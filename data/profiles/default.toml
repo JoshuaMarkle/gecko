@@ -1,0 +1,22 @@
+name = "default"
+description = "Balanced modern profile: low SFB/SFS, low stretch, good rolls, even finger load."
+
+# Target % per finger: LP LR LM LI LT RT RI RM RR RP
+finger_target = [8.0, 11.0, 15.0, 16.0, 0.0, 0.0, 16.0, 15.0, 11.0, 8.0]
+
+# Weights apply to metric values in natural units (% or average effort). Direction comes from
+# the metric (rewards like rolls subtract). Larger = care more. Ids: research/metrics-catalog.md.
+[weights]
+B01 = 5.0    # SFB %
+S01 = 0.6    # SFS %
+B03 = 0.02   # finger travel
+B04 = 0.4    # LSB %
+B05 = 0.8    # scissors %
+M01 = 2.0    # effort
+M02 = 0.03   # finger load error (mean squared %)
+M04 = 0.05   # hand balance
+T03 = 0.05   # rolls in
+T04 = 0.03   # rolls out
+T01 = 0.03   # alternates
+T06 = 0.15   # redirects
+T07 = 0.4    # bad redirects

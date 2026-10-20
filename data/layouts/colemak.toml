@@ -1,0 +1,4 @@
+name = "Colemak"
+geometry = "ansi-30"
+source = "Shai Coleman, 2006 (colemak.com)"
+rows = ['qwfpgjluy;', 'arstdhneio', 'zxcvbkm,./']

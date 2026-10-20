@@ -1,0 +1,4 @@
+name = "QWERTY"
+geometry = "ansi-30"
+source = "Sholes, 1870s"
+rows = ['qwertyuiop', 'asdfghjkl;', 'zxcvbnm,./']

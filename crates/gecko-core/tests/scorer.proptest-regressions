@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 6f7e0f23f637e67db0322b723101d3ced820ac53efc617ff89ca37c402f56efa # shrinks to seed = 2011, swaps = [(17, 1), (12, 4), (12, 22), (15, 24), (29, 21), (25, 16), (24, 2), (14, 10), (20, 11), (1, 13), (10, 18), (15, 5)]

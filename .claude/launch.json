@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "gecko-serve", "runtimeExecutable": "./target/release/gecko", "runtimeArgs": ["serve", "--port", "7777"], "port": 7777 }
+  ]
+}

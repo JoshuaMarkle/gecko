@@ -1,0 +1,42 @@
+# Testing and benchmarks
+
+## Must-have tests
+
+| Test | What it guards |
+|---|---|
+| Metric unit tests | Each metric on a tiny geometry (3–6 keys) with hand-computed answers |
+| Delta == full (property test, `proptest`) | Random layouts + random swaps: delta matches re-evaluation within 1e-5 relative |
+| Folding == unfolded | Folded score equals sum of individually computed metrics |
+| Reference snapshot | Scores and metric values of reference layouts per profile (`insta`). Changes must be intentional |
+| Ranking sanity | Default profile ranks modern layouts > Colemak > Dvorak > QWERTY |
+| Published numbers | SFB % for QWERTY/Colemak/Graphite within tolerance of published values on the matching corpus |
+| Optimizer correctness | On instances small enough to brute-force (≤ 8 keys), each optimizer finds the optimum |
+| Determinism | Same seed → identical result |
+| Format round-trip | Layout/geometry parse → print → parse |
+| Collision (geometry phases) | Known overlapping/non-overlapping key pairs |
+
+## Benchmarks (`criterion`)
+
+- Full evaluation per layout, swap-delta per call, swaps/sec on all cores.
+- Algorithm leaderboard (`gecko bench`): fixed geometry/corpus/profile and time budget,
+  10+ seeds, report mean/best/stdev of final score and time-to-target.
+- Keep a `bench/history.jsonl` so performance regressions are visible.
+
+## Web
+
+TypeScript type check + a few Vitest tests for data shaping. A smoke test that the
+WASM scorer matches the CLI on reference layouts.
+
+## Implemented (`crates/gecko-core/tests/scorer.rs` + unit tests)
+
+delta == full (proptest), folding == breakdown, brute-force optimum on a 6-key board for
+HC/SA/GA, determinism with an eval budget, pins respected, ranking sanity + QWERTY SFB,
+corpus counting + binary round-trip, layout TOML round-trip. Web: `web/src/format.test.ts`.
+WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
+
+Still to add: metric unit tests with hand-computed answers per metric, `insta` snapshots,
+criterion benches + `bench/history.jsonl`.
+
+## Rule
+
+`cargo test` and `cargo clippy -- -D warnings` pass before any change is considered done.

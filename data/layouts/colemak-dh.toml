@@ -1,0 +1,4 @@
+name = "Colemak-DH"
+geometry = "ansi-30"
+source = "colemakmods.github.io (matrix variant)"
+rows = ['qwfpbjluy;', 'arstgmneio', 'zxcdvkh,./']

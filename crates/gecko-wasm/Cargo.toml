@@ -1,0 +1,13 @@
+[package]
+name = "gecko-wasm"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+gecko-core = { path = "../gecko-core" }
+serde.workspace = true
+serde_json.workspace = true
+wasm-bindgen = "0.2"

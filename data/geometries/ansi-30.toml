@@ -1,0 +1,229 @@
+name = "ansi-30"
+description = "The 30 main alpha keys of a standard row-staggered (ANSI) keyboard, traditional fingering."
+# Units: 1u = 19.05 mm. x right, y toward the user (top row = 0), z up.
+# Keys are listed row by row; layout rows map onto them in this order.
+# effort: base cost per press (lower is easier), carpalx/Oxeylyzer-style.
+
+[[key]]
+pos = [0.00, 0.00, 0.0]
+finger = "LP"
+row = 0
+col = 0
+effort = 3.0
+
+[[key]]
+pos = [1.00, 0.00, 0.0]
+finger = "LR"
+row = 0
+col = 1
+effort = 2.4
+
+[[key]]
+pos = [2.00, 0.00, 0.0]
+finger = "LM"
+row = 0
+col = 2
+effort = 2.0
+
+[[key]]
+pos = [3.00, 0.00, 0.0]
+finger = "LI"
+row = 0
+col = 3
+effort = 2.2
+
+[[key]]
+pos = [4.00, 0.00, 0.0]
+finger = "LI"
+row = 0
+col = 4
+stretch = true
+effort = 3.2
+
+[[key]]
+pos = [5.00, 0.00, 0.0]
+finger = "RI"
+row = 0
+col = 5
+stretch = true
+effort = 3.2
+
+[[key]]
+pos = [6.00, 0.00, 0.0]
+finger = "RI"
+row = 0
+col = 6
+effort = 2.2
+
+[[key]]
+pos = [7.00, 0.00, 0.0]
+finger = "RM"
+row = 0
+col = 7
+effort = 2.0
+
+[[key]]
+pos = [8.00, 0.00, 0.0]
+finger = "RR"
+row = 0
+col = 8
+effort = 2.4
+
+[[key]]
+pos = [9.00, 0.00, 0.0]
+finger = "RP"
+row = 0
+col = 9
+effort = 3.0
+
+[[key]]
+pos = [0.25, 1.00, 0.0]
+finger = "LP"
+row = 1
+col = 0
+home = true
+effort = 1.6
+
+[[key]]
+pos = [1.25, 1.00, 0.0]
+finger = "LR"
+row = 1
+col = 1
+home = true
+effort = 1.3
+
+[[key]]
+pos = [2.25, 1.00, 0.0]
+finger = "LM"
+row = 1
+col = 2
+home = true
+effort = 1.1
+
+[[key]]
+pos = [3.25, 1.00, 0.0]
+finger = "LI"
+row = 1
+col = 3
+home = true
+effort = 1.0
+
+[[key]]
+pos = [4.25, 1.00, 0.0]
+finger = "LI"
+row = 1
+col = 4
+stretch = true
+effort = 2.2
+
+[[key]]
+pos = [5.25, 1.00, 0.0]
+finger = "RI"
+row = 1
+col = 5
+stretch = true
+effort = 2.2
+
+[[key]]
+pos = [6.25, 1.00, 0.0]
+finger = "RI"
+row = 1
+col = 6
+home = true
+effort = 1.0
+
+[[key]]
+pos = [7.25, 1.00, 0.0]
+finger = "RM"
+row = 1
+col = 7
+home = true
+effort = 1.1
+
+[[key]]
+pos = [8.25, 1.00, 0.0]
+finger = "RR"
+row = 1
+col = 8
+home = true
+effort = 1.3
+
+[[key]]
+pos = [9.25, 1.00, 0.0]
+finger = "RP"
+row = 1
+col = 9
+home = true
+effort = 1.6
+
+[[key]]
+pos = [0.75, 2.00, 0.0]
+finger = "LP"
+row = 2
+col = 0
+effort = 3.4
+
+[[key]]
+pos = [1.75, 2.00, 0.0]
+finger = "LR"
+row = 2
+col = 1
+effort = 2.8
+
+[[key]]
+pos = [2.75, 2.00, 0.0]
+finger = "LM"
+row = 2
+col = 2
+effort = 2.4
+
+[[key]]
+pos = [3.75, 2.00, 0.0]
+finger = "LI"
+row = 2
+col = 3
+effort = 1.8
+
+[[key]]
+pos = [4.75, 2.00, 0.0]
+finger = "LI"
+row = 2
+col = 4
+stretch = true
+effort = 3.4
+
+[[key]]
+pos = [5.75, 2.00, 0.0]
+finger = "RI"
+row = 2
+col = 5
+stretch = true
+effort = 2.6
+
+[[key]]
+pos = [6.75, 2.00, 0.0]
+finger = "RI"
+row = 2
+col = 6
+effort = 1.8
+
+[[key]]
+pos = [7.75, 2.00, 0.0]
+finger = "RM"
+row = 2
+col = 7
+effort = 2.4
+
+[[key]]
+pos = [8.75, 2.00, 0.0]
+finger = "RR"
+row = 2
+col = 8
+effort = 2.8
+
+[[key]]
+pos = [9.75, 2.00, 0.0]
+finger = "RP"
+row = 2
+col = 9
+effort = 3.4

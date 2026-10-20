@@ -1,0 +1,7 @@
+/target
+/web/node_modules
+/web/dist
+/web/src/wasm/pkg
+/runs/*
+!/runs/.gitkeep
+/data/corpora/src/

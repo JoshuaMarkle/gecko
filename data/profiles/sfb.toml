@@ -1,0 +1,8 @@
+name = "sfb"
+description = "Minimize same-finger bigrams first; everything else is a light tie-breaker."
+
+[weights]
+B01 = 10.0
+S01 = 1.0
+M01 = 0.5
+B04 = 0.2

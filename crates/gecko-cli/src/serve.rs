@@ -1,0 +1,377 @@
+//! `gecko serve`: the built web app plus a JSON API over `data/` and `runs/`, with live run
+//! progress over SSE. JSON shapes match the CLI's `--json` output. See `context/web.md`.
+
+use std::collections::HashMap;
+use std::convert::Infallible;
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+
+use anyhow::Result;
+use axum::extract::{Path, State};
+use axum::http::{header, StatusCode};
+use axum::response::sse::{Event, KeepAlive, Sse};
+use axum::response::{IntoResponse, Response};
+use axum::routing::{get, post};
+use axum::{Json, Router};
+use futures_util::stream::{self, Stream, StreamExt};
+use gecko_core::optimize::{Algo, Params};
+use gecko_core::report::analyze;
+use gecko_core::run::{self, RunSpec};
+use gecko_core::store::Store;
+use gecko_core::{Layout, Profile, Scorer, SCHEMA};
+use serde::Deserialize;
+use serde_json::{json, Value};
+use tokio::sync::broadcast;
+use tokio_stream::wrappers::BroadcastStream;
+use tower_http::services::{ServeDir, ServeFile};
+
+#[derive(Clone)]
+struct Msg {
+    event: &'static str,
+    data: String,
+}
+
+struct LiveRun {
+    tx: broadcast::Sender<Msg>,
+    history: Mutex<Vec<Msg>>,
+    done: AtomicBool,
+    cancel: AtomicBool,
+}
+
+impl LiveRun {
+    fn send(&self, event: &'static str, data: String) {
+        let m = Msg { event, data };
+        let mut h = self.history.lock().unwrap();
+        // Keep the replay short: only the latest progress event matters for late subscribers.
+        if event == "progress" {
+            h.retain(|x| x.event != "progress");
+        }
+        h.push(m.clone());
+        let _ = self.tx.send(m);
+    }
+}
+
+struct App {
+    store: Store,
+    live: Mutex<HashMap<String, Arc<LiveRun>>>,
+}
+
+type AppState = Arc<App>;
+
+struct ApiError(StatusCode, String);
+
+impl IntoResponse for ApiError {
+    fn into_response(self) -> Response {
+        (self.0, Json(json!({"schema": SCHEMA, "error": self.1}))).into_response()
+    }
+}
+
+impl<E: std::fmt::Display> From<E> for ApiError {
+    fn from(e: E) -> Self {
+        ApiError(StatusCode::BAD_REQUEST, e.to_string())
+    }
+}
+
+type ApiResult = std::result::Result<Json<Value>, ApiError>;
+
+pub fn serve(store: Store, port: u16, web: PathBuf) -> Result<()> {
+    let rt = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;
+    rt.block_on(async move {
+        if !web.join("index.html").is_file() {
+            eprintln!("warning: {} has no index.html; build the UI with `cd web && npm install && npm run build`", web.display());
+        }
+        let app: AppState = Arc::new(App { store, live: Mutex::new(HashMap::new()) });
+        let static_files = ServeDir::new(&web).fallback(ServeFile::new(web.join("index.html")));
+        let router = Router::new()
+            .route("/api/meta", get(meta))
+            .route("/api/layouts", get(layouts))
+            .route("/api/geometries", get(geometries))
+            .route("/api/profiles", get(profiles))
+            .route("/api/corpora", get(corpora))
+            .route("/api/corpora/{name}", get(corpus_bin))
+            .route("/api/score", post(score))
+            .route("/api/runs", get(list_runs).post(start_run))
+            .route("/api/runs/{id}", get(get_run))
+            .route("/api/runs/{id}/events", get(run_events))
+            .route("/api/runs/{id}/cancel", post(cancel_run))
+            .fallback_service(static_files)
+            .with_state(app);
+        let addr = std::net::SocketAddr::from(([127, 0, 0, 1], port));
+        let listener = tokio::net::TcpListener::bind(addr).await?;
+        eprintln!("gecko serve: http://{addr}  (web: {})", web.display());
+        axum::serve(listener, router)
+            .with_graceful_shutdown(async {
+                let _ = tokio::signal::ctrl_c().await;
+            })
+            .await?;
+        Ok(())
+    })
+}
+
+async fn meta(State(app): State<AppState>) -> ApiResult {
+    Ok(Json(json!({
+        "schema": SCHEMA,
+        "version": env!("CARGO_PKG_VERSION"),
+        "defaults": app.store.defaults,
+        "algos": Algo::ALL.iter().map(|a| a.name()).collect::<Vec<_>>(),
+        "metrics": gecko_core::metrics::METRICS,
+        "threads": std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1),
+    })))
+}
+
+async fn layouts(State(app): State<AppState>) -> ApiResult {
+    let mut out = Vec::new();
+    for id in app.store.list("layouts") {
+        let l = app.store.layout(&id, "")?;
+        out.push(
+            json!({"id": id, "name": l.name, "geometry": l.geometry, "source": l.source, "chars": l.chars.iter().collect::<String>()}),
+        );
+    }
+    Ok(Json(json!(out)))
+}
+
+async fn geometries(State(app): State<AppState>) -> ApiResult {
+    let mut out = Vec::new();
+    for id in app.store.list("geometries") {
+        let g = app.store.geometry(&id)?;
+        let mut v = serde_json::to_value(&g)?;
+        v["id"] = json!(id);
+        out.push(v);
+    }
+    Ok(Json(json!(out)))
+}
+
+async fn profiles(State(app): State<AppState>) -> ApiResult {
+    let mut out = Vec::new();
+    for id in app.store.list("profiles") {
+        let p = app.store.profile(&id)?;
+        let mut v = serde_json::to_value(&p)?;
+        v["id"] = json!(id);
+        out.push(v);
+    }
+    Ok(Json(json!(out)))
+}
+
+async fn corpora(State(app): State<AppState>) -> ApiResult {
+    let mut out = Vec::new();
+    for id in app.store.list("corpora") {
+        let c = app.store.corpus(&id)?;
+        out.push(json!({"id": id, "name": c.name, "chars": c.total_chars(), "charset": c.charset.iter().collect::<String>()}));
+    }
+    Ok(Json(json!(out)))
+}
+
+async fn corpus_bin(State(app): State<AppState>, Path(name): Path<String>) -> std::result::Result<Response, ApiError> {
+    if name.contains('/') || name.contains("..") {
+        return Err(ApiError(StatusCode::BAD_REQUEST, "bad corpus name".into()));
+    }
+    let bytes = std::fs::read(app.store.corpus_path(&name)).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
+    Ok(([(header::CONTENT_TYPE, "application/octet-stream")], bytes).into_response())
+}
+
+/// Shared input for scoring and runs: names default to gecko.toml; `profile_override` wins over `profile`.
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct InputsReq {
+    geometry: Option<String>,
+    corpus: Option<String>,
+    profile: Option<String>,
+    profile_override: Option<Profile>,
+    /// Slot-ordered symbols; or `layout` (any CLI layout spec).
+    chars: Option<String>,
+    layout: Option<String>,
+}
+
+struct Resolved {
+    geometry: gecko_core::Geometry,
+    corpus: gecko_core::Corpus,
+    profile: Profile,
+    layout: Layout,
+}
+
+fn resolve(store: &Store, r: &InputsReq) -> std::result::Result<Resolved, ApiError> {
+    let d = &store.defaults;
+    let geometry = store.geometry(r.geometry.as_deref().unwrap_or(&d.geometry))?;
+    let corpus = store.corpus(r.corpus.as_deref().unwrap_or(&d.corpus))?;
+    let profile = match &r.profile_override {
+        Some(p) => p.clone(),
+        None => store.profile(r.profile.as_deref().unwrap_or(&d.profile))?,
+    };
+    let layout = match (&r.chars, &r.layout) {
+        (Some(c), _) => Layout::from_str_flat("custom", &geometry.name, c)?,
+        (None, Some(spec)) => store.layout(spec, &geometry.name)?,
+        (None, None) => store.layout(&d.reference, &geometry.name)?,
+    };
+    layout.check_geometry(&geometry)?;
+    Ok(Resolved { geometry, corpus, profile, layout })
+}
+
+#[derive(Deserialize)]
+struct ScoreReq {
+    #[serde(flatten)]
+    inputs: InputsReq,
+    #[serde(default = "ten")]
+    top: usize,
+}
+fn ten() -> usize {
+    10
+}
+
+async fn score(State(app): State<AppState>, Json(req): Json<ScoreReq>) -> ApiResult {
+    let v = tokio::task::spawn_blocking(move || -> std::result::Result<Value, ApiError> {
+        let r = resolve(&app.store, &req.inputs)?;
+        let sc = Scorer::new(&r.geometry, &r.corpus, &r.profile, &r.layout)?;
+        let st = sc.identity();
+        Ok(json!({"schema": SCHEMA, "chars": r.layout.chars.iter().collect::<String>(), "rows": r.layout.rows(&r.geometry), "analysis": analyze(&sc, &st, req.top)}))
+    })
+    .await??;
+    Ok(Json(v))
+}
+
+#[derive(Deserialize)]
+struct RunReq {
+    #[serde(flatten)]
+    inputs: InputsReq,
+    #[serde(default)]
+    algo: Option<String>,
+    #[serde(default)]
+    time_ms: Option<u64>,
+    #[serde(default)]
+    evals: Option<u64>,
+    #[serde(default)]
+    seed: Option<u64>,
+    #[serde(default)]
+    threads: Option<usize>,
+    #[serde(default)]
+    pins: String,
+    #[serde(default)]
+    sa_steps: Option<u64>,
+    #[serde(default)]
+    ga_pop: Option<usize>,
+}
+
+async fn start_run(State(app): State<AppState>, Json(req): Json<RunReq>) -> ApiResult {
+    let r = resolve(&app.store, &req.inputs)?;
+    let algo_name = req.algo.as_deref().unwrap_or("sa");
+    let algo = Algo::parse(algo_name).ok_or_else(|| ApiError(StatusCode::BAD_REQUEST, format!("unknown algo '{algo_name}'")))?;
+    let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
+    let mut params = Params {
+        algo,
+        seed: req.seed.unwrap_or(1),
+        threads: req.threads.unwrap_or(cores).clamp(1, cores.max(1)),
+        time_ms: if req.evals.is_some() { None } else { Some(req.time_ms.unwrap_or(10_000).min(3_600_000)) },
+        evals: req.evals,
+        top: 10,
+        ..Default::default()
+    };
+    if let Some(s) = req.sa_steps {
+        params.sa.steps = if s == 0 { 0 } else { s.max(1000) };
+    }
+    if let Some(p) = req.ga_pop {
+        params.ga.pop_size = p.clamp(4, 10_000);
+    }
+    let spec = RunSpec {
+        geometry: &r.geometry,
+        corpus: &r.corpus,
+        profile: &r.profile,
+        start: &r.layout,
+        pins: &req.pins,
+        params: params.clone(),
+    };
+    let prep = run::prepare(&app.store.runs, &spec)?;
+    let id = prep.config.id.clone();
+    let (tx, _) = broadcast::channel(256);
+    let live = Arc::new(LiveRun { tx, history: Mutex::new(Vec::new()), done: AtomicBool::new(false), cancel: AtomicBool::new(false) });
+    app.live.lock().unwrap().insert(id.clone(), live.clone());
+    let pins = req.pins.clone();
+    std::thread::spawn(move || {
+        let spec = RunSpec { geometry: &r.geometry, corpus: &r.corpus, profile: &r.profile, start: &r.layout, pins: &pins, params };
+        let res = run::execute(&prep, &spec, &live.cancel, |p| live.send("progress", serde_json::to_string(p).unwrap()));
+        match res {
+            Ok(res) => live.send("done", serde_json::to_string(&res).unwrap()),
+            Err(e) => live.send("failed", json!({"error": e.to_string()}).to_string()),
+        }
+        live.done.store(true, Ordering::SeqCst);
+    });
+    Ok(Json(json!({"schema": SCHEMA, "id": id, "config": spec_config(&app, &id)})))
+}
+
+fn spec_config(app: &App, id: &str) -> Value {
+    run::load_config(&app.store.runs.join(id)).ok().map(|c| json!(c)).unwrap_or(Value::Null)
+}
+
+fn check_id(id: &str) -> std::result::Result<(), ApiError> {
+    if id.is_empty() || id.contains('/') || id.contains("..") {
+        return Err(ApiError(StatusCode::BAD_REQUEST, "bad run id".into()));
+    }
+    Ok(())
+}
+
+async fn list_runs(State(app): State<AppState>) -> ApiResult {
+    let live = app.live.lock().unwrap();
+    let v: Vec<Value> = run::list(&app.store.runs)
+        .into_iter()
+        .map(|s| {
+            let mut v = json!(s);
+            if let Some(l) = live.get(&s.id) {
+                if !l.done.load(Ordering::SeqCst) {
+                    v["status"] = json!("running");
+                }
+            }
+            v
+        })
+        .collect();
+    Ok(Json(json!(v)))
+}
+
+async fn get_run(State(app): State<AppState>, Path(id): Path<String>) -> ApiResult {
+    check_id(&id)?;
+    let dir = app.store.runs.join(&id);
+    let config = run::load_config(&dir).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
+    let result = run::load_result(&dir).ok();
+    let running = app.live.lock().unwrap().get(&id).is_some_and(|l| !l.done.load(Ordering::SeqCst));
+    Ok(Json(json!({"schema": SCHEMA, "config": config, "result": result, "progress": run::load_progress(&dir), "running": running})))
+}
+
+async fn cancel_run(State(app): State<AppState>, Path(id): Path<String>) -> ApiResult {
+    check_id(&id)?;
+    if let Some(l) = app.live.lock().unwrap().get(&id) {
+        l.cancel.store(true, Ordering::SeqCst);
+    }
+    Ok(Json(json!({"schema": SCHEMA, "id": id, "cancelled": true})))
+}
+
+async fn run_events(
+    State(app): State<AppState>,
+    Path(id): Path<String>,
+) -> std::result::Result<Sse<impl Stream<Item = std::result::Result<Event, Infallible>>>, ApiError> {
+    check_id(&id)?;
+    let live = app.live.lock().unwrap().get(&id).cloned();
+    let (history, rx) = match &live {
+        Some(l) => {
+            let h = l.history.lock().unwrap();
+            (h.clone(), Some(l.tx.subscribe()))
+        }
+        None => {
+            let res = run::load_result(&app.store.runs.join(&id)).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
+            (vec![Msg { event: "done", data: serde_json::to_string(&res).unwrap() }], None)
+        }
+    };
+    let finished = history.iter().any(|m| m.event != "progress");
+    let to_event = |m: Msg| Ok::<_, Infallible>(Event::default().event(m.event).data(m.data));
+    let replay = stream::iter(history);
+    let tail = match (rx, finished) {
+        // Forward live events and end the stream right after the terminal (done/error) event.
+        (Some(rx), false) => BroadcastStream::new(rx)
+            .filter_map(|m| async move { m.ok() })
+            .scan(false, |ended, m| {
+                let out = if *ended { None } else { Some(m.clone()) };
+                *ended |= m.event != "progress";
+                futures_util::future::ready(out)
+            })
+            .boxed(),
+        _ => stream::empty().boxed(),
+    };
+    Ok(Sse::new(replay.chain(tail).map(to_event)).keep_alive(KeepAlive::default()))
+}

@@ -1,0 +1,4 @@
+name = "Dvorak"
+geometry = "ansi-30"
+source = "August Dvorak, 1936"
+rows = ["',.pyfgcrl", 'aoeuidhtns', ';qjkxbmwvz']

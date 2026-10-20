@@ -1,0 +1,7 @@
+# Defaults for the gecko CLI and server (paths relative to this file).
+data = "data"
+runs = "runs"
+geometry = "ansi-30"
+corpus = "english"
+profile = "default"
+reference = "qwerty"
