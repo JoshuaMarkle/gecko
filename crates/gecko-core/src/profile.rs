@@ -109,6 +109,14 @@ impl Profile {
         self.weight(id) / self.scale.get(id).copied().unwrap_or(1.0)
     }
 
+    /// Hash of the parameters that shape metric tables and raw metric values (everything but the
+    /// weights and scales). Raw vectors measured under one table hash can be re-scored exactly
+    /// with any profile that has the same table hash.
+    pub fn table_hash(&self) -> u64 {
+        let v = serde_json::json!({"finger_target": self.finger_target, "trigram_coverage": self.trigram_coverage, "sfb": self.sfb});
+        hash::fnv1a(v.to_string().as_bytes())
+    }
+
     pub fn hash(&self) -> u64 {
         hash::fnv1a(serde_json::to_string(self).unwrap_or_default().as_bytes())
     }

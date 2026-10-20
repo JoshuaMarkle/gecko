@@ -70,3 +70,19 @@ A run directory `runs/<timestamp>-<algo>-<short-hash>/` contains:
 - `config.json` (params, input names + hashes, full profile, start layout, pins, version)
 - `best.json` (resolved params, top-K layouts with full metric breakdown, evals, speed)
 - `progress.jsonl` (elapsed, evals, best score and layout, every ~250 ms)
+
+Explore runs add an **atlas** (`explore/atlas.rs`; little-endian, fixed-size records,
+rewritten atomically on each snapshot):
+- `optima.bin`: `GKATLAS1`, u32 version 1, slots S, metrics M, count N; M metric ids
+  (4 bytes, zero-padded); N × {f64 score, u32 hits, u32 first_ms, u16 flags, S × u8 symbol
+  ids, M × f32 raw metric values}, sorted by score. Flag 1 = constrained (end of an
+  exclusion descent).
+- `edges.bin`: `GKEDGES1`, u32 count; × {u32 from, u32 to, u32 count, u8 kick, u8 strength}
+  (rows of `optima.bin`; kick 0 = swaps, 1 = columns).
+- `samples.bin`: `GKSAMPL1`, u32 M, u32 count; × {f64 score, M × f32 raw} (random layouts).
+- `atlas.json`: schema, done, evals, symbols, metric ids, mirror symmetry, profile table
+  hash, counts, best, probe summary (random distribution, correlation length), FDC, funnels,
+  coverage (Chao1), distinct bests.
+
+Raw metric vectors make the atlas re-rankable under any weights without re-searching (as
+long as the profile's tables — `Profile::table_hash` — match).

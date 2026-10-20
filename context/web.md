@@ -23,7 +23,7 @@ web/src/
 Toolbar (see design.md "App shell"): view tabs | Start optimization · Pause · End | run progress.
 Views: **Home** (Inputs | 3D keyboard over chart tabs | Result), **Results** (all runs, the
 selected run's convergence and best layouts), **Layout analysis** (all charts for the current
-layout). The view is remembered in `localStorage`.
+layout), **Explore** (atlas of an explore run, below). The view is remembered in `localStorage`.
 
 - Play starts a run with Inputs › Search (algorithm, budget) or resumes a paused one. Pause
   freezes the workers and the budget clock. End cancels; results so far are saved.
@@ -32,6 +32,21 @@ layout). The view is remembered in `localStorage`.
   (`profile_override`), so the run's `config.json` records exactly what was optimized.
 - While a run is going, the 3D view shows the live best layout.
 - UI preferences (view, group, tab, overlay, sizes, current layout) persist in `localStorage`.
+
+## Explore view (`components/explore/`)
+
+Left: atlas picker, new exploration (budget, threads, seed; other inputs from Home), ranking
+(atlas profile, or the current profile with editable weights; every panel re-ranks), focus
+(best N, family radius, brush) and landscape stats. Centre, linked cards: Map (PCA of slot,
+finger or metric encodings), Fitness vs distance (+ reference layouts), Consensus keyboard,
+Families, Trade-off (any two metrics, Pareto front), Funnels, Parallel coordinates, Weight
+stability, Discovery curve, How good is good (random vs optima), Ruggedness. Right: the
+picked layout — metrics vs best, provenance, its whole swap neighbourhood; Open in editor.
+
+All atlas statistics run in WASM (`AtlasView`) on the binary files; the live atlas reloads
+on each snapshot (throttled 2.5 s). Reference layouts are scored via `/api/score`. Swap
+neighbourhoods use WASM when the geometry and corpus match the loaded scorer, else
+`/api/swap-matrix`.
 
 ## 3D rendering
 
@@ -52,6 +67,9 @@ fit the board to the viewport. Flat and curved boards use the same code path.
 | `GET /api/runs/{id}` | config, result, progress, running, paused |
 | `GET /api/runs/{id}/events` | SSE: `progress`, then `done` (RunResult) or `failed` |
 | `POST /api/runs/{id}/cancel` | stop early (results are still saved) |
+| `GET /api/runs/{id}/atlas` | explore run summary (`atlas.json`) |
+| `GET /api/runs/{id}/atlas/{optima\|edges\|samples}` | atlas binary files (for WASM `AtlasView`) |
+| `POST /api/swap-matrix` | score inputs + `chars` → Δ score of every slot-pair swap |
 | `POST /api/runs/{id}/pause` · `/resume` | pause / resume a running run; paused time does not count against `time_ms` or toward `elapsed_ms` |
 
 ## Dev

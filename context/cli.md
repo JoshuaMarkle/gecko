@@ -9,9 +9,17 @@ gecko score    <layout> [-g geometry] [-p profile] [-c corpus]   # per-metric br
 gecko compare  [<layout>...] [--corpora a,b,c]                   # rank layouts (all references if none);
                                                                   #   --corpora: score/rank per corpus (L05)
 gecko analyze  <layout> [--top 10]                                # finger loads, worst SFB/SFS/LSB/scissors
-gecko optimize [--algo sa|hc|ga] [--time 30s | --evals N] [--seed 1] [--threads N]
+gecko optimize [--algo sa|hc|ga|bls|explore] [--time 30s | --evals N] [--seed 1] [--threads N]
                [--pin ",./;"] [--from <layout>] [--top 10] [--sa-steps N] [--ga-pop N]
-gecko bench    [--algos hc,sa,ga] [--seeds 3] [--time 5s]         # algorithm leaderboard
+gecko bench    [--algos hc,sa,ga,bls] [--seeds 3] [--time 5s]         # algorithm leaderboard
+gecko explore  [--time 60s | --evals N] [--seed 1] [--threads N] [--pin ...] [--from <layout>]
+               [--samples 2000] [--max-optima 100000]         # map local optima; writes an atlas run
+gecko landscape [--samples 4000] [--walks 64] [--walk-len 400] [--seed 1] [--from <layout>]
+                                                                  # random-score distribution, correlation
+                                                                  #   length, reference percentiles, symmetry
+gecko atlas    <run> [--top 10] [--cut 8] [--pool 300] [-p profile]
+                                                                  # summary, ranked, families, consensus,
+                                                                  #   funnels, FDC; -p re-ranks under a profile
 gecko perf     [--layout qwerty]                                  # full evals/s and swap deltas/s (1 thread)
 gecko corpus build <files or dirs...> [--out english] [--charset ...]
 gecko corpus import <cmini corpus dir> --out <name> [--charset ...]   # words.json or n-gram JSON

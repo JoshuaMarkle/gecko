@@ -7,6 +7,7 @@
 pub mod calibrate;
 pub mod corpus;
 pub mod error;
+pub mod explore;
 pub mod geometry;
 pub mod hash;
 pub mod layout;

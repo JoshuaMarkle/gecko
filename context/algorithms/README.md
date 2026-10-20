@@ -10,7 +10,7 @@ trait Optimizer {
 }
 ```
 
-Implemented: HC, SA, GA (`gecko-core/src/optimize/`). The runner handles time budgets, threads/restarts, progress events, and persistence,
+Implemented: HC, SA, GA, BLS, Explore (`gecko-core/src/optimize/`, `explore/`). The runner handles time budgets, threads/restarts, progress events, and persistence,
 so algorithms contain only search logic. All moves respect pins.
 
 | File | Kind | Status | Role |
@@ -21,6 +21,7 @@ so algorithms contain only search logic. All moves respect pins.
 | [tabu-search.md](tabu-search.md) | Local search | Phase 2 | Strong for QAP |
 | [memetic.md](memetic.md) | Hybrid | Phase 2–3 | GA + local search, island model |
 | [nsga2.md](nsga2.md) | Multi-objective | Phase 3 | Pareto fronts |
+| [explore.md](explore.md) | Local search + archive | Done | BLS; explore = probe + BLS with exclusion restarts, writes an atlas of local optima |
 | [geometry-search.md](geometry-search.md) | Continuous | Phase 6+ | Key positions/rotations; bilevel with layout |
 
 Shared neighborhoods: swap (default), 3-cycle, swap two columns on the same finger, swap

@@ -6,7 +6,7 @@ import type { Analysis, Geometry, MetricValue, Ngram, Progress } from "../api";
 import { ACCENT, fingerColor, heatColor, heatText, HAIR, INK, MUTED } from "../colors";
 import { fmt, fmtTime, scoredMetrics } from "../format";
 
-function useSize<T extends HTMLElement>() {
+export function useSize<T extends HTMLElement>() {
   const ref = useRef<T>(null);
   const [size, setSize] = useState({ w: 600, h: 240 });
   useLayoutEffect(() => {
@@ -19,7 +19,7 @@ function useSize<T extends HTMLElement>() {
   return [ref, size] as const;
 }
 
-function niceTicks(lo: number, hi: number, n = 5): number[] {
+export function niceTicks(lo: number, hi: number, n = 5): number[] {
   if (!(hi > lo)) return [lo];
   const step0 = (hi - lo) / n;
   const mag = Math.pow(10, Math.floor(Math.log10(step0)));

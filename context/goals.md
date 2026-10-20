@@ -18,8 +18,8 @@ optimization on top.
 Status 2026-10-20: phase 1 done (scorer, P0 metrics + trigram classes, ranking test);
 phase 2 partly done (HC, SA, GA, `gecko bench`); phase 4 MVP done (single-screen UI, 3D view,
 live editor, runs); phase 3 started (B14, S02/S03, Engram comfort judge E05, extra corpora +
-robustness report, spread-normalized weights, `gecko profile fit`). Next: result diversity,
-tabu, lower bounds.
+robustness report, spread-normalized weights, `gecko profile fit`); search-space exploration
+done (BLS, `gecko explore` atlas, Explore view). Next: tabu, lower bounds, MAP-Elites.
 
 | # | Phase | Done when |
 |---|---|---|

@@ -39,14 +39,15 @@ gecko/
 | `metrics` | Metric definitions + per-geometry cost tables (`metrics/mod.rs`; trigram classes in `metrics/trigram.rs`) |
 | `scorer` | Folds metrics × weights into flat tables; full + delta evaluation; `State` |
 | `report` | Per-metric breakdown, finger loads, heat, worst n-grams |
-| `optimize` | `Optimizer` trait, threaded runner, top-K; `hill_climb`, `anneal`, `genetic` |
+| `optimize` | `Optimizer` trait, threaded runner, top-K; `hill_climb`, `anneal`, `genetic`, `bls` |
+| `explore` | Landscape probe, local-optima archive, atlas files, distances/symmetry, atlas statistics (`explore/`) |
 | `run` | Run directories (config, progress, best), listing |
 | `store` | The data directory (`gecko.toml`, `data/`, `runs/`) and layout specs |
 | `rng` | Seeded xoshiro256++ (identical on native and WASM) |
 | `hand` (phase 7+) | Hand model, IK, reach costs → feeds `geometry` tables |
 
 Dependency direction: `metrics → geometry, corpus`; `scorer → metrics`;
-`optimize → scorer, layout`; `run → optimize`. No cycles. `gecko-core` has no CLI or HTTP code.
+`optimize → scorer, layout`; `explore → optimize` (via the `Observer` trait in `Ctx`); `run → optimize, explore`. No cycles. `gecko-core` has no CLI or HTTP code.
 
 ## Data flow
 

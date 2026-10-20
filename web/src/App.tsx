@@ -5,7 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import { api, type Analysis, type CorpusInfo, type Geometry, type LayoutInfo, type Meta, type Profile, type Progress, type RunDetail, type RunSummary } from "./api";
 import { Convergence, FingerLoad, Heatmap, MetricBars, WorstNgrams } from "./components/Charts";
 import { AnalysisView } from "./components/AnalysisView";
-import { IconAnalysis, IconHome, IconPause, IconPlay, IconResults, IconSkip } from "./components/Icons";
+import { ExploreView } from "./components/explore/ExploreView";
+import { IconAnalysis, IconExplore, IconHome, IconPause, IconPlay, IconResults, IconSkip } from "./components/Icons";
 import { InputsPanel, type Group, type SearchSettings } from "./components/InputsPanel";
 import { ResultPanel } from "./components/ResultPanel";
 import { ResultsView } from "./components/ResultsView";
@@ -16,8 +17,10 @@ import { Scorer } from "./wasm";
 
 type Tab = "convergence" | "metrics" | "fingers" | "heatmap" | "ngrams";
 const TABS: [Tab, string][] = [["convergence", "Convergence"], ["metrics", "Metrics"], ["fingers", "Finger load"], ["heatmap", "Heatmap"], ["ngrams", "Worst n-grams"]];
-type View = "home" | "results" | "analysis";
-const VIEWS: [View, string, () => ReactElement][] = [["home", "Home", IconHome], ["results", "Results", IconResults], ["analysis", "Layout analysis", IconAnalysis]];
+type View = "home" | "results" | "analysis" | "explore";
+const VIEWS: [View, string, () => ReactElement][] = [
+  ["home", "Home", IconHome], ["results", "Results", IconResults], ["analysis", "Layout analysis", IconAnalysis], ["explore", "Explore the search space", IconExplore],
+];
 
 function usePref<T>(key: string, init: T): [T, (v: T) => void] {
   const [v, setV] = useState<T>(() => {
@@ -62,7 +65,7 @@ function download(name: string, text: string, type = "application/json") {
 }
 
 // Pause bookkeeping mirrors the server: paused time does not use up the budget.
-interface Live { id: string; progress: Progress[]; running: boolean; started: number; budgetMs: number; pausedAt: number | null; pausedMs: number }
+interface Live { id: string; algo: string; progress: Progress[]; running: boolean; started: number; budgetMs: number; pausedAt: number | null; pausedMs: number }
 
 export function App() {
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -91,6 +94,7 @@ export function App() {
   const [sizes, setSizes] = usePref("sizes", { side: 0, res: 0, plot: 0 });
 
   const [scorer, setScorer] = useState<Scorer | null>(null);
+  const [scorerKey, setScorerKey] = useState("");
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [refAnalysis, setRefAnalysis] = useState<Analysis | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
@@ -137,7 +141,7 @@ export function App() {
       try {
         const bytes = await api.corpusBytes(corpus.id);
         made = await Scorer.create(geometry, bytes);
-        if (alive) setScorer(made);
+        if (alive) { setScorer(made); setScorerKey(`${geometry.id}|${corpus.id}`); }
       } catch (e) {
         if (alive) setErr(`WASM scorer failed to load (${(e as Error).message}); falling back to the server.`);
       }
@@ -145,7 +149,7 @@ export function App() {
     return () => { alive = false; setScorer(null); made?.free(); };
   }, [geometry, corpus]);
 
-  const previewChars = live?.running ? live.progress[live.progress.length - 1]?.best_chars : undefined;
+  const previewChars = live?.running && live.algo !== "explore" ? live.progress[live.progress.length - 1]?.best_chars : undefined;
   const viewChars = previewChars ?? chars;
 
   // ---- scoring (WASM first, server fallback) ----
@@ -195,16 +199,17 @@ export function App() {
     }
   };
 
-  const startRun = async () => {
+  const startRun = async (explore = false) => {
     if (!profile || !geometry || !corpus) return;
     setErr(null);
+    const algo = explore ? "explore" : search.algo;
     try {
       const r = await api.startRun({
-        geometry: geometry.id, corpus: corpus.id, profile_override: profile, chars, algo: search.algo, time_ms: search.timeS * 1000,
+        geometry: geometry.id, corpus: corpus.id, profile_override: profile, chars, algo, time_ms: search.timeS * 1000,
         threads: search.threads, seed: search.seed, pins, sa_steps: search.saSteps, ga_pop: search.gaPop,
       });
-      setLive({ id: r.id, progress: [], running: true, started: Date.now(), budgetMs: search.timeS * 1000, pausedAt: null, pausedMs: 0 });
-      setTab("convergence");
+      setLive({ id: r.id, algo, progress: [], running: true, started: Date.now(), budgetMs: search.timeS * 1000, pausedAt: null, pausedMs: 0 });
+      if (!explore) setTab("convergence");
       refreshRuns();
       esRef.current?.close();
       const es = new EventSource(`/api/runs/${encodeURIComponent(r.id)}/events`);
@@ -216,7 +221,7 @@ export function App() {
       es.addEventListener("done", () => {
         es.close();
         setLive((l) => (l ? { ...l, running: false } : l));
-        openRun(r.id);
+        if (!explore) openRun(r.id);
         refreshRuns();
       });
       es.addEventListener("failed", (e) => {
@@ -239,7 +244,7 @@ export function App() {
       return on ? { ...l, pausedAt: Date.now() } : { ...l, pausedAt: null, pausedMs: l.pausedMs + Date.now() - (l.pausedAt ?? Date.now()) };
     })).catch((e) => setErr((e as Error).message));
   };
-  const play = () => { if (!live?.running) startRun(); else setPaused(false); };
+  const play = () => { if (!live?.running) startRun(view === "explore"); else setPaused(false); };
 
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -252,8 +257,11 @@ export function App() {
   const lastP = progress[progress.length - 1];
   const paused = !!live?.running && live.pausedAt !== null;
   const activeMs = live ? (live.pausedAt ?? now) - live.started - live.pausedMs : 0;
+  const liveP = live?.progress[live.progress.length - 1];
   const status = live?.running
-    ? `${paused ? "paused" : "running"} · ${fmtCount(lastP?.evals ?? 0)} evals · best ${lastP ? fmt(lastP.best, 3) : "–"}`
+    ? liveP?.explore
+      ? `${paused ? "paused" : liveP.explore.phase === "probe" ? "probing landscape" : "exploring"} · ${fmtCount(liveP.explore.optima)} optima · best ${fmt(liveP.best, 3)}`
+      : `${paused ? "paused" : "running"} · ${fmtCount(lastP?.evals ?? 0)} evals · best ${lastP ? fmt(lastP.best, 3) : "–"}`
     : runDetail?.result ? `done · ${runDetail.config.params.algo} · ${fmtTime(runDetail.result.elapsed_ms)}` : "idle";
   const frac = live?.running ? Math.min(1, activeMs / live.budgetMs) : live ? 1 : 0;
 
@@ -288,7 +296,8 @@ export function App() {
         </nav>
         <div className="transport" aria-label="Optimization">
           <button className="start" onClick={play} disabled={!corpus || (live?.running && !paused)}
-            title={paused ? "Resume" : live?.running ? "Running" : `Run optimization (${search.algo}, ${search.timeS}s)`}><IconPlay />{paused ? "Resume" : live?.running ? "Optimizing…" : "Start optimization"}</button>
+            title={paused ? "Resume" : live?.running ? "Running" : view === "explore" ? `Explore the search space (${search.timeS}s)` : `Run optimization (${search.algo}, ${search.timeS}s)`}>
+            <IconPlay />{paused ? "Resume" : live?.running ? (live.algo === "explore" ? "Exploring…" : "Optimizing…") : view === "explore" ? "Start exploration" : "Start optimization"}</button>
           <button className={`tool ${paused ? "on" : ""}`} onClick={() => setPaused(!paused)} disabled={!live?.running}
             title={paused ? "Resume" : "Pause"} aria-label="Pause" aria-pressed={paused}><IconPause /></button>
           <button className="tool" onClick={stopRun} disabled={!live?.running} title="End optimization now (results are kept)" aria-label="End optimization"><IconSkip /></button>
@@ -361,6 +370,15 @@ export function App() {
         <div className="page">
           <ResultsView runs={runs} run={runDetail} progress={progress} rank={rank} refScore={refAnalysis?.breakdown.score} refName={reference?.name ?? "reference"}
             onOpenRun={(id) => openRun(id)} onPickRank={pickRank} onShowHome={() => setView("home")} />
+        </div>
+      )}
+
+      {view === "explore" && (
+        <div className="page">
+          <ExploreView meta={meta} runs={runs} geometries={geometries} corpora={corpora} layouts={layouts} profile={profile} setProfile={setProfile}
+            scorer={scorer} scorerKey={scorerKey} search={search} setSearch={setSearch} onStart={() => startRun(true)}
+            live={live && live.algo === "explore" ? { id: live.id, version: liveP?.explore?.version ?? 0, running: live.running } : null}
+            onOpen={(c, l) => { setChars(c, l); setView("home"); }} />
         </div>
       )}
 

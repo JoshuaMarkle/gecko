@@ -155,12 +155,18 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
         }
     }
     let movable: Vec<usize> = (0..scorer.n).filter(|&s| !pinned.contains(&scorer.chars[s])).collect();
-    let ctx = Ctx { scorer: &scorer, movable, start };
+    let ctx = Ctx::new(&scorer, movable, start);
     let mut log = std::io::BufWriter::new(std::fs::File::create(prep.dir.join("progress.jsonl"))?);
-    let out = optimize::run(&ctx, &spec.params, Duration::from_millis(250), control, |p| {
+    let mut emit = |p: &Progress| {
         let _ = writeln!(log, "{}", serde_json::to_string(p).unwrap());
         on_progress(p);
-    });
+    };
+    let interval = Duration::from_millis(250);
+    let out = if spec.params.algo == optimize::Algo::Explore {
+        crate::explore::run(&ctx, &spec.params, interval, control, &prep.dir, &prep.config.id, &mut emit)?.0
+    } else {
+        optimize::run(&ctx, &spec.params, interval, control, &mut emit)
+    };
     log.flush()?;
     drop(log);
     let best = out

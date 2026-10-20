@@ -1,6 +1,6 @@
 // Loads the gecko-wasm scorer (same Rust code as the CLI). Built by `npm run wasm`.
 
-import init, { Engine } from "./wasm/pkg/gecko_wasm.js";
+import init, { AtlasView, Engine } from "./wasm/pkg/gecko_wasm.js";
 import type { Analysis, Geometry, Profile } from "./api";
 
 let ready: Promise<unknown> | null = null;
@@ -19,7 +19,21 @@ export class Scorer {
     return JSON.parse(this.engine.analyze(chars, JSON.stringify(profile), top)).analysis as Analysis;
   }
 
+  /** Score change for swapping each pair of slots (`m[i * n + j]`). */
+  swapMatrix(chars: string, profile: Profile): Float32Array {
+    return this.engine.swap_matrix(chars, JSON.stringify(profile));
+  }
+
   free() {
     this.engine.free();
   }
 }
+
+/** Parse an explore atlas into WASM memory (see gecko-wasm `AtlasView`). */
+export async function loadAtlasView(optima: Uint8Array, edges: Uint8Array, samples: Uint8Array): Promise<AtlasView> {
+  ready ??= init();
+  await ready;
+  return new AtlasView(optima, edges, samples);
+}
+
+export type { AtlasView };

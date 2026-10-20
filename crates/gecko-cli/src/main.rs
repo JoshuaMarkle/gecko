@@ -1,5 +1,6 @@
 //! `gecko` — the agent-first CLI and `gecko serve`. See `context/cli.md`.
 
+mod explore_cmd;
 mod serve;
 
 use std::path::PathBuf;
@@ -95,6 +96,65 @@ enum Cmd {
         /// GA: population size.
         #[arg(long)]
         ga_pop: Option<usize>,
+        #[command(flatten)]
+        inputs: Inputs,
+    },
+    /// Map the space of good layouts: landscape probe + breakout local search with exclusion
+    /// restarts, archiving every local optimum. Writes an atlas run directory.
+    Explore {
+        /// Time budget, e.g. 2m (default 60s).
+        #[arg(long)]
+        time: Option<String>,
+        /// Evaluation budget (deterministic with --threads 1).
+        #[arg(long)]
+        evals: Option<u64>,
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
+        #[arg(long)]
+        threads: Option<usize>,
+        #[arg(long, default_value = "")]
+        pin: String,
+        #[arg(long)]
+        from: Option<String>,
+        /// Random layouts measured by the landscape probe.
+        #[arg(long)]
+        samples: Option<usize>,
+        /// Archive cap (the worst optima beyond it are dropped).
+        #[arg(long)]
+        max_optima: Option<usize>,
+        #[command(flatten)]
+        inputs: Inputs,
+    },
+    /// Landscape probe without searching: random-layout score distribution, correlation
+    /// length, and where each reference layout sits among random layouts.
+    Landscape {
+        #[arg(long, default_value_t = 4000)]
+        samples: usize,
+        #[arg(long, default_value_t = 64)]
+        walks: usize,
+        #[arg(long, default_value_t = 400)]
+        walk_len: usize,
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
+        /// Layout whose symbol set is probed (default: the reference layout).
+        #[arg(long)]
+        from: Option<String>,
+        #[command(flatten)]
+        inputs: Inputs,
+    },
+    /// Read an explore atlas: summary, ranked optima, families and consensus. With -p, re-rank
+    /// the archive under another profile (no new search).
+    Atlas {
+        /// Run id of an explore run.
+        run: String,
+        #[arg(long, default_value_t = 10)]
+        top: usize,
+        /// Family radius: slots that may differ from the family's leader.
+        #[arg(long, default_value_t = 8)]
+        cut: usize,
+        /// How many of the best optima are grouped into families.
+        #[arg(long, default_value_t = 300)]
+        pool: usize,
         #[command(flatten)]
         inputs: Inputs,
     },
@@ -502,7 +562,7 @@ fn real_main(cli: Cli) -> Result<()> {
         }
         Cmd::Optimize { algo, time, evals, seed, threads, pin, from, top, sa_steps, ga_pop, inputs } => {
             let l = ctx.load(&inputs)?;
-            let algo = Algo::parse(&algo).with_context(|| format!("unknown algo '{algo}' (hc, sa, ga)"))?;
+            let algo = Algo::parse(&algo).with_context(|| format!("unknown algo '{algo}' (hc, sa, ga, bls, explore)"))?;
             let start = ctx.layout(from.as_deref().unwrap_or(&ctx.store.defaults.reference), &l)?;
             let mut params = Params {
                 algo,
@@ -553,6 +613,14 @@ fn real_main(cli: Cli) -> Result<()> {
                 }
             }
         }
+        Cmd::Explore { time, evals, seed, threads, pin, from, samples, max_optima, inputs } => explore_cmd::explore(
+            &ctx,
+            explore_cmd::ExploreArgs { time, evals, seed, threads, pin, from, samples, max_optima, inputs },
+        )?,
+        Cmd::Landscape { samples, walks, walk_len, seed, from, inputs } => {
+            explore_cmd::landscape(&ctx, &inputs, from.as_deref(), samples, walks, walk_len, seed)?
+        }
+        Cmd::Atlas { run, top, cut, pool, inputs } => explore_cmd::atlas_cmd(&ctx, &run, &inputs, top, cut, pool)?,
         Cmd::Bench { algos, seeds, time, threads, inputs } => {
             let l = ctx.load(&inputs)?;
             let start = ctx.layout(&ctx.store.defaults.reference, &l)?;
@@ -566,7 +634,7 @@ fn real_main(cli: Cli) -> Result<()> {
                 let mut eps = Vec::new();
                 for seed in 1..=seeds {
                     let params = Params { algo, seed, threads, time_ms: Some(time_ms), evals: None, top: 1, ..Default::default() };
-                    let c = gecko_core::optimize::Ctx { scorer: &sc, movable: (0..sc.n).collect(), start: sc.identity() };
+                    let c = gecko_core::optimize::Ctx::new(&sc, (0..sc.n).collect(), sc.identity());
                     let o = gecko_core::optimize::run(&c, &params, std::time::Duration::from_secs(3600), &Control::default(), |_| {});
                     scores.push(o.top.first().map(|s| s.score).unwrap_or(f64::NAN));
                     eps.push(o.evals_per_sec);

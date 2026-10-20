@@ -7,7 +7,7 @@ import { checkLayout, fmtCount, rowsOf } from "../format";
 export type Group = "layout" | "board" | "corpus" | "profile" | "search";
 const GROUPS: [Group, string][] = [["layout", "Layout"], ["board", "Board"], ["corpus", "Corpus"], ["profile", "Profile"], ["search", "Search"]];
 
-const ALGOS: [string, string][] = [["sa", "Simulated annealing"], ["hc", "Hill climbing"], ["ga", "Genetic algorithm"]];
+const ALGOS: [string, string][] = [["sa", "Simulated annealing"], ["bls", "Breakout local search"], ["hc", "Hill climbing"], ["ga", "Genetic algorithm"]];
 
 export interface SearchSettings { algo: string; timeS: number; threads: number; seed: number; saSteps: number; gaPop: number }
 

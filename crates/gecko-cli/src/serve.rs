@@ -97,6 +97,9 @@ pub fn serve(store: Store, port: u16, web: PathBuf) -> Result<()> {
             .route("/api/runs/{id}/cancel", post(cancel_run))
             .route("/api/runs/{id}/pause", post(pause_run))
             .route("/api/runs/{id}/resume", post(resume_run))
+            .route("/api/runs/{id}/atlas", get(atlas_summary))
+            .route("/api/runs/{id}/atlas/{file}", get(atlas_file))
+            .route("/api/swap-matrix", post(swap_matrix))
             .fallback_service(static_files)
             .with_state(app);
         let addr = std::net::SocketAddr::from(([127, 0, 0, 1], port));
@@ -366,6 +369,40 @@ fn set_paused(app: &App, id: &str, on: bool) -> ApiResult {
         .ok_or_else(|| ApiError(StatusCode::NOT_FOUND, "run is not running".into()))?;
     l.control.set_paused(on);
     Ok(Json(json!({"schema": SCHEMA, "id": id, "paused": on})))
+}
+
+async fn atlas_summary(State(app): State<AppState>, Path(id): Path<String>) -> std::result::Result<Response, ApiError> {
+    check_id(&id)?;
+    let bytes = std::fs::read(app.store.runs.join(&id).join("atlas.json")).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
+    Ok(([(header::CONTENT_TYPE, "application/json"), (header::CACHE_CONTROL, "no-store")], bytes).into_response())
+}
+
+/// Atlas binaries (`optima`, `edges`, `samples`); parsed in the browser by gecko-wasm.
+async fn atlas_file(State(app): State<AppState>, Path((id, file)): Path<(String, String)>) -> std::result::Result<Response, ApiError> {
+    check_id(&id)?;
+    if !["optima", "edges", "samples"].contains(&file.as_str()) {
+        return Err(ApiError(StatusCode::NOT_FOUND, format!("no atlas file '{file}'")));
+    }
+    let bytes = std::fs::read(app.store.runs.join(&id).join(format!("{file}.bin"))).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
+    Ok(([(header::CONTENT_TYPE, "application/octet-stream"), (header::CACHE_CONTROL, "no-store")], bytes).into_response())
+}
+
+#[derive(Deserialize)]
+struct SwapReq {
+    #[serde(flatten)]
+    inputs: InputsReq,
+}
+
+/// Score change of every slot-pair swap for a layout (fallback for the WASM `swap_matrix`).
+async fn swap_matrix(State(app): State<AppState>, Json(req): Json<SwapReq>) -> ApiResult {
+    let v = tokio::task::spawn_blocking(move || -> std::result::Result<Value, ApiError> {
+        let r = resolve(&app.store, &req.inputs)?;
+        let sc = Scorer::new(&r.geometry, &r.corpus, &r.profile, &r.layout)?;
+        let st = sc.identity();
+        Ok(json!({"schema": SCHEMA, "n": sc.n, "score": st.score, "matrix": gecko_core::report::swap_matrix(&sc, &st)}))
+    })
+    .await??;
+    Ok(Json(v))
 }
 
 async fn run_events(

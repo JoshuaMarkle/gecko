@@ -33,7 +33,12 @@ delta == full (proptest), folding == breakdown, brute-force optimum on a 6-key b
 HC/SA/GA, determinism with an eval budget, pins respected, ranking sanity + QWERTY SFB,
 corpus counting (incl. skip-2/3, word imports) + binary round-trip + `GKCORP1` compatibility,
 imported corpora reproduce QWERTY SFB computed independently from their source tables,
-layout TOML round-trip. Web: `web/src/format.test.ts`.
+layout TOML round-trip. Explore (`tests/explore.rs` + unit tests in `explore/`): raw-vector
+re-scoring == full score (proptest); on a mirror-symmetric 6-key board the archive equals the
+brute-forced set of canonical local optima; ansi atlas consistency (pins, constrained
+records, every unconstrained record locally optimal); distances, PCA, funnels, Chao1.
+BLS and explore are in the brute-force and determinism tests.
+Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
 
 Still to add: metric unit tests with hand-computed answers per metric, `insta` snapshots,

@@ -2,11 +2,12 @@
 //! logic; the runner owns budgets, threads, progress and top-K. See `context/algorithms/`.
 
 pub mod anneal;
+pub mod bls;
 pub mod genetic;
 pub mod hill_climb;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{mpsc, Mutex};
+use std::sync::{mpsc, Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
@@ -23,15 +24,22 @@ pub enum Algo {
     Sa,
     /// Genetic algorithm (order crossover, swap mutation, tournament selection).
     Ga,
+    /// Breakout local search: descend, kick with adaptive strength, descend again.
+    Bls,
+    /// Search-space exploration: landscape probe + BLS with exclusion restarts, writing an
+    /// atlas of every local optimum (`crate::explore`).
+    Explore,
 }
 
 impl Algo {
-    pub const ALL: [Algo; 3] = [Algo::Hc, Algo::Sa, Algo::Ga];
+    pub const ALL: [Algo; 5] = [Algo::Hc, Algo::Sa, Algo::Ga, Algo::Bls, Algo::Explore];
     pub fn name(self) -> &'static str {
         match self {
             Algo::Hc => "hc",
             Algo::Sa => "sa",
             Algo::Ga => "ga",
+            Algo::Bls => "bls",
+            Algo::Explore => "explore",
         }
     }
     pub fn parse(s: &str) -> Option<Algo> {
@@ -54,6 +62,10 @@ pub struct Params {
     pub sa: anneal::SaParams,
     #[serde(default)]
     pub ga: genetic::GaParams,
+    #[serde(default)]
+    pub bls: bls::BlsParams,
+    #[serde(default)]
+    pub explore: crate::explore::ExploreParams,
 }
 
 impl Default for Params {
@@ -67,6 +79,8 @@ impl Default for Params {
             top: 10,
             sa: Default::default(),
             ga: Default::default(),
+            bls: Default::default(),
+            explore: Default::default(),
         }
     }
 }
@@ -78,15 +92,44 @@ pub struct Scored {
     pub sym: Vec<u8>,
 }
 
+/// How a local-search algorithm left one local optimum for the next (LON edge label).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u8)]
+pub enum Kick {
+    /// `strength` random swaps.
+    Swaps = 0,
+    /// Two whole same-size columns exchanged.
+    Columns = 1,
+}
+
+/// Receives search events outside the hot loop (once per local optimum / kick), e.g. the
+/// explore archive. Called concurrently from all workers.
+pub trait Observer: Sync {
+    /// `st` is a local optimum (or, with `constrained`, the end of an exclusion descent).
+    /// Returns an id for edges.
+    fn optimum(&self, st: &State, constrained: bool) -> u32;
+    /// A kick from optimum `from` led (after descent) to optimum `to`.
+    fn edge(&self, from: u32, to: u32, kick: Kick, strength: u8);
+    /// Distinct good layouts (`sym[slot]`) that exclusion restarts must stay away from.
+    fn exclusions(&self) -> Arc<Vec<Vec<u8>>> {
+        Arc::new(Vec::new())
+    }
+}
+
 /// Search context shared by all workers (read-only).
 pub struct Ctx<'a> {
     pub scorer: &'a Scorer,
     /// Symbols allowed to move (not on a pinned slot).
     pub movable: Vec<usize>,
     pub start: State,
+    pub observer: Option<&'a dyn Observer>,
 }
 
-impl Ctx<'_> {
+impl<'a> Ctx<'a> {
+    pub fn new(scorer: &'a Scorer, movable: Vec<usize>, start: State) -> Self {
+        Ctx { scorer, movable, start, observer: None }
+    }
+
     /// A random layout: movable symbols shuffled among their slots; pinned symbols stay.
     pub fn random_state(&self, rng: &mut Rng) -> State {
         let mut sym = self.start.sym.clone();
@@ -195,6 +238,22 @@ pub struct Progress {
     pub best: f64,
     /// Best layout so far as slot-ordered chars.
     pub best_chars: String,
+    /// Atlas counters during an explore run.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub explore: Option<ExploreProgress>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct ExploreProgress {
+    /// `probe` (landscape sampling) or `search`.
+    pub phase: String,
+    /// Distinct optima in the archive.
+    pub optima: u64,
+    /// Descents that ended in an archived optimum (incl. repeats).
+    pub hits: u64,
+    pub edges: u64,
+    /// Times the atlas files were rewritten (the web refetches when this changes).
+    pub version: u64,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -282,6 +341,8 @@ fn make(algo: Algo, p: &Params) -> Box<dyn Optimizer + Send> {
         Algo::Hc => Box::new(hill_climb::HillClimb::new(p.top)),
         Algo::Sa => Box::new(anneal::Anneal::new(p.sa.clone(), p.top)),
         Algo::Ga => Box::new(genetic::Genetic::new(p.ga.clone(), p.top)),
+        Algo::Bls => Box::new(bls::Bls::new(p.bls.clone(), p.top, false)),
+        Algo::Explore => Box::new(bls::Bls::new(p.bls.clone(), p.top, true)),
     }
 }
 
@@ -357,6 +418,7 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mu
                         evals: total_evals.load(Ordering::Relaxed),
                         best: *s,
                         best_chars: sym.iter().map(|&x| ctx.scorer.chars[x as usize]).collect(),
+                        explore: None,
                     });
                 }
             }

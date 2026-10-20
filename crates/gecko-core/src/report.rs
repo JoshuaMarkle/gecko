@@ -124,6 +124,21 @@ fn worst_pairs(sc: &Scorer, st: &State, f: &[f32], t: &[f32], top: usize) -> Vec
     v
 }
 
+/// Score change for swapping the symbols on every pair of slots: `m[i * n + j]`, symmetric,
+/// zero on the diagonal (one 435-swap neighbourhood scan for 30 keys).
+pub fn swap_matrix(sc: &Scorer, st: &State) -> Vec<f32> {
+    let n = sc.n;
+    let mut m = vec![0f32; n * n];
+    for i in 0..n {
+        for j in (i + 1)..n {
+            let d = sc.delta(st, st.sym[i] as usize, st.sym[j] as usize) as f32;
+            m[i * n + j] = d;
+            m[j * n + i] = d;
+        }
+    }
+    m
+}
+
 pub fn analyze(sc: &Scorer, st: &State, top: usize) -> Analysis {
     let id = |s: &str| METRICS.iter().position(|d| d.id == s).unwrap();
     let t = |s: &str| sc.table(id(s)).unwrap();

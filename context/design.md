@@ -126,6 +126,12 @@ left, transport controls dead centre, run progress right.
   `--r-md`) in a two-column grid: heatmap, metrics table, score contributions, finger load,
   and worst n-grams full width. One column below 1100px.
 
+- **Explore**: atlas controls (left) | linked cards in a two-column grid (centre) | picked
+  layout (right). Point clouds are canvas scatters, grey by score (darker = better), best in
+  ink and picked in `--accent` with a 2px surface ring; drag to brush, double-click clears,
+  click picks. Off-chart reference layouts are listed in the plot corner, not clamped to the
+  edge. Card hints wrap; controls in a card header never shrink.
+
 ## Do
 
 - Let the keyboard supply color; keep chrome monochrome.

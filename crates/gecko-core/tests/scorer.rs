@@ -67,7 +67,7 @@ proptest! {
         let g = ansi();
         let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 3);
         let sc = Scorer::new(&g, &c, &all_weights(), &layout("qwerty")).unwrap();
-        let ctx = Ctx { scorer: &sc, movable: (0..30).collect(), start: sc.identity() };
+        let ctx = Ctx::new(&sc, (0..30).collect(), sc.identity());
         let mut st = ctx.random_state(&mut Rng::new(seed));
         for (a, b) in swaps {
             let before = sc.full(&st);
@@ -143,7 +143,7 @@ fn optimizers_find_brute_force_optimum() {
         let mut p = Params { algo, seed: 3, threads: 2, time_ms: None, evals: Some(200_000), top: 3, ..Default::default() };
         p.sa.steps = 5_000;
         p.ga.pop_size = 16;
-        let ctx = Ctx { scorer: &sc, movable: (0..6).collect(), start: sc.identity() };
+        let ctx = Ctx::new(&sc, (0..6).collect(), sc.identity());
         let out = optimize::run(&ctx, &p, Duration::from_secs(60), &Control::default(), |_| {});
         let got = out.top[0].score;
         assert!((got - best).abs() < 1e-6, "{}: {got} vs optimum {best}", algo.name());
@@ -160,7 +160,7 @@ fn deterministic_with_eval_budget() {
         p.sa.steps = 10_000;
         p.ga.pop_size = 16;
         let run = || {
-            let ctx = Ctx { scorer: &sc, movable: (0..30).collect(), start: sc.identity() };
+            let ctx = Ctx::new(&sc, (0..30).collect(), sc.identity());
             optimize::run(&ctx, &p, Duration::from_secs(60), &Control::default(), |_| {}).top
         };
         assert_eq!(run(), run(), "{} not deterministic", algo.name());
@@ -173,7 +173,7 @@ fn pins_are_respected() {
     let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 4);
     let sc = Scorer::new(&g, &c, &all_weights(), &layout("qwerty")).unwrap();
     let pinned: Vec<usize> = ",./;".chars().map(|ch| sc.chars.iter().position(|&x| x == ch).unwrap()).collect();
-    let ctx = Ctx { scorer: &sc, movable: (0..30).filter(|s| !pinned.contains(s)).collect(), start: sc.identity() };
+    let ctx = Ctx::new(&sc, (0..30).filter(|s| !pinned.contains(s)).collect(), sc.identity());
     let p = Params { algo: Algo::Sa, seed: 1, threads: 2, time_ms: None, evals: Some(100_000), top: 3, ..Default::default() };
     for s in optimize::run(&ctx, &p, Duration::from_secs(60), &Control::default(), |_| {}).top {
         for &x in &pinned {
@@ -212,7 +212,7 @@ fn pause_stops_the_clock() {
     let g = ansi();
     let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 2);
     let sc = Scorer::new(&g, &c, &all_weights(), &layout("qwerty")).unwrap();
-    let ctx = Ctx { scorer: &sc, movable: (0..30).collect(), start: sc.identity() };
+    let ctx = Ctx::new(&sc, (0..30).collect(), sc.identity());
     let p = Params { algo: Algo::Hc, seed: 1, threads: 2, time_ms: Some(200), evals: None, top: 1, ..Default::default() };
     let control = Control::default();
     control.set_paused(true);

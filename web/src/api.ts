@@ -65,7 +65,22 @@ export interface Analysis {
 }
 export interface ScoreResponse { schema: number; chars: string; rows: string[]; analysis: Analysis }
 
-export interface Progress { elapsed_ms: number; evals: number; best: number; best_chars: string }
+export interface ExploreProgress { phase: "probe" | "search"; optima: number; hits: number; edges: number; version: number }
+export interface Progress { elapsed_ms: number; evals: number; best: number; best_chars: string; explore?: ExploreProgress }
+
+/** `atlas.json` of an explore run (gecko-core `explore::atlas::Summary`). */
+export interface AtlasBest { score: number; chars: string; d_best: number }
+export interface AtlasSummary {
+  schema: number; id: string; done: boolean; elapsed_ms: number; evals: number;
+  /** Symbol id → char for every `sym` array. */
+  chars: string; slots: number; metrics: string[]; symmetric: boolean; table_hash: string;
+  counts: { optima: number; constrained: number; hits: number; edges: number; pruned: number };
+  best: AtlasBest | null;
+  probe: { samples: number; random_mean: number; random_sd: number; random_min: number; walks: number; walk_len: number; rho: number[]; corr_length: number };
+  fdc: number; funnels: number;
+  coverage: { within: number; observed: number; estimate: number };
+  distinct_dist: number; distinct: AtlasBest[];
+}
 export interface Ranked { rank: number; score: number; chars: string; rows: string[]; hash: string; breakdown: Breakdown }
 export interface RunResult { schema: number; id: string; geometry: string; evals: number; elapsed_ms: number; evals_per_sec: number; best: Ranked[] }
 export interface RunParams { algo: string; seed: number; threads: number; time_ms: number | null; evals: number | null; top: number }
@@ -108,6 +123,12 @@ export const api = {
   pause: (id: string, on: boolean) => post<unknown>(`/api/runs/${encodeURIComponent(id)}/${on ? "pause" : "resume"}`, {}),
   score: (body: ScoreRequest) => post<ScoreResponse>("/api/score", body),
   startRun: (body: RunRequest) => post<{ id: string; config: RunConfig }>("/api/runs", body),
+  swapMatrix: (body: ScoreRequest) => post<{ n: number; score: number; matrix: number[] }>("/api/swap-matrix", body),
+  atlas: (id: string) => req<AtlasSummary>(`/api/runs/${encodeURIComponent(id)}/atlas`),
+  atlasFile: async (id: string, file: "optima" | "edges" | "samples") => {
+    const r = await fetch(`/api/runs/${encodeURIComponent(id)}/atlas/${file}`);
+    return r.ok ? new Uint8Array(await r.arrayBuffer()) : new Uint8Array();
+  },
 };
 
 export interface ScoreRequest { geometry: string; corpus: string; profile_override: Profile; chars: string; top?: number }
