@@ -3,12 +3,11 @@
 mod serve;
 
 use std::path::PathBuf;
-use std::sync::atomic::AtomicBool;
 
 use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand};
 use gecko_core::metrics::Dir;
-use gecko_core::optimize::{Algo, Params};
+use gecko_core::optimize::{Algo, Control, Params};
 use gecko_core::report::{analyze, breakdown, Breakdown};
 use gecko_core::run::{self, RunSpec};
 use gecko_core::store::Store;
@@ -352,9 +351,9 @@ fn real_main(cli: Cli) -> Result<()> {
             let spec = RunSpec { geometry: &l.geometry, corpus: &l.corpus, profile: &l.profile, start: &start, pins: &pin, params };
             let prep = run::prepare(&ctx.store.runs, &spec)?;
             eprintln!("run {}  ({} · {} threads · {})", prep.config.id, algo.name(), spec.params.threads, l.profile.name);
-            let cancel = AtomicBool::new(false);
+            let control = Control::default();
             let quiet = ctx.json;
-            let res = run::execute(&prep, &spec, &cancel, |p| {
+            let res = run::execute(&prep, &spec, &control, |p| {
                 if !quiet {
                     eprint!("\r  {:>6.1}s  {:>12} evals  best {:.4}  {}", p.elapsed_ms as f64 / 1000.0, p.evals, p.best, p.best_chars);
                 }
@@ -397,7 +396,7 @@ fn real_main(cli: Cli) -> Result<()> {
                 for seed in 1..=seeds {
                     let params = Params { algo, seed, threads, time_ms: Some(time_ms), evals: None, top: 1, ..Default::default() };
                     let c = gecko_core::optimize::Ctx { scorer: &sc, movable: (0..sc.n).collect(), start: sc.identity() };
-                    let o = gecko_core::optimize::run(&c, &params, std::time::Duration::from_secs(3600), &AtomicBool::new(false), |_| {});
+                    let o = gecko_core::optimize::run(&c, &params, std::time::Duration::from_secs(3600), &Control::default(), |_| {});
                     scores.push(o.top.first().map(|s| s.score).unwrap_or(f64::NAN));
                     eps.push(o.evals_per_sec);
                     if !ctx.json {

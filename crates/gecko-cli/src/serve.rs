@@ -15,7 +15,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use futures_util::stream::{self, Stream, StreamExt};
-use gecko_core::optimize::{Algo, Params};
+use gecko_core::optimize::{Algo, Control, Params};
 use gecko_core::report::analyze;
 use gecko_core::run::{self, RunSpec};
 use gecko_core::store::Store;
@@ -36,7 +36,7 @@ struct LiveRun {
     tx: broadcast::Sender<Msg>,
     history: Mutex<Vec<Msg>>,
     done: AtomicBool,
-    cancel: AtomicBool,
+    control: Control,
 }
 
 impl LiveRun {
@@ -95,6 +95,8 @@ pub fn serve(store: Store, port: u16, web: PathBuf) -> Result<()> {
             .route("/api/runs/{id}", get(get_run))
             .route("/api/runs/{id}/events", get(run_events))
             .route("/api/runs/{id}/cancel", post(cancel_run))
+            .route("/api/runs/{id}/pause", post(pause_run))
+            .route("/api/runs/{id}/resume", post(resume_run))
             .fallback_service(static_files)
             .with_state(app);
         let addr = std::net::SocketAddr::from(([127, 0, 0, 1], port));
@@ -282,12 +284,12 @@ async fn start_run(State(app): State<AppState>, Json(req): Json<RunReq>) -> ApiR
     let prep = run::prepare(&app.store.runs, &spec)?;
     let id = prep.config.id.clone();
     let (tx, _) = broadcast::channel(256);
-    let live = Arc::new(LiveRun { tx, history: Mutex::new(Vec::new()), done: AtomicBool::new(false), cancel: AtomicBool::new(false) });
+    let live = Arc::new(LiveRun { tx, history: Mutex::new(Vec::new()), done: AtomicBool::new(false), control: Control::default() });
     app.live.lock().unwrap().insert(id.clone(), live.clone());
     let pins = req.pins.clone();
     std::thread::spawn(move || {
         let spec = RunSpec { geometry: &r.geometry, corpus: &r.corpus, profile: &r.profile, start: &r.layout, pins: &pins, params };
-        let res = run::execute(&prep, &spec, &live.cancel, |p| live.send("progress", serde_json::to_string(p).unwrap()));
+        let res = run::execute(&prep, &spec, &live.control, |p| live.send("progress", serde_json::to_string(p).unwrap()));
         match res {
             Ok(res) => live.send("done", serde_json::to_string(&res).unwrap()),
             Err(e) => live.send("failed", json!({"error": e.to_string()}).to_string()),
@@ -330,16 +332,35 @@ async fn get_run(State(app): State<AppState>, Path(id): Path<String>) -> ApiResu
     let dir = app.store.runs.join(&id);
     let config = run::load_config(&dir).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
     let result = run::load_result(&dir).ok();
-    let running = app.live.lock().unwrap().get(&id).is_some_and(|l| !l.done.load(Ordering::SeqCst));
-    Ok(Json(json!({"schema": SCHEMA, "config": config, "result": result, "progress": run::load_progress(&dir), "running": running})))
+    let (running, paused) = match app.live.lock().unwrap().get(&id) {
+        Some(l) if !l.done.load(Ordering::SeqCst) => (true, l.control.paused()),
+        _ => (false, false),
+    };
+    Ok(Json(json!({"schema": SCHEMA, "config": config, "result": result, "progress": run::load_progress(&dir), "running": running, "paused": paused})))
 }
 
 async fn cancel_run(State(app): State<AppState>, Path(id): Path<String>) -> ApiResult {
     check_id(&id)?;
     if let Some(l) = app.live.lock().unwrap().get(&id) {
-        l.cancel.store(true, Ordering::SeqCst);
+        l.control.cancel();
     }
     Ok(Json(json!({"schema": SCHEMA, "id": id, "cancelled": true})))
+}
+
+async fn pause_run(State(app): State<AppState>, Path(id): Path<String>) -> ApiResult {
+    set_paused(&app, &id, true)
+}
+
+async fn resume_run(State(app): State<AppState>, Path(id): Path<String>) -> ApiResult {
+    set_paused(&app, &id, false)
+}
+
+fn set_paused(app: &App, id: &str, on: bool) -> ApiResult {
+    check_id(id)?;
+    let live = app.live.lock().unwrap();
+    let l = live.get(id).filter(|l| !l.done.load(Ordering::SeqCst)).ok_or_else(|| ApiError(StatusCode::NOT_FOUND, "run is not running".into()))?;
+    l.control.set_paused(on);
+    Ok(Json(json!({"schema": SCHEMA, "id": id, "paused": on})))
 }
 
 async fn run_events(

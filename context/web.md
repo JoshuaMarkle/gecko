@@ -14,25 +14,28 @@ web/src/
   wasm.ts              gecko-wasm loader (Scorer.create / analyze)
   format.ts(.test.ts)  pure helpers (rows, swaps, verdicts, validation)
   colors.ts            data colors (finger palette, heat ramp)
-  components/          InputsPanel, ResultPanel, Charts
+  components/          InputsPanel, ResultPanel, Charts, ResultsView, AnalysisView, Icons
   three/Keyboard3D.tsx 3D keyboard
 ```
 
 ## Screen
 
-One screen (see design.md "App shell"): Inputs (Layout, Board, Corpus, Profile, Search) |
-3D keyboard over chart tabs (Convergence, Metrics, Finger load, Heatmap, Worst n-grams) |
-Result (score vs reference, metric table, run results, runs list, exports).
+Toolbar (see design.md "App shell"): view tabs | Start optimization · Pause · End | run progress.
+Views: **Home** (Inputs | 3D keyboard over chart tabs | Result), **Results** (all runs, the
+selected run's convergence and best layouts), **Layout analysis** (all charts for the current
+layout). The view is remembered in `localStorage`.
 
+- Play starts a run with Inputs › Search (algorithm, budget) or resumes a paused one. Pause
+  freezes the workers and the budget clock. End cancels; results so far are saved.
 - Click two keys (3D or heatmap) to swap them; the score updates live via WASM.
 - Profile weights and targets are editable; edits re-score live and are sent with each run
   (`profile_override`), so the run's `config.json` records exactly what was optimized.
 - While a run is going, the 3D view shows the live best layout.
-- UI preferences (group, tab, overlay, sizes, current layout) persist in `localStorage`.
+- UI preferences (view, group, tab, overlay, sizes, current layout) persist in `localStorage`.
 
 ## 3D rendering
 
-Each key is a rounded keycap placed from the geometry's `pos`, `rot`, `size` (1 unit = 1u =
+Each key is a keycap (sharp base, tapered walls with smooth rounded corners, flat top; `capGeometry`, cached per size) placed from the geometry's `pos`, `rot`, `size` (1 unit = 1u =
 19.05 mm; board y → three z). Legends are cached canvas textures. Overlays: finger colors,
 frequency heat, SFB arcs (top same-finger bigrams, width ∝ frequency). 3D/top camera presets
 fit the board to the viewport. Flat and curved boards use the same code path.
@@ -46,9 +49,10 @@ fit the board to the viewport. Flat and curved boards use the same code path.
 | `GET /api/corpora/{name}` | `.gkc` bytes (for WASM) |
 | `POST /api/score` | `{geometry, corpus, profile \| profile_override, chars \| layout, top}` → analysis |
 | `GET /api/runs` · `POST /api/runs` | list / start (`algo, time_ms \| evals, threads, seed, pins, sa_steps, ga_pop` + score inputs) |
-| `GET /api/runs/{id}` | config, result, progress, running |
+| `GET /api/runs/{id}` | config, result, progress, running, paused |
 | `GET /api/runs/{id}/events` | SSE: `progress`, then `done` (RunResult) or `failed` |
 | `POST /api/runs/{id}/cancel` | stop early (results are still saved) |
+| `POST /api/runs/{id}/pause` · `/resume` | pause / resume a running run; paused time does not count against `time_ms` or toward `elapsed_ms` |
 
 ## Dev
 

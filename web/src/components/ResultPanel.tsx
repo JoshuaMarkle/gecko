@@ -24,6 +24,30 @@ interface Props {
   copied: string | null;
 }
 
+/** Per-metric value vs reference and weighted contribution, with a better/worse dot. */
+export function MetricTable({ a, refA, refName }: { a: Analysis; refA: Analysis | null; refName: string }) {
+  return (
+    <table className="tbl">
+      <thead><tr><th>metric</th><th>value</th><th>{refName}</th><th>score</th><th /></tr></thead>
+      <tbody>
+        {a.breakdown.metrics.map((m) => {
+          const r = refA?.breakdown.metrics.find((x) => x.id === m.id);
+          const v = r ? verdict(m.dir, m.value, r.value) : "same";
+          return (
+            <tr key={m.id} className={m.weight === 0 ? "off" : ""} title={`${m.id}${m.dir === "max" ? " (higher is better)" : m.dir === "info" ? " (info only)" : " (lower is better)"}`}>
+              <td>{m.name}</td>
+              <td>{fmt(m.value)}{m.unit === "%" ? "%" : ""}</td>
+              <td>{r ? `${fmt(r.value)}${m.unit === "%" ? "%" : ""}` : ""}</td>
+              <td>{m.weight === 0 ? "–" : fmt(m.weighted, 3)}</td>
+              <td>{v !== "same" && m.weight > 0 && <span className={`dot ${v}`} />}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
 export function ResultPanel(p: Props) {
   const a = p.a;
   const delta = a && p.refA ? a.breakdown.score - p.refA.breakdown.score : null;
@@ -60,24 +84,7 @@ export function ResultPanel(p: Props) {
           <details className="sec" open>
             <summary>Metrics<span className="note">value · {p.refName} · contribution</span></summary>
             <div className="body">
-              <table className="tbl">
-                <thead><tr><th>metric</th><th>value</th><th>{p.refName}</th><th>score</th><th /></tr></thead>
-                <tbody>
-                  {a.breakdown.metrics.map((m) => {
-                    const r = p.refA?.breakdown.metrics.find((x) => x.id === m.id);
-                    const v = r ? verdict(m.dir, m.value, r.value) : "same";
-                    return (
-                      <tr key={m.id} className={m.weight === 0 ? "off" : ""} title={`${m.id}${m.dir === "max" ? " (higher is better)" : m.dir === "info" ? " (info only)" : " (lower is better)"}`}>
-                        <td>{m.name}</td>
-                        <td>{fmt(m.value)}{m.unit === "%" ? "%" : ""}</td>
-                        <td>{r ? `${fmt(r.value)}${m.unit === "%" ? "%" : ""}` : ""}</td>
-                        <td>{m.weight === 0 ? "–" : fmt(m.weighted, 3)}</td>
-                        <td>{v !== "same" && m.weight > 0 && <span className={`dot ${v}`} />}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <MetricTable a={a} refA={p.refA} refName={p.refName} />
             </div>
           </details>
         )}

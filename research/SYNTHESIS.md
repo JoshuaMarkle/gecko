@@ -90,6 +90,12 @@ what the user gets:
    canonicalization of results; "move to empty slot" once geometries have spare keys.
    ([oxeylyzer](sources/oxeylyzer.md), [dellamico](sources/dellamico-single-finger-qap.md))
 
+6. **Explore mode and landscape views.** Archive every local optimum with its raw metric vector
+   (re-weight without re-searching), sample a local optima network with BLS kicks, and show
+   fitness–distance, consensus keyboard, embedding map and funnels in a web Explore view.
+   Full catalog (50 views), escape strategies and implementation plan:
+   [search-space-visualization.md](search-space-visualization.md).
+
 Not worth it now: RL / neural combinatorial search (n = 30 with fast deltas favours classic
 local search). ([ml-approaches](sources/ml-approaches.md))
 
@@ -136,6 +142,8 @@ local search). ([ml-approaches](sources/ml-approaches.md))
 | 10 | IKI model from 136M data (E01) | 9 | L | dhakal |
 | 11 | Personal calibration: tapping test + pairwise comfort study in UI | 9 | M | genkey, engram |
 | 12 | Parametric geometry + Cosmos-style IK reach cost | 6–7 | L | ergogen-dactyl, cosmos, hand-models |
+| 13 | Run telemetry + optima archive + swap-delta matrix (explore steps 1–4) | 2–3 | M | [search-space-visualization](search-space-visualization.md) |
+| 14 | `explore` engine (BLS + LON + exclusion search) and web Explore view | 3 | M | [search-space-visualization](search-space-visualization.md) |
 
 ## 9. Open questions and things to verify
 

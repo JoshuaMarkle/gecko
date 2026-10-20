@@ -1,10 +1,9 @@
 //! Core invariants: delta == full, folding == breakdown, optimizers find brute-force optima,
 //! determinism, and ranking sanity on the bundled corpus. See `context/testing.md`.
 
-use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use gecko_core::optimize::{self, Algo, Ctx, Params};
+use gecko_core::optimize::{self, Algo, Control, Ctx, Params};
 use gecko_core::report::breakdown;
 use gecko_core::rng::Rng;
 use gecko_core::{Corpus, Geometry, Layout, Profile, Scorer};
@@ -140,7 +139,7 @@ fn optimizers_find_brute_force_optimum() {
         p.sa.steps = 5_000;
         p.ga.pop_size = 16;
         let ctx = Ctx { scorer: &sc, movable: (0..6).collect(), start: sc.identity() };
-        let out = optimize::run(&ctx, &p, Duration::from_secs(60), &AtomicBool::new(false), |_| {});
+        let out = optimize::run(&ctx, &p, Duration::from_secs(60), &Control::default(), |_| {});
         let got = out.top[0].score;
         assert!((got - best).abs() < 1e-6, "{}: {got} vs optimum {best}", algo.name());
     }
@@ -157,7 +156,7 @@ fn deterministic_with_eval_budget() {
         p.ga.pop_size = 16;
         let run = || {
             let ctx = Ctx { scorer: &sc, movable: (0..30).collect(), start: sc.identity() };
-            optimize::run(&ctx, &p, Duration::from_secs(60), &AtomicBool::new(false), |_| {}).top
+            optimize::run(&ctx, &p, Duration::from_secs(60), &Control::default(), |_| {}).top
         };
         assert_eq!(run(), run(), "{} not deterministic", algo.name());
     }
@@ -171,7 +170,7 @@ fn pins_are_respected() {
     let pinned: Vec<usize> = ",./;".chars().map(|ch| sc.chars.iter().position(|&x| x == ch).unwrap()).collect();
     let ctx = Ctx { scorer: &sc, movable: (0..30).filter(|s| !pinned.contains(s)).collect(), start: sc.identity() };
     let p = Params { algo: Algo::Sa, seed: 1, threads: 2, time_ms: None, evals: Some(100_000), top: 3, ..Default::default() };
-    for s in optimize::run(&ctx, &p, Duration::from_secs(60), &AtomicBool::new(false), |_| {}).top {
+    for s in optimize::run(&ctx, &p, Duration::from_secs(60), &Control::default(), |_| {}).top {
         for &x in &pinned {
             assert_eq!(s.sym[ctx.start.pos[x] as usize], x as u8);
         }
@@ -196,4 +195,25 @@ fn ranking_sanity_on_english() {
     let b = breakdown(&sc, &sc.identity());
     let sfb = b.metrics.iter().find(|m| m.id == "B01").unwrap().value;
     assert!((5.8..7.4).contains(&sfb), "QWERTY SFB {sfb}%");
+}
+
+#[test]
+fn pause_stops_the_clock() {
+    let g = ansi();
+    let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 2);
+    let sc = Scorer::new(&g, &c, &all_weights(), &layout("qwerty")).unwrap();
+    let ctx = Ctx { scorer: &sc, movable: (0..30).collect(), start: sc.identity() };
+    let p = Params { algo: Algo::Hc, seed: 1, threads: 2, time_ms: Some(200), evals: None, top: 1, ..Default::default() };
+    let control = Control::default();
+    control.set_paused(true);
+    let t = std::time::Instant::now();
+    let out = std::thread::scope(|s| {
+        s.spawn(|| {
+            std::thread::sleep(Duration::from_millis(300));
+            control.set_paused(false);
+        });
+        optimize::run(&ctx, &p, Duration::from_secs(60), &control, |_| {})
+    });
+    assert!(t.elapsed() >= Duration::from_millis(480), "paused time used the budget");
+    assert!(out.elapsed_ms < 400, "elapsed_ms {} includes the pause", out.elapsed_ms);
 }

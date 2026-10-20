@@ -63,7 +63,8 @@ Mono (`ui-monospace, Menlo, Consolas`) for layout strings and n-grams.
 - Radii: `--r-xs` 4px (badges, segments, swatches) · `--r-sm` 6px (buttons, inputs,
   selects, segmented tracks) · `--r-md` 8px (cards, notices) · `--r-full` only for
   switches and progress tracks. Never stadium-pill buttons.
-- Keycaps in the 2D view: `--r-sm`; in 3D: rounded box with a small bevel.
+- Keycaps in the 2D view: `--r-sm`; in 3D: a sharp base and tapered walls with rounded
+  vertical corners (plan radius larger at the base than the top), and a flat top with no bevel.
 
 ## Elevation
 
@@ -72,7 +73,8 @@ The only lift is the active segment of a segmented control (white segment, 1px h
 
 ## Components
 
-- **Button primary**: `--ink` fill, white label. The single main action (`Run optimization`).
+- **Button primary**: `--ink` fill, white label. For a pane's single main action.
+- **Icon tool button**: segmented-track option holding a 16px icon; see the toolbar above.
 - **Button outline**: white, 1px `--hair` border. Secondary actions.
 - **Button soft**: `--soft` fill, no border. Tertiary/utility (exports, reset).
 - **Button danger**: `--error` fill. Only for destructive actions (delete run).
@@ -92,21 +94,37 @@ The only lift is the active segment of a segmented control (white segment, 1px h
 
 ## App shell (`web/`)
 
-A single-screen tool. CSS grid: top bar | inputs (left) | 3D view over charts (centre) | result (right).
+CSS grid: a toolbar over one of three views. The toolbar follows the Unity editor: view tabs
+left, transport controls dead centre, run progress right.
 
-- **Top bar**: wordmark `GECKO` and tagline left; the `Algorithm` choice, run status with
-  progress, and the single primary `Run optimization` right.
-- **Left panel, Inputs**: a segmented control picks one group at a time (Layout, Board,
-  Corpus, Profile, Search). Each group holds collapsible sections. The chosen group and
-  collapsed sections are remembered per browser.
-- **Centre**: the 3D keyboard (on `--soft`) with view controls top-right (3D / top) and an
-  overlay picker (fingers, heat, SFB arcs). Below it, chart tabs as one segmented track:
-  Convergence, Metrics, Finger load, Heatmap, Worst bigrams.
-- **Right panel, Result**: run errors (notice), the best layout with its `Best` badge and
-  score, the layout string (mono, copyable), per-metric table vs reference, runs list,
-  compare picks, and exports (JSON, layout TOML).
-- Side panels and the chart pane resize by dragging their hairline edge (double-click
-  resets). Below 1360px wide the side panels start narrower.
+- **Toolbar**: three equal-weight columns so the transport stays centred.
+  - Left: icon tabs in one segmented track: Home, Results, Layout analysis. Active tab is a
+    white segment. No wordmark; the Home icon is the way back.
+  - Centre: one joined transport cluster (rounded only at its outer ends, square seams):
+    a black `--ink` "Start optimization" button with a play icon (reads "Resume" while
+    paused, "Optimizing…" while running), then Pause (toggle) and End (stop now, results
+    kept) icons. Pause while paused is an `--accent` fill, the toolbar's single blue mark.
+    Disabled Start is `--muted`; disabled icons are `--faint`.
+  - Right: run status line over the 4px progress bar. Paused time does not advance it.
+- Icons: 16px, 1.4px stroke or solid glyphs, `currentColor`, in 30×22 hit targets (toolbar is 36px tall; tracks and the transport cluster are 26px)
+  (`components/Icons.tsx`). Every icon button has a `title` and `aria-label`.
+- **Home**: inputs (left) | 3D view over charts (centre) | result (right).
+  - Left, Inputs: a segmented control picks one group at a time (Layout, Board, Corpus,
+    Profile, Search). Search starts with the Algorithm picker and shows only that
+    algorithm's settings. The chosen group and collapsed sections are remembered per browser.
+  - Centre: the 3D keyboard (on `--soft`) with view controls top-right (3D / top) and an
+    overlay picker (fingers, heat, SFB arcs). Below it, chart tabs as one segmented track:
+    Convergence, Metrics, Finger load, Heatmap, Worst n-grams.
+  - Right, Result: run errors (notice), the layout with its `Best` badge and score, the
+    layout string (mono, copyable), per-metric table vs reference, run results, runs list,
+    and exports (JSON, layout TOML).
+  - Side panels and the chart pane resize by dragging their hairline edge (double-click
+    resets). Below 1360px wide the side panels start narrower.
+- **Results**: runs table (left) | selected run (right): convergence, best layouts with
+  delta vs reference (click loads one into the editor), and the run's reproducibility facts.
+- **Layout analysis**: the current layout's score and delta, then cards (1px `--hair`,
+  `--r-md`) in a two-column grid: heatmap, metrics table, score contributions, finger load,
+  and worst n-grams full width. One column below 1100px.
 
 ## Do
 

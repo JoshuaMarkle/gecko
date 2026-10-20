@@ -1,4 +1,4 @@
-// 3D keyboard: one rounded keycap per geometry key, placed from pos/rot/size (1 unit = 1u).
+// 3D keyboard: one tapered, round-cornered keycap per geometry key, placed from pos/rot/size (1 unit = 1u).
 // Flat and (later) curved boards share this code path. Overlays: fingers, heat, SFB arcs.
 
 import { Canvas, useThree } from "@react-three/fiber";
@@ -23,6 +23,67 @@ interface Props {
 }
 
 const CAP_H = 0.42;
+/** Keycap profile: walls lean in by TAPER from base to top; plan-view corner radii at base and top. */
+const TAPER = 0.09;
+const R_BASE = 0.09;
+const R_TOP = 0.07;
+const CORNER_SEGS = 6;
+const caps = new Map<string, THREE.BufferGeometry>();
+
+/**
+ * Keycap centred on the origin: a rounded rectangle at the base lofted to a smaller rounded
+ * rectangle at the top. Corners shade smooth, flat sides stay flat, and the top and base
+ * edges are sharp (caps have their own vertices).
+ */
+function capGeometry(w: number, d: number): THREE.BufferGeometry {
+  const key = `${w.toFixed(3)}x${d.toFixed(3)}`;
+  let g = caps.get(key);
+  if (g) return g;
+  const pos: number[] = [], nor: number[] = [], idx: number[] = [];
+  const vert = (x: number, y: number, z: number, n: [number, number, number]) => { pos.push(x, y, z); nor.push(...n); return pos.length / 3 - 1; };
+  // Index triangles so they face along the first vertex's normal.
+  const tri = (a: number, b: number, c: number) => {
+    const v = (i: number) => new THREE.Vector3(pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]);
+    const n = new THREE.Vector3().subVectors(v(b), v(a)).cross(new THREE.Vector3().subVectors(v(c), v(a)));
+    idx.push(...(n.dot(new THREE.Vector3(nor[3 * a], nor[3 * a + 1], nor[3 * a + 2])) >= 0 ? [a, b, c] : [a, c, b]));
+  };
+  // Rounded-rectangle outline: per corner, CORNER_SEGS + 1 points with their plan-view normal angle.
+  const ring = (inset: number, r: number) => {
+    const [hx, hz] = [w / 2 - inset - r, d / 2 - inset - r];
+    const out: { x: number; z: number; t: number }[] = [];
+    [[hx, hz], [-hx, hz], [-hx, -hz], [hx, -hz]].forEach(([cx, cz], c) => {
+      for (let i = 0; i <= CORNER_SEGS; i++) {
+        const t = (c + i / CORNER_SEGS) * (Math.PI / 2);
+        out.push({ x: cx + r * Math.cos(t), z: cz + r * Math.sin(t), t });
+      }
+    });
+    return out;
+  };
+  const [y0, y1] = [-CAP_H / 2, CAP_H / 2];
+  const base = ring(0, R_BASE), top = ring(TAPER, R_TOP);
+  const lean = Math.atan2(TAPER, CAP_H);
+  const sideN = (t: number): [number, number, number] => [Math.cos(t) * Math.cos(lean), Math.sin(lean), Math.sin(t) * Math.cos(lean)];
+  const m = base.length;
+  const sb = base.map((p) => vert(p.x, y0, p.z, sideN(p.t)));
+  const st = top.map((p) => vert(p.x, y1, p.z, sideN(p.t)));
+  for (let i = 0; i < m; i++) {
+    const j = (i + 1) % m;
+    tri(sb[i], sb[j], st[j]);
+    tri(sb[i], st[j], st[i]);
+  }
+  for (const [ring_, y, n] of [[top, y1, [0, 1, 0]], [base, y0, [0, -1, 0]]] as const) {
+    const c = vert(0, y, 0, [...n]);
+    const vs = ring_.map((p) => vert(p.x, y, p.z, [...n]));
+    for (let i = 0; i < m; i++) tri(c, vs[i], vs[(i + 1) % m]);
+  }
+  g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3));
+  g.setIndex(idx);
+  caps.set(key, g);
+  return g;
+}
+
 const textures = new Map<string, THREE.CanvasTexture>();
 
 function legend(ch: string, color: string): THREE.CanvasTexture {
@@ -64,19 +125,17 @@ function Keycap({ k, cx, cy, ch, color, text, selected, onClick }: {
   const lift = selected ? 0.12 : hover ? 0.04 : 0;
   return (
     <group position={[p[0], p[1] + CAP_H / 2 + lift, p[2]]} rotation={r}>
-      <RoundedBox
-        args={[w, CAP_H, h]}
-        radius={0.07}
-        smoothness={3}
+      <mesh
+        geometry={capGeometry(w, h)}
         onClick={(e) => { e.stopPropagation(); onClick(); }}
         onPointerOver={(e) => { e.stopPropagation(); setHover(true); document.body.style.cursor = "pointer"; }}
         onPointerOut={() => { setHover(false); document.body.style.cursor = ""; }}
       >
         <meshStandardMaterial color={color} roughness={0.75} metalness={0} />
         {selected && <Edges color={ACCENT} lineWidth={2} threshold={30} />}
-      </RoundedBox>
+      </mesh>
       <mesh position={[0, CAP_H / 2 + 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.62, 0.62]} />
+        <planeGeometry args={[0.6, 0.6]} />
         <meshBasicMaterial map={legend(ch, text)} transparent depthWrite={false} />
       </mesh>
     </group>

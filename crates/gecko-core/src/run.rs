@@ -3,12 +3,11 @@
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-use crate::optimize::{self, Ctx, Params, Progress};
+use crate::optimize::{self, Control, Ctx, Params, Progress};
 use crate::report::breakdown;
 use crate::{hash, Corpus, Error, Geometry, Layout, Profile, Result, Scorer, SCHEMA};
 
@@ -146,7 +145,7 @@ pub fn prepare(runs: &Path, spec: &RunSpec) -> Result<Prepared> {
 }
 
 /// Build the scorer/context, run the optimizer, and write `progress.jsonl` + `best.json`.
-pub fn execute(prep: &Prepared, spec: &RunSpec, cancel: &AtomicBool, mut on_progress: impl FnMut(&Progress)) -> Result<RunResult> {
+pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progress: impl FnMut(&Progress)) -> Result<RunResult> {
     let scorer = Scorer::new(spec.geometry, spec.corpus, spec.profile, spec.start)?;
     let start = scorer.identity();
     let pinned: Vec<char> = spec.pins.chars().filter(|c| !c.is_whitespace()).collect();
@@ -158,7 +157,7 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, cancel: &AtomicBool, mut on_prog
     let movable: Vec<usize> = (0..scorer.n).filter(|&s| !pinned.contains(&scorer.chars[s])).collect();
     let ctx = Ctx { scorer: &scorer, movable, start };
     let mut log = std::io::BufWriter::new(std::fs::File::create(prep.dir.join("progress.jsonl"))?);
-    let out = optimize::run(&ctx, &spec.params, Duration::from_millis(250), cancel, |p| {
+    let out = optimize::run(&ctx, &spec.params, Duration::from_millis(250), control, |p| {
         let _ = writeln!(log, "{}", serde_json::to_string(p).unwrap());
         on_progress(p);
     });

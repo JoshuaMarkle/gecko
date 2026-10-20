@@ -1,10 +1,14 @@
-// App shell (context/design.md): top bar | inputs | 3D view over charts | result.
+// App shell (context/design.md): toolbar (views | transport | progress) over one of three views.
+// Home: inputs | 3D view over charts | result. Results: saved runs. Analysis: current layout.
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from "react";
 import { api, type Analysis, type CorpusInfo, type Geometry, type LayoutInfo, type Meta, type Profile, type Progress, type RunDetail, type RunSummary } from "./api";
 import { Convergence, FingerLoad, Heatmap, MetricBars, WorstNgrams } from "./components/Charts";
+import { AnalysisView } from "./components/AnalysisView";
+import { IconAnalysis, IconHome, IconPause, IconPlay, IconResults, IconSkip } from "./components/Icons";
 import { InputsPanel, type Group, type SearchSettings } from "./components/InputsPanel";
 import { ResultPanel } from "./components/ResultPanel";
+import { ResultsView } from "./components/ResultsView";
 import { fingerLegend } from "./colors";
 import { fmt, fmtCount, fmtTime, rowsOf, swapChars } from "./format";
 import { Keyboard3D, type Overlay, type ViewMode } from "./three/Keyboard3D";
@@ -12,7 +16,8 @@ import { Scorer } from "./wasm";
 
 type Tab = "convergence" | "metrics" | "fingers" | "heatmap" | "ngrams";
 const TABS: [Tab, string][] = [["convergence", "Convergence"], ["metrics", "Metrics"], ["fingers", "Finger load"], ["heatmap", "Heatmap"], ["ngrams", "Worst n-grams"]];
-const ALGOS: [string, string][] = [["sa", "Simulated annealing"], ["hc", "Hill climbing"], ["ga", "Genetic algorithm"]];
+type View = "home" | "results" | "analysis";
+const VIEWS: [View, string, () => ReactElement][] = [["home", "Home", IconHome], ["results", "Results", IconResults], ["analysis", "Layout analysis", IconAnalysis]];
 
 function usePref<T>(key: string, init: T): [T, (v: T) => void] {
   const [v, setV] = useState<T>(() => {
@@ -56,7 +61,8 @@ function download(name: string, text: string, type = "application/json") {
   URL.revokeObjectURL(url);
 }
 
-interface Live { id: string; progress: Progress[]; running: boolean; started: number; budgetMs: number }
+// Pause bookkeeping mirrors the server: paused time does not use up the budget.
+interface Live { id: string; progress: Progress[]; running: boolean; started: number; budgetMs: number; pausedAt: number | null; pausedMs: number }
 
 export function App() {
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -77,6 +83,7 @@ export function App() {
   const [startChars, setStartChars] = useState("");
   const [pins, setPins] = usePref("pins", "");
   const [group, setGroup] = usePref<Group>("group", "layout");
+  const [view, setView] = usePref<View>("view", "home");
   const [tab, setTab] = usePref<Tab>("tab", "convergence");
   const [overlay, setOverlay] = usePref<Overlay>("overlay", "fingers");
   const [mode, setMode] = usePref<ViewMode>("mode", "3d");
@@ -196,7 +203,7 @@ export function App() {
         geometry: geometry.id, corpus: corpus.id, profile_override: profile, chars, algo: search.algo, time_ms: search.timeS * 1000,
         threads: search.threads, seed: search.seed, pins, sa_steps: search.saSteps, ga_pop: search.gaPop,
       });
-      setLive({ id: r.id, progress: [], running: true, started: Date.now(), budgetMs: search.timeS * 1000 });
+      setLive({ id: r.id, progress: [], running: true, started: Date.now(), budgetMs: search.timeS * 1000, pausedAt: null, pausedMs: 0 });
       setTab("convergence");
       refreshRuns();
       esRef.current?.close();
@@ -225,6 +232,14 @@ export function App() {
   };
 
   const stopRun = () => { if (live) api.cancel(live.id).catch(() => {}); };
+  const setPaused = (on: boolean) => {
+    if (!live?.running || (live.pausedAt !== null) === on) return;
+    api.pause(live.id, on).then(() => setLive((l) => {
+      if (!l || l.id !== live.id) return l;
+      return on ? { ...l, pausedAt: Date.now() } : { ...l, pausedAt: null, pausedMs: l.pausedMs + Date.now() - (l.pausedAt ?? Date.now()) };
+    })).catch((e) => setErr((e as Error).message));
+  };
+  const play = () => { if (!live?.running) startRun(); else setPaused(false); };
 
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -235,10 +250,12 @@ export function App() {
 
   const progress = live && (live.running || runDetail?.config.id !== live.id) ? live.progress : runDetail?.progress ?? live?.progress ?? [];
   const lastP = progress[progress.length - 1];
+  const paused = !!live?.running && live.pausedAt !== null;
+  const activeMs = live ? (live.pausedAt ?? now) - live.started - live.pausedMs : 0;
   const status = live?.running
-    ? `running · ${fmtCount(lastP?.evals ?? 0)} evals · best ${lastP ? fmt(lastP.best, 3) : "–"}`
+    ? `${paused ? "paused" : "running"} · ${fmtCount(lastP?.evals ?? 0)} evals · best ${lastP ? fmt(lastP.best, 3) : "–"}`
     : runDetail?.result ? `done · ${runDetail.config.params.algo} · ${fmtTime(runDetail.result.elapsed_ms)}` : "idle";
-  const frac = live?.running ? Math.min(1, (now - live.started) / live.budgetMs) : live ? 1 : 0;
+  const frac = live?.running ? Math.min(1, activeMs / live.budgetMs) : live ? 1 : 0;
 
   const shellStyle = useMemo(() => {
     const s: Record<string, string> = {};
@@ -254,34 +271,40 @@ export function App() {
   if (!meta || !geometry || !profile) {
     return <div className="empty" style={{ height: "100%" }}>{err ? <div className="notice error" style={{ maxWidth: 520 }}>{err}</div> : "Loading…"}</div>;
   }
+  const pickRank = (i: number) => {
+    const b = runDetail?.result?.best[i];
+    if (b) { setCharsRaw(b.chars); setStartChars(b.chars); setRank(i); setLabel(`${runDetail!.config.params.algo} run #${i + 1}`); setSelected(null); }
+  };
   const isBest = rank === 0 && label.includes("run #1");
   const rankLabel = rank !== null && runDetail ? `${runDetail.config.params.algo} run #${rank + 1}` : label;
 
   return (
     <div className="shell" style={shellStyle}>
       <header id="top">
-        <div className="brand"><b>GECKO</b><span>keyboard layout search</span></div>
-        <div className="spacer" />
-        <label className="objpick" title="Search algorithm. Settings live in Inputs › Search.">Algorithm
-          <select value={search.algo} onChange={(e) => setSearch({ ...search, algo: e.target.value })} disabled={live?.running}>
-            {ALGOS.filter(([a]) => meta.algos.includes(a)).map(([a, n]) => <option key={a} value={a}>{n}</option>)}
-          </select>
-        </label>
-        <div className="sep" />
+        <nav className="toolgroup" aria-label="Views">
+          {VIEWS.map(([v, name, Icon]) => (
+            <button key={v} className={`tool ${view === v ? "on" : ""}`} onClick={() => setView(v)} title={name} aria-label={name} aria-pressed={view === v}><Icon /></button>
+          ))}
+        </nav>
+        <div className="transport" aria-label="Optimization">
+          <button className="start" onClick={play} disabled={!corpus || (live?.running && !paused)}
+            title={paused ? "Resume" : live?.running ? "Running" : `Run optimization (${search.algo}, ${search.timeS}s)`}><IconPlay />{paused ? "Resume" : live?.running ? "Optimizing…" : "Start optimization"}</button>
+          <button className={`tool ${paused ? "on" : ""}`} onClick={() => setPaused(!paused)} disabled={!live?.running}
+            title={paused ? "Resume" : "Pause"} aria-label="Pause" aria-pressed={paused}><IconPause /></button>
+          <button className="tool" onClick={stopRun} disabled={!live?.running} title="End optimization now (results are kept)" aria-label="End optimization"><IconSkip /></button>
+        </div>
         <div className="runbox">
-          <div className="statusline"><span>{status}</span><span>{live?.running ? `${fmtTime(now - live.started)} / ${fmtTime(live.budgetMs)}` : ""}</span></div>
+          <div className="statusline"><span>{status}</span><span>{live?.running ? `${fmtTime(activeMs)} / ${fmtTime(live.budgetMs)}` : ""}</span></div>
           <progress value={frac} max={1} />
         </div>
-        {live?.running
-          ? <button className="btn primary" onClick={stopRun}>Stop</button>
-          : <button className="btn primary" onClick={startRun} disabled={!corpus}>Run optimization</button>}
       </header>
 
+      {view === "home" && <>
       <aside id="left" className="side">
         <InputsPanel group={group} setGroup={setGroup} meta={meta} layouts={layouts} geometries={geometries} corpora={corpora} profiles={profiles}
           geometry={geometry} corpus={corpus} chars={chars} setChars={setChars} startChars={startChars} pins={pins} setPins={setPins}
           refId={refId} setRefId={setRefId} setGeomId={setGeomId} setCorpusId={setCorpusId} profileId={profileId} setProfileId={setProfileId}
-          profile={profile} setProfile={setProfile} search={search} setSearch={setSearch} />
+          profile={profile} setProfile={setProfile} search={search} setSearch={setSearch} running={!!live?.running} />
         <Gutter dir="v" onDrag={(d) => setSizes({ ...sizes, side: Math.max(260, Math.min(640, px("--side") + d)) })} onReset={() => setSizes({ ...sizes, side: 0 })} />
       </aside>
 
@@ -325,13 +348,28 @@ export function App() {
       <aside id="right" className="side">
         <ResultPanel err={err} geometry={geometry} chars={viewChars} label={live?.running ? "Live best" : rankLabel} isBest={isBest && !live?.running} a={analysis} refA={refAnalysis}
           refName={reference?.name ?? "reference"} run={runDetail} rank={rank}
-          onPickRank={(i) => { const b = runDetail?.result?.best[i]; if (b) { setCharsRaw(b.chars); setStartChars(b.chars); setRank(i); setLabel(`${runDetail!.config.params.algo} run #${i + 1}`); } }}
+          onPickRank={pickRank}
           runs={runs} onOpenRun={(id) => openRun(id)}
           onExportJson={() => analysis && download(`gecko-${viewChars.length}.json`, JSON.stringify({ schema: 1, chars: viewChars, rows: rowsOf(viewChars, geometry), profile, analysis }, null, 2))}
           onExportToml={() => download("layout.toml", `name = "${rankLabel.replace(/"/g, "'")}"\ngeometry = "${geometry.name}"\nsource = "gecko web"\nrows = [${rowsOf(viewChars, geometry).map((r) => (r.includes("'") ? `"${r}"` : `'${r}'`)).join(", ")}]\n`, "application/toml")}
           onCopy={(t) => copy(t, t.startsWith("gecko") ? "cli" : "rows")} copied={copied} />
         <Gutter dir="v" onDrag={(d) => setSizes({ ...sizes, res: Math.max(280, Math.min(640, px("--res") - d)) })} onReset={() => setSizes({ ...sizes, res: 0 })} />
       </aside>
+      </>}
+
+      {view === "results" && (
+        <div className="page">
+          <ResultsView runs={runs} run={runDetail} progress={progress} rank={rank} refScore={refAnalysis?.breakdown.score} refName={reference?.name ?? "reference"}
+            onOpenRun={(id) => openRun(id)} onPickRank={pickRank} onShowHome={() => setView("home")} />
+        </div>
+      )}
+
+      {view === "analysis" && (
+        <div className="page">
+          <AnalysisView geometry={geometry} chars={viewChars} label={live?.running ? "Live best" : rankLabel} a={analysis} refA={refAnalysis}
+            refName={reference?.name ?? "reference"} selected={selected} onKey={onKey} />
+        </div>
+      )}
     </div>
   );
 }

@@ -7,6 +7,8 @@ import { checkLayout, fmtCount, rowsOf } from "../format";
 export type Group = "layout" | "board" | "corpus" | "profile" | "search";
 const GROUPS: [Group, string][] = [["layout", "Layout"], ["board", "Board"], ["corpus", "Corpus"], ["profile", "Profile"], ["search", "Search"]];
 
+const ALGOS: [string, string][] = [["sa", "Simulated annealing"], ["hc", "Hill climbing"], ["ga", "Genetic algorithm"]];
+
 export interface SearchSettings { algo: string; timeS: number; threads: number; seed: number; saSteps: number; gaPop: number }
 
 interface Props {
@@ -34,6 +36,7 @@ interface Props {
   setProfile: (p: Profile) => void;
   search: SearchSettings;
   setSearch: (s: SearchSettings) => void;
+  running: boolean;
 }
 
 function Sec({ id, title, note, children }: { id: string; title: string; note?: string; children: ReactNode }) {
@@ -189,16 +192,26 @@ function SearchGroup(p: Props) {
   const set = (patch: Partial<SearchSettings>) => p.setSearch({ ...s, ...patch });
   return (
     <>
+      <Sec id="search-algo" title="Algorithm" note="how the search moves">
+        <div className="row">
+          <label title="Search algorithm. Its own settings appear below. Locked while a run is going.">Algorithm</label>
+          <select value={s.algo} onChange={(e) => set({ algo: e.target.value })} disabled={p.running}>
+            {ALGOS.filter(([a]) => p.meta.algos.includes(a)).map(([a, n]) => <option key={a} value={a}>{n}</option>)}
+          </select>
+          <span />
+        </div>
+        {s.algo === "sa" && (
+          <Num label="Steps / restart" help="Swap attempts in one cooling schedule. 0 = auto (about 4 restarts per thread within the time budget)." value={s.saSteps} step={100000} min={0} unit={s.saSteps === 0 ? "auto" : ""} onChange={(v) => set({ saSteps: Math.max(0, Math.round(v)) })} />
+        )}
+        {s.algo === "ga" && (
+          <Num label="Population" help="Layouts per generation." value={s.gaPop} step={16} min={4} onChange={(v) => set({ gaPop: Math.max(4, Math.round(v)) })} />
+        )}
+        {s.algo === "hc" && <div className="hint">Steepest descent with random restarts. No extra settings.</div>}
+      </Sec>
       <Sec id="search" title="Budget" note="time and threads">
         <Num label="Time" help="Wall-clock budget for the run." value={s.timeS} min={1} step={1} unit="s" onChange={(v) => set({ timeS: Math.max(1, v) })} />
         <Num label="Threads" help="Independent workers (restarts / islands) in parallel." value={s.threads} min={1} max={p.meta.threads} unit={`/${p.meta.threads}`} onChange={(v) => set({ threads: Math.min(p.meta.threads, Math.max(1, Math.round(v))) })} />
         <Num label="Seed" help="Runs are reproducible from the seed (exactly so with an evaluation budget)." value={s.seed} min={0} onChange={(v) => set({ seed: Math.max(0, Math.round(v)) })} />
-      </Sec>
-      <Sec id="search-sa" title="Simulated annealing" note="sa">
-        <Num label="Steps / restart" help="Swap attempts in one cooling schedule. 0 = auto (about 4 restarts per thread within the time budget)." value={s.saSteps} step={100000} min={0} unit={s.saSteps === 0 ? "auto" : ""} onChange={(v) => set({ saSteps: Math.max(0, Math.round(v)) })} />
-      </Sec>
-      <Sec id="search-ga" title="Genetic algorithm" note="ga">
-        <Num label="Population" help="Layouts per generation." value={s.gaPop} step={16} min={4} onChange={(v) => set({ gaPop: Math.max(4, Math.round(v)) })} />
       </Sec>
     </>
   );

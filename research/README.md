@@ -6,6 +6,7 @@ the sources say to build next, with a prioritized backlog. Then open only the fi
 | File | Read when |
 |---|---|
 | [SYNTHESIS.md](SYNTHESIS.md) | Deciding what to build next; why a metric or method is worth it |
+| [search-space-visualization.md](search-space-visualization.md) | Visualizing runs and the fitness landscape, exploring the space, escaping local optima, the Explore mode |
 | [sources/](sources/README.md) | Implementing a specific idea: one summary per source with code/data links |
 | [existing-optimizers.md](existing-optimizers.md) | Quick comparison table of other tools |
 | [metrics-catalog.md](metrics-catalog.md) | Adding or changing a metric. The master list of ways to judge a layout |

@@ -8,7 +8,7 @@
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px;
   --ctl-h: 26px; --label-w: 132px; --unit-w: 28px;
-  --side: 360px; --res: 380px; --plot: 38vh; --top: 48px;
+  --side: 360px; --res: 380px; --plot: 38vh; --top: 36px;
 }
 @media (max-width: 1360px) { :root { --side: 320px; --res: 340px; --label-w: 112px; } }
 * { box-sizing: border-box; }
@@ -20,16 +20,29 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .shell { height: 100%; display: grid; grid-template-columns: var(--side) minmax(0, 1fr) var(--res);
   grid-template-rows: var(--top) minmax(0, 1fr) var(--plot); }
 
-/* ---------- top bar ---------- */
-#top { grid-column: 1 / 4; display: flex; align-items: center; gap: var(--s3); padding: 0 var(--s4); border-bottom: 1px solid var(--hair); min-width: 0; }
-#top .brand { display: flex; align-items: baseline; gap: var(--s2); min-width: 0; white-space: nowrap; }
-#top .brand b { font-weight: 650; font-size: 15px; line-height: 1; }
-#top .brand span { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
-#top .spacer { flex: 1; }
-#top .sep { width: 1px; align-self: stretch; margin: var(--s3) 0; background: var(--hair-soft); }
-.runbox { display: grid; gap: 3px; width: 300px; }
-.objpick { display: flex; align-items: center; gap: var(--s2); color: var(--muted); white-space: nowrap; }
-.objpick select { width: 170px; color: var(--ink); }
+/* ---------- toolbar: views (left) | transport (centred) | run progress (right) ---------- */
+#top { grid-column: 1 / 4; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--s3);
+  padding: 0 var(--s4); border-bottom: 1px solid var(--hair); min-width: 0; }
+.toolgroup { display: inline-flex; gap: 2px; padding: 2px; background: var(--soft); border-radius: var(--r-sm); justify-self: start; }
+.tool { width: 30px; height: 22px; display: grid; place-items: center; border: 0; background: none; border-radius: var(--r-xs); color: var(--muted); cursor: pointer; padding: 0; }
+.tool:hover:not(:disabled) { color: var(--ink); }
+.tool.on { background: var(--canvas); color: var(--ink); box-shadow: 0 0 0 1px var(--hair); }
+.tool:disabled { cursor: default; }
+.tool:disabled:not(.on) { color: var(--faint); }
+.tool:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+/* Transport: one joined cluster, square seams inside, rounded only at the ends.
+   Start is the black primary; Pause while paused is the one accent on the toolbar. */
+.transport { justify-self: center; display: inline-flex; border-radius: var(--r-sm); overflow: hidden; background: var(--soft); }
+.transport > button { height: 26px; border: 0; border-radius: 0; cursor: pointer; }
+.transport > button + button { border-left: 1px solid var(--hair); }
+.transport .start { display: inline-flex; align-items: center; gap: var(--s2); padding: 0 var(--s3) 0 10px; background: var(--ink); color: var(--canvas); font-weight: 600; white-space: nowrap; }
+.transport .start:hover:not(:disabled) { background: var(--ink-soft); }
+.transport .start:disabled { cursor: default; background: var(--muted); }
+.transport .start + button { border-left-color: var(--ink); }
+.transport .start:disabled + button { border-left-color: var(--muted); }
+.transport .tool { width: 32px; }
+.transport .tool.on { background: var(--accent); color: var(--canvas); box-shadow: none; }
+.runbox { display: grid; gap: 2px; width: 300px; max-width: 100%; justify-self: end; }
 .statusline { display: flex; justify-content: space-between; gap: var(--s2); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- side panels ---------- */
@@ -164,4 +177,20 @@ body.resizing { user-select: none; } body.resizing canvas { pointer-events: none
 .plot svg text { font: 450 11px var(--font); fill: var(--muted); font-variant-numeric: tabular-nums; }
 .plot svg text.ink { fill: var(--ink); }
 .grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s4); }
+/* ---------- Results and Analysis views ---------- */
+.page { grid-column: 1 / 4; grid-row: 2 / 4; min-height: 0; min-width: 0; overflow: hidden; }
+.pane { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.results { height: 100%; display: grid; grid-template-columns: minmax(380px, 2fr) minmax(0, 3fr); }
+.results > .pane:first-child { border-right: 1px solid var(--hair); }
+.chartbox { height: 260px; min-height: 0; }
+.analysis { height: 100%; overflow-y: auto; padding: var(--s4); display: grid; gap: var(--s3); align-content: start; scrollbar-width: thin; }
+.analysis-head { display: flex; align-items: baseline; gap: var(--s3); flex-wrap: wrap; }
+.analysis-head > b { font-weight: 650; font-size: 13px; }
+.analysis-head .score b { font-size: 28px; }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+.card { border: 1px solid var(--hair); border-radius: var(--r-md); padding: var(--s3); min-width: 0; display: grid; gap: var(--s2); align-content: start; }
+.card.wide { grid-column: 1 / -1; }
+.card h3 { margin: 0; font-size: 12px; font-weight: 600; display: flex; gap: var(--s2); align-items: baseline; }
+.card .chartbox { height: 280px; }
+@media (max-width: 1100px) { .cards { grid-template-columns: minmax(0, 1fr); } .results { grid-template-columns: minmax(0, 1fr); grid-template-rows: 1fr 1fr; } }
 .empty { height: 100%; display: grid; place-items: center; color: var(--muted); }

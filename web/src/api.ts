@@ -75,7 +75,7 @@ export interface RunSummary {
   id: string; created: string; algo: string; profile: string; corpus: string; geometry: string;
   best_score: number | null; best: string | null; elapsed_ms: number | null; status: string;
 }
-export interface RunDetail { config: RunConfig; result: RunResult | null; progress: Progress[]; running: boolean }
+export interface RunDetail { config: RunConfig; result: RunResult | null; progress: Progress[]; running: boolean; paused?: boolean }
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(path, init);
@@ -97,6 +97,7 @@ export const api = {
   runs: () => req<RunSummary[]>("/api/runs"),
   run: (id: string) => req<RunDetail>(`/api/runs/${encodeURIComponent(id)}`),
   cancel: (id: string) => post<unknown>(`/api/runs/${encodeURIComponent(id)}/cancel`, {}),
+  pause: (id: string, on: boolean) => post<unknown>(`/api/runs/${encodeURIComponent(id)}/${on ? "pause" : "resume"}`, {}),
   score: (body: ScoreRequest) => post<ScoreResponse>("/api/score", body),
   startRun: (body: RunRequest) => post<{ id: string; config: RunConfig }>("/api/runs", body),
 };

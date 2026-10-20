@@ -6,7 +6,7 @@ pub mod genetic;
 pub mod hill_climb;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::mpsc;
+use std::sync::{mpsc, Mutex};
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
@@ -236,6 +236,46 @@ fn resolve_auto(ctx: &Ctx, params: &Params) -> Params {
     p
 }
 
+/// External control of a running search: cancel (stop early, results kept) and pause.
+/// Paused time does not count against a time budget or toward `elapsed_ms`.
+#[derive(Default)]
+pub struct Control {
+    cancel: AtomicBool,
+    paused: AtomicBool,
+    /// (start of the current pause, total of finished pauses)
+    pause: Mutex<(Option<Instant>, Duration)>,
+}
+
+impl Control {
+    pub fn cancel(&self) {
+        self.cancel.store(true, Ordering::SeqCst);
+    }
+    pub fn cancelled(&self) -> bool {
+        self.cancel.load(Ordering::Relaxed)
+    }
+    pub fn set_paused(&self, on: bool) {
+        let mut p = self.pause.lock().unwrap();
+        match (on, p.0) {
+            (true, None) => p.0 = Some(Instant::now()),
+            (false, Some(t)) => *p = (None, p.1 + t.elapsed()),
+            _ => {}
+        }
+        self.paused.store(on, Ordering::SeqCst);
+    }
+    pub fn paused(&self) -> bool {
+        self.paused.load(Ordering::Relaxed)
+    }
+    /// Total paused time so far, including a pause in progress.
+    pub fn paused_for(&self) -> Duration {
+        let p = self.pause.lock().unwrap();
+        p.1 + p.0.map_or(Duration::ZERO, |t| t.elapsed())
+    }
+    /// Time since `t0` excluding pauses.
+    fn active(&self, t0: Instant) -> Duration {
+        t0.elapsed().saturating_sub(self.paused_for())
+    }
+}
+
 fn make(algo: Algo, p: &Params) -> Box<dyn Optimizer + Send> {
     // Dynamic dispatch is per step (a batch of thousands of evaluations), never per evaluation.
     match algo {
@@ -246,12 +286,12 @@ fn make(algo: Algo, p: &Params) -> Box<dyn Optimizer + Send> {
 }
 
 /// Run `params.threads` independent workers until the budget ends. `on_progress` is called
-/// from the calling thread about every `interval`. `cancel` stops the run early.
-pub fn run(ctx: &Ctx, params: &Params, interval: Duration, cancel: &AtomicBool, mut on_progress: impl FnMut(&Progress)) -> Outcome {
+/// from the calling thread about every `interval`. `control` cancels or pauses the run.
+pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mut on_progress: impl FnMut(&Progress)) -> Outcome {
     let threads = params.threads.max(1);
     let params = &resolve_auto(ctx, params);
     let t0 = Instant::now();
-    let deadline = params.time_ms.map(|ms| t0 + Duration::from_millis(ms));
+    let budget = params.time_ms.map(Duration::from_millis);
     let per_worker_evals = params.evals.map(|e| (e / threads as u64).max(1));
     let total_evals = AtomicU64::new(0);
     let (tx, rx) = mpsc::channel::<(usize, f64, Vec<u8>)>();
@@ -270,11 +310,16 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, cancel: &AtomicBool, 
                 let mut evals = 0u64;
                 let mut last_best = f64::INFINITY;
                 loop {
-                    if stop.load(Ordering::Relaxed) || cancel.load(Ordering::Relaxed) {
+                    if stop.load(Ordering::Relaxed) || control.cancelled() {
                         break;
                     }
-                    if let Some(d) = deadline {
-                        if Instant::now() >= d {
+                    if control.paused() {
+                        std::thread::sleep(Duration::from_millis(20));
+                        continue;
+                    }
+                    if let Some(b) = budget {
+                        // Cheap wall-clock check first; only subtract pauses near the end.
+                        if t0.elapsed() >= b && control.active(t0) >= b {
                             break;
                         }
                     }
@@ -308,7 +353,7 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, cancel: &AtomicBool, 
                 if force || last_emit.elapsed() >= interval {
                     *last_emit = Instant::now();
                     on_progress(&Progress {
-                        elapsed_ms: t0.elapsed().as_millis() as u64,
+                        elapsed_ms: control.active(t0).as_millis() as u64,
                         evals: total_evals.load(Ordering::Relaxed),
                         best: *s,
                         best_chars: sym.iter().map(|&x| ctx.scorer.chars[x as usize]).collect(),
@@ -347,7 +392,7 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, cancel: &AtomicBool, 
         })
         .collect();
     top.sort_by(|a, b| a.score.total_cmp(&b.score));
-    let elapsed = t0.elapsed();
+    let elapsed = control.active(t0);
     let evals = total_evals.load(Ordering::Relaxed);
     Outcome { params: params.clone(), top, evals, elapsed_ms: elapsed.as_millis() as u64, evals_per_sec: evals as f64 / elapsed.as_secs_f64().max(1e-9) }
 }
