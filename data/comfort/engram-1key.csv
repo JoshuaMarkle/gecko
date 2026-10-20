@@ -1,0 +1,36 @@
+# Engram 1-key comfort tiers mapped onto ansi-30 (row, col).
+# source: Bradley-Terry tiers in https://github.com/binarybottle/keyboard_layout_scorers/blob/179e1c08b220ae1b02f6c425a7d1cbd1150c1db2/prep/prep_keypair_engram_scores.py (tier_values)
+# licence: MIT (c) Arno Klein
+# scale: 0..1; direction: higher = more comfortable. Measured on the left hand, mirrored to the right.
+# Center columns (col 4, 5) were not in the study: Engram gives them 0 ("outside" penalty); treat as unmeasured.
+row,col,score
+0,0,0.137
+0,1,0.472
+0,2,0.646
+0,3,0.568
+0,4,0
+0,5,0
+0,6,0.568
+0,7,0.646
+0,8,0.472
+0,9,0.137
+1,0,0.41
+1,1,0.646
+1,2,0.87
+1,3,1
+1,4,0
+1,5,0
+1,6,1
+1,7,0.87
+1,8,0.646
+1,9,0.41
+2,0,0.137
+2,1,0.137
+2,2,0.41
+2,3,0.568
+2,4,0
+2,5,0
+2,6,0.568
+2,7,0.41
+2,8,0.137
+2,9,0.137

@@ -336,7 +336,9 @@ async fn get_run(State(app): State<AppState>, Path(id): Path<String>) -> ApiResu
         Some(l) if !l.done.load(Ordering::SeqCst) => (true, l.control.paused()),
         _ => (false, false),
     };
-    Ok(Json(json!({"schema": SCHEMA, "config": config, "result": result, "progress": run::load_progress(&dir), "running": running, "paused": paused})))
+    Ok(Json(
+        json!({"schema": SCHEMA, "config": config, "result": result, "progress": run::load_progress(&dir), "running": running, "paused": paused}),
+    ))
 }
 
 async fn cancel_run(State(app): State<AppState>, Path(id): Path<String>) -> ApiResult {
@@ -358,7 +360,10 @@ async fn resume_run(State(app): State<AppState>, Path(id): Path<String>) -> ApiR
 fn set_paused(app: &App, id: &str, on: bool) -> ApiResult {
     check_id(id)?;
     let live = app.live.lock().unwrap();
-    let l = live.get(id).filter(|l| !l.done.load(Ordering::SeqCst)).ok_or_else(|| ApiError(StatusCode::NOT_FOUND, "run is not running".into()))?;
+    let l = live
+        .get(id)
+        .filter(|l| !l.done.load(Ordering::SeqCst))
+        .ok_or_else(|| ApiError(StatusCode::NOT_FOUND, "run is not running".into()))?;
     l.control.set_paused(on);
     Ok(Json(json!({"schema": SCHEMA, "id": id, "paused": on})))
 }

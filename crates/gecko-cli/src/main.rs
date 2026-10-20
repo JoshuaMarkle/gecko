@@ -52,6 +52,9 @@ enum Cmd {
     /// Rank several layouts side by side (all reference layouts when none are given).
     Compare {
         layouts: Vec<String>,
+        /// Robustness report: score and rank on each of these corpora (comma-separated).
+        #[arg(long, value_delimiter = ',')]
+        corpora: Vec<String>,
         #[command(flatten)]
         inputs: Inputs,
     },
@@ -120,6 +123,11 @@ enum Cmd {
         #[command(subcommand)]
         cmd: CorpusCmd,
     },
+    /// Profile calibration tools.
+    Profile {
+        #[command(subcommand)]
+        cmd: ProfileCmd,
+    },
     /// List layouts, geometries, profiles, corpora, runs or metrics.
     List { what: String },
     /// Serve the web UI and JSON API.
@@ -142,6 +150,106 @@ enum CorpusCmd {
         #[arg(long, default_value = gecko_core::corpus::DEFAULT_CHARSET)]
         charset: String,
     },
+    /// Import precomputed counts from a cmini-style directory: words.json (preferred), else
+    /// monograms/bigrams/trigrams.json. Writes data/corpora/<out>.gkc.
+    Import {
+        dir: PathBuf,
+        #[arg(long)]
+        out: String,
+        #[arg(long, default_value = gecko_core::corpus::DEFAULT_CHARSET)]
+        charset: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum ProfileCmd {
+    /// Measure each metric's spread over reference layouts and re-express the profile's weights
+    /// in spread units (same objective, comparable weights). Prints TOML unless --out.
+    Normalize {
+        /// Layouts to measure spread on (default: all reference layouts).
+        #[arg(long, value_delimiter = ',')]
+        layouts: Vec<String>,
+        /// Write data/profiles/<out>.toml.
+        #[arg(long)]
+        out: Option<String>,
+        #[command(flatten)]
+        inputs: Inputs,
+    },
+    /// Fit non-negative spread-unit weights so the other metrics predict a judge metric (e.g. E05)
+    /// over layouts sampled around the references. Prints TOML unless --out.
+    Fit {
+        #[arg(long, default_value = "E05")]
+        target: String,
+        #[arg(long, value_delimiter = ',')]
+        layouts: Vec<String>,
+        #[arg(long)]
+        out: Option<String>,
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
+        #[command(flatten)]
+        inputs: Inputs,
+    },
+}
+
+/// Print a profile as TOML, or write it to data/profiles/<out>.toml.
+fn emit_profile(ctx: &Ctx, p: &gecko_core::Profile, out: Option<&str>) -> Result<()> {
+    // Profile numbers are f32; print each at its shortest f32 decimal, not the widened f64.
+    fn tidy(v: &mut toml::Value) {
+        match v {
+            toml::Value::Float(f) => *f = format!("{}", *f as f32).parse().unwrap_or(*f),
+            toml::Value::Array(a) => a.iter_mut().for_each(tidy),
+            toml::Value::Table(t) => t.iter_mut().for_each(|(_, v)| tidy(v)),
+            _ => {}
+        }
+    }
+    let mut v = toml::Value::try_from(p)?;
+    tidy(&mut v);
+    let text = toml::to_string(&v)?;
+    match out {
+        Some(name) => {
+            let path = ctx.store.data.join("profiles").join(format!("{name}.toml"));
+            std::fs::write(&path, &text).with_context(|| format!("writing {}", path.display()))?;
+            if !ctx.json {
+                println!("wrote {}", path.display());
+            }
+        }
+        None if !ctx.json => print!("{text}"),
+        None => {}
+    }
+    Ok(())
+}
+
+fn reference_layouts(ctx: &Ctx, l: &Loaded, names: Vec<String>) -> Result<(Vec<Layout>, String)> {
+    let names = if names.is_empty() { ctx.store.list("layouts") } else { names };
+    let layouts = names.iter().map(|n| ctx.layout(n, l)).collect::<Result<Vec<_>>>()?;
+    let basis = format!("stdev over {} layouts ({}) on {} / {}", layouts.len(), names.join(", "), l.corpus.name, l.geometry.name);
+    Ok((layouts, basis))
+}
+
+/// A JSON object of `"gram": count` pairs.
+fn read_counts(path: &std::path::Path) -> Result<Vec<(String, u64)>> {
+    let text = std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
+    let map: serde_json::Map<String, serde_json::Value> =
+        serde_json::from_str(&text).with_context(|| format!("{}: expected an object of counts", path.display()))?;
+    map.into_iter()
+        .map(|(k, v)| {
+            let n = v.as_u64().or_else(|| v.as_f64().map(|f| f.round() as u64));
+            n.map(|n| (k.clone(), n)).with_context(|| format!("{}: count for '{k}' is not a number", path.display()))
+        })
+        .collect()
+}
+
+fn write_corpus(ctx: &Ctx, c: &Corpus, files: usize) -> Result<()> {
+    let path = ctx.store.corpus_path(&c.name);
+    std::fs::create_dir_all(path.parent().unwrap())?;
+    std::fs::write(&path, c.to_bytes())?;
+    let v = json!({"schema": SCHEMA, "corpus": c.name, "path": path, "files": files, "chars": c.total_chars(), "hash": gecko_core::hash::hex(c.hash())});
+    if ctx.json {
+        ctx.print(v);
+    } else {
+        println!("wrote {} ({} files, {} chars)", path.display(), files, c.total_chars());
+    }
+    Ok(())
 }
 
 fn parse_duration(s: &str) -> Result<u64> {
@@ -233,6 +341,68 @@ fn layout_rows(layout: &Layout, g: &gecko_core::Geometry) -> String {
     layout.rows(g).iter().map(|r| r.chars().map(|c| c.to_string()).collect::<Vec<_>>().join(" ")).collect::<Vec<_>>().join("\n  ")
 }
 
+/// `compare --corpora`: each layout's score and rank per corpus, and how far its rank moves (L05).
+fn robustness(ctx: &Ctx, layouts: Vec<String>, corpora: &[String], inputs: &Inputs) -> Result<()> {
+    let base = ctx.load(inputs)?;
+    let names = if layouts.is_empty() { ctx.store.list("layouts") } else { layouts };
+    let layouts: Vec<Layout> = names.iter().map(|n| ctx.layout(n, &base)).collect::<Result<_>>()?;
+    let nl = layouts.len();
+    // score[c][i], sfb[c][i], rank[c][i] (1 = best)
+    let mut score = vec![vec![0.0; nl]; corpora.len()];
+    let mut sfb = score.clone();
+    let mut rank = vec![vec![0usize; nl]; corpora.len()];
+    for (ci, cn) in corpora.iter().enumerate() {
+        let l = Loaded { geometry: base.geometry.clone(), profile: base.profile.clone(), corpus: ctx.store.corpus(cn)? };
+        for (i, lay) in layouts.iter().enumerate() {
+            let (sc, st) = score_layout(&l, lay)?;
+            let b = breakdown(&sc, &st);
+            score[ci][i] = b.score;
+            sfb[ci][i] = b.metrics.iter().find(|m| m.id == "B01").map_or(0.0, |m| m.value);
+        }
+        let mut order: Vec<usize> = (0..nl).collect();
+        order.sort_by(|&a, &b| score[ci][a].total_cmp(&score[ci][b]));
+        for (r, &i) in order.iter().enumerate() {
+            rank[ci][i] = r + 1;
+        }
+    }
+    let nc = corpora.len() as f64;
+    let mean_rank = |i: usize| rank.iter().map(|r| r[i] as f64).sum::<f64>() / nc;
+    let rank_spread = |i: usize| rank.iter().map(|r| r[i]).max().unwrap() - rank.iter().map(|r| r[i]).min().unwrap();
+    let mut order: Vec<usize> = (0..nl).collect();
+    order.sort_by(|&a, &b| mean_rank(a).total_cmp(&mean_rank(b)).then(score[0][a].total_cmp(&score[0][b])));
+    if ctx.json {
+        let v: Vec<_> = order
+            .iter()
+            .map(|&i| {
+                let per: serde_json::Map<String, serde_json::Value> = corpora
+                    .iter()
+                    .enumerate()
+                    .map(|(c, n)| (n.clone(), json!({"score": score[c][i], "rank": rank[c][i], "sfb": sfb[c][i]})))
+                    .collect();
+                json!({"layout": layouts[i].name, "corpora": per, "mean_rank": mean_rank(i), "rank_spread": rank_spread(i)})
+            })
+            .collect();
+        ctx.print(
+            json!({"schema": SCHEMA, "geometry": base.geometry.name, "profile": base.profile.name, "corpora": corpora, "layouts": v}),
+        );
+        return Ok(());
+    }
+    println!("score (rank) [SFB %] per corpus, sorted by mean rank; spread = worst rank - best rank");
+    print!("{:<14}", "layout");
+    for c in corpora {
+        print!(" {:>22}", c);
+    }
+    println!(" {:>9} {:>6}", "mean rank", "spread");
+    for &i in &order {
+        print!("{:<14}", layouts[i].name);
+        for c in 0..corpora.len() {
+            print!(" {:>22}", format!("{:.3} ({:>2}) [{:.2}]", score[c][i], rank[c][i], sfb[c][i]));
+        }
+        println!(" {:>9.1} {:>6}", mean_rank(i), rank_spread(i));
+    }
+    Ok(())
+}
+
 fn main() {
     let cli = Cli::parse();
     if let Err(e) = real_main(cli) {
@@ -269,7 +439,8 @@ fn real_main(cli: Cli) -> Result<()> {
                 print_breakdown(&b);
             }
         }
-        Cmd::Compare { layouts, inputs } => {
+        Cmd::Compare { layouts, corpora, inputs } if !corpora.is_empty() => robustness(&ctx, layouts, &corpora, &inputs)?,
+        Cmd::Compare { layouts, inputs, .. } => {
             let l = ctx.load(&inputs)?;
             let names = if layouts.is_empty() { ctx.store.list("layouts") } else { layouts };
             let mut rows = Vec::new();
@@ -480,15 +651,64 @@ fn real_main(cli: Cli) -> Result<()> {
                 let bytes = std::fs::read(f).with_context(|| format!("reading {}", f.display()))?;
                 c.add_text(&String::from_utf8_lossy(&bytes));
             }
-            let path = ctx.store.corpus_path(&out);
-            std::fs::create_dir_all(path.parent().unwrap())?;
-            std::fs::write(&path, c.to_bytes())?;
-            let v = json!({"schema": SCHEMA, "corpus": out, "path": path, "files": files.len(), "chars": c.total_chars(), "hash": gecko_core::hash::hex(c.hash())});
-            if ctx.json {
-                ctx.print(v);
+            write_corpus(&ctx, &c, files.len())?;
+        }
+        Cmd::Corpus { cmd: CorpusCmd::Import { dir, out, charset } } => {
+            let mut c = Corpus::new(&out, &charset);
+            let words = dir.join("words.json");
+            let files = if words.is_file() {
+                let mut e = c.word_edges();
+                for (w, n) in read_counts(&words)? {
+                    c.add_word(&w, n, &mut e);
+                }
+                c.add_word_boundaries(&e);
+                1
             } else {
-                println!("wrote {} ({} files, {} chars)", path.display(), files.len(), c.total_chars());
+                let names = ["monograms.json", "bigrams.json", "trigrams.json"];
+                for f in names {
+                    for (g, n) in read_counts(&dir.join(f))? {
+                        c.add_ngram(&g, n);
+                    }
+                }
+                names.len()
+            };
+            write_corpus(&ctx, &c, files)?;
+        }
+        Cmd::Profile { cmd: ProfileCmd::Normalize { layouts, out, inputs } } => {
+            let l = ctx.load(&inputs)?;
+            let (refs, basis) = reference_layouts(&ctx, &l, layouts)?;
+            let scales = gecko_core::calibrate::spread_scales(&l.geometry, &l.corpus, &l.profile, &refs)?;
+            let mut p = l.profile.clone();
+            for (id, w) in p.weights.iter_mut() {
+                let eff = l.profile.effective_weight(id);
+                *w = match scales.get(id) {
+                    Some(s) => round4(eff * s),
+                    None => eff,
+                };
             }
+            p.scale = scales.into_iter().filter(|(id, _)| p.weights.contains_key(id)).map(|(k, v)| (k, round4(v))).collect();
+            p.scale_basis = basis;
+            if ctx.json {
+                ctx.print(json!({"schema": SCHEMA, "profile": p}));
+            }
+            emit_profile(&ctx, &p, out.as_deref())?;
+        }
+        Cmd::Profile { cmd: ProfileCmd::Fit { target, layouts, out, seed, inputs } } => {
+            let l = ctx.load(&inputs)?;
+            let (refs, basis) = reference_layouts(&ctx, &l, layouts)?;
+            let fit = gecko_core::calibrate::fit_to(&l.geometry, &l.corpus, &l.profile, &refs, &target, seed)?;
+            let mut p = l.profile.clone();
+            p.name = out.clone().unwrap_or_else(|| format!("fit-{}", target.to_lowercase()));
+            p.description = format!("Weights fitted to predict {target} (R² = {:.3}, {} samples, seed {seed}).", fit.r2, fit.samples);
+            p.weights = fit.weights.iter().map(|(k, v)| (k.clone(), round4(*v))).collect();
+            p.scale = fit.scales.iter().filter(|(k, _)| p.weights.contains_key(*k)).map(|(k, v)| (k.clone(), round4(*v))).collect();
+            p.scale_basis = basis;
+            if ctx.json {
+                ctx.print(json!({"schema": SCHEMA, "fit": fit, "profile": p}));
+            } else {
+                eprintln!("{target}: R² = {:.3} over {} sampled layouts", fit.r2, fit.samples);
+            }
+            emit_profile(&ctx, &p, out.as_deref())?;
         }
         Cmd::List { what } => {
             let items: serde_json::Value = match what.as_str() {
@@ -526,4 +746,13 @@ fn real_main(cli: Cli) -> Result<()> {
         }
     }
     Ok(())
+}
+
+/// Round to 4 significant digits so generated profiles stay readable.
+fn round4(v: f32) -> f32 {
+    if v == 0.0 || !v.is_finite() {
+        return v;
+    }
+    let m = 10f32.powi(3 - v.abs().log10().floor() as i32);
+    (v * m).round() / m
 }

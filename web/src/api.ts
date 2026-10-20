@@ -15,7 +15,11 @@ export interface Key {
   effort: number;
 }
 
-export interface Geometry { id: string; name: string; description: string; key: Key[] }
+export interface Geometry {
+  id: string; name: string; description: string; key: Key[];
+  /** Comfort metric id → table name, and the loaded N×N tables (passed through to WASM). */
+  comfort?: Record<string, string>; comfort_tables?: Record<string, number[]>;
+}
 
 export interface Profile {
   id?: string;
@@ -24,6 +28,10 @@ export interface Profile {
   weights: Record<string, number>;
   finger_target: number[];
   trigram_coverage: number;
+  /** Metric id → reference spread; the scorer uses weight / scale (weights in spread units). */
+  scale?: Record<string, number>;
+  scale_basis?: string;
+  sfb?: { distance: "linear" | "squared" | "fitts"; lateral: number; finger_factor: number[]; skip_decay: number };
 }
 
 export type Dir = "min" | "max" | "info";

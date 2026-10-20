@@ -15,8 +15,13 @@ fn read(p: &str) -> String {
     std::fs::read_to_string(format!("{ROOT}/{p}")).unwrap()
 }
 
+/// ansi-30 with its comfort tables, as the store loads them (so E04/E05 are exercised).
 fn ansi() -> Geometry {
-    Geometry::from_toml(&read("data/geometries/ansi-30.toml")).unwrap()
+    let mut g = Geometry::from_toml(&read("data/geometries/ansi-30.toml")).unwrap();
+    for (metric, table) in g.comfort.clone() {
+        g.load_comfort(&metric, &read(&format!("data/comfort/{table}.csv"))).unwrap();
+    }
+    g
 }
 
 fn layout(name: &str) -> Layout {
@@ -187,8 +192,13 @@ fn ranking_sanity_on_english() {
         sc.identity().score
     };
     let modern = ["graphite", "sturdy", "semimak"].map(score).into_iter().fold(f64::NEG_INFINITY, f64::max);
-    let (colemak, dvorak, qwerty) = (score("colemak"), score("dvorak"), score("qwerty"));
-    assert!(modern < colemak && colemak < dvorak && dvorak < qwerty, "modern {modern} colemak {colemak} dvorak {dvorak} qwerty {qwerty}");
+    // Colemak vs Dvorak is no longer pinned: B14 rates Colemak's D/H stretches about level with
+    // Dvorak, and measured comfort (E05) favours Dvorak's alternation; see context/decisions.md.
+    let (colemak, dvorak, qwerty) = (score("colemak-dh"), score("dvorak"), score("qwerty"));
+    assert!(
+        modern < colemak.min(dvorak) && colemak.max(dvorak) < qwerty,
+        "modern {modern} colemak-dh {colemak} dvorak {dvorak} qwerty {qwerty}"
+    );
 
     // Published QWERTY SFB is ≈ 6.6% on English prose.
     let sc = Scorer::new(&g, &c, &p, &layout("qwerty")).unwrap();
@@ -216,4 +226,34 @@ fn pause_stops_the_clock() {
     });
     assert!(t.elapsed() >= Duration::from_millis(480), "paused time used the budget");
     assert!(out.elapsed_ms < 400, "elapsed_ms {} includes the pause", out.elapsed_ms);
+}
+
+/// ansi-30 slot for (row, col).
+fn at(r: usize, c: usize) -> usize {
+    r * 10 + c
+}
+
+#[test]
+fn stretch_on_known_pairs() {
+    use gecko_core::metrics::stretch;
+    let g = ansi();
+    assert_eq!(stretch(&g, at(1, 1), at(1, 2)), 0.0, "home-row neighbours");
+    assert_eq!(stretch(&g, at(1, 2), at(1, 3)), 0.0, "middle + index on home");
+    assert_eq!(stretch(&g, at(1, 3), at(1, 6)), 0.0, "different hands");
+    assert!(stretch(&g, at(1, 2), at(1, 4)) > 0.0, "LSB: middle + index center column");
+    assert!(stretch(&g, at(0, 1), at(2, 0)) > 0.0, "ring top + pinky bottom scissor");
+    // Finger-length rule: the shorter finger reaching up is worse.
+    assert!(stretch(&g, at(0, 3), at(2, 2)) > stretch(&g, at(0, 2), at(2, 3)));
+    // Row stagger shifts the bottom row right, so the left ring/pinky scissor is the worse one.
+    assert!(stretch(&g, at(0, 1), at(2, 0)) > stretch(&g, at(0, 8), at(2, 9)));
+}
+
+#[test]
+fn engram_comfort_table() {
+    let g = ansi();
+    let t = &g.comfort_tables["E04"];
+    let c = |a: usize, b: usize| t[a * 30 + b];
+    assert_eq!(c(at(1, 2), at(1, 3)), 1.0, "home-row inward roll");
+    assert!(c(at(0, 3), at(1, 3)) < 0.5, "same-finger reach");
+    assert_eq!(c(at(1, 1), at(1, 1)), 1.0, "repeats are left to B02");
 }

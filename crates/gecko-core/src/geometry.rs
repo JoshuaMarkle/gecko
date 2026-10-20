@@ -1,6 +1,8 @@
 //! Physical boards: keys with 3D position/rotation, finger assignment and base effort.
 //! Format: `context/representation.md`.
 
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{hash, Error, Result};
@@ -74,14 +76,15 @@ impl Finger {
         }
     }
 
-    /// Relative strength used to scale same-finger travel (index strongest).
-    pub fn strength(self) -> f32 {
+    /// Length offset in key units added to a key's y for this finger (longer fingers reach
+    /// up more easily). Oxeylyzer 2 values; used by the B14 stretch metric.
+    pub fn length_offset(self) -> f32 {
         match self.ord() {
-            0 => 0.5,
-            1 => 0.65,
-            2 => 0.9,
-            3 => 1.0,
-            _ => 1.0,
+            0 => -0.15,
+            1 => 0.35,
+            2 => 0.25,
+            3 => -0.30,
+            _ => -1.80,
         }
     }
 }
@@ -122,6 +125,13 @@ pub struct Geometry {
     #[serde(default)]
     pub description: String,
     pub key: Vec<Key>,
+    /// Comfort metric id (E04, E05) → key-pair comfort table in `data/comfort/<name>.csv`.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub comfort: BTreeMap<String, String>,
+    /// The loaded tables by metric id, `[N×N]` in 0..1 (higher = more comfortable), filled by
+    /// the store from `comfort`. Serialized so the browser scorer gets them with the geometry.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub comfort_tables: BTreeMap<String, Vec<f32>>,
 }
 
 impl Geometry {
@@ -138,6 +148,34 @@ impl Geometry {
         if self.key.len() > 64 {
             return Err(Error::invalid("geometry", "more than 64 keys is not supported yet"));
         }
+        if self.comfort_tables.values().any(|t| t.len() != self.len() * self.len()) {
+            return Err(Error::invalid("geometry", "comfort tables must have N×N entries"));
+        }
+        Ok(())
+    }
+
+    /// Load a pair comfort CSV (`a_row,a_col,b_row,b_col,score,…`, `#` comments, one header
+    /// line) as the table for `metric`, matching keys by (row, col). Pairs not listed score 1.0
+    /// (no discomfort); same-key repeats are set to 1.0 because B02 reports them.
+    pub fn load_comfort(&mut self, metric: &str, csv: &str) -> Result<()> {
+        let n = self.len();
+        let slot = |r: i8, c: i8| self.key.iter().position(|k| k.row == r && k.col == c);
+        let mut t = vec![1.0f32; n * n];
+        let bad = |line: &str| Error::invalid("comfort", format!("bad line '{line}'"));
+        for line in csv.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')).skip(1) {
+            let f: Vec<&str> = line.split(',').collect();
+            if f.len() < 5 {
+                return Err(bad(line));
+            }
+            let num = |i: usize| f[i].trim().parse::<f32>().map_err(|_| bad(line));
+            let (ar, ac, br, bc, score) = (num(0)? as i8, num(1)? as i8, num(2)? as i8, num(3)? as i8, num(4)?);
+            if let (Some(a), Some(b)) = (slot(ar, ac), slot(br, bc)) {
+                if a != b {
+                    t[a * n + b] = score;
+                }
+            }
+        }
+        self.comfort_tables.insert(metric.to_string(), t);
         Ok(())
     }
 

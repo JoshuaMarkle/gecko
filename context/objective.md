@@ -1,9 +1,12 @@
 # Objective
 
 Full metric list with IDs: `research/metrics-catalog.md`. Implemented now (`gecko list metrics`):
-B01 SFB, S01 SFS, B03 finger travel, B04 LSB, B05 scissors, M01 effort, M02 finger-load error,
+B01 SFB, S01 SFS, S02 far SFS (gaps 2–3, decayed), S03 SFS distance, B03 finger speed,
+B04 LSB, B05 scissors, B14 geometric stretch (Oxeylyzer 2), M01 effort, M02 finger-load error,
 M04 hand balance, M05 home row, M06 center columns, B08 alternation, T01–T08 trigram classes,
-B02 repeats (info).
+E04/E05 Engram key-pair discomfort (formula / measured; geometry `[comfort]` tables),
+B02 repeats (info). Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
+lateral multiplier and per-finger factors, and S02's `skip_decay`.
 
 ## Metric contract
 
@@ -39,7 +42,8 @@ and reports. A property test enforces `full(after) − full(before) == delta`.
 
 Trigrams are stored sparsely per symbol (CSR of non-zero trigrams containing it), so a swap
 touches only trigrams with `a` or `b`. Current speed (`gecko perf`, i9-13900H, 1 thread):
-≈ 400k swap deltas/s with the default profile (trigrams on), ≈ 3M/s without trigrams.
+≈ 570k swap deltas/s with the default profile (trigrams and far skipgrams on). The far-skipgram
+channel is compiled out of the delta when no metric uses it (~10% faster).
 
 Next speed tricks, in order of expected payoff: cache per-trigram current cost in the state;
 pre-multiplying frequencies into cost tables where the layout term allows it; SIMD.
@@ -48,21 +52,25 @@ pre-multiplying frequencies into cost tables where the layout term allows it; SI
 
 - Frequencies are normalized over the symbols on the layout: values read as "% of the
   keystrokes / bigrams / skipgrams / trigrams typed on this layout".
-- Raw metric values are in natural units (%, average effort). For now weights apply to
-  these values directly (tuned by hand so the ranking test passes). Normalizing by spread
-  across reference layouts is still planned.
+- Raw metric values are in natural units (%, average effort). A profile's optional `[scale]`
+  divides each weight (`weight / scale`); `gecko profile normalize` sets scale = the metric's
+  stdev over the reference layouts and rewrites weights so the objective is unchanged. The
+  default profile is in these spread units: weight 1 = "one reference spread".
+- `gecko profile fit --target E05` fits non-negative spread-unit weights so the other metrics
+  predict a judge metric over layouts sampled around the references (reports R²).
 - `trigram_coverage` (default 0.99) keeps the most frequent trigrams covering that share
   and renormalizes; scoring, deltas and reports all use the same truncated table, so they
   stay consistent. About 2× faster search than exact (1.0).
-- Profiles are TOML in `data/profiles/` (`default`, `carpalx`, `low-sfb`, …):
+- Profiles are TOML in `data/profiles/` (`default`, `sfb`, `engram` = independent judge, E05 only):
   weights, soft targets, constraints. Profiles are versioned; runs record the hash.
 
 ## Calibration
 
-The default profile must rank known layouts sensibly (modern layouts > Colemak >
-Dvorak > QWERTY) and reproduce published SFB percentages within tolerance. A
+The default profile must rank known layouts sensibly (modern layouts > Colemak-DH and
+Dvorak > QWERTY; Colemak-DH vs Dvorak is left open, see decisions.md) and reproduce published SFB percentages within tolerance. A
 regression test pins these rankings (`ranking_sanity_on_english`). On the bundled corpus
-QWERTY SFB = 6.63% (published ≈ 6.6%).
+QWERTY SFB = 6.63% (published ≈ 6.6%). Cross-checks: `gecko compare -p engram` (measured
+comfort) and `gecko compare --corpora english,shai,mt-10k,mt-450k` (robustness, L05).
 
 ## Multi-objective
 

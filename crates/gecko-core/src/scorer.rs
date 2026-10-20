@@ -1,7 +1,9 @@
 //! Folded scorer: full evaluation and O(S)/O(S²) swap deltas. See `context/objective.md`.
 //!
 //! score = Σ f1[x]·C1[p(x)] + Σ f2[x,y]·C2[p(x),p(y)] + Σ fk[x,z]·Ck[p(x),p(z)]
-//!       + Σ f3[x,y,z]·C3[p(x),p(y),p(z)] + load terms (M02, M04)
+//!       + Σ fkf[x,z]·Ckf[p(x),p(z)] + Σ f3[x,y,z]·C3[p(x),p(y),p(z)] + load terms (M02, M04)
+//!
+//! `fk` is gap-1 skipgrams; `fkf` mixes gap-2 and gap-3 skipgrams with `sfb.skip_decay`.
 //!
 //! Frequencies are normalized over the symbols present on the layout, so values read as
 //! "% of keystrokes / bigrams / skipgrams / trigrams typed on this layout".
@@ -23,13 +25,17 @@ pub struct Scorer {
     f1: Vec<f32>,
     f2: Vec<f32>,
     fk: Vec<f32>,
+    fkf: Vec<f32>,
     f3: Vec<f32>,
     c1: Vec<f32>,
     c2: Vec<f32>,
     ck: Vec<f32>,
+    ckf: Vec<f32>,
     c3: Vec<f32>,
-    has_bi: bool,
-    has_skip: bool,
+    /// Any bigram, skipgram or far-skipgram cost is non-zero.
+    has_pair: bool,
+    /// The far-skipgram channel is in use (skipped otherwise; it costs ~12% of delta speed).
+    has_far: bool,
     has_tri: bool,
     /// Non-zero trigrams grouped by symbol (CSR): every trigram containing symbol `s` is
     /// stored in `tri_entries[tri_start[s]..tri_start[s + 1]]`. Exact, just sparse.
@@ -91,6 +97,7 @@ impl Scorer {
         let mut f1 = vec![0f32; n];
         let mut f2 = vec![0f32; n * n];
         let mut fk = vec![0f32; n * n];
+        let (mut fk2, mut fk3) = (vec![0f32; n * n], vec![0f32; n * n]);
         let mut f3 = vec![0f32; n * n * n];
         for x in 0..n {
             let Some(cx) = cidx[x] else { continue };
@@ -99,27 +106,34 @@ impl Scorer {
                 let Some(cy) = cidx[y] else { continue };
                 f2[x * n + y] = corpus.bi[cx * cs + cy] as f32;
                 fk[x * n + y] = corpus.skip[cx * cs + cy] as f32;
+                fk2[x * n + y] = corpus.skip2[cx * cs + cy] as f32;
+                fk3[x * n + y] = corpus.skip3[cx * cs + cy] as f32;
                 for z in 0..n {
                     let Some(cz) = cidx[z] else { continue };
                     f3[(x * n + y) * n + z] = corpus.tri[(cx * cs + cy) * cs + cz] as f32;
                 }
             }
         }
-        for v in [&mut f1, &mut f2, &mut fk, &mut f3] {
+        for v in [&mut f1, &mut f2, &mut fk, &mut fk2, &mut fk3, &mut f3] {
             norm(v);
         }
+        // Far skipgrams: gap 2 × decay + gap 3 × decay², each normalized like gap 1, so S02 reads
+        // as "% of skipgram volume, decayed" relative to S01.
+        let decay = profile.sfb.skip_decay;
+        let fkf: Vec<f32> = fk2.iter().zip(&fk3).map(|(a, b)| decay * a + decay * decay * b).collect();
         truncate_coverage(&mut f3, profile.trigram_coverage as f64);
         norm(&mut f3);
 
-        let tables: Vec<Option<Vec<f32>>> = METRICS.iter().map(|d| metrics::table(geometry, d)).collect();
+        let tables: Vec<Option<Vec<f32>>> = METRICS.iter().map(|d| metrics::table(geometry, profile, d)).collect();
         let mut c1 = vec![0f32; n];
         let mut c2 = vec![0f32; n * n];
         let mut ck = vec![0f32; n * n];
+        let mut ckf = vec![0f32; n * n];
         let mut c3 = vec![0f32; n * n * n];
-        let (mut has_bi, mut has_skip, mut has_tri) = (false, false, false);
+        let (mut has_pair, mut has_far, mut has_tri) = (false, false, false);
         let (mut w_load, mut w_hand) = (0.0, 0.0);
         for (d, t) in METRICS.iter().zip(&tables) {
-            let w = profile.weight(d.id);
+            let w = profile.effective_weight(d.id);
             let signed = match d.dir {
                 Dir::Min => w,
                 Dir::Max => -w,
@@ -138,12 +152,17 @@ impl Scorer {
                     let dst = match order {
                         Order::Mono => &mut c1,
                         Order::Bi => {
-                            has_bi = true;
+                            has_pair = true;
                             &mut c2
                         }
                         Order::Skip => {
-                            has_skip = true;
+                            has_pair = true;
                             &mut ck
+                        }
+                        Order::SkipFar => {
+                            has_pair = true;
+                            has_far = true;
+                            &mut ckf
                         }
                         Order::Tri => {
                             has_tri = true;
@@ -188,13 +207,15 @@ impl Scorer {
             f1,
             f2,
             fk,
+            fkf,
             f3,
             c1,
             c2,
             ck,
+            ckf,
             c3,
-            has_bi,
-            has_skip,
+            has_pair,
+            has_far,
             has_tri,
             tri_start,
             tri_entries,
@@ -264,12 +285,14 @@ impl Scorer {
         for x in 0..n {
             sum += self.f1[x] as f64 * self.c1[pos[x] as usize] as f64;
         }
-        if self.has_bi || self.has_skip {
+        if self.has_pair {
             for x in 0..n {
                 let px = pos[x] as usize * n;
                 for y in 0..n {
-                    let py = pos[y] as usize;
-                    sum += self.f2[x * n + y] as f64 * self.c2[px + py] as f64 + self.fk[x * n + y] as f64 * self.ck[px + py] as f64;
+                    let (xy, p) = (x * n + y, px + pos[y] as usize);
+                    sum += self.f2[xy] as f64 * self.c2[p] as f64
+                        + self.fk[xy] as f64 * self.ck[p] as f64
+                        + self.fkf[xy] as f64 * self.ckf[p] as f64;
                 }
             }
         }
@@ -302,29 +325,8 @@ impl Scorer {
         let (c1, f1) = (&self.c1, &self.f1);
         let mut d = (f1[a] * (c1[pb] - c1[pa]) + f1[b] * (c1[pa] - c1[pb])) as f64;
 
-        if self.has_bi || self.has_skip {
-            let (c2, ck, f2, fk) = (&self.c2, &self.ck, &self.f2, &self.fk);
-            let mut acc = 0.0f64;
-            for &x in &[a, b] {
-                let (ox, nx) = (old[x] as usize * n, new[x] as usize * n);
-                let row = x * n;
-                for y in 0..n {
-                    let (oy, ny) = (old[y] as usize, new[y] as usize);
-                    acc += (f2[row + y] * (c2[nx + ny] - c2[ox + oy]) + fk[row + y] * (ck[nx + ny] - ck[ox + oy])) as f64;
-                }
-            }
-            for x in 0..n {
-                if x == a || x == b {
-                    continue;
-                }
-                let px = old[x] as usize * n;
-                let row = x * n;
-                for &y in &[a, b] {
-                    let (oy, ny) = (old[y] as usize, new[y] as usize);
-                    acc += (f2[row + y] * (c2[px + ny] - c2[px + oy]) + fk[row + y] * (ck[px + ny] - ck[px + oy])) as f64;
-                }
-            }
-            d += acc;
+        if self.has_pair {
+            d += if self.has_far { self.pair_delta::<true>(old, new, a, b) } else { self.pair_delta::<false>(old, new, a, b) };
         }
 
         if self.has_tri {
@@ -359,6 +361,41 @@ impl Scorer {
         d
     }
 
+    /// Bigram + skipgram (+ far skipgram if `FAR`) part of a swap delta; `old`/`new` are `pos` before/after.
+    #[inline]
+    fn pair_delta<const FAR: bool>(&self, old: &[u8], new: &[u8], a: usize, b: usize) -> f64 {
+        let n = self.n;
+        let (c2, ck, ckf, f2, fk, fkf) = (&self.c2, &self.ck, &self.ckf, &self.f2, &self.fk, &self.fkf);
+        // Change in the pair channels for frequency index `xy` moving from slot pair `o` to `nw`.
+        let term = |xy: usize, o: usize, nw: usize| {
+            let t = f2[xy] * (c2[nw] - c2[o]) + fk[xy] * (ck[nw] - ck[o]);
+            if FAR {
+                t + fkf[xy] * (ckf[nw] - ckf[o])
+            } else {
+                t
+            }
+        };
+        let mut acc = 0.0f64;
+        for &x in &[a, b] {
+            let (ox, nx) = (old[x] as usize * n, new[x] as usize * n);
+            let row = x * n;
+            for y in 0..n {
+                acc += term(row + y, ox + old[y] as usize, nx + new[y] as usize) as f64;
+            }
+        }
+        for x in 0..n {
+            if x == a || x == b {
+                continue;
+            }
+            let px = old[x] as usize * n;
+            let row = x * n;
+            for &y in &[a, b] {
+                acc += term(row + y, px + old[y] as usize, px + new[y] as usize) as f64;
+            }
+        }
+        acc
+    }
+
     /// Apply the swap of symbols `a` and `b`, given its precomputed delta.
     #[inline]
     pub fn apply(&self, st: &mut State, a: usize, b: usize, delta: f64) {
@@ -387,6 +424,9 @@ impl Scorer {
     }
     pub fn fk(&self) -> &[f32] {
         &self.fk
+    }
+    pub fn fkf(&self) -> &[f32] {
+        &self.fkf
     }
     pub fn f3(&self) -> &[f32] {
         &self.f3

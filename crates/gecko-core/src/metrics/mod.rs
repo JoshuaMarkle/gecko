@@ -2,19 +2,24 @@
 //! `research/metrics-catalog.md`. Each linear metric is a table indexed by slot (mono),
 //! slot pair (bi, skip) or slot triple (tri), in natural units (%, or a per-keystroke
 //! average). The scorer folds them with profile weights; see `context/objective.md`.
+//! Some tables depend on profile parameters (`Profile::sfb`), so they are built per profile.
 
 pub mod trigram;
 
 use serde::Serialize;
 
-use crate::Geometry;
+use crate::profile::{DistanceFn, SfbParams};
+use crate::{Geometry, Profile};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Order {
     Mono,
     Bi,
+    /// Skipgram with one key between.
     Skip,
+    /// Skipgrams with two and three keys between, mixed with decaying weights (`sfb.skip_decay`).
+    SkipFar,
     Tri,
     /// Non-linear: computed from per-finger load accumulators.
     Load,
@@ -49,9 +54,33 @@ const fn m(id: &'static str, name: &'static str, unit: &'static str, order: Orde
 pub static METRICS: &[MetricDef] = &[
     m("B01", "SFB", "%", Order::Bi, Dir::Min, "Same-finger bigrams: consecutive keys on one finger (different keys)."),
     m("S01", "SFS", "%", Order::Skip, Dir::Min, "Same-finger skipgrams: keys 1 and 3 of a trigram on one finger."),
-    m("B03", "Finger travel", "u", Order::Bi, Dir::Min, "Same-finger distance per bigram, scaled by finger strength (×100)."),
+    m(
+        "B03",
+        "Finger speed",
+        "u",
+        Order::Bi,
+        Dir::Min,
+        "Same-finger distance per 100 bigrams: g(distance) × finger factor (profile `sfb`).",
+    ),
+    m(
+        "S02",
+        "Far SFS",
+        "%",
+        Order::SkipFar,
+        Dir::Min,
+        "Same finger with 2–3 keys between, decayed per extra key (profile `sfb.skip_decay`).",
+    ),
+    m("S03", "SFS distance", "u", Order::Skip, Dir::Min, "Finger speed (B03) applied to skipgrams with one key between."),
     m("B04", "LSB", "%", Order::Bi, Dir::Min, "Lateral stretch: index on a center-column key next to the middle finger."),
     m("B05", "Scissors", "%", Order::Bi, Dir::Min, "Adjacent fingers, same hand, two-row jump."),
+    m(
+        "B14",
+        "Stretch",
+        "u",
+        Order::Bi,
+        Dir::Min,
+        "Geometric stretch between same-hand fingers per 100 bigrams (Oxeylyzer 2); covers LSB, scissors, crossings.",
+    ),
     m("M01", "Effort", "", Order::Mono, Dir::Min, "Average base key effort per keystroke."),
     m("M02", "Finger load error", "%", Order::Load, Dir::Min, "RMS gap between finger loads and the profile's target loads."),
     m("M04", "Left hand", "%", Order::Load, Dir::Min, "Share of keystrokes on the left hand; scored as squared distance from 50%."),
@@ -66,6 +95,22 @@ pub static METRICS: &[MetricDef] = &[
     m("T06", "Redirects", "%", Order::Tri, Dir::Min, "Three same-hand keys that change direction."),
     m("T07", "Bad redirects", "%", Order::Tri, Dir::Min, "Redirects that do not use the index finger."),
     m("T08", "SFT", "%", Order::Tri, Dir::Min, "Same-finger trigrams: all three keys on one finger."),
+    m(
+        "E04",
+        "Engram formula",
+        "%",
+        Order::Bi,
+        Dir::Min,
+        "Bigram discomfort, mean of 1 − comfort, from Engram's hand-built pair formula (geometry `comfort.E04`).",
+    ),
+    m(
+        "E05",
+        "Engram measured",
+        "%",
+        Order::Bi,
+        Dir::Min,
+        "Bigram discomfort, mean of 1 − comfort, fitted from Engram's pairwise choices (geometry `comfort.E05`).",
+    ),
     m("B02", "Same-key repeats", "%", Order::Bi, Dir::Info, "The same key twice in a row."),
 ];
 
@@ -77,8 +122,9 @@ pub fn index_of(id: &str) -> Option<usize> {
     METRICS.iter().position(|d| d.id == id)
 }
 
-/// Per-metric cost table for a geometry, aligned with [`METRICS`]. `None` for `Order::Load`.
-pub fn table(g: &Geometry, d: &MetricDef) -> Option<Vec<f32>> {
+/// Per-metric cost table for a geometry and profile, aligned with [`METRICS`]. `None` for
+/// `Order::Load`, and for E04/E05 when the geometry has no comfort table for them.
+pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
     let n = g.len();
     let mono = |f: &dyn Fn(usize) -> f32| Some((0..n).map(f).collect());
     let pair = |f: &dyn Fn(usize, usize) -> f32| {
@@ -99,9 +145,14 @@ pub fn table(g: &Geometry, d: &MetricDef) -> Option<Vec<f32>> {
         "M01" => mono(&|i| k[i].effort),
         "M05" => mono(&|i| pct(k[i].home || k[i].row == home_row(g))),
         "M06" => mono(&|i| pct(k[i].stretch)),
-        "B01" | "S01" => pair(&|i, j| pct(same_finger(i, j))),
+        "B01" | "S01" | "S02" => pair(&|i, j| pct(same_finger(i, j))),
         "B02" => pair(&|i, j| pct(i == j)),
-        "B03" => pair(&|i, j| if same_finger(i, j) { 100.0 * g.dist(i, j) / k[i].finger.strength() } else { 0.0 }),
+        "B03" | "S03" => pair(&|i, j| if same_finger(i, j) { 100.0 * finger_speed(g, &p.sfb, i, j) } else { 0.0 }),
+        "B14" => pair(&|i, j| 100.0 * stretch(g, i, j)),
+        "E04" | "E05" => {
+            let c = g.comfort_tables.get(d.id)?;
+            pair(&|i, j| 100.0 * (1.0 - c[i * n + j]))
+        }
         "B04" => pair(&|i, j| {
             let lsb = |a: usize, b: usize| k[a].stretch && k[a].finger.ord() == 3 && k[b].finger.ord() == 2;
             pct(same_hand(i, j) && (lsb(i, j) || lsb(j, i)))
@@ -110,6 +161,58 @@ pub fn table(g: &Geometry, d: &MetricDef) -> Option<Vec<f32>> {
         "B08" => pair(&|i, j| pct(!same_hand(i, j))),
         id if id.starts_with('T') => Some(trigram::table(g, trigram::class_for(id)?)),
         _ => None,
+    }
+}
+
+/// Same-finger movement cost `g(d) · finger_factor` for slots `i`, `j` (B03, S03).
+pub fn finger_speed(g: &Geometry, s: &SfbParams, i: usize, j: usize) -> f32 {
+    let (a, b) = (g.key[i].pos, g.key[j].pos);
+    let (dx, dy, dz) = (s.lateral * (a[0] - b[0]), a[1] - b[1], a[2] - b[2]);
+    let d = (dx * dx + dy * dy + dz * dz).sqrt();
+    let gd = match s.distance {
+        DistanceFn::Linear => d,
+        DistanceFn::Squared => d * d,
+        DistanceFn::Fitts => (1.0 + d).log2(),
+    };
+    gd * s.finger_factor[g.key[i].finger.ord() as usize]
+}
+
+/// Oxeylyzer 2's geometric stretch (`core/src/cached_layout.rs`, commit 52b271a) for two keys
+/// on the same hand and different fingers, in key units; 0 otherwise. Keys collapse to their
+/// centres (edge offset 0.5); each finger's length offset shifts its keys in y; moving a finger
+/// to the wrong side of its neighbour counts as a crossing. Positive only beyond the
+/// `1.35 u` per finger of spread a relaxed hand covers.
+pub fn stretch(g: &Geometry, i: usize, j: usize) -> f32 {
+    let (a, b) = (&g.key[i], &g.key[j]);
+    if a.finger == b.finger || a.hand() != b.hand() {
+        return 0.0;
+    }
+    let (fa, fb) = (a.finger.index(), b.finger.index());
+    let (xa, xb) = (a.pos[0], b.pos[0]);
+    let (ya, yb) = (a.pos[1] + a.finger.length_offset(), b.pos[1] + b.finger.length_offset());
+    let dx = (xa - xb).abs();
+    let dy = (ya - yb).abs();
+    let xo = finger_overlap(a.finger.ord(), b.finger.ord());
+    // Fingers are indexed left to right across both hands, so the higher index should sit to the right.
+    let crossed = if fa > fb { xa < xb + xo } else { xa + xo > xb };
+    let dx = if crossed { -dx } else { dx };
+    let overlap = (xo - 1.3 * dx + dy / 3.0).max(0.0);
+    let s = dx.hypot(dy) + overlap - 1.35 * fa.abs_diff(fb) as f32;
+    if s > 0.001 {
+        s
+    } else {
+        0.0
+    }
+}
+
+/// How far two neighbouring fingers naturally overlap sideways (Oxeylyzer 2 `x_finger_overlap`).
+fn finger_overlap(oa: u8, ob: u8) -> f32 {
+    match (oa.min(ob), oa.max(ob)) {
+        (0, 1) => 0.8,
+        (1, 2) => 0.4,
+        (2, 3) => 0.1,
+        (3, 4) => -2.5,
+        _ => 0.0,
     }
 }
 

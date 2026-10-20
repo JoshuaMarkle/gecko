@@ -101,7 +101,11 @@ impl Store {
     pub fn geometry(&self, name: &str) -> Result<Geometry> {
         let p = self.dir("geometries").join(format!("{name}.toml"));
         let p = if p.is_file() { p } else { PathBuf::from(name) };
-        Geometry::from_toml(&read(&p)?)
+        let mut g = Geometry::from_toml(&read(&p)?)?;
+        for (metric, table) in g.comfort.clone() {
+            g.load_comfort(&metric, &read(&self.dir("comfort").join(format!("{table}.csv")))?)?;
+        }
+        Ok(g)
     }
 
     pub fn profile(&self, name: &str) -> Result<Profile> {

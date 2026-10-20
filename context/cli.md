@@ -6,13 +6,17 @@ One binary, `gecko` (`crates/gecko-cli`). Built for agents first: deterministic,
 
 ```
 gecko score    <layout> [-g geometry] [-p profile] [-c corpus]   # per-metric breakdown
-gecko compare  [<layout>...]                                      # rank layouts (all references if none)
+gecko compare  [<layout>...] [--corpora a,b,c]                   # rank layouts (all references if none);
+                                                                  #   --corpora: score/rank per corpus (L05)
 gecko analyze  <layout> [--top 10]                                # finger loads, worst SFB/SFS/LSB/scissors
 gecko optimize [--algo sa|hc|ga] [--time 30s | --evals N] [--seed 1] [--threads N]
                [--pin ",./;"] [--from <layout>] [--top 10] [--sa-steps N] [--ga-pop N]
 gecko bench    [--algos hc,sa,ga] [--seeds 3] [--time 5s]         # algorithm leaderboard
 gecko perf     [--layout qwerty]                                  # full evals/s and swap deltas/s (1 thread)
 gecko corpus build <files or dirs...> [--out english] [--charset ...]
+gecko corpus import <cmini corpus dir> --out <name> [--charset ...]   # words.json or n-gram JSON
+gecko profile normalize [-p profile] [--layouts a,b] [--out name]   # weights → spread units
+gecko profile fit [--target E05] [--layouts a,b] [--out name]       # fit weights to a judge metric
 gecko list     layouts|geometries|profiles|corpora|runs|metrics
 gecko serve    [--port 7777] [--web web/dist]
 ```

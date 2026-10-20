@@ -39,6 +39,7 @@ Notation: `f(x)` corpus frequency; keys `i,j,k`; fingers LP LR LM LI LT | RT RI 
 | B10 | Row jump (same hand) | − | P1 | Vertical distance between SH keys. |
 | B11 | Movement pattern cost | − | P2 | Full cost table over (finger pair, direction, row change), KLO-style. Generalizes B04–B10. |
 | B12 | Predicted bigram time | − | P2 | Empirical inter-key interval (IKI) model per key/finger pair, fit from timing data. |
+| B14 | Geometric stretch | − | P0 | Oxeylyzer 2 formula on key positions + finger length offsets; covers LSB, scissors, crossings on any geometry. Implemented; replaces B04/B05 in the default profile. |
 | B13 | No switch after off-home key | − | P2 | Hand stays after a key that pulls it off home position (KLO). |
 
 ## 3. Skipgram (keys 1 and 3, 1–3 apart)
@@ -84,6 +85,8 @@ stats summing to 100% and makes reports easy to read.
 |---|---|---|---|---|
 | E01 | Predicted typing time | − | P2 | Σ predicted IKI over corpus, from a fitted timing model (finger pair, distance, hand). |
 | E02 | Personal timing cost | − | P3 | Same, fit to the user's own keystroke logs. |
+| E04 | Engram formula discomfort | − | P1 | Mean (1 − comfort) over bigrams from Engram's hand-built pair formula. Implemented. |
+| E05 | Engram measured discomfort | − | P1 | Same, from a Bradley–Terry fit of Engram's raw pairwise choices (74% held-out accuracy vs 59% for the formula). Implemented; in the default profile. |
 | E03 | Learned weights | − | P3 | Profile weights fit so the weighted sum predicts measured speed/comfort. |
 
 ## 7. Layout-level (no frequencies)
@@ -94,7 +97,7 @@ stats summing to 100% and makes reports easy to read.
 | L02 | Familiarity | ± | P2 | Distance from a reference layout: keys moved, keys kept on the same finger/hand. |
 | L03 | Grouping / symmetry | − | P2 | Related symbols kept together or mirrored (brackets, vowels, similar letters). |
 | L04 | Punctuation constraints | − | P1 | Required positions for `, . ; '` etc. Usually pins, sometimes soft. |
-| L05 | Corpus robustness | − | P2 | Score spread across several corpora (prose, chat, code). |
+| L05 | Corpus robustness | − | P2 | Score spread across several corpora (prose, chat, code). Report only: `gecko compare --corpora`. |
 | L06 | Held-out generalization | info | P2 | Score on a corpus not used in optimization. Guards against overfitting. |
 
 ## 8. Layers and symbols (phase: symbol layers)

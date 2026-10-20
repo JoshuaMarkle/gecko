@@ -20,7 +20,10 @@ tempering (replicas at several temperatures exchange states).
 
 ## Results
 
-Implemented: `optimize/anneal.rs`. `steps = 0` (default) = auto, ≈ 4 restarts per worker in the budget; T updated every 256 steps. Best so far: 8.396 (`,aufzvpmbl ioesjgdtnr .;/yxwckhq`, found by 10 s and 30 s runs with different seeds — likely the optimum for this profile; the profile, not the search, is now the limit).
+Implemented: `optimize/anneal.rs`. `steps = 0` (default) = auto, ≈ 4 restarts per worker in the budget; T updated every 256 steps. Best under the current default profile (spread units, B14, S02, E05): 15.704,
+`jkndfzquo, rthcpxseai lmbwvyg/;.` (20 s, seeds 1 and 2 agree). Ranks 1st on english/shai/mt-10k,
+2nd on mt-450k, and edges out Graphite on measured comfort (E05 5.22 vs 5.25). The previous
+profile's optimum (8.396 then) ranked last of all layouts on E05.
 
 Leaderboard 2026-10-20 (`gecko bench --time 5s --seeds 3`, 20 threads, i9-13900H, default
 profile, english corpus, ansi-30; lower is better; Semimak 11.85, Graphite 12.26, QWERTY 53.31):

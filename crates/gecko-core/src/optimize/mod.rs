@@ -394,5 +394,11 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mu
     top.sort_by(|a, b| a.score.total_cmp(&b.score));
     let elapsed = control.active(t0);
     let evals = total_evals.load(Ordering::Relaxed);
-    Outcome { params: params.clone(), top, evals, elapsed_ms: elapsed.as_millis() as u64, evals_per_sec: evals as f64 / elapsed.as_secs_f64().max(1e-9) }
+    Outcome {
+        params: params.clone(),
+        top,
+        evals,
+        elapsed_ms: elapsed.as_millis() as u64,
+        evals_per_sec: evals as f64 / elapsed.as_secs_f64().max(1e-9),
+    }
 }

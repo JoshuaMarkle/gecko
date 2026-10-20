@@ -4,6 +4,7 @@
 // Table code indexes several parallel arrays by the same symbol/slot id; range loops read clearer.
 #![allow(clippy::needless_range_loop)]
 
+pub mod calibrate;
 pub mod corpus;
 pub mod error;
 pub mod geometry;

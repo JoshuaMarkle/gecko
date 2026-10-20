@@ -8,6 +8,11 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 - TOML in `data/geometries/`. One `[[key]]` per slot, listed row by row, with
   `pos[3], rot[3], size[2], finger, row, col, home, stretch, effort` (hand comes from finger;
   `role` comes with symbol layers). Boards: `ansi-30`, `ortho-30`.
+- Optional `[comfort]` maps comfort metrics to key-pair tables: `E04 = "engram-2key"` loads
+  `data/comfort/engram-2key.csv` (`a_row,a_col,b_row,b_col,score,…`, 0..1, higher = more
+  comfortable, keys matched by row/col). The store loads them into `comfort_tables`, which are
+  served with the geometry so the WASM scorer has them. ansi-30: E04 Engram formula, E05 fitted
+  from Engram's raw choices (`research/scripts/fit_engram_bt.py`).
 - Positions are always 3D. Flat boards use z = 0 and only z-rotation.
 - KLE JSON importer for any existing board (planned).
 - At scorer build, precompute dense tables indexed by slot:
@@ -31,15 +36,32 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 ## Corpus
 
 - Symbols mapped to ids `0..S`. S ≈ 30 now, ≤ 64 with layers.
-- Tables (f32, normalized to sum 1): mono `[S]`, bi `[S×S]`, skip1..3 `[S×S]`,
-  tri `[S×S×S]` (dense up to S=64 = 1 MB; switch to top-K sparse beyond).
-- Built by `gecko corpus build` into `data/corpora/<name>.gkc` (magic `GKCORP1`, name,
-  charset, u64 counts for mono, bi, skip, tri). Mixes are weighted sums of normalized tables.
+- Tables (f32, normalized to sum 1 each): mono `[S]`, bi `[S×S]`, skip (gap 1), skip2, skip3
+  `[S×S]`, tri `[S×S×S]` (dense up to S=64 = 1 MB; switch to top-K sparse beyond).
+- `data/corpora/<name>.gkc`: magic `GKCORP2`, name, charset, u64 counts for mono, bi, skip,
+  skip2, skip3, tri. `GKCORP1` files (no skip2/skip3) still load with those tables zero.
+  Mixes are weighted sums of normalized tables.
 - Tokenization: lowercase; curly quotes → `'`, dashes → `-`; whitespace runs → one space;
-  other characters break n-grams. Bigrams/trigrams count only charset runs; skipgrams count
-  `x _ z` whatever the middle is. Project Gutenberg headers are stripped.
-- Default charset: `a–z , . / ; ' -` (32). Bundled corpus `english`: 10 Project Gutenberg
-  novels, 6.1M characters (raw text in `data/corpora/src/`, not committed).
+  other characters break n-grams. Bigrams/trigrams count only charset runs; skip-g counts
+  x and z with exactly g tokens between, whatever they are. Project Gutenberg headers are stripped.
+- `gecko corpus build <text>` counts raw text. `gecko corpus import <dir>` reads cmini-style
+  JSON counts: from `words.json` every in-word n-gram is exact, and skipgrams across a space are
+  estimated assuming consecutive words are independent (spans over 3+ words are dropped);
+  word imports scale skip counts ×1000 so small estimates survive rounding (tables are
+  normalized separately, so this is harmless). Without `words.json` it reads
+  mono/bi/trigrams.json: skip-1 comes from trigram ends (in-word only), skip-2/3 stay empty.
+- Default charset: `a–z , . / ; ' -` (32).
+- Bundled corpora (`gecko compare --corpora english,shai,mt-10k,mt-450k` for the L05 report):
+
+  | Name | Source | Size | QWERTY SFB |
+  |---|---|---|---|
+  | `english` | 10 Project Gutenberg novels (raw text in `data/corpora/src/`, not committed) | 6.1M chars | 6.63 % |
+  | `shai` | cmini `corpora/shai/words.json` (iweb-based English; the community default) | 430M chars | 6.70 % |
+  | `mt-10k` | cmini `corpora/english-10k` (Monkeytype 10k word list, each word once) | 72k chars | 8.40 % |
+  | `mt-450k` | cmini `corpora/english-450k` (Monkeytype 450k list) | 4.3M chars | 8.30 % |
+
+  cmini data from https://github.com/Apsu/cmini (GPL-3.0; only aggregated counts are
+  committed). Word lists weight every word once, as a Monkeytype test samples them.
 - Uppercase folded by default; Shift modeled only once layers exist.
 
 ## Results

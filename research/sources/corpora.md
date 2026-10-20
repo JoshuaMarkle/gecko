@@ -15,6 +15,10 @@ Extends `../data-sources.md` with what the analyzers actually ship.
 
 ## Notes
 
+- In GECKO: `shai`, `mt-10k`, `mt-450k` are imported from cmini with `gecko corpus import`
+  (see `context/representation.md`). cmini's `words.json` is exactly the source of its
+  mono/bi/trigram tables (totals match), and its n-grams never span words.
+
 - Results depend on corpus (Gallium 10k vs 450k). GECKO's bundled corpus is Gutenberg novels;
   add shai or a Monkeytype list so SFB numbers line up with what users see in cmini.
 - Skipgram definitions differ: genkey counts skipgrams up to gap 10 with `1/2^g` weights and

@@ -2,12 +2,21 @@
 //!
 //! Tokenization: lowercase; whitespace collapses to one space token; characters outside the
 //! charset are "other" tokens. Bigrams and trigrams count only runs of charset symbols;
-//! skipgrams (x _ z) count when x and z are charset symbols, whatever sits between.
+//! skipgrams with gap g (x, g tokens, z; g = 1..3) count when x and z are charset symbols,
+//! whatever sits between.
+//!
+//! Word-frequency imports (`add_word` + `add_word_boundaries`) count every n-gram inside a word
+//! exactly; n-grams never span words, as with text. Skipgrams across a word boundary are
+//! estimated by assuming consecutive words are independent (see `add_word_boundaries`).
 
 use crate::{hash, Error, Result};
 
 pub const DEFAULT_CHARSET: &str = "abcdefghijklmnopqrstuvwxyz,./;'-";
-const MAGIC: &[u8; 8] = b"GKCORP1\0";
+const MAGIC: &[u8; 8] = b"GKCORP2\0";
+const MAGIC_V1: &[u8; 8] = b"GKCORP1\0";
+/// Word imports scale skipgram counts so cross-word estimates (fractions) survive rounding.
+/// Harmless: every table is normalized on its own.
+const SKIP_SCALE: f64 = 1000.0;
 
 #[derive(Clone, Debug)]
 pub struct Corpus {
@@ -15,7 +24,12 @@ pub struct Corpus {
     pub charset: Vec<char>,
     pub mono: Vec<u64>,
     pub bi: Vec<u64>,
+    /// Skipgrams with gap 1 (x _ z).
     pub skip: Vec<u64>,
+    /// Gap 2 (x _ _ z).
+    pub skip2: Vec<u64>,
+    /// Gap 3 (x _ _ _ z).
+    pub skip3: Vec<u64>,
     pub tri: Vec<u64>,
 }
 
@@ -29,11 +43,29 @@ fn strip_gutenberg(text: &str) -> &str {
     &text[start..end]
 }
 
+/// Edge statistics of imported words: `ends[i][x]` = occurrences of words whose (i+1)-th token
+/// from the end is symbol x; `starts[j][z]` likewise from the start; `words` = occurrences.
+#[derive(Clone, Debug)]
+pub struct WordEdges {
+    ends: [Vec<f64>; 3],
+    starts: [Vec<f64>; 3],
+    words: f64,
+}
+
 impl Corpus {
     pub fn new(name: &str, charset: &str) -> Self {
         let charset: Vec<char> = charset.chars().collect();
         let c = charset.len();
-        Corpus { name: name.to_string(), charset, mono: vec![0; c], bi: vec![0; c * c], skip: vec![0; c * c], tri: vec![0; c * c * c] }
+        Corpus {
+            name: name.to_string(),
+            charset,
+            mono: vec![0; c],
+            bi: vec![0; c * c],
+            skip: vec![0; c * c],
+            skip2: vec![0; c * c],
+            skip3: vec![0; c * c],
+            tri: vec![0; c * c * c],
+        }
     }
 
     pub fn size(&self) -> usize {
@@ -44,18 +76,15 @@ impl Corpus {
         self.charset.iter().position(|&c| c == ch)
     }
 
-    /// Count n-grams of `text` into this corpus.
-    pub fn add_text(&mut self, text: &str) {
-        let text = strip_gutenberg(text);
-        let c = self.size();
+    /// Text → tokens (charset index, `SPACE` or `OTHER`), with whitespace runs collapsed.
+    fn tokens(&self, text: &str) -> Vec<u8> {
         let mut lut = [OTHER; 128];
         for (i, &ch) in self.charset.iter().enumerate() {
             if (ch as u32) < 128 {
                 lut[ch as usize] = i as u8;
             }
         }
-        let mut p2 = OTHER;
-        let mut p1 = OTHER;
+        let mut out = Vec::with_capacity(text.len());
         for raw in text.chars() {
             let ch = match raw {
                 '\u{2018}' | '\u{2019}' => '\'',
@@ -69,24 +98,106 @@ impl Corpus {
             } else {
                 OTHER
             };
-            if t == SPACE && p1 == SPACE {
+            if t == SPACE && out.last() == Some(&SPACE) {
                 continue;
             }
-            if (t as usize) < c {
-                let x = t as usize;
-                self.mono[x] += 1;
-                if (p1 as usize) < c {
-                    self.bi[p1 as usize * c + x] += 1;
-                    if (p2 as usize) < c {
-                        self.tri[(p2 as usize * c + p1 as usize) * c + x] += 1;
-                    }
-                }
-                if (p2 as usize) < c {
-                    self.skip[p2 as usize * c + x] += 1;
+            out.push(t);
+        }
+        out
+    }
+
+    /// Add every n-gram of a token sequence `w` times (skipgrams `skip_w` times).
+    fn count(&mut self, t: &[u8], w: u64, skip_w: u64) {
+        let c = self.size();
+        let sym = |i: usize| -> Option<usize> { t.get(i).map(|&x| x as usize).filter(|&x| x < c) };
+        for i in 0..t.len() {
+            let Some(x) = sym(i) else { continue };
+            self.mono[x] += w;
+            if let Some(y) = sym(i + 1) {
+                self.bi[x * c + y] += w;
+                if let Some(z) = sym(i + 2) {
+                    self.tri[(x * c + y) * c + z] += w;
                 }
             }
-            p2 = p1;
-            p1 = t;
+            for (g, table) in [(1, &mut self.skip), (2, &mut self.skip2), (3, &mut self.skip3)] {
+                if let Some(z) = sym(i + g + 1) {
+                    table[x * c + z] += skip_w;
+                }
+            }
+        }
+    }
+
+    /// Count n-grams of `text` into this corpus.
+    pub fn add_text(&mut self, text: &str) {
+        let t = self.tokens(strip_gutenberg(text));
+        self.count(&t, 1, 1);
+    }
+
+    pub fn word_edges(&self) -> WordEdges {
+        let z = || vec![0.0; self.size()];
+        WordEdges { ends: [z(), z(), z()], starts: [z(), z(), z()], words: 0.0 }
+    }
+
+    /// Count one word (no whitespace inside) that occurs `count` times.
+    pub fn add_word(&mut self, word: &str, count: u64, edges: &mut WordEdges) {
+        let t = self.tokens(word.trim());
+        self.count(&t, count, count * SKIP_SCALE as u64);
+        let c = self.size();
+        for k in 0..3.min(t.len()) {
+            if let Some(&x) = t.get(t.len() - 1 - k).filter(|&&x| (x as usize) < c) {
+                edges.ends[k][x as usize] += count as f64;
+            }
+            if let Some(&z) = t.get(k).filter(|&&z| (z as usize) < c) {
+                edges.starts[k][z as usize] += count as f64;
+            }
+        }
+        edges.words += count as f64;
+    }
+
+    /// Add one precomputed 1-, 2- or 3-gram (no spaces) that occurs `count` times. Without word
+    /// counts, skip-1 comes from the trigrams' outer symbols (inside words only) and skip-2/3
+    /// stay empty; prefer `add_word` when the source has word frequencies.
+    pub fn add_ngram(&mut self, gram: &str, count: u64) {
+        let t = self.tokens(gram);
+        let c = self.size();
+        if t.iter().any(|&x| x as usize >= c) {
+            // Mirrors text: a non-charset symbol breaks the n-gram, but a trigram's ends still form a skipgram.
+            if let [x, _, z] = t[..] {
+                if (x as usize) < c && (z as usize) < c {
+                    self.skip[x as usize * c + z as usize] += count;
+                }
+            }
+            return;
+        }
+        match t[..] {
+            [x] => self.mono[x as usize] += count,
+            [x, y] => self.bi[x as usize * c + y as usize] += count,
+            [x, y, z] => {
+                self.tri[(x as usize * c + y as usize) * c + z as usize] += count;
+                self.skip[x as usize * c + z as usize] += count;
+            }
+            _ => {}
+        }
+    }
+
+    /// Estimate skipgrams that span a space between two words, assuming consecutive words are
+    /// independent: x at offset i from the end of one word and z at offset j from the start of
+    /// the next are i + j − 1 tokens apart. Spans across three or more words are ignored.
+    pub fn add_word_boundaries(&mut self, e: &WordEdges) {
+        if e.words <= 0.0 {
+            return;
+        }
+        let c = self.size();
+        for (g, table) in [(1, &mut self.skip), (2, &mut self.skip2), (3, &mut self.skip3)] {
+            for i in 1..=g {
+                let j = g + 1 - i;
+                for x in 0..c {
+                    for z in 0..c {
+                        let v = e.ends[i - 1][x] * e.starts[j - 1][z] / e.words * SKIP_SCALE;
+                        table[x * c + z] += v.round() as u64;
+                    }
+                }
+            }
         }
     }
 
@@ -103,7 +214,7 @@ impl Corpus {
             out.extend_from_slice(&(s.len() as u32).to_le_bytes());
             out.extend_from_slice(s);
         }
-        for t in [&self.mono, &self.bi, &self.skip, &self.tri] {
+        for t in [&self.mono, &self.bi, &self.skip, &self.skip2, &self.skip3, &self.tri] {
             for &v in t.iter() {
                 out.extend_from_slice(&v.to_le_bytes());
             }
@@ -113,7 +224,8 @@ impl Corpus {
 
     pub fn from_bytes(b: &[u8]) -> Result<Self> {
         let bad = || Error::parse("corpus", "truncated or corrupt corpus file");
-        if b.len() < 8 || &b[..8] != MAGIC {
+        let v1 = b.len() >= 8 && &b[..8] == MAGIC_V1;
+        if b.len() < 8 || (&b[..8] != MAGIC && !v1) {
             return Err(Error::parse("corpus", "not a GECKO corpus file (bad magic)"));
         }
         let mut i = 8;
@@ -127,7 +239,13 @@ impl Corpus {
         let name = take_str(&mut i)?;
         let cs = take_str(&mut i)?;
         let mut c = Corpus::new(&name, &cs);
-        for t in [&mut c.mono, &mut c.bi, &mut c.skip, &mut c.tri] {
+        // GKCORP1 has no skip2/skip3; they stay zero.
+        let tables = if v1 {
+            vec![&mut c.mono, &mut c.bi, &mut c.skip, &mut c.tri]
+        } else {
+            vec![&mut c.mono, &mut c.bi, &mut c.skip, &mut c.skip2, &mut c.skip3, &mut c.tri]
+        };
+        for t in tables {
             for v in t.iter_mut() {
                 *v = u64::from_le_bytes(b.get(i..i + 8).ok_or_else(bad)?.try_into().unwrap());
                 i += 8;
@@ -150,7 +268,14 @@ impl Corpus {
             if c.charset != first.charset {
                 return Err(Error::invalid("corpus mix", "charsets differ"));
             }
-            for (dst, src) in [(&mut out.mono, &c.mono), (&mut out.bi, &c.bi), (&mut out.skip, &c.skip), (&mut out.tri, &c.tri)] {
+            for (dst, src) in [
+                (&mut out.mono, &c.mono),
+                (&mut out.bi, &c.bi),
+                (&mut out.skip, &c.skip),
+                (&mut out.skip2, &c.skip2),
+                (&mut out.skip3, &c.skip3),
+                (&mut out.tri, &c.tri),
+            ] {
                 let tot: u64 = src.iter().sum::<u64>().max(1);
                 for (d, &s) in dst.iter_mut().zip(src.iter()) {
                     *d += (s as f64 / tot as f64 * w * SCALE) as u64;
@@ -178,8 +303,47 @@ mod tests {
         assert_eq!(c.tri[(0 * 3 + 1) * 3 + 2], 1); // abc
         assert_eq!(c.skip[0 * 3 + 2], 1); // a_c from abc
         assert_eq!(c.skip[2 * 3 + 0], 1); // c _ a
+        assert_eq!(c.skip2[1 * 3 + 0], 2); // b..a twice
+        assert_eq!(c.skip2[2 * 3 + 1], 1); // c..b
+        assert_eq!(c.skip2[0 * 3 + 2], 1); // a.._c
+        assert_eq!(c.skip3[0 * 3 + 0], 2); // a...a twice
+        assert_eq!(c.skip3[1 * 3 + 1], 1); // b...b
+        assert_eq!(c.skip3.iter().sum::<u64>(), 3);
         let back = Corpus::from_bytes(&c.to_bytes()).unwrap();
         assert_eq!(back.tri, c.tri);
+        assert_eq!(back.skip3, c.skip3);
         assert_eq!(back.name, "t");
+    }
+
+    #[test]
+    fn reads_v1_files() {
+        let mut c = Corpus::new("t", "abc");
+        c.add_text("abc ab ca");
+        // A GKCORP1 file is the v2 layout without skip2/skip3.
+        let v2 = c.to_bytes();
+        let n = 3 * 3 * 8;
+        let head = v2.len() - (3 + 9 * 4 + 27) * 8;
+        let mut v1 = MAGIC_V1.to_vec();
+        v1.extend_from_slice(&v2[8..head + (3 + 9 + 9) * 8]);
+        v1.extend_from_slice(&v2[head + (3 + 9 + 9) * 8 + 2 * n..]);
+        let back = Corpus::from_bytes(&v1).unwrap();
+        assert_eq!(back.skip, c.skip);
+        assert_eq!(back.tri, c.tri);
+        assert!(back.skip2.iter().all(|&v| v == 0));
+    }
+
+    #[test]
+    fn words_count_inside_and_estimate_across() {
+        let mut c = Corpus::new("t", "abc");
+        let mut e = c.word_edges();
+        c.add_word("ab", 2, &mut e);
+        c.add_word("Ca", 1, &mut e);
+        c.add_word_boundaries(&e);
+        assert_eq!(c.mono, vec![3, 2, 1]);
+        assert_eq!(c.bi[0 * 3 + 1], 2);
+        assert_eq!(c.bi[1 * 3 + 0], 0); // never across words
+                                        // b ends 2 of 3 words, a starts 2 of 3: 3 · (2/3) · (2/3) = 4/3, scaled by 1000.
+        assert_eq!(c.skip[1 * 3 + 0], 1333);
+        assert_eq!(c.skip[0 * 3 + 2], 333);
     }
 }

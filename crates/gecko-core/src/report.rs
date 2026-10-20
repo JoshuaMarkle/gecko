@@ -57,8 +57,12 @@ pub fn breakdown(sc: &Scorer, st: &State) -> Breakdown {
     for (mi, d) in METRICS.iter().enumerate() {
         let value = match (d.order, sc.table(mi)) {
             (Order::Mono, Some(t)) => (0..n).map(|x| sc.f1()[x] as f64 * t[pos[x] as usize] as f64).sum(),
-            (Order::Bi | Order::Skip, Some(t)) => {
-                let f = if d.order == Order::Bi { sc.f2() } else { sc.fk() };
+            (Order::Bi | Order::Skip | Order::SkipFar, Some(t)) => {
+                let f = match d.order {
+                    Order::Bi => sc.f2(),
+                    Order::Skip => sc.fk(),
+                    _ => sc.fkf(),
+                };
                 let mut v = 0.0;
                 for x in 0..n {
                     for y in 0..n {
@@ -89,7 +93,7 @@ pub fn breakdown(sc: &Scorer, st: &State) -> Breakdown {
             _ => 0.0,
         };
         let weight = sc.profile.weight(d.id);
-        let w = weight as f64;
+        let w = sc.profile.effective_weight(d.id) as f64;
         let weighted = match (d.dir, d.id) {
             (Dir::Info, _) => 0.0,
             (_, "M02") => w * load_error_cost(&st.load, sc.target()),
