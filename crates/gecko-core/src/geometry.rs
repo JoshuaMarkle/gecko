@@ -170,6 +170,52 @@ impl Geometry {
         Ok(g)
     }
 
+    /// TOML in the hand-written style of `data/geometries/` (defaults omitted). Base keys only.
+    pub fn to_toml(&self) -> String {
+        fn num(v: f32) -> String {
+            let s = format!("{v}");
+            if s.contains(['.', 'e', 'N', 'i']) {
+                s
+            } else {
+                format!("{s}.0")
+            }
+        }
+        let arr = |a: &[f32]| format!("[{}]", a.iter().map(|&v| num(v)).collect::<Vec<_>>().join(", "));
+        let q = |s: &str| toml::Value::String(s.to_string()).to_string();
+        let mut out = format!(
+            "name = {}\ndescription = {}\n# Units: 1u = 19.05 mm. x right, y toward the user, z up.\n",
+            q(&self.name),
+            q(&self.description)
+        );
+        for k in self.key.iter().filter(|k| k.layer == 0) {
+            out += &format!("\n[[key]]\npos = {}\n", arr(&k.pos));
+            if k.rot != [0.0; 3] {
+                out += &format!("rot = {}\n", arr(&k.rot));
+            }
+            if k.size != [1.0, 1.0] {
+                out += &format!("size = {}\n", arr(&k.size));
+            }
+            out += &format!("finger = \"{}\"\nrow = {}\ncol = {}\n", k.finger.name(), k.row, k.col);
+            if k.home {
+                out += "home = true\n";
+            }
+            if k.stretch {
+                out += "stretch = true\n";
+            }
+            out += &format!("effort = {}\n", num(k.effort));
+            if let Some(f) = &k.fill {
+                out += &format!("fill = {}\n", q(f));
+            }
+        }
+        if !self.comfort.is_empty() {
+            out += "\n[comfort]\n";
+            for (m, t) in &self.comfort {
+                out += &format!("{m} = {}\n", q(t));
+            }
+        }
+        out
+    }
+
     pub fn validate(&self) -> Result<()> {
         if self.key.is_empty() {
             return Err(Error::invalid("geometry", "no keys"));
