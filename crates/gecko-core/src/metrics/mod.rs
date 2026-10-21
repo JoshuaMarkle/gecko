@@ -291,7 +291,7 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
     };
     let pct = |b: bool| if b { 100.0 } else { 0.0 };
     match d.id {
-        "M01" => mono(&|i| k[i].effort + row_offset(g, p, i) + g.holder(i).map_or(0.0, |h| k[h].effort + row_offset(g, p, h))),
+        "M01" => mono(&|i| key_effort(g, p, i) + g.holder(i).map_or(0.0, |h| key_effort(g, p, h))),
         "M05" => mono(&|i| pct(k[i].home || k[i].row == home_row(g))),
         "M06" => mono(&|i| pct(k[i].stretch)),
         "B01" | "S01" | "S02" => pair(&|i, j| pct(same_finger(i, j))),
@@ -549,6 +549,25 @@ fn finger_overlap(oa: u8, ob: u8) -> f32 {
         (3, 4) => -2.5,
         _ => 0.0,
     }
+}
+
+/// Per-key effort including optional finger-specific travel from the nearest home key.
+/// Uses logical columns/rows so split rotation and tenting do not change movement axes.
+pub fn key_effort(g: &Geometry, p: &Profile, i: usize) -> f32 {
+    let k = &g.key[i];
+    let mut cost = k.effort + row_offset(g, p, i);
+    if let Some(e) = &p.finger_effort {
+        let f = e.index(k.finger.index());
+        let travel = g
+            .key
+            .iter()
+            .filter(|h| h.finger == k.finger && h.home)
+            .map(|h| (k.col as f32 - h.col as f32).abs() * e.lateral[f] + (k.row as f32 - h.row as f32).abs() * e.vertical[f])
+            .reduce(f32::min)
+            .unwrap_or(0.0);
+        cost += travel;
+    }
+    cost
 }
 
 /// Profile effort offset for slot `i`: `row_offset[finger][0]` above the home row, `[1]` below

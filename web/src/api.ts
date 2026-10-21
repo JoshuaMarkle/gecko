@@ -34,6 +34,7 @@ export interface Profile {
   description: string;
   weights: Record<string, number>;
   finger_target: number[];
+  finger_effort?: import("./fingerEffort").FingerEffort;
   /** Target thumb share % for M09 (default 18 when absent). */
   thumb_target?: number;
   trigram_coverage: number;

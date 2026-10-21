@@ -1110,3 +1110,51 @@ fn lower_bound_holds_on_ansi() {
     }
     assert!(r.total.lower >= r.total.gilmore_lawler && r.pair.lower >= r.pair.gilmore_lawler, "{r:?}");
 }
+
+#[test]
+fn finger_effort_normalizes_and_preserves_delta() {
+    use gecko_core::profile::FingerEffort;
+    let g = ansi();
+    let l = layout("qwerty");
+    let c = synthetic(&l.chars.iter().collect::<String>(), 13);
+    let mut p = all_weights();
+    p.finger_effort =
+        Some(FingerEffort { typing: [2., 1.5, 1.1, 1., 1., 1., 1., 1.1, 1.5, 2.], lateral: [2.; 10], vertical: [3.; 10], symmetric: true });
+    let sc = Scorer::new(&g, &c, &p, &l).unwrap();
+    assert!((sc.target().iter().sum::<f64>() - 100.).abs() < 1e-10);
+    assert_eq!(sc.target()[4], 0.);
+    assert_eq!(sc.target()[5], 0.);
+    assert_eq!(sc.target()[0], sc.target()[9]);
+    assert_eq!(sc.target()[3], sc.target()[0] * 2.);
+    let baseline = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
+    let effort = |i| gecko_core::metrics::key_effort(&g, &p, i) - gecko_core::metrics::key_effort(&g, &baseline, i);
+    assert_eq!(effort(at(1, 0)), 0.);
+    assert_eq!(effort(at(0, 0)), 3.);
+    assert!((effort(at(1, 4)) - 2.).abs() < 1e-6);
+    let st = sc.state_for(&l).unwrap();
+    for a in 0..sc.n {
+        for b in a + 1..sc.n {
+            let mut next = st.clone();
+            let delta = sc.delta(&st, a, b);
+            sc.apply(&mut next, a, b, delta);
+            assert!((sc.full(&next) - sc.full(&st) - delta).abs() < 1e-5);
+        }
+    }
+    let e = p.finger_effort.as_mut().unwrap();
+    e.symmetric = false;
+    e.typing[9] = 4.;
+    let asym = Scorer::new(&g, &c, &p, &l).unwrap();
+    assert_eq!(asym.target()[0], asym.target()[9] * 2.);
+    let mut thumbs = g.clone();
+    thumbs.key[0].finger = gecko_core::geometry::Finger::LT;
+    let with_thumb = Scorer::new(&thumbs, &c, &p, &l).unwrap();
+    assert!(with_thumb.target()[4] > 0.);
+    assert_eq!(with_thumb.thumb_target(), with_thumb.target()[4]);
+    for v in &mut p.finger_effort.as_mut().unwrap().typing {
+        *v *= 2.;
+    }
+    let scaled = Scorer::new(&g, &c, &p, &l).unwrap();
+    assert_eq!(scaled.target(), asym.target());
+    p.finger_effort.as_mut().unwrap().typing[0] = 0.;
+    assert!(Scorer::new(&g, &c, &p, &l).is_err());
+}

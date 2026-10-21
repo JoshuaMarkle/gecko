@@ -5,11 +5,12 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Edges, Grid, OrbitControls, QuadraticBezierLine } from "@react-three/drei";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode } from "react";
 import * as THREE from "three";
 import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { Geometry, Key } from "../api";
 import { ACCENT, fingerColor, heatColor, heatText, INK } from "../colors";
+import { KEY_TRAVEL } from "../hand";
 
 export type Overlay = "none" | "fingers" | "heat" | "ngrams";
 /** One arc between the keys holding chars `ngram[0]` and `ngram[1]`; `w` in [0, 1] sets width and opacity. */
@@ -32,7 +33,12 @@ interface Props {
   spin?: number;
   /** Extra scene content in board-centred coordinates (see `boardBounds`, `place`). */
   children?: ReactNode;
+  /** Region the camera frames instead of the board (centre x / z and size, board-centred), e.g. to include hands. */
+  focus?: Focus;
+  /** Live press state per key (0 up, else depth fraction of KEY_TRAVEL), read every frame: pressed keys sink and turn blue. */
+  pressed?: MutableRefObject<Float32Array>;
 }
+export interface Focus { cx: number; cz: number; w: number; h: number }
 
 export const CAP_H = 0.42;
 /** Keycap profile: walls lean in by TAPER from base to top; plan-view corner radii at base and top. */
@@ -43,6 +49,8 @@ const CORNER_SEGS = 6;
 /** Keycap color when no overlay colors the keys; muted keys (unusable on the shown layer). */
 const CAP = "#ffffff";
 const MUTED = "#c8c8c8";
+/** Keycap color while pressed (`pressed` prop). */
+const PRESSED = "#5c9bff";
 /** Empty-slot glyph (gecko-core `layout::EMPTY`): drawn as a blank cap. */
 const EMPTY = "\u00B7";
 const caps = new Map<string, THREE.BufferGeometry>();
@@ -158,8 +166,9 @@ export function place(k: Key, cx: number, cy: number): { p: [number, number, num
   };
 }
 
-function Keycap({ k, cx, cy, ch, color, text, selected, onClick }: {
+function Keycap({ k, cx, cy, ch, color, text, selected, onClick, bind }: {
   k: Key; cx: number; cy: number; ch: string; color: string; text: string; selected: boolean; onClick: (at: { x: number; y: number }) => void;
+  bind?: (g: THREE.Group | null) => void;
 }) {
   const [hover, setHover] = useState(false);
   const { p, r } = place(k, cx, cy);
@@ -167,7 +176,7 @@ function Keycap({ k, cx, cy, ch, color, text, selected, onClick }: {
   const h = k.size[1] - 0.08;
   const lift = selected ? 0.12 : hover ? 0.04 : 0;
   return (
-    <group position={[p[0], p[1] + CAP_H / 2 + lift, p[2]]} rotation={r}>
+    <group ref={bind} position={[p[0], p[1] + CAP_H / 2 + lift, p[2]]} rotation={r} userData={{ y: p[1] + CAP_H / 2 + lift, color }}>
       <mesh
         geometry={capGeometry(w, h)}
         onClick={(e) => { e.stopPropagation(); onClick({ x: e.nativeEvent.clientX, y: e.nativeEvent.clientY }); }}
@@ -185,6 +194,27 @@ function Keycap({ k, cx, cy, ch, color, text, selected, onClick }: {
   );
 }
 
+/**
+ * Pressed keys: each frame, keys with a press state sink by its depth and turn PRESSED; keys
+ * that come back up return to their rest height and color (kept in the group's userData).
+ */
+function PressAnimator({ pressed, groups }: { pressed: MutableRefObject<Float32Array>; groups: MutableRefObject<(THREE.Group | null)[]> }) {
+  const down = useRef<boolean[]>([]);
+  useFrame(() => {
+    const amt = pressed.current;
+    groups.current.forEach((g, i) => {
+      if (!g) return;
+      const a = amt[i] ?? 0;
+      if (a <= 0 && !down.current[i]) return;
+      const mat = (g.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial;
+      g.position.y = g.userData.y - a * KEY_TRAVEL / 19.05;
+      mat.color.set(a > 0 ? PRESSED : g.userData.color);
+      down.current[i] = a > 0;
+    });
+  });
+  return null;
+}
+
 /** Slow orbit while `on`; eases to a stop once `stop` is set. */
 function AutoRotate({ on, stop }: { on: boolean; stop: boolean }) {
   const { controls } = useThree() as unknown as { controls: { autoRotate: boolean; autoRotateSpeed: number } | null };
@@ -199,7 +229,7 @@ function AutoRotate({ on, stop }: { on: boolean; stop: boolean }) {
   return null;
 }
 
-function CameraRig({ mode, w, h, reset }: { mode: ViewMode; w: number; h: number; reset: number }) {
+function CameraRig({ mode, w, h, cx = 0, cz = 0, reset }: { mode: ViewMode; w: number; h: number; cx?: number; cz?: number; reset: number }) {
   const { camera, controls, size } = useThree() as unknown as {
     camera: THREE.PerspectiveCamera; controls: { target: THREE.Vector3; update: () => void } | null; size: { width: number; height: number };
   };
@@ -211,19 +241,20 @@ function CameraRig({ mode, w, h, reset }: { mode: ViewMode; w: number; h: number
     const fitW = (w / 2 + 0.8) / Math.tan(hfov / 2);
     const fitH = (h / 2 + 0.8) / Math.tan(v / 2);
     const d = Math.max(fitW, fitH * (mode === "top" ? 1 : 1.6));
-    if (mode === "top") camera.position.set(0, d, 0.001);
-    else camera.position.set(0, d * 0.72, d * 0.7);
-    camera.lookAt(0, 0, 0);
+    if (mode === "top") camera.position.set(cx, d, cz + 0.001);
+    else camera.position.set(cx, d * 0.72, cz + d * 0.7);
+    camera.lookAt(cx, 0, cz);
     if (controls) {
-      controls.target.set(0, 0, 0);
+      controls.target.set(cx, 0, cz);
       controls.update();
     }
-  }, [mode, w, h, aspect, camera, controls, reset]);
+  }, [mode, w, h, cx, cz, aspect, camera, controls, reset]);
   return null;
 }
 
-export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, selected, onKey, spin = 0, children }: Props) {
+export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, selected, onKey, spin = 0, children, focus, pressed }: Props) {
   const keys = geometry.key;
+  const groups = useRef<(THREE.Group | null)[]>([]);
   const bounds = useMemo(() => boardBounds(keys), [keys]);
   // Auto-rotate: a new `spin` restarts it; the first interaction stops it until the next one.
   const [touched, setTouched] = useState(false);
@@ -244,7 +275,7 @@ export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, 
       <directionalLight position={[-6, 6, 4]} intensity={0.4} />
       {/* Floor grid under the case: 1u cells, 5u sections, fading out with distance. */}
       <Grid position={[0, -CASE_H - 0.001, 0]} infiniteGrid cellSize={1} sectionSize={5} cellThickness={0.6} sectionThickness={1} cellColor="#dcdcdc" sectionColor="#c4c4c4" fadeDistance={40} fadeStrength={1.5} />
-      <CameraRig mode={mode} w={bounds.w} h={bounds.h} reset={spin} />
+      <CameraRig mode={mode} w={focus?.w ?? bounds.w} h={focus?.h ?? bounds.h} cx={focus?.cx} cz={focus?.cz} reset={spin} />
       {spin > 0 && <AutoRotate on={mode === "3d"} stop={touched} key={spin} />}
       <mesh geometry={caseGeo}>
         <meshStandardMaterial color="#d2d2d2" roughness={0.9} />
@@ -256,7 +287,8 @@ export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, 
         const color = off ? MUTED : overlay === "heat" ? heatColor(t) : overlay === "fingers" || overlay === "ngrams" ? fingerColor(k.finger) : CAP;
         const text = overlay === "heat" ? heatText(t) : INK;
         return (
-          <Keycap key={i} k={k} cx={bounds.cx} cy={bounds.cy} ch={ch} color={color} text={text} selected={selected === i} onClick={(at) => onKey(i, at)} />
+          <Keycap key={i} k={k} cx={bounds.cx} cy={bounds.cy} ch={ch} color={color} text={text} selected={selected === i} onClick={(at) => onKey(i, at)}
+            bind={pressed ? (g) => { groups.current[i] = g; } : undefined} />
         );
       })}
       {overlay === "ngrams" && arcs.map((a, n) => {
@@ -281,6 +313,7 @@ export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, 
           />
         );
       })}
+      {pressed && <PressAnimator pressed={pressed} groups={groups} />}
       {children}
       <OrbitControls makeDefault enableRotate={mode === "3d"} enablePan enableDamping dampingFactor={0.12} maxPolarAngle={Math.PI / 2.05} minDistance={3} maxDistance={40} />
     </Canvas>

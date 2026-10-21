@@ -4,6 +4,7 @@
 
 import { useCallback, useState } from "react";
 import type { Geometry, Profile } from "./api";
+import { withFingerEffort } from "./fingerEffort";
 import type { HandSettings } from "./hand";
 
 export interface SearchSettings {
@@ -48,7 +49,8 @@ export function useInputs() {
   const [corpusId, setCorpusId] = usePref("corpus", "");
   const [profileId, setProfileId] = usePref("profile", "");
   /** The live (possibly edited) profile; sent with each run as `profile_override`. */
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfileRaw] = useState<Profile | null>(null);
+  const setProfile = (p: Profile | null) => setProfileRaw(p ? withFingerEffort(p) : null);
   const [refId, setRefId] = usePref("reference", "");
   const [chars, setChars] = usePref("chars", "");
   const [label, setLabel] = usePref("label", "");

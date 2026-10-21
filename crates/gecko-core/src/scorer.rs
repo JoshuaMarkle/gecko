@@ -361,6 +361,23 @@ impl Scorer {
         for (t, &v) in target.iter_mut().zip(&profile.finger_target) {
             *t = v as f64;
         }
+        if let Some(e) = &profile.finger_effort {
+            e.validate()?;
+            let mut present = [false; FINGERS];
+            for k in &geometry.key {
+                present[k.finger.index()] = true;
+            }
+            for i in 0..FINGERS {
+                target[i] = if present[i] { 1.0 / e.typing[e.index(i)] as f64 } else { 0.0 };
+            }
+            let total: f64 = target.iter().sum();
+            if total > 0.0 {
+                for t in &mut target {
+                    *t *= 100.0 / total;
+                }
+            }
+        }
+        let thumb_target = if profile.finger_effort.is_some() { target[4] + target[5] } else { profile.thumb_target as f64 };
         Ok(Scorer {
             n,
             chars,
@@ -411,7 +428,7 @@ impl Scorer {
             w_peak,
             has_load: w_load != 0.0 || w_hand != 0.0 || w_rss != 0.0 || w_peak != 0.0 || w_thumb != 0.0,
             w_thumb,
-            thumb_target: profile.thumb_target as f64,
+            thumb_target,
             target,
             tables,
         })

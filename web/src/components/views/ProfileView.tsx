@@ -2,12 +2,13 @@
 // a visual of what the focused section optimizes | what it measures and how weights move the score.
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { FINGERS, type Analysis, type Geometry, type LayoutInfo, type Meta, type MetricDef, type PairKind, type Profile } from "../../api";
+import { type Analysis, type Geometry, type LayoutInfo, type Meta, type MetricDef, type PairKind, type Profile } from "../../api";
 import { fingerColor, heatColor, heatText, INK, PAIR_KINDS } from "../../colors";
 import { fmt, LAYER_KEYS, ONESHOT_KEYS, TOGGLE_KEYS, undirected } from "../../format";
 import { FitBoard, type Cell, type KeyArc } from "../Board2D";
 import { FingerLoad } from "../Charts";
-import { Frame, Num } from "../Form";
+import { defaultFingerEffort, editFingerEffort, fingerTargets, symmetricEffort, withFingerEffort } from "../../fingerEffort";
+import { Frame, Num, Toggle } from "../Form";
 
 interface Props {
   meta: Meta;
@@ -110,7 +111,7 @@ function Visualize({ id, geometry, chars, a, layouts }: { id: Visual; geometry: 
       return board((i) => {
         const t = (es[i] - lo) / Math.max(hi - lo, 1e-9);
         return { fill: heatColor(t * 0.85), text: heatText(t * 0.85), main: label(i), sub: es[i].toFixed(1), ring: geometry.key[i].home };
-      }, undefined, <div className="legend static"><span>darker = more effort · ringed = home keys</span></div>);
+      }, undefined, <div className="legend static"><span>darker = geometry base effort (before profile costs) · ringed = home keys</span></div>);
     }
     case "sfb":
       return board((i) => ({ ...plain(i), fill: mix(fingerColor(geometry.key[i].finger), 0.35) }), [...arcsOf(a!.bigrams, ["sfb"]), ...arcsOf(a!.skipgrams, ["sfs"], 15).map((x) => ({ ...x, w: x.w * 0.5 }))],
@@ -163,7 +164,10 @@ export function ProfileView(p: Props) {
   const pr = p.profile;
   const [focus, setFocus] = useState<Visual>("load");
   const scroller = useRef<HTMLDivElement>(null);
-  const base = p.profiles.find((x) => x.id === p.profileId);
+  const saved = p.profiles.find((x) => x.id === p.profileId);
+  const base = saved ? withFingerEffort(saved) : undefined;
+  const effort = pr.finger_effort ?? defaultFingerEffort();
+  const targets = fingerTargets(effort, p.geometry);
   const changed = base && JSON.stringify({ ...base, id: undefined }) !== JSON.stringify({ ...pr, id: undefined });
   const bySection = useMemo(() => {
     const m = new Map<Visual, MetricDef[]>();
@@ -223,14 +227,25 @@ export function ProfileView(p: Props) {
               <div className="psec-body">
                 {(bySection.get(s.id) ?? []).map((m) => (
                   <Num key={m.id} label={`${m.name}${m.dir === "max" ? " +" : ""}`} help={`${m.id} · ${m.desc}${m.dir === "max" ? " (reward: a larger weight lowers the score)" : ""}`}
-                    value={pr.weights[m.id] ?? 0} step={0.05} min={0} onChange={(v) => setW(m.id, v)} unit={m.id} />
+                    value={pr.weights[m.id] ?? 0} step={0.05} min={0} onChange={(v) => setW(m.id, v)} />
                 ))}
                 {s.id === "load" && <>
-                  {pr.finger_target.map((t, i) => (i === 4 || i === 5 ? null : (
-                    <Num key={i} label={`Target ${FINGERS[i]}`} help={`Target share of keystrokes for ${FINGERS[i]} (Finger load error, M02).`} value={t} step={0.5} unit="%"
-                      onChange={(v) => { const ft = [...pr.finger_target]; ft[i] = v; p.setProfile({ ...pr, finger_target: ft }); }} />
-                  )))}
-                  <Num label="Thumb target" help="Target thumb share % for Thumb load (M09)." value={pr.thumb_target ?? 18} step={0.5} unit="%" onChange={(v) => p.setProfile({ ...pr, thumb_target: v })} />
+                  <Toggle label="Symmetric hands" help="Use the left-hand costs for both hands. Turning this on copies the left values to the right." value={effort.symmetric}
+                    onChange={v => p.setProfile({ ...pr, finger_effort: symmetricEffort(effort, v) })} />
+                  <p className="hint">Higher effort = harder. Targets use inverse typing effort, normalized over fingers on this board. Movement costs add to Effort (M01) per column or row from home.</p>
+                  {(effort.symmetric ? [3, 2, 1, 0, 4] : [3, 2, 1, 0, 4, 6, 7, 8, 9, 5]).map(i => {
+                    const name = ["Pinky", "Ring", "Middle", "Index", "Thumb"][i < 5 ? i : 9 - i];
+                    const label = effort.symmetric ? name : `${i < 5 ? "Left" : "Right"} ${name.toLowerCase()}`;
+                    return <div key={i} className="finger-effort">
+                      <div className="hint">{label} · target {targets[i].toFixed(1)}%{effort.symmetric ? ` left / ${targets[9 - i].toFixed(1)}% right` : ""}</div>
+                      {([['typing', 'Typing effort'], ['lateral', 'Sideways effort'], ['vertical', 'Vertical effort']] as const).map(([field, title]) => (
+                        <Num key={field} label={title} help={field === 'typing' ? "Relative typing effort; twice the effort gives half the target share." : "Extra key effort per logical column or row away from this finger’s nearest home key. No home key means no added movement cost."}
+                          value={effort[field][i]} step={0.1} min={field === 'typing' ? 0.01 : 0}
+                          onChange={v => p.setProfile({ ...pr, finger_effort: editFingerEffort(effort, field, i, v) })} />
+                      ))}
+                    </div>;
+                  })}
+                  <div className="hint">Combined thumb target: {(targets[4] + targets[5]).toFixed(1)}%</div>
                 </>}
                 {s.id === "sfb" && pr.sfb && <>
                   <div className="row">

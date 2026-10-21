@@ -1,21 +1,24 @@
-// Hand tab (frontend.md "Hand"): hand settings | 3D wireframe hands posed by IK on the board's
-// home keys, with a typing simulation | measurements, size distribution, similarity.
+// Hand tab (frontend.md "Hand"): hand settings | 3D hands placed over the board's home keys
+// (mirrored skeletons, finger IK), with a typing simulation whose fingers move in parallel |
+// measurements, typing timeline and stats, size distribution, similarity.
 // Preview only: the scorer has no hand model yet (#92).
 
 import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import * as THREE from "three";
-import type { Geometry } from "../../api";
-import { ACCENT, HAIR, INK, MUTED } from "../../colors";
+import type { Finger, Geometry } from "../../api";
+import { ACCENT, ERROR, fingerColor, HAIR, INK, MUTED } from "../../colors";
 import {
-  AVERAGE, FINGER_NAMES, dimsVector, handDims, handLength, LENGTH_MEAN, LENGTH_SD, normalCdf, normalPdf, population, poseHand,
-  PRESET_SCALE, scaleDims, similarity, sizeBand, typicality,
-  type FingerName, type HandDims, type HandPose, type HandSettings, type Preset, type V3,
+  AVERAGE, dimsVector, FINGER_NAMES, fingerAt, fingerKey, keysDown, fingerLength, FOUR, handDims, handLayout, handLength, handShift,
+  LENGTH_MEAN, LENGTH_SD, naturalTip, normalCdf, normalPdf, placeHand, planTyping, adjustPlacement, wristOf, WRIST0, population, poseHand, PRESET_SCALE,
+  scaleDims, similarity, sizeBand, sub3, toWorld, typicality,
+  type FingerName, type FingerState, type HandDims, type HandPose, type HandSettings, type Placement, type Plan, type Preset,
+  type Side, type Stroke, type V3, type Wrist,
 } from "../../hand";
-import { boardBounds, CAP_H, Keyboard3D, place, type ViewMode } from "../../three/Keyboard3D";
+import { boardBounds, CAP_H, Keyboard3D, place, type Focus, type ViewMode } from "../../three/Keyboard3D";
 import { useSize } from "../Charts";
-import { Frame, Num, PanelTabs, Sec, Seg, Toggle } from "../Form";
+import { Frame, Num, PanelTabs, Sec, Seg, Slider, Toggle } from "../Form";
 
 interface Props {
   geometry: Geometry;
@@ -30,190 +33,406 @@ const SAMPLES: [string, string][] = [
   ["prose", "it was the best of times, it was the worst of times, it was the age of wisdom"],
   ["code", "for (let i = 0; i < n; i++) { total += values[i]; }"],
 ];
-const SPEEDS: [string, string][] = [["slow", "Slow"], ["normal", "Normal"], ["fast", "Fast"]];
-const SPEED_WPM: Record<string, number> = { slow: 15, normal: 40, fast: 80 };
 const FINGER_OF: Record<string, FingerName> = { P: "pinky", R: "ring", M: "middle", I: "index", T: "thumb" };
+const CODE_OF: Record<FingerName, string> = { pinky: "P", ring: "R", middle: "M", index: "I", thumb: "T" };
 const SEG_NAMES: Record<FingerName, [string, string, string]> = {
   thumb: ["Metacarpal", "Proximal", "Distal"], index: ["Proximal", "Middle", "Distal"], middle: ["Proximal", "Middle", "Distal"],
   ring: ["Proximal", "Middle", "Distal"], pinky: ["Proximal", "Middle", "Distal"],
 };
+/** Pause at the end of the sample before it loops, seconds. */
+const LOOP_GAP = 0.8;
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
-// ---------- 3D ----------
+// ---------- rigs and strokes ----------
 
-type Targets = Record<"L" | "R", Record<FingerName, V3>>;
+/**
+ * One hand on the board: its solved placement (`base`), the placement shown after the wrist
+ * adjustments, how much the hand follows a reaching finger, and the fingertip home of each
+ * finger (board-centred three coordinates).
+ */
+interface Rig { side: Side; base: Placement; place: Placement; follow: number; home: Record<FingerName, V3> }
 
-/** Home targets (key tops) per hand and finger, in board-centred three coordinates. */
-function homeTargets(g: Geometry): { home: Targets; keyTop: (slot: number) => V3 } {
+/**
+ * Hands for a board: the four fingers rest on their home keys (non-stretch first), the hand is
+ * placed by `placeHand`, and the thumb rests on the thumb key nearest its natural rest point
+ * (or on that point at key height when the board has no thumb keys), so both thumbs pick
+ * mirrored keys on a symmetric board. The wrist adjustments move the shown hand only; the
+ * fingertips keep their homes.
+ */
+function buildRigs(g: Geometry, d: HandDims, w: Wrist): { rigs: Rig[]; keyTop: (slot: number) => V3 } {
   const b = boardBounds(g.key);
   const keyTop = (i: number): V3 => { const p = place(g.key[i], b.cx, b.cy).p; return [p[0], p[1] + CAP_H, p[2]]; };
-  const home = { L: {}, R: {} } as Targets;
+  const rigs: Rig[] = [];
   for (const side of ["L", "R"] as const) {
-    for (const [code, name] of Object.entries(FINGER_OF)) {
-      const f = `${side}${code}`;
-      const ks = g.key.map((k, i) => ({ k, i })).filter((x) => x.k.finger === f);
+    const home = {} as Record<FingerName, V3>;
+    for (const f of FOUR) {
+      const ks = g.key.map((k, i) => ({ k, i })).filter((x) => x.k.finger === `${side}${CODE_OF[f]}`);
       const pick = ks.find((x) => x.k.home && !x.k.stretch) ?? ks.find((x) => x.k.home) ?? ks[0];
-      if (pick) home[side][name] = keyTop(pick.i);
+      if (pick) home[f] = keyTop(pick.i);
     }
-    // A board without thumb keys: rest the thumb below the bottom row, inside of the index finger.
-    if (!home[side].thumb && home[side].index) {
-      const ix = home[side].index;
-      home[side].thumb = [ix[0] + (side === "L" ? 1 : -1) * 1.1, ix[1] - 0.3, ix[2] + 2.4];
-    }
+    if (FOUR.some((f) => !home[f])) continue;
+    const pl = placeHand(side, home, d, MM);
+    const rest = toWorld(side, pl, MM, handLayout(d).thumbRest);
+    const thumbs = g.key.map((k, i) => ({ k, i })).filter((x) => x.k.finger === `${side}T`).map((x) => keyTop(x.i));
+    const near = (p: V3) => Math.hypot(p[0] - rest[0], p[2] - rest[2]);
+    home.thumb = thumbs.length ? thumbs.reduce((a, p) => (near(p) < near(a) ? p : a)) : [rest[0], Math.min(...FOUR.map((f) => home[f][1])), rest[2]];
+    rigs.push({ side, base: pl, place: adjustPlacement(side, pl, w, MM), follow: w.follow, home });
   }
-  return { home, keyTop };
+  return { rigs, keyTop };
 }
 
-/** One frame of typing: which finger moves where, as a fraction of the way out and back. */
-function typingTargets(home: Targets, slotOf: Map<string, number>, g: Geometry, keyTop: (i: number) => V3, text: string, t: number): Targets {
-  const out: Targets = { L: { ...home.L }, R: { ...home.R } };
-  if (!text) return out;
-  const pos = t % text.length;
-  const ch = text[Math.floor(pos)];
-  const phase = pos - Math.floor(pos);
-  const slot = slotOf.get(ch === " " ? "␣" : ch) ?? slotOf.get(ch.toLowerCase());
-  let side: "L" | "R" | null = null, finger: FingerName | null = null, target: V3 | null = null;
-  if (slot !== undefined) {
-    const f = g.key[slot].finger;
-    side = f[0] as "L" | "R";
-    finger = FINGER_OF[f[1]];
-    target = keyTop(slot);
-  } else if (ch === " ") {
-    side = "R"; finger = "thumb"; target = home.R.thumb;
+/** Keystrokes for a text on the loaded layout. Unmapped spaces go to a thumb, alternating away from the last hand. */
+function strokesFor(text: string, g: Geometry, chars: string, rigs: Rig[], keyTop: (i: number) => V3): Stroke[] {
+  const slotOf = new Map<string, number>();
+  [...chars].forEach((c, i) => { if (i < g.key.length && !slotOf.has(c)) slotOf.set(c, i); });
+  const sides = new Set(rigs.map((r) => r.side));
+  const homeOf = (s: Side) => rigs.find((r) => r.side === s)!.home;
+  const out: Stroke[] = [];
+  for (const ch of text) {
+    const slot = slotOf.get(ch === " " ? "␣" : ch) ?? slotOf.get(ch.toLowerCase());
+    if (slot !== undefined) {
+      const f = g.key[slot].finger;
+      const side = f[0] as Side;
+      if (sides.has(side)) out.push({ side, finger: FINGER_OF[f[1]], pos: keyTop(slot), ch, key: slot });
+    } else if (ch === " " && sides.size) {
+      const prev = out[out.length - 1]?.side;
+      let side: Side = prev === "R" ? "L" : "R";
+      if (!sides.has(side)) side = side === "L" ? "R" : "L";
+      out.push({ side, finger: "thumb", pos: homeOf(side).thumb, ch });
+    }
   }
-  if (!side || !finger || !target || !out[side][finger]) return out;
-  const h = home[side][finger];
-  // Out (0–0.4), press (0.4–0.6), back (0.6–1); smoothstep easing; a 0.25u lift on the way.
-  const ease = (x: number) => x * x * (3 - 2 * x);
-  const k = phase < 0.4 ? ease(phase / 0.4) : phase < 0.6 ? 1 : 1 - ease((phase - 0.6) / 0.4);
-  const lift = Math.sin(Math.PI * Math.min(1, phase / 0.4)) * 0.25 * (phase < 0.4 ? 1 : 0);
-  const press = phase >= 0.4 && phase < 0.6 ? -0.08 * Math.sin(Math.PI * (phase - 0.4) / 0.2) : 0;
-  out[side][finger] = [h[0] + (target[0] - h[0]) * k, h[1] + (target[1] - h[1]) * k + lift + press, h[2] + (target[2] - h[2]) * k];
   return out;
 }
 
-/** Line segments (pairs of points) and joints of both hands. */
-function poseLines(poses: HandPose[]): { seg: number[]; joints: number[] } {
-  const seg: number[] = [], joints: number[] = [];
-  for (const p of poses) {
-    for (const ch of p.fingers) {
-      for (let i = 0; i < ch.length - 1; i++) seg.push(...ch[i], ...ch[i + 1]);
-      for (const j of ch) joints.push(...j);
+// ---------- 3D ----------
+
+const BONE = "#3a3a3a";
+const MOVE = "#5b8def";
+const STATE_COLOR: Record<FingerState, string> = { rest: BONE, move: MOVE, ready: MOVE, press: ACCENT };
+
+interface Frame3 { pose: HandPose; states: Record<FingerName, FingerState> }
+
+/** Both hands at time `t` of the plan (`t` < 0: resting). The hand follows its fingers' excursions; resting fingers ride along. */
+function framesAt(rigs: Rig[], plan: Plan | null, d: HandDims, t: number): Frame3[] {
+  return rigs.map((r) => {
+    const states = {} as Record<FingerName, FingerState>;
+    const pos = {} as Record<FingerName, V3>;
+    const ex: [FingerName, V3][] = [];
+    for (const f of FINGER_NAMES) {
+      const a = plan && t >= 0 ? fingerAt(plan.byFinger[fingerKey(r.side, f)], r.home[f], t, MM) : { pos: r.home[f], state: "rest" as const };
+      states[f] = a.state;
+      pos[f] = a.pos;
+      ex.push([f, sub3(a.pos, r.home[f])]);
     }
-    const ring = p.palm;
-    for (let i = 0; i < ring.length; i++) seg.push(...ring[i], ...ring[(i + 1) % ring.length]);
-    joints.push(...ring[0], ...ring[1]);
-  }
-  return { seg, joints };
+    const off = handShift(ex, r.follow);
+    const targets = {} as Record<FingerName, V3>;
+    for (const f of FINGER_NAMES) targets[f] = states[f] === "rest" ? [r.home[f][0] + off[0], r.home[f][1], r.home[f][2] + off[2]] : pos[f];
+    return { pose: poseHand(r.side, r.place, targets, d, MM, off), states };
+  });
 }
 
-function Hands({ g, chars, dims, text, wpm, playing, labels }: { g: Geometry; chars: string; dims: HandDims; text: string; wpm: number; playing: boolean; labels: boolean }) {
-  const { home, keyTop } = useMemo(() => homeTargets(g), [g]);
-  const slotOf = useMemo(() => new Map([...chars].map((c, i) => [c, i])), [chars]);
-  const rest = useMemo(() => (["L", "R"] as const).filter((s) => home[s].index).map((s) => poseHand(s, home[s], dims, MM)), [home, dims]);
-  const init = useMemo(() => poseLines(rest), [rest]);
+/** Hands as line segments with square joints, colored per finger state; the palm as a translucent outline. */
+function Hands({ rigs, dims, plan, clock, keys, playing, loop, onEnd, labels }: {
+  rigs: Rig[]; dims: HandDims; plan: Plan | null; clock: MutableRefObject<number>; keys: MutableRefObject<Float32Array>;
+  playing: boolean; loop: boolean; onEnd: () => void; labels: boolean;
+}) {
+  const nh = rigs.length;
+  const outlineN = handLayout(dims).outline.length;
+  const segN = nh * (15 + outlineN) * 2, jointN = nh * 20;
   const lines = useRef<THREE.LineSegments>(null);
   const points = useRef<THREE.Points>(null);
-  const clock = useRef(0);
-  useFrame((_, dt) => {
-    if (!playing || !lines.current || !points.current) return;
-    clock.current += dt * (wpm * 5) / 60;
-    const tg = typingTargets(home, slotOf, g, keyTop, text, clock.current);
-    const poses = (["L", "R"] as const).filter((s) => home[s].index).map((s) => poseHand(s, tg[s], dims, MM));
-    const { seg, joints } = poseLines(poses);
-    (lines.current.geometry.attributes.position as THREE.BufferAttribute).set(seg);
-    lines.current.geometry.attributes.position.needsUpdate = true;
-    (points.current.geometry.attributes.position as THREE.BufferAttribute).set(joints);
-    points.current.geometry.attributes.position.needsUpdate = true;
+  const palmFill = useRef<THREE.Mesh>(null);
+  const color = useMemo(() => new THREE.Color(), []);
+  const rest = useMemo(() => framesAt(rigs, null, dims, -1), [rigs, dims]);
+
+  const draw = (frames: Frame3[]) => {
+    const [ls, ps, pf] = [lines.current, points.current, palmFill.current];
+    if (!ls || !ps || !pf) return;
+    const lp = ls.geometry.attributes.position as THREE.BufferAttribute, lc = ls.geometry.attributes.color as THREE.BufferAttribute;
+    const pp = ps.geometry.attributes.position as THREE.BufferAttribute, pc = ps.geometry.attributes.color as THREE.BufferAttribute;
+    const fill = pf.geometry.attributes.position as THREE.BufferAttribute;
+    let li = 0, ji = 0, fi = 0;
+    const seg = (p: V3, q: V3) => {
+      lp.setXYZ(li, p[0], p[1], p[2]); lc.setXYZ(li++, color.r, color.g, color.b);
+      lp.setXYZ(li, q[0], q[1], q[2]); lc.setXYZ(li++, color.r, color.g, color.b);
+    };
+    for (const { pose, states } of frames) {
+      pose.fingers.forEach((ch, f) => {
+        color.set(STATE_COLOR[states[FINGER_NAMES[f]]]);
+        ch.forEach((p, s) => {
+          pp.setXYZ(ji, p[0], p[1], p[2]); pc.setXYZ(ji++, color.r, color.g, color.b);
+          if (s < ch.length - 1) seg(p, ch[s + 1]);
+        });
+      });
+      color.set(BONE);
+      const ring = pose.palm;
+      const cx = ring.reduce((t, p) => t + p[0], 0) / ring.length, cy = ring.reduce((t, p) => t + p[1], 0) / ring.length, cz = ring.reduce((t, p) => t + p[2], 0) / ring.length;
+      ring.forEach((p, i) => {
+        const q = ring[(i + 1) % ring.length];
+        seg(p, q);
+        fill.setXYZ(fi++, cx, cy, cz);
+        fill.setXYZ(fi++, p[0], p[1], p[2]);
+        fill.setXYZ(fi++, q[0], q[1], q[2]);
+      });
+    }
+    for (const a of [lp, lc, pp, pc, fill]) a.needsUpdate = true;
+    pf.geometry.computeVertexNormals();
+  };
+
+  // Rest pose whenever the inputs change or typing stops; the clock restarts from the top.
+  useLayoutEffect(() => {
+    if (playing) return;
+    clock.current = -1;
+    keys.current.fill(0);
+    draw(rest);
   });
-  // Reset to the rest pose when stopped.
-  const key = `${playing}|${init.seg.length}|${dims.palmWidth}|${g.id}|${handLength(dims)}`;
-  const right = rest[rest.length - 1];
+  useFrame((_, dt) => {
+    if (!playing || !plan) return;
+    const next = clock.current < 0 ? 0 : clock.current + Math.min(dt, 0.1);
+    if (!loop && next > plan.end) { onEnd(); return; }
+    clock.current = loop ? next % (plan.end + LOOP_GAP) : next;
+    keysDown(plan, clock.current, keys.current);
+    draw(framesAt(rigs, plan, dims, clock.current));
+  });
+
   return (
-    <group key={key}>
+    <group key={`${nh}|${outlineN}`}>
       <lineSegments ref={lines} renderOrder={10}>
-        <bufferGeometry><bufferAttribute attach="attributes-position" args={[new Float32Array(init.seg), 3]} /></bufferGeometry>
-        <lineBasicMaterial color={INK} depthTest={false} transparent opacity={0.85} />
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[new Float32Array(segN * 3), 3]} />
+          <bufferAttribute attach="attributes-color" args={[new Float32Array(segN * 3), 3]} />
+        </bufferGeometry>
+        <lineBasicMaterial vertexColors depthTest={false} transparent />
       </lineSegments>
       <points ref={points} renderOrder={11}>
-        <bufferGeometry><bufferAttribute attach="attributes-position" args={[new Float32Array(init.joints), 3]} /></bufferGeometry>
-        <pointsMaterial color={INK} size={6} sizeAttenuation={false} depthTest={false} />
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[new Float32Array(jointN * 3), 3]} />
+          <bufferAttribute attach="attributes-color" args={[new Float32Array(jointN * 3), 3]} />
+        </bufferGeometry>
+        <pointsMaterial vertexColors size={6} sizeAttenuation={false} depthTest={false} transparent />
       </points>
-      {labels && !playing && right && right.fingers.map((ch, fi) => ch.slice(0, -1).map((a, si) => {
+      <mesh ref={palmFill}>
+        <bufferGeometry><bufferAttribute attach="attributes-position" args={[new Float32Array(nh * outlineN * 9), 3]} /></bufferGeometry>
+        <meshStandardMaterial color="#9a9a9a" transparent opacity={0.22} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      {labels && !playing && rest.map(({ pose }, h) => pose.fingers.map((ch, fi) => ch.slice(0, -1).map((a, si) => {
         const b = ch[si + 1];
-        const f = FINGER_NAMES[fi];
         return (
-          <Html key={`${fi}-${si}`} position={[(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + 0.05, (a[2] + b[2]) / 2]} center zIndexRange={[1, 0]}>
-            <span className="handlabel">{dims[f][si].toFixed(0)}</span>
+          <Html key={`${h}-${fi}-${si}`} position={[(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + 0.25, (a[2] + b[2]) / 2]} center zIndexRange={[1, 0]}>
+            <span className="handlabel">{dims[FINGER_NAMES[fi]][si].toFixed(0)}</span>
           </Html>
         );
-      }))}
+      })))}
     </group>
   );
 }
 
+/** Camera region covering the board and both resting hands. */
+function handFocus(g: Geometry, rigs: Rig[], d: HandDims, mode: ViewMode): Focus {
+  const b = boardBounds(g.key);
+  const xs = [-b.w / 2, b.w / 2], zs = [-b.h / 2, b.h / 2];
+  // Frame the unadjusted hands so the camera holds still while the wrist sliders move.
+  for (const { pose } of framesAt(rigs.map((r) => ({ ...r, place: r.base })), null, d, -1)) for (const p of [...pose.palm, ...pose.fingers.flat()]) { xs.push(p[0]); zs.push(p[2]); }
+  const [x0, x1, z0, z1] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
+  // The tilted camera foreshortens depth (its fit pads a shallow board's depth, see CameraRig).
+  return { cx: (x0 + x1) / 2, cz: (z0 + z1) / 2, w: x1 - x0, h: (mode === "3d" ? 0.62 : 1) * (z1 - z0) };
+}
+
 // ---------- bottom panels ----------
 
-/** One hand palm-down in 2D (right hand, fingers up) with dimension lines. */
+/** One right hand, palm down, turned so the fingers point right (thumb on top), with dimension lines. */
 function Measurements({ d }: { d: HandDims }) {
   const [box, { w, h }] = useSize<HTMLDivElement>();
-  const fingers: FingerName[] = ["index", "middle", "ring", "pinky"];
-  const len = (f: FingerName) => d[f][0] + d[f][1] + d[f][2];
-  const totalH = d.palmLength + Math.max(...fingers.map(len)) + 30;
-  const totalW = d.palmWidth + d.thumb[0] + d.thumb[1] + d.thumb[2] + 120;
-  const s = Math.min((w - 20) / totalW, (h - 20) / totalH);
-  const ox = 20 + (d.thumb[0] + d.thumb[1] + d.thumb[2]) * 0.75 * s + 40, oy = 10 + (Math.max(...fingers.map(len)) + 14) * s;
-  const kx = (i: number) => ox + (i / 3) * d.palmWidth * s;
-  const arch = [3, 0, 2, 8];
-  const tips: [number, number][] = [];
-  const els: React.ReactNode[] = [];
-  fingers.forEach((f, i) => {
-    let y = oy + arch[i] * s;
-    const x = kx(i);
-    els.push(<circle key={`k${f}`} cx={x} cy={y} r={2.5} fill={INK} />);
-    d[f].forEach((l, j) => {
-      const y2 = y - l * s;
-      els.push(<line key={`${f}${j}`} x1={x} y1={y} x2={x} y2={y2} stroke={INK} strokeWidth={1.4} />);
-      els.push(<circle key={`${f}j${j}`} cx={x} cy={y2} r={2} fill={INK} />);
-      els.push(<text key={`${f}t${j}`} x={x + 5} y={(y + y2) / 2 + 3}>{l.toFixed(0)}</text>);
-      y = y2;
-    });
-    tips.push([x, y]);
+  const lay = handLayout(d);
+  // Hand-local mm → drawing mm: forward (−z) to the right, toward the pinky (+x) down.
+  const P = (p: V3): [number, number] => [-p[2], p[0]];
+  const fingers = FOUR.map((f, i) => {
+    const k = lay.knuckles[i];
+    const pts: [number, number][] = [P(k)];
+    let z = k[2];
+    for (const l of d[f]) { z -= l; pts.push(P([k[0], 0, z])); }
+    return pts;
   });
-  // Thumb: from the base of the palm on the left (right hand, palm down), angled out 50°.
-  const tb: [number, number] = [ox - 6 * s, oy + d.palmLength * 0.62 * s];
-  let [tx, ty] = tb;
-  const ang = (-140 * Math.PI) / 180;
-  els.push(<circle key="tb" cx={tx} cy={ty} r={2.5} fill={INK} />);
+  // Thumb: out from its base toward the index side, bending a little toward the fingers.
+  const thumb: [number, number][] = [P(lay.thumb)];
   d.thumb.forEach((l, j) => {
-    const a = ang + j * 0.12;
-    const x2 = tx + Math.cos(a) * l * s, y2 = ty + Math.sin(a) * l * s;
-    els.push(<line key={`th${j}`} x1={tx} y1={ty} x2={x2} y2={y2} stroke={INK} strokeWidth={1.4} />);
-    els.push(<circle key={`thj${j}`} cx={x2} cy={y2} r={2} fill={INK} />);
-    els.push(<text key={`tht${j}`} x={(tx + x2) / 2 - 6} y={(ty + y2) / 2 + 12} textAnchor="end">{l.toFixed(0)}</text>);
-    [tx, ty] = [x2, y2];
+    const a = ((48 - 10 * j) * Math.PI) / 180;
+    const [x, y] = thumb[j];
+    thumb.push([x + l * Math.cos(a), y - l * Math.sin(a)]);
   });
-  const wristY = oy + d.palmLength * s;
-  const pinkTip = tips[3];
+  const outline = lay.outline.map(P);
+  const all = [...fingers.flat(), ...thumb, ...outline];
+  const xMax = Math.max(...all.map((p) => p[0])), yMin = Math.min(...all.map((p) => p[1])), yMax = Math.max(...all.map((p) => p[1]));
+  const indexTip = fingers[0][3], middleTip = fingers[1][3], pinkyTip = fingers[3][3], thumbTip = thumb[3];
+  // Fit: room for the reach circle on the right, dimension lines below, labels left and top.
+  const mx0 = -48, mx1 = Math.max(xMax, indexTip[0] + d.reach) + 34, my0 = Math.min(yMin, indexTip[1] - d.reach) - 10, my1 = yMax + 40;
+  const s = Math.max(0.1, Math.min((w - 16) / (mx1 - mx0), (h - 12) / (my1 - my0)));
+  const ox = (w - (mx1 - mx0) * s) / 2 - mx0 * s, oy = (h - (my1 - my0) * s) / 2 - my0 * s;
+  const X = (x: number) => ox + x * s, Y = (y: number) => oy + y * s;
+  const els: React.ReactNode[] = [];
+  const chain = (pts: [number, number][], lens: number[], key: string, below: boolean) => {
+    pts.forEach(([x, y], j) => {
+      els.push(<circle key={`${key}j${j}`} cx={X(x)} cy={Y(y)} r={j ? 2 : 2.6} fill={INK} />);
+      if (j === 0) return;
+      const [px, py] = pts[j - 1];
+      els.push(<line key={`${key}s${j}`} x1={X(px)} y1={Y(py)} x2={X(x)} y2={Y(y)} stroke={INK} strokeWidth={1.4} />);
+      els.push(<text key={`${key}t${j}`} x={(X(px) + X(x)) / 2} y={(Y(py) + Y(y)) / 2 + (below ? 12 : -5)} textAnchor="middle">{lens[j - 1].toFixed(0)}</text>);
+    });
+  };
+  fingers.forEach((pts, i) => chain(pts, d[FOUR[i]], FOUR[i], false));
+  chain(thumb, d.thumb, "thumb", false);
+  const kn = fingers.map((f) => f[0]);
+  const edge = (d.palmWidth - 0.76 * d.palmWidth) / 2;
+  const dimY1 = yMax + 14, dimY2 = yMax + 30;
+  const pwX = kn[1][0] - 10;
   return (
-    <div ref={box} className="chartfill">
-      <svg width={w} height={h}>
-        <path d={`M${kx(0)},${oy + arch[0] * s} L${kx(3)},${oy + arch[3] * s} L${kx(3) - 4 * s},${wristY} L${kx(0) + 8 * s},${wristY} L${tb[0]},${tb[1]} Z`} fill="none" stroke={MUTED} />
-        {els}
-        {/* palm width */}
-        <line x1={kx(0)} x2={kx(3)} y1={oy + 16 * s} y2={oy + 16 * s} stroke={ACCENT} markerEnd="url(#arr)" markerStart="url(#arr)" />
-        <text className="ink" x={(kx(0) + kx(3)) / 2} y={oy + 16 * s - 4} textAnchor="middle">palm width {d.palmWidth.toFixed(0)}</text>
-        {/* palm length */}
-        <line x1={kx(3) + 18 * s} x2={kx(3) + 18 * s} y1={oy} y2={wristY} stroke={ACCENT} markerEnd="url(#arr)" markerStart="url(#arr)" />
-        <text className="ink" x={kx(3) + 22 * s} y={(oy + wristY) / 2}>palm length {d.palmLength.toFixed(0)}</text>
-        {/* span */}
-        <line x1={tx} y1={ty} x2={pinkTip[0]} y2={pinkTip[1]} stroke={HAIR} strokeDasharray="4 3" />
-        <text x={tx - 4} y={ty - 6} textAnchor="end"><title>Thumb tip to pinky tip, spread flat</title>span {d.span.toFixed(0)}</text>
-        {/* reach around the index tip */}
-        <circle cx={tips[1][0]} cy={tips[1][1]} r={d.reach * s} fill="none" stroke={ACCENT} strokeDasharray="3 3" opacity={0.6} />
-        <text x={tips[1][0] + d.reach * s + 4} y={tips[1][1] - 4}>reach {d.reach.toFixed(0)}</text>
-        <defs><marker id="arr" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0L6,3L0,6" fill={ACCENT} /></marker></defs>
-      </svg>
+    <div className="measure">
+      <div ref={box} className="chartfill">
+        <svg width={w} height={h}>
+          <defs><marker id="arr" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0L6,3L0,6" fill={ACCENT} /></marker></defs>
+          <path d={outline.map(([x, y], i) => `${i ? "L" : "M"}${X(x)},${Y(y)}`).join(" ") + " Z"} fill="#f6f6f6" stroke={MUTED} />
+          {/* reach around the index tip */}
+          <circle cx={X(indexTip[0])} cy={Y(indexTip[1])} r={d.reach * s} fill="none" stroke={ACCENT} strokeDasharray="3 3" opacity={0.6} />
+          <text x={X(indexTip[0] + d.reach) + 4} y={Y(indexTip[1]) - 4}>reach {d.reach.toFixed(0)}</text>
+          {/* span */}
+          <line x1={X(thumbTip[0])} y1={Y(thumbTip[1])} x2={X(pinkyTip[0])} y2={Y(pinkyTip[1])} stroke={HAIR} strokeDasharray="4 3" />
+          <text x={X(thumbTip[0]) + 6} y={Y(thumbTip[1]) - 4}><title>Thumb tip to pinky tip, spread flat</title>span {d.span.toFixed(0)}</text>
+          {els}
+          {/* palm width, across the knuckles */}
+          <line x1={X(pwX)} x2={X(pwX)} y1={Y(kn[0][1] - edge)} y2={Y(kn[3][1] + edge)} stroke={ACCENT} markerEnd="url(#arr)" markerStart="url(#arr)" />
+          <text className="ink" x={X(pwX) - 6} y={Y((kn[0][1] + kn[3][1]) / 2) + 4} textAnchor="end">palm width {d.palmWidth.toFixed(0)}</text>
+          {/* palm length and hand length, wrist crease to the middle knuckle / tip */}
+          <line x1={X(0)} x2={X(0)} y1={Y(yMin)} y2={Y(dimY2) + 4} stroke={HAIR} />
+          <line x1={X(kn[1][0])} x2={X(0) + (kn[1][0]) * s} y1={Y(kn[1][1])} y2={Y(dimY1) + 4} stroke={HAIR} />
+          <line x1={X(middleTip[0])} x2={X(middleTip[0])} y1={Y(middleTip[1])} y2={Y(dimY2) + 4} stroke={HAIR} />
+          <line x1={X(0)} x2={X(kn[1][0])} y1={Y(dimY1)} y2={Y(dimY1)} stroke={ACCENT} markerEnd="url(#arr)" markerStart="url(#arr)" />
+          <text className="ink" x={X(kn[1][0] / 2)} y={Y(dimY1) - 4} textAnchor="middle">palm length {d.palmLength.toFixed(0)}</text>
+          <line x1={X(0)} x2={X(middleTip[0])} y1={Y(dimY2)} y2={Y(dimY2)} stroke={ACCENT} markerEnd="url(#arr)" markerStart="url(#arr)" />
+          <text className="ink" x={X(middleTip[0] / 2)} y={Y(dimY2) + 14} textAnchor="middle">hand length {handLength(d).toFixed(0)}</text>
+          <text x={X(0) - 6} y={Y((yMin + yMax) / 2)} textAnchor="end">wrist</text>
+        </svg>
+      </div>
+      <div className="measurelist">
+        <div className="kv"><span>Hand length</span><span>{handLength(d).toFixed(0)} mm</span></div>
+        <div className="kv"><span>Palm</span><span>{d.palmWidth.toFixed(0)} × {d.palmLength.toFixed(0)} mm</span></div>
+        {FINGER_NAMES.map((f) => <div key={f} className="kv"><span>{cap(f)}</span><span>{fingerLength(d, f).toFixed(0)} mm</span></div>)}
+        <div className="kv"><span title="Knuckle to fingertip, forward, in the natural typing curl (middle finger)">Curled reach</span><span>{naturalTip(d.middle)[0].toFixed(0)} mm · {(naturalTip(d.middle)[0] * MM).toFixed(2)} u</span></div>
+        <div className="kv"><span title="Centre to centre, index to pinky knuckles, divided by 3">Knuckle pitch</span><span>{((0.76 * d.palmWidth) / 3).toFixed(1)} mm</span></div>
+        <div className="kv"><span>Span · reach</span><span>{d.span.toFixed(0)} · {d.reach.toFixed(0)} mm</span></div>
+      </div>
+    </div>
+  );
+}
+
+/** Lanes top → bottom: left pinky … left thumb, right thumb … right pinky. */
+const LANES: [Side, FingerName][] = [
+  ["L", "pinky"], ["L", "ring"], ["L", "middle"], ["L", "index"], ["L", "thumb"],
+  ["R", "thumb"], ["R", "index"], ["R", "middle"], ["R", "ring"], ["R", "pinky"],
+];
+/** Seconds shown in the timeline; the playhead sits at PLAYHEAD of the width. */
+const WINDOW = 2.4;
+const PLAYHEAD = 0.65;
+
+/** Per-finger timeline of the typing plan (moves light, presses solid) with a playhead, plus stats. */
+function Typing({ plan, clock, playing }: { plan: Plan | null; clock: MutableRefObject<number>; playing: boolean }) {
+  const [box, { w, h }] = useSize<HTMLDivElement>();
+  const cv = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const el = cv.current;
+    if (!el || !w || !h) return;
+    const dpr = window.devicePixelRatio || 1;
+    el.width = w * dpr;
+    el.height = h * dpr;
+    const g = el.getContext("2d")!;
+    let raf = 0;
+    const draw = () => {
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.clearRect(0, 0, w, h);
+      g.font = "11px Inter, -apple-system, Helvetica, Arial, sans-serif";
+      const lx = 70, top = 18, lane = (h - top - 16) / LANES.length;
+      const now = clock.current;
+      const t0 = playing && now >= 0 ? now - PLAYHEAD * WINDOW : -0.1;
+      const sx = (t: number) => lx + ((t - t0) / WINDOW) * (w - lx - 4);
+      g.textBaseline = "middle";
+      LANES.forEach(([side, f], i) => {
+        const y = top + i * lane;
+        g.fillStyle = i % 2 ? "#fafafa" : "#f3f3f3";
+        g.fillRect(lx, y, w - lx, lane);
+        g.fillStyle = MUTED;
+        g.fillText(`${side} ${f}`, 4, y + lane / 2);
+      });
+      g.fillStyle = HAIR;
+      g.fillRect(lx, top + 5 * lane - 0.5, w - lx, 1);
+      if (plan) {
+        const period = plan.end + LOOP_GAP;
+        for (const shift of [-period, 0, period]) {
+          for (const pr of plan.presses) {
+            const i = LANES.findIndex(([s, f]) => s === pr.side && f === pr.finger);
+            const y = top + i * lane;
+            const [a, r, b, c] = [sx(pr.depart + shift), sx(pr.ready + shift), sx(pr.arrive + shift), sx(pr.up + shift)];
+            if (c < lx || a > w) continue;
+            const col = fingerColor(`${pr.side}${CODE_OF[pr.finger]}` as Finger);
+            g.globalAlpha = 0.35;
+            g.fillStyle = col;
+            g.fillRect(Math.max(a, lx), y + lane * 0.3, Math.max(0, r - Math.max(a, lx)), lane * 0.4);
+            g.fillRect(Math.max(r, lx), y + lane * 0.46, Math.max(0, b - Math.max(r, lx)), lane * 0.08);
+            if (Number.isFinite(pr.back)) g.fillRect(Math.max(c, lx), y + lane * 0.38, Math.max(0, sx(pr.back + shift) - Math.max(c, lx)), lane * 0.24);
+            g.globalAlpha = 1;
+            g.fillRect(Math.max(b, lx), y + lane * 0.15, Math.max(1.5, c - Math.max(b, lx)), lane * 0.7);
+            g.fillStyle = INK;
+            if (b >= lx) g.fillText(pr.ch === " " ? "␣" : pr.ch, c + 3, y + lane / 2);
+            if (pr.limit !== "rhythm" && b >= lx) {
+              g.fillStyle = pr.limit === "finger" ? ERROR : MUTED;
+              g.beginPath();
+              g.moveTo(b, y + lane * 0.15); g.lineTo(b - 4, y + 1); g.lineTo(b + 4, y + 1);
+              g.fill();
+            }
+          }
+        }
+      }
+      g.fillStyle = MUTED;
+      g.fillText("light: moving · thin: ready over the key · solid: key down · ▼ waited for the same finger (red) or a late start (grey)", lx, 8);
+      if (playing && now >= 0) {
+        g.fillStyle = ACCENT;
+        g.fillRect(sx(now) - 0.75, top, 1.5, h - top - 16);
+      }
+      g.fillStyle = MUTED;
+      g.textAlign = "right";
+      g.fillText(`${WINDOW.toFixed(1)} s window`, w - 4, h - 7);
+      g.textAlign = "left";
+      if (playing) raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => cancelAnimationFrame(raf);
+  }, [plan, playing, w, h, clock]);
+  const st = plan?.stats;
+  const pct = (x: number) => `${(100 * x).toFixed(0)}%`;
+  const n = plan?.presses.length ?? 0;
+  return (
+    <div className="typingpanel">
+      <div ref={box} className="chartfill"><canvas ref={cv} style={{ width: w, height: h, display: "block" }} /></div>
+      {st && (
+        <div className="measurelist">
+          <div className="kv"><span title="Speed reached with every finger at its natural pace and this parallelism, vs the target: a key waits until its finger can get there">Speed</span><span>{st.wpm.toFixed(0)} of {st.targetWpm} wpm</span></div>
+          <div className="kv"><span title="Keys that went down later than the target rhythm because their finger could not get there in time">Late keys</span><span>{st.fingerWaits + st.serialWaits} of {n}</span></div>
+          <div className="kv"><span title="Keys whose finger set off before the previous key was released">Started early</span><span>{pct(st.early)}</span></div>
+          <div className="kv"><span title="Share of the time with two or more fingers moving, waiting over a key, or pressing at once">Fingers overlap</span><span>{pct(st.overlap)}</span></div>
+          <div className="kv"><span title="Waited because the same finger had just pressed its previous key">· same finger</span><span>{st.fingerWaits}</span></div>
+          <div className="kv"><span title="Waited because the finger could not set off before the previous key was released (raise Parallel)">· late start</span><span>{st.serialWaits}</span></div>
+          <div className="kv"><span>Hand alternation</span><span>{pct(st.alternation)}</span></div>
+          <div className="kv"><span title="Fingertip travel per keystroke, including returns home">Travel / key</span><span>{st.travel.toFixed(1)} mm</span></div>
+          <div className="kv"><span title="Presses after which the finger goes back to its home key before its next press">Home returns</span><span>{pct(st.homeReturns)}</span></div>
+        </div>
+      )}
+      {st && (
+        <div className="measurelist">
+          <div className="kv head"><span>Finger</span><span>keys · mm · busy</span></div>
+          {LANES.filter(([s, f]) => st.perFinger[fingerKey(s, f)]).map(([s, f]) => {
+            const x = st.perFinger[fingerKey(s, f)];
+            return <div key={s + f} className="kv"><span>{s} {f}</span><span>{x.presses} · {x.travel.toFixed(0)} · {pct(x.busy)}</span></div>;
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -298,20 +517,47 @@ export function HandView(p: Props) {
   const h = p.hand;
   const d = handDims(h);
   const off = !h.use;
-  const [tab, setTab] = useState<"measure" | "size" | "similar">("measure");
+  const [tab, setTab] = useState<"measure" | "typing" | "size" | "similar">("measure");
+  const [sideTab, setSideTab] = useState<"hand" | "simulation">("hand");
   const [sample, setSample] = useState("pangram");
-  const [wpm, setWpm] = useState(40);
+  const [wpm, setWpm] = useState(120);
+  const [parallel, setParallel] = useState(1);
   const [playing, setPlaying] = useState(false);
+  const [loop, setLoop] = useState(true);
+  const [labels, setLabels] = useState(false);
   const [mode, setMode] = useState<ViewMode>("3d");
+  const clock = useRef(-1);
+  /** Press state per board key, written by the typing animation, read by the keycaps. */
+  const keys = useRef(new Float32Array(0));
+  if (keys.current.length !== p.geometry.key.length) keys.current = new Float32Array(p.geometry.key.length);
   const setDims = (next: HandDims) => p.setHand({ ...h, preset: "custom", custom: next });
   const setSeg = (f: FingerName, i: number, v: number) => { const s = [...d[f]] as [number, number, number]; s[i] = Math.max(1, v); setDims({ ...d, [f]: s }); };
-  const speed = Object.entries(SPEED_WPM).find(([, v]) => v === wpm)?.[0] ?? "";
+
+  // `d` is rebuilt every render; key the memos on its values.
+  const dimsKey = dimsVector(d).join(",");
+  const w = wristOf(h);
+  const wristKey = Object.values(w).join(",");
+  const setWrist = (patch: Partial<Wrist>) => p.setHand({ ...h, wrist: { ...w, ...patch } });
+  const { rigs, keyTop } = useMemo(() => buildRigs(p.geometry, d, w), [p.geometry, dimsKey, wristKey]);
+  const focus = useMemo(() => handFocus(p.geometry, rigs, d, mode), [p.geometry, rigs, mode]);
+  // Fingers that cannot reach their home key in the resting pose (wrist adjusted too far), with the gap in mm.
+  const unreachable = useMemo(() => framesAt(rigs, null, d, -1).flatMap(({ pose }, hi) => FINGER_NAMES.map((f, fi) => {
+    const tip = pose.fingers[fi][3], t = rigs[hi].home[f];
+    return { name: `${rigs[hi].side} ${f}`, gap: Math.hypot(tip[0] - t[0], tip[1] - t[1], tip[2] - t[2]) / MM };
+  })).filter((x) => x.gap > 1), [rigs, dimsKey]);
+  const text = SAMPLES.find(([k]) => k === sample)?.[1] ?? "";
+  const plan = useMemo(() => {
+    if (!rigs.length) return null;
+    const strokes = strokesFor(text, p.geometry, p.chars, rigs, keyTop);
+    const homeOf = (s: Side, f: FingerName) => rigs.find((r) => r.side === s)!.home[f];
+    return planTyping(strokes, homeOf, wpm, parallel, MM);
+  }, [rigs, keyTop, text, p.geometry, p.chars, wpm, parallel]);
 
   return (
     <Frame
-      title="Hand"
+      title={<Seg inline value={sideTab} onChange={setSideTab} options={[["hand", "Hand"], ["simulation", "Simulation"]]} />}
       side={
-        <>
+        sideTab === "hand" ? <>
           <div className="pad">
             <Toggle label="Use hand in optimization" help="Score layouts with this hand's reach (needs the hand model in the scorer, #92). Off: preview only." value={h.use} onChange={(use) => p.setHand({ ...h, use })} />
             {off && <div className="hint">Off: the scorer ignores the hand. The views on the right still preview it.</div>}
@@ -345,34 +591,56 @@ export function HandView(p: Props) {
               <div className="btns"><button className="btn soft small" disabled={off || h.preset !== "custom"} onClick={() => p.setHand({ ...h, preset: "average", custom: null })}>Reset to Average</button></div>
             </Sec>
           </fieldset>
-        </>
+        </> : (
+          <Sec id="hand-wrist" title="Wrist" note="view only">
+            <div className="wrist">
+              <Slider label="Height" help="Raise (+) or lower (−) the wrist and palm from where the fingers rest naturally; the fingers still reach the home keys." value={w.height} min={-30} max={40} step={1} unit={`${w.height} mm`} onChange={(height) => setWrist({ height })} />
+              <Slider label="Distance" help="Move the wrists toward you (+) or toward the keyboard (−)." value={w.distance} min={-40} max={60} step={1} unit={`${w.distance} mm`} onChange={(distance) => setWrist({ distance })} />
+              <Slider label="Spread" help="Move each hand away from (+) or toward (−) the middle of the board." value={w.spread} min={-40} max={60} step={1} unit={`${w.spread} mm`} onChange={(spread) => setWrist({ spread })} />
+              <Slider label="Angle" help="Turn each hand about the wrist: + points the fingers more toward the middle of the board, − straighter ahead or outward." value={w.angle} min={-30} max={30} step={1} unit={`${w.angle}°`} onChange={(angle) => setWrist({ angle })} />
+              <Slider label="Tilt" help="Roll each hand about the forearm: + lifts the thumb side so the pinky side sits closer to the keyboard (the index knuckle rises toward the middle); − the reverse." value={w.tilt} min={-30} max={45} step={1} unit={`${w.tilt}°`} onChange={(tilt) => setWrist({ tilt })} />
+              <Slider label="Wrist movement" help="How much the whole hand follows a reaching finger while typing: 0 keeps the wrist planted (fingers stretch), 100% moves the hand with the finger." value={w.follow} min={0} max={1} step={0.05} unit={`${(100 * w.follow).toFixed(0)}%`} onChange={(follow) => setWrist({ follow })} />
+              <div className="btns"><button className="btn soft small" disabled={Object.entries(WRIST0).every(([k, v]) => w[k as keyof Wrist] === v)} onClick={() => p.setHand({ ...h, wrist: WRIST0 })}>Reset wrist</button></div>
+            </div>
+          </Sec>
+        )
       }
       main={
-        <div className="viewport">
-          <Keyboard3D geometry={p.geometry} chars={p.chars} heat={[]} arcs={[]} overlay="none" mode={mode} selected={null} onKey={() => {}}>
-            <Hands g={p.geometry} chars={p.chars} dims={d} text={SAMPLES.find(([k]) => k === sample)?.[1] ?? ""} wpm={wpm} playing={playing} labels />
+        <div className="viewport hand-viewport">
+          <Keyboard3D geometry={p.geometry} chars={p.chars} heat={[]} arcs={[]} overlay="none" mode={mode} selected={null} onKey={() => {}} focus={focus} pressed={keys}>
+            <Hands rigs={rigs} dims={d} plan={plan} clock={clock} keys={keys} playing={playing} loop={loop} onEnd={() => setPlaying(false)} labels={labels} />
           </Keyboard3D>
-          <div className="viewlabel"><span>Hands on {p.geometry.name}</span><span className="muted">fingertips on the home keys (IK)</span></div>
+          <div className="viewlabel">
+            <span>Hands on {p.geometry.name}</span>
+            {unreachable.length > 0 && <span className="err" title="These fingertips cannot reach their home key from this wrist position; they point at it, fully extended.">out of reach: {unreachable.map((x) => `${x.name} ${x.gap.toFixed(0)} mm`).join(", ")}</span>}
+            <span className="muted">{playing && plan ? `typing · ${plan.stats.wpm.toFixed(0)} of ${wpm} wpm reached · ${(100 * plan.stats.early).toFixed(0)}% of keys started early` : "fingertips on the home keys (IK)"}</span>
+          </div>
           <div className="viewctl">
+            <div className="seg inline"><button className={labels ? "on" : ""} onClick={() => setLabels(!labels)} title="Segment lengths (mm) on the resting hands">Lengths</button></div>
             <div className="seg inline"><button className={mode === "3d" ? "on" : ""} onClick={() => setMode(mode === "3d" ? "top" : "3d")} title="3D view (off: flat top-down)">3D</button></div>
           </div>
           <div className="typingbar">
-            <button className="btn primary small" onClick={() => setPlaying(!playing)}>{playing ? "Stop" : "Type"}</button>
+            <button className="btn primary small" onClick={() => setPlaying(!playing)}>{playing ? "Stop" : "Play"}</button>
             <select value={sample} onChange={(e) => setSample(e.target.value)} title="Sample text">
               {SAMPLES.map(([k, t]) => <option key={k} value={k}>{t.length > 34 ? `${t.slice(0, 34)}…` : t}</option>)}
             </select>
-            <Seg inline value={speed} options={SPEEDS} onChange={(s) => setWpm(SPEED_WPM[s])} />
-            <input type="range" min={5} max={120} step={5} value={wpm} onChange={(e) => setWpm(+e.target.value)} title="Words per minute" />
-            <span className="muted">{wpm} wpm</span>
+            <div className="seg inline"><button className={loop ? "on" : ""} onClick={() => setLoop(!loop)} title="Repeat the sample (off: type it once, then stop)">Loop</button></div>
+            <input type="range" min={5} max={200} step={5} value={wpm} onChange={(e) => setWpm(+e.target.value)} title="Target words per minute" />
+            <span className="muted num">{wpm} wpm</span>
+            <span className="sep" />
+            <label className="muted" title="How far the next finger moves while the previous key is still down. 0: one finger at a time (each starts after the previous release); 100%: the next finger travels during the previous press and waits over its key; above 100%: keys roll over (each held into the next press) and fingers get ready ever earlier; 300%: every finger heads for its next key as soon as it is free.">Parallel</label>
+            <input type="range" min={0} max={3} step={0.05} value={parallel} onChange={(e) => setParallel(+e.target.value)} title="Finger overlap" />
+            <span className="muted num">{(100 * parallel).toFixed(0)}%</span>
           </div>
         </div>
       }
       bottom={
         <div className="bottomtabs">
-          <PanelTabs value={tab} onChange={setTab} options={[["measure", "Measurements"], ["size", "Size distribution"], ["similar", "Similarity"]]}
+          <PanelTabs value={tab} onChange={setTab} options={[["measure", "Measurements"], ["typing", "Typing"], ["size", "Size distribution"], ["similar", "Similarity"]]}
             right={<span className="hint">{h.preset === "custom" ? "Custom" : cap(h.preset)} hand</span>} />
           <div className="bottombody">
             {tab === "measure" && <Measurements d={d} />}
+            {tab === "typing" && <Typing plan={plan} clock={clock} playing={playing} />}
             {tab === "size" && <SizeDistribution d={d} />}
             {tab === "similar" && <Similarity d={d} />}
           </div>

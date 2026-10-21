@@ -28,11 +28,12 @@ web/src/
 ## Screen
 
 Navbar (see design.md "App shell"): Inputs tabs (Board, Hand, Language, Profile, Search) |
-Results tabs (Home, Explore, Analysis, Saved) · play / pause / stop centred, run % beside ·
+Results tabs (Home, Explore, Analysis, Saved) · play / pause / stop centred with run % beside
+(on Results tabs only) ·
 working model right. The tab is remembered in `localStorage`; old names map (Corpus →
 Language, Stats → Analysis, Runs → Saved, Optimize → Home).
 
-- Inputs live in one store (`inputs.ts`); Play uses them whichever tab it is pressed on: the
+- Inputs live in one store (`inputs.ts`); Play on any Results tab uses them: the
   Search settings, an exploration on the Explore tab, or resume when paused. Pause freezes
   the workers and the budget clock; Stop cancels (results so far are saved). The % is time
   or evaluations used of the budget.
@@ -57,14 +58,29 @@ key opens a popup (x, y, z, rx, ry, rz, finger); the first edit forks the board 
 (`board.ts`) ranked against the other boards.
 
 ### Hand
-Sidebar: **Use hand in optimization** (default off; off greys out the settings, the views
+Sidebar tabs: **Hand** (default) and **Simulation**. Hand contains **Use hand in optimization** (default off; off greys out the settings, the views
 still preview), presets Average / Large / Small (Custom appears after an edit), Advanced:
-every segment length, palm width / length, span, reach. Main: wireframe hands in 3D on the
-current board, fingertips on the home keys by planar IK (`hand.ts`), length labels; Type
-animates a sample text at a chosen speed (slow / normal / fast or a WPM slider) using the
-loaded layout. Bottom tabs: Measurements (2D hand with dimension lines), Size distribution
-(normal curve of hand length, Small / Average / Large bands, this hand marked), Similarity
-(typicality of this hand among a synthetic population).
+every segment length, palm width / length, span, reach. Main: skeletal hands in 3D on the
+current board (`hand.ts`: one right-hand skeleton mirrored for the left, each hand placed by
+fitting natural finger reach to the home keys, thumb on the nearest thumb key, finger IK
+within joint limits), a Lengths toggle for segment labels; the Simulation tab in the left
+sidebar contains the Wrist controls (view only, outside the "use hand"
+lock). These offset the solved placement, mirrored per hand: height, distance, spread,
+angle, tilt (roll, + thumb side up) and wrist movement (how much the hand follows a reaching
+finger); fingertips that can no longer reach their home key are listed in red. Play animates
+a sample text on the loaded layout once or on Loop (the button returns to Play when a single
+pass ends): every finger moves at its natural pace toward a target WPM
+(5–200, default 120); a key waits until its finger gets there, so the speed reached can fall short. A Parallel slider (0–300%, default 100%) sets how early fingers set off for their
+next key (100%: during the previous press; above: keys roll over; 300%: as soon as free).
+The playback bar background fits its controls, wrapping within the viewport on narrower screens.
+The wrist follows far reaches. Hands are lines with square joints; moving fingers are light
+blue, pressing ones accent; a pressed key sinks 3.5 mm with the fingertip and turns blue.
+Bottom tabs: Measurements (the hand drawn horizontally, fingers right, with dimension lines,
+plus derived lengths), Typing (per-finger timeline of moves, waits and presses with a
+playhead, late keys marked; speed reached vs target, late keys (same finger or late start),
+keys started early, overlap, alternation, travel, per-finger load), Size distribution (normal curve of hand length,
+Small / Average / Large bands, this hand marked), Similarity (typicality of this hand among
+a synthetic population).
 
 ### Language
 Sidebar "Languages · N": collapsible rows with a status (Summarized / Unsummarized /
@@ -78,7 +94,7 @@ bigrams, trigrams, skipgrams (`corpus_stats`). Local languages cannot be used fo
 
 ### Profile
 Sidebar: profile picker + reset, then every parameter in sections (Finger load with
-targets, Rows and reach, Same-finger with SFB distance settings, Stretches and scissors,
+relative effort inputs, Rows and reach, Same-finger with SFB distance settings, Stretches and scissors,
 Rolls and alternation, Redirects, Measured comfort, Layers, Shortcuts and familiarity,
 Precision); each field has a tooltip. Scroll-spy marks the focused section (click a title to
 jump). Main: a visual of the focused section on the current layout (finger heat + finger
@@ -139,7 +155,7 @@ of them; width and opacity ∝ √(frequency / most frequent visible pair); colo
 violet, other same-hand ink, alternation faint; same-hand and alternate start hidden; legend chips toggle each class and show its %).
 `spin` (Board tab) resets the camera and auto-rotates until the first interaction; children
 render in board-centred coordinates (`boardBounds`, `place`, `CAP_H`; the Hand tab's
-wireframe hands). A 3D toggle (default on) switches between the orbit camera and a flat top-down view with rotation
+skeletal hands; a `focus` region makes the camera frame board and hands; `pressed`, a per-key depth array read each frame, sinks and tints keys without re-rendering). A 3D toggle (default on) switches between the orbit camera and a flat top-down view with rotation
 locked; both presets fit the board to the viewport. A floor grid (1u cells, 5u sections) sits under the case. Flat and curved boards use the same code path.
 
 ## API (gecko serve)
@@ -172,3 +188,15 @@ fields use defaults. The server limits islands to core count and caps population
 work. Older saved Search preferences acquire defaults for the new fields.
 `npm run test:parity` builds WASM and the native CLI and checks every reference score and
 metric against fresh CLI output across all bundled profiles (1e-6 relative).
+
+Finger load uses five fingers with symmetric hands by default; disable symmetry to edit
+each hand. Each finger has typing, side-to-side, and up/down effort. Generated target
+percentages are read-only, normalized from inverse typing costs over fingers on the board;
+M09 uses the combined generated thumb target. Turning symmetry back on copies left to
+right. Web profiles acquire these defaults on selection/reset; legacy CLI profiles keep
+their percentage targets unless `finger_effort` is supplied.
+
+Profile parameter rows omit trailing metric-ID labels and use equal left/right sidebar
+padding (`--s4`, 16px). Finger effort groups appear in index, middle, ring, pinky, thumb order for each hand,
+using standard spacing and hairline dividers, with explicit
+Typing effort / Sideways effort / Vertical effort labels. Metric IDs remain in tooltips.

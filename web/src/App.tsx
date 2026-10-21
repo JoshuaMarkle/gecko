@@ -304,16 +304,18 @@ export function App() {
           ))}
         </nav>
         <div className="transportwrap">
-          <div className="transport" aria-label="Optimization">
-            <button className="play" onClick={play} disabled={!corpus || (live?.running && !paused)} aria-label={paused ? "Resume" : "Play"}
-              title={paused ? "Resume" : live?.running ? "Running" : view === "explore" ? `Explore the search space (${search.timeS}s)` : `Optimize: ${algoName(search.algo)}, ${search.budget === "evals" ? `${fmtCount(search.evals ?? 50_000_000)} evals` : `${search.timeS}s`}`}>
-              <IconPlay />
-            </button>
-            <button className={`tool ${paused ? "on" : ""}`} onClick={() => setPaused(!paused)} disabled={!live?.running}
-              title={paused ? "Resume" : "Pause"} aria-label="Pause" aria-pressed={paused}><IconPause /></button>
-            <button className="tool" onClick={stopRun} disabled={!live?.running} title="Stop now (results are kept)" aria-label="Stop"><IconStop /></button>
-          </div>
-          {frac !== null && <span className="runpct" title={live?.running ? `${fmtTime(activeMs)} elapsed` : "done"}>{Math.round(100 * frac)}%</span>}
+          {!INPUT_TABS.some(([tab]) => tab === view) && <>
+            <div className="transport" aria-label="Optimization">
+              <button className="play" onClick={play} disabled={!corpus || (live?.running && !paused)} aria-label={paused ? "Resume" : "Play"}
+                title={paused ? "Resume" : live?.running ? "Running" : view === "explore" ? `Explore the search space (${search.timeS}s)` : `Optimize: ${algoName(search.algo)}, ${search.budget === "evals" ? `${fmtCount(search.evals ?? 50_000_000)} evals` : `${search.timeS}s`}`}>
+                <IconPlay />
+              </button>
+              <button className={`tool ${paused ? "on" : ""}`} onClick={() => setPaused(!paused)} disabled={!live?.running}
+                title={paused ? "Resume" : "Pause"} aria-label="Pause" aria-pressed={paused}><IconPause /></button>
+              <button className="tool" onClick={stopRun} disabled={!live?.running} title="Stop now (results are kept)" aria-label="Stop"><IconStop /></button>
+            </div>
+            {frac !== null && <span className="runpct" title={live?.running ? `${fmtTime(activeMs)} elapsed` : "done"}>{Math.round(100 * frac)}%</span>}
+          </>}
         </div>
         <div className="navright">
           {view === "language" && sel?.local && (
