@@ -1,0 +1,14 @@
+name = "Colemak-DH + code layers (toggled numbers)"
+geometry = "corne-36"
+source = "corne-code with a held symbol layer and a toggled number layer"
+# {tg2} toggles the number layer: one tap in, one tap out (the same key leaves it).
+rows = ['qwfpbjluy;', 'arstgmneio', 'zxcdvkh,./', '{esc}{space}{layer1}{enter}{bspc}{tg2}']
+
+[[layer]]
+name = "sym"
+rows = ['!@#$%^&*~`', '{}()=+_?:"', '[]<>|\····', '······']
+
+[[layer]]
+name = "num"
+mode = "toggle"
+rows = ['··········', '1234567890', '··········', '······']

@@ -9,7 +9,7 @@ pub mod trigram;
 use serde::Serialize;
 
 use crate::profile::{DistanceFn, SfbParams};
-use crate::{Geometry, Profile};
+use crate::{Geometry, LayerMode, Profile};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -136,7 +136,7 @@ pub static METRICS: &[MetricDef] = &[
         "%",
         Order::Bi,
         Dir::Min,
-        "Layer-key presses per 100 bigrams (hold model: a press when the next symbol is on another non-base layer); a press right after a key on the layer key's finger counts double. Plus Shift presses per 100 keystrokes (with a ⇧ key), double when Shift's finger also types the shifted key or the key before.",
+        "Layer-key presses per 100 bigrams: hold and toggle layers cost a press on entry, toggle layers another to leave, one-shot layers one per symbol; a press next to another key of the layer key's finger counts double. Plus Shift presses per 100 keystrokes (with a ⇧ key), double when Shift's finger also types the shifted key or the key before.",
     ),
     m(
         "Y02",
@@ -201,21 +201,40 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
         }),
         "B05" => pair(&|i, j| pct(adjacent(i, j) && (k[i].row - k[j].row).abs() >= 2)),
         "B08" => pair(&|i, j| pct(!same_hand(i, j))),
-        "Y01" => pair(&|i, j| {
-            let lj = k[j].layer as usize;
-            if lj == 0 || k[i].layer as usize == lj {
-                return 0.0;
-            }
-            let h = g.layer_keys[lj - 1];
-            if k[i].finger == k[h].finger && g.phys(i) != h {
-                200.0
-            } else {
-                100.0
-            }
+        "Y01" => pair(&|i, j| layer_presses(g, i, j)),
+        "Y02" => pair(&|i, j| {
+            let oneshot = k[i].layer != 0 && layer_mode(g, k[i].layer as usize) == LayerMode::Oneshot;
+            pct(same_finger(i, j) || k[i].layer != k[j].layer || oneshot)
         }),
-        "Y02" => pair(&|i, j| pct(same_finger(i, j) || k[i].layer != k[j].layer)),
         id if id.starts_with('T') => Some(trigram::table(g, trigram::class_for(id)?)),
         _ => None,
+    }
+}
+
+fn layer_mode(g: &Geometry, l: usize) -> LayerMode {
+    g.layer_modes.get(l - 1).copied().unwrap_or_default()
+}
+
+/// Y01 cost of typing slot `j` right after slot `i`: 100 per layer-key press in between (a
+/// toggle layer's key to leave `i`'s layer, then the key to reach `j`'s layer unless it is
+/// already active, always for one-shot), plus 100 per press adjacent to another key on the
+/// same finger. A hold layer is released for free; its finger's keys are not on the layer.
+fn layer_presses(g: &Geometry, i: usize, j: usize) -> f32 {
+    let (li, lj) = (g.key[i].layer as usize, g.key[j].layer as usize);
+    let mut seq = vec![i];
+    if li != 0 && li != lj && layer_mode(g, li) == LayerMode::Toggle {
+        seq.push(g.layer_keys[li - 1]);
+    }
+    if lj != 0 && (li != lj || layer_mode(g, lj) == LayerMode::Oneshot) {
+        seq.push(g.layer_keys[lj - 1]);
+    }
+    seq.push(j);
+    let presses = seq.len() - 2;
+    let sf = seq.windows(2).filter(|w| g.key[w[0]].finger == g.key[w[1]].finger && !g.same_key(w[0], w[1])).count();
+    if presses == 0 {
+        0.0
+    } else {
+        100.0 * (presses + sf) as f32
     }
 }
 

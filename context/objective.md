@@ -99,13 +99,16 @@ fronts (NSGA-II). Reports always show the per-metric breakdown.
 
 ## Layers (Y01, Y02)
 
-- **Y01** (bigram table on the layered geometry): 100 when the second symbol is on a
-  non-base layer the first isn't on (one layer-key press, hold model), 200 when the first key
-  is on the layer key's finger (same-finger into the layer key). Reads "presses per 100
-  bigrams". Releases are free.
+- **Y01** (bigram table on the layered geometry, expanded per layer mode): typing `j` after
+  `i` costs 100 per layer-key press in between, plus 100 for each press next to a different key
+  on the same finger (same-finger into or out of the layer key). Presses: a toggle layer's key
+  to leave `i`'s layer when `j` is elsewhere, then `j`'s layer key unless `j`'s layer is already
+  active — one-shot layers always need it. Hold releases are free. So hold costs once per run
+  of layer symbols, one-shot once per symbol, toggle twice per run (in and out). Reads
+  "presses per 100 bigrams".
 - **Y02** (own channel `fy`/`Cy`, `Order::SymBi`): frequencies are only bigrams of two ASCII
-  punctuation symbols, normalized on their own; cost 100 when they are on one finger (two keys)
-  or on different layers. Reads "% of symbol bigrams that are awkward". Adds one term to the
+  punctuation symbols, normalized on their own; cost 100 when they are on one finger (two keys),
+  on different layers, or the first is on a one-shot layer (a tap between them). Reads "% of symbol bigrams that are awkward". Adds one term to the
   pair delta only when weighted.
 - **Shift** (layout has `⇧` keys and the corpus has case counts, `GKCORP3`): a layer-like hold
   on its own fixed key. Each press (one per run of shifted symbols) is typed with the best `⇧`
@@ -115,5 +118,5 @@ fronts (NSGA-II). Reports always show the per-metric breakdown.
   channels: mono `fsh`/`Csh` and pair `fsb`/`Csb` (the latter compiled into the pair delta only
   when weighted). Without `⇧` on the layout Shift costs nothing, so 30-key layouts score as
   before. A one-shot Shift costs the same for single capitals; caps runs are scored as held.
-- Not modeled yet: the layer/Shift key's own keystroke in finger load, one-shot layers,
-  thumb-trigram classes. Profile `code` weights Y01/Y02 (scales are rough estimates).
+- Not modeled yet: the layer/Shift key's own keystroke in finger load, thumb-trigram classes,
+  layer state beyond one bigram (toggle assumes each bigram starts from `i`'s layer). Profile `code` weights Y01/Y02 (scales are rough estimates).

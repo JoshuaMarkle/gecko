@@ -171,8 +171,15 @@ proptest! {
 /// Layered layouts: symbols move between layers and onto empty layer slots; Y01/Y02 weighted
 /// (all_weights), so the code-symbol channel is exercised.
 fn layered_scorer() -> (Scorer, Layout) {
+    layered_scorer_for("corne-code")
+}
+
+/// Hold (`corne-code`), one-shot and toggle layers.
+const LAYERED: [&str; 3] = ["corne-code", "corne-code-oneshot", "corne-code-numtoggle"];
+
+fn layered_scorer_for(name: &str) -> (Scorer, Layout) {
     let g = thumb_board("corne-36");
-    let l = Layout::from_toml(&read("data/layouts/layered/corne-code.toml")).unwrap().fit(&g).unwrap();
+    let l = Layout::from_toml(&read(&format!("data/layouts/layered/{name}.toml"))).unwrap().fit(&g).unwrap();
     let c = synthetic(gecko_core::corpus::CODE_CHARSET, 7);
     (Scorer::new(&g, &c, &all_weights(), &l).unwrap(), l)
 }
@@ -180,8 +187,8 @@ fn layered_scorer() -> (Scorer, Layout) {
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(32))]
     #[test]
-    fn delta_matches_full_with_layers(seed in 0u64..10_000, swaps in proptest::collection::vec((0usize..128, 0usize..128), 1..40)) {
-        let (sc, _) = layered_scorer();
+    fn delta_matches_full_with_layers(seed in 0u64..10_000, which in 0usize..3, swaps in proptest::collection::vec((0usize..128, 0usize..128), 1..40)) {
+        let (sc, _) = layered_scorer_for(LAYERED[which]);
         let ctx = Ctx::new(&sc, (0..sc.n).collect(), sc.identity());
         let mut st = ctx.random_state(&mut Rng::new(seed));
         for (a, b) in swaps {
@@ -265,6 +272,58 @@ fn layered_layouts_round_trip_and_score() {
     let i = bad.layers[0].chars.iter().position(|&c| c == '!').unwrap();
     bad.layers[0].chars.swap(i, lt);
     assert!(bad.flat(&g).is_err());
+}
+
+#[test]
+fn layer_modes_parse_round_trip_and_cost() {
+    use gecko_core::layout::{layer_key_info, ONESHOT_KEYS, TOGGLE_KEYS};
+    use gecko_core::LayerMode::{Hold, Oneshot, Toggle};
+    let g = thumb_board("corne-36");
+    let p = all_weights();
+    let y01 = gecko_core::metrics::def("Y01").unwrap();
+    for (name, modes, n) in [
+        ("corne-code", [Hold, Hold], 36 + 33 + 33),
+        ("corne-code-oneshot", [Oneshot, Oneshot], 36 + 35 + 35),
+        ("corne-code-numtoggle", [Hold, Toggle], 36 + 33 + 35),
+    ] {
+        let (sc, l) = layered_scorer_for(name);
+        assert_eq!(sc.n, n, "{name}");
+        assert_eq!(l.holders().unwrap().iter().map(|h| h.1).collect::<Vec<_>>(), modes, "{name}");
+        // The mode survives TOML and the flat string (runs, `raw:`).
+        let back = Layout::from_toml(&l.to_toml(&g)).unwrap();
+        assert_eq!(back.chars, l.chars);
+        let (vg, flat) = l.flat(&g).unwrap();
+        let again = Layout::from_flat("x", &g, flat.clone()).unwrap();
+        assert_eq!(again.holders().unwrap(), l.holders().unwrap());
+        assert_eq!(vg.layer_modes, modes);
+        // Y01 per mode, from the expanded bigram table.
+        let t = gecko_core::metrics::table(&vg, &p, y01).unwrap();
+        let at = |c: char| flat.iter().position(|&x| x == c).unwrap();
+        let cost = |a: char, b: char| t[at(a) * vg.len() + at(b)];
+        let space = gecko_core::layout::SPACE;
+        let bspc = gecko_core::layout::BACKSPACE;
+        // Symbol layer: hold or one-shot. Space shares the layer key's thumb.
+        assert_eq!(cost('a', '('), 100.0, "{name}");
+        assert_eq!(cost(space, '('), 200.0, "{name}");
+        assert_eq!(cost('(', 'a'), 0.0, "{name}");
+        assert_eq!(cost('(', ')'), if modes[0] == Oneshot { 100.0 } else { 0.0 }, "{name}");
+        // Number layer.
+        let num = modes[1];
+        assert_eq!(cost('a', '1'), 100.0, "{name}");
+        assert_eq!(cost(bspc, '1'), 200.0, "{name}");
+        assert_eq!(cost('1', '2'), if num == Oneshot { 100.0 } else { 0.0 }, "{name}");
+        assert_eq!(cost('1', 'a'), if num == Toggle { 100.0 } else { 0.0 }, "{name}");
+        assert_eq!(cost('1', '('), if num == Toggle { 200.0 } else { 100.0 }, "{name}");
+        if num != Hold {
+            // The layer key's finger may type on the layer; next to the layer key it counts double.
+            assert_eq!(cost('1', bspc), if num == Toggle { 200.0 } else { 0.0 }, "{name}");
+        }
+    }
+    // `mode` sets the token; a conflicting token is an error.
+    assert_eq!(layer_key_info(ONESHOT_KEYS[1]), Some((2, Oneshot)));
+    assert_eq!(layer_key_info(TOGGLE_KEYS[0]), Some((1, Toggle)));
+    let bad = read("data/layouts/layered/corne-code-numtoggle.toml").replace("{tg2}", "{os2}");
+    assert!(Layout::from_toml(&bad).is_err());
 }
 
 fn thumb_board(name: &str) -> Geometry {
