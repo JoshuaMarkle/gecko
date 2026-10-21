@@ -30,7 +30,8 @@ pub const DEFAULT_CHARSET: &str = "abcdefghijklmnopqrstuvwxyz,./;'-\u{2423}";
 pub const CODE_CHARSET: &str = "abcdefghijklmnopqrstuvwxyz,./;'-\u{2423}0123456789()[]{}<>=+*&|!?:\"_#$%^~`@\\\u{23CE}";
 
 /// The code charset plus the arrow keys `←↓↑→` (`--charset nav`).
-pub const NAV_CHARSET: &str = "abcdefghijklmnopqrstuvwxyz,./;'-\u{2423}0123456789()[]{}<>=+*&|!?:\"_#$%^~`@\\\u{23CE}\u{2190}\u{2193}\u{2191}\u{2192}";
+pub const NAV_CHARSET: &str =
+    "abcdefghijklmnopqrstuvwxyz,./;'-\u{2423}0123456789()[]{}<>=+*&|!?:\"_#$%^~`@\\\u{23CE}\u{2190}\u{2193}\u{2191}\u{2192}";
 
 /// A charset argument: `default`, `code`, `nav`, or the literal symbols.
 pub fn charset_named(s: &str) -> &str {
@@ -598,7 +599,13 @@ impl Corpus {
         let pick_dir = |rng: &mut Rng, not: Option<usize>| -> usize {
             loop {
                 let mut u = rng.f64();
-                let d = DIR.iter().position(|&p| { u -= p; u < 0.0 }).unwrap_or(3);
+                let d = DIR
+                    .iter()
+                    .position(|&p| {
+                        u -= p;
+                        u < 0.0
+                    })
+                    .unwrap_or(3);
                 if Some(d) != not {
                     return d;
                 }
@@ -831,7 +838,7 @@ mod tests {
         assert_eq!(w.tri[(0 * 3 + 1) * 3 + 2], 3); // ab␣
         assert_eq!(w.tri[(2 * 3 + 1) * 3 + 2], 1); // ␣b␣
         assert_eq!(w.tri[(1 * 3 + 2) * 3 + 0], 3); // b␣a: 4 · 3/4
-        // ␣ _ ␣ around "b": exact, as the segment end meets the next segment's space.
+                                                   // ␣ _ ␣ around "b": exact, as the segment end meets the next segment's space.
         assert_eq!(w.skip[2 * 3 + 2], 1000);
     }
 }

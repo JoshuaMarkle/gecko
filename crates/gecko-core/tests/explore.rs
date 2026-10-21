@@ -78,7 +78,14 @@ proptest! {
 /// 6 keys, mirror-symmetric: small enough to enumerate every local optimum.
 fn tiny() -> Geometry {
     let mut s = String::from("name = \"tiny\"\n");
-    let keys = [("LM", 0.0, 0.0, 1.5), ("LI", 1.0, 0.0, 1.2), ("LI", 1.0, 1.0, 1.0), ("RI", 3.0, 1.0, 1.0), ("RI", 3.0, 0.0, 1.2), ("RM", 4.0, 0.0, 1.5)];
+    let keys = [
+        ("LM", 0.0, 0.0, 1.5),
+        ("LI", 1.0, 0.0, 1.2),
+        ("LI", 1.0, 1.0, 1.0),
+        ("RI", 3.0, 1.0, 1.0),
+        ("RI", 3.0, 0.0, 1.2),
+        ("RM", 4.0, 0.0, 1.5),
+    ];
     for (i, (f, x, y, e)) in keys.iter().enumerate() {
         s += &format!("[[key]]\npos = [{x}, {y}, 0.0]\nfinger = \"{f}\"\nrow = {}\ncol = {i}\neffort = {e}\n", *y as i8);
     }

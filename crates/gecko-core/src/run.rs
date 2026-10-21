@@ -71,6 +71,10 @@ pub struct RunResult {
     pub objectives: Vec<optimize::nsga2::Objective>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub front: Vec<ParetoRanked>,
+    /// Gilmore–Lawler lower bound and optimality gap of `best[0]` (`crate::bound`); absent
+    /// when skipped (too many symbols, negative load weights).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bound: Option<crate::bound::BoundReport>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -209,16 +213,32 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
             })
         })
         .collect::<Result<Vec<_>>>()?;
-    let front = out.front.iter().enumerate().map(|(i, point)| {
-        let st = scorer.state_from_sym(point.sym.clone());
-        let chars = st.chars(&scorer);
-        let layout = Layout::from_flat("", spec.geometry, chars.clone())?.with_magic(spec.start.magic.clone())?;
-        Ok(ParetoRanked {
-            layout: Ranked { rank: i + 1, score: st.score, chars: chars.iter().collect(), rows: layout.all_rows(spec.geometry),
-                hash: hash::short(layout.hash()), breakdown: serde_json::to_value(breakdown(&scorer, &st)).unwrap() },
-            raw: point.raw.clone(), costs: point.costs.clone(),
+    let front = out
+        .front
+        .iter()
+        .enumerate()
+        .map(|(i, point)| {
+            let st = scorer.state_from_sym(point.sym.clone());
+            let chars = st.chars(&scorer);
+            let layout = Layout::from_flat("", spec.geometry, chars.clone())?.with_magic(spec.start.magic.clone())?;
+            Ok(ParetoRanked {
+                layout: Ranked {
+                    rank: i + 1,
+                    score: st.score,
+                    chars: chars.iter().collect(),
+                    rows: layout.all_rows(spec.geometry),
+                    hash: hash::short(layout.hash()),
+                    breakdown: serde_json::to_value(breakdown(&scorer, &st)).unwrap(),
+                },
+                raw: point.raw.clone(),
+                costs: point.costs.clone(),
+            })
         })
-    }).collect::<Result<Vec<_>>>()?;
+        .collect::<Result<Vec<_>>>()?;
+    let bound = out
+        .top
+        .first()
+        .and_then(|s| crate::bound::report(&scorer, &ctx.movable, &scorer.state_from_sym(s.sym.clone()), crate::bound::ASCENT_ITERS));
     let res = RunResult {
         schema: SCHEMA,
         id: prep.config.id.clone(),
@@ -230,6 +250,7 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
         best,
         objectives: out.objectives.clone(),
         front,
+        bound,
     };
     std::fs::write(prep.dir.join("best.json"), serde_json::to_string_pretty(&res).unwrap())?;
     Ok(res)
@@ -311,10 +332,7 @@ pub fn verify(store: &crate::store::Store, dir: &Path) -> Result<Verification> {
     let config = load_config(dir)?;
     let recorded = load_result(dir)?;
     if config.params.evals.is_none() {
-        return Err(Error::invalid(
-            "verify",
-            format!("run {} has a time budget; only --evals runs are reproducible", config.id),
-        ));
+        return Err(Error::invalid("verify", format!("run {} has a time budget; only --evals runs are reproducible", config.id)));
     }
     let geometry = store.geometry(&config.geometry.name)?;
     let corpus = store.corpus(&config.corpus.name)?;
@@ -356,10 +374,15 @@ pub fn verify(store: &crate::store::Store, dir: &Path) -> Result<Verification> {
     checks.push(check("objectives", serde_json::to_string(&recorded.objectives).unwrap(), serde_json::to_string(&res.objectives).unwrap()));
     checks.push(check("front", recorded.front.len(), res.front.len()));
     for (a, b) in recorded.front.iter().zip(&res.front) {
-        let close = |xs: &[f64], ys: &[f64]| xs.len() == ys.len() && xs.iter().zip(ys).all(|(x,y)| (x-y).abs() <= 1e-9 * x.abs().max(1.0));
-        checks.push(Check { name: format!("front#{}", a.layout.rank),
-            expected: serde_json::to_string(a).unwrap(), actual: serde_json::to_string(b).unwrap(),
-            ok: a.layout.chars == b.layout.chars && close(&a.raw, &b.raw) && close(&a.costs, &b.costs)
+        let close =
+            |xs: &[f64], ys: &[f64]| xs.len() == ys.len() && xs.iter().zip(ys).all(|(x, y)| (x - y).abs() <= 1e-9 * x.abs().max(1.0));
+        checks.push(Check {
+            name: format!("front#{}", a.layout.rank),
+            expected: serde_json::to_string(a).unwrap(),
+            actual: serde_json::to_string(b).unwrap(),
+            ok: a.layout.chars == b.layout.chars
+                && close(&a.raw, &b.raw)
+                && close(&a.costs, &b.costs)
                 && close(&[a.layout.score], &[b.layout.score]),
         });
     }

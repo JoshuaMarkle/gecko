@@ -18,7 +18,13 @@ fn assert_clean(g: &Geometry, flat: &[Flat]) {
     assert_eq!(flat.len(), g.len());
     for i in 0..g.len() {
         for j in i + 1..g.len() {
-            assert!(!overlaps((&flat[i], g.key[i].size), (&flat[j], g.key[j].size)), "{}: keys {i} and {j} overlap: {:?} {:?}", g.name, flat[i], flat[j]);
+            assert!(
+                !overlaps((&flat[i], g.key[i].size), (&flat[j], g.key[j].size)),
+                "{}: keys {i} and {j} overlap: {:?} {:?}",
+                g.name,
+                flat[i],
+                flat[j]
+            );
         }
     }
     // Row/column order: along a row (same hand) x grows with col; down a column y grows with row.
@@ -96,7 +102,7 @@ fn curved() -> Geometry {
                 stretch: false,
                 effort: 1.0,
                 fill: None,
-        hrm: None,
+                hrm: None,
                 layer: 0,
                 phys: None,
             });
@@ -105,7 +111,15 @@ fn curved() -> Geometry {
             for c in 0..5i8 {
                 let phi = (row as f32 - 1.0) * 40f32.to_radians();
                 let col = c + 5 * half as i8;
-                push(x0 + c as f32, well * phi.sin(), well * (1.0 - phi.cos()), -(row as f32 - 1.0) * 40.0, row, col, fingers[col as usize]);
+                push(
+                    x0 + c as f32,
+                    well * phi.sin(),
+                    well * (1.0 - phi.cos()),
+                    -(row as f32 - 1.0) * 40.0,
+                    row,
+                    col,
+                    fingers[col as usize],
+                );
             }
         }
         // Thumbs: lower in z, overlapping the bottom row once projected.
@@ -115,7 +129,15 @@ fn curved() -> Geometry {
             push(tx + t as f32 * 1.02, well * 40f32.to_radians().sin() + 0.8, -1.2, 0.0, 3, t + 10 * half as i8, thumb);
         }
     }
-    Geometry { name: "curved-test".into(), description: String::new(), key, comfort: Default::default(), comfort_tables: Default::default(), layer_modes: Vec::new(), layer_keys: Vec::new() }
+    Geometry {
+        name: "curved-test".into(),
+        description: String::new(),
+        key,
+        comfort: Default::default(),
+        comfort_tables: Default::default(),
+        layer_modes: Vec::new(),
+        layer_keys: Vec::new(),
+    }
 }
 
 #[test]

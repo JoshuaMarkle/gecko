@@ -4,11 +4,11 @@
 pub mod anneal;
 pub mod bls;
 pub mod genetic;
-pub mod nsga2;
 pub mod hill_climb;
 pub mod map_elites;
 pub mod memetic;
 pub mod moves;
+pub mod nsga2;
 pub mod tabu;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -47,7 +47,8 @@ pub enum Algo {
 }
 
 impl Algo {
-    pub const ALL: [Algo; 10] = [Algo::Hc, Algo::Sa, Algo::Ga, Algo::Memetic, Algo::Bls, Algo::Explore, Algo::Tabu, Algo::Qd, Algo::Nsga2, Algo::Rwsa];
+    pub const ALL: [Algo; 10] =
+        [Algo::Hc, Algo::Sa, Algo::Ga, Algo::Memetic, Algo::Bls, Algo::Explore, Algo::Tabu, Algo::Qd, Algo::Nsga2, Algo::Rwsa];
     pub fn name(self) -> &'static str {
         match self {
             Algo::Hc => "hc",

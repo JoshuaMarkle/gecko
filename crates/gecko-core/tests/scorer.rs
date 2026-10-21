@@ -1063,3 +1063,49 @@ fn memetic_handles_fixed_layouts_and_cancellation_at_generation_boundaries() {
     assert!(out.evals < 100_000);
     assert!(!out.top.is_empty());
 }
+
+#[test]
+fn lower_bound_is_below_brute_force_optimum() {
+    use gecko_core::bound;
+    let g = tiny();
+    for seed in [11, 12, 13] {
+        let c = synthetic("etaoin", seed);
+        let start = Layout::from_str_flat("start", "tiny", "etaoin").unwrap();
+        let sc = Scorer::new(&g, &c, &all_weights(), &start).unwrap();
+        let states: Vec<_> = permutations((0..6).collect()).into_iter().map(|p| sc.state_from_sym(p)).collect();
+        let best = states.iter().map(|s| s.score).fold(f64::INFINITY, f64::min);
+        let best_pair = states.iter().map(|s| sc.parts(s).0).fold(f64::INFINITY, f64::min);
+        let st = sc.identity();
+        // All free, and with two symbols pinned on their slots.
+        for movable in [(0..6).collect::<Vec<_>>(), vec![0, 2, 3, 5]] {
+            let r = bound::report(&sc, &movable, &st, 30).unwrap();
+            let opt = if movable.len() == 6 {
+                (best, best_pair)
+            } else {
+                let fixed = |s: &&gecko_core::State| s.pos[1] == st.pos[1] && s.pos[4] == st.pos[4];
+                let ok: Vec<_> = states.iter().filter(fixed).collect();
+                (ok.iter().map(|s| s.score).fold(f64::INFINITY, f64::min), ok.iter().map(|s| sc.parts(s).0).fold(f64::INFINITY, f64::min))
+            };
+            assert!(r.total.gilmore_lawler <= r.total.lower + 1e-9, "{r:?}");
+            assert!(r.total.lower <= opt.0 + 1e-6, "total bound {} above optimum {}", r.total.lower, opt.0);
+            assert!(r.pair.lower <= opt.1 + 1e-6, "pair bound {} above optimum {}", r.pair.lower, opt.1);
+        }
+    }
+}
+
+#[test]
+fn lower_bound_holds_on_ansi() {
+    let g = ansi();
+    let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 4);
+    let sc = Scorer::new(&g, &c, &all_weights(), &layout("qwerty")).unwrap();
+    let st = sc.identity();
+    let r = gecko_core::bound::report(&sc, &(0..30).collect::<Vec<_>>(), &st, 3).unwrap();
+    let mut rng = Rng::new(1);
+    for _ in 0..200 {
+        let mut sym: Vec<u8> = (0..30).collect();
+        rng.shuffle(&mut sym);
+        let s = sc.state_from_sym(sym);
+        assert!(r.total.lower <= s.score && r.pair.lower <= sc.parts(&s).0);
+    }
+    assert!(r.total.lower >= r.total.gilmore_lawler && r.pair.lower >= r.pair.gilmore_lawler, "{r:?}");
+}

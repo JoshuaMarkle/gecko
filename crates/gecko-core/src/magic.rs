@@ -197,8 +197,7 @@ pub fn rewrite(corpus: &Corpus, keys: &[Magic]) -> Result<Corpus> {
             }
             for k in 0..=nk {
                 out.bi[variant(x, k) * cc + y2] += put(b * lead2[(x * c + y) * (nk + 1) + k]);
-                out.shift_bi[variant(x, k) * cc + y2] +=
-                    put(corpus.shift_bi[x * c + y] as f64 * lead2[(x * c + y) * (nk + 1) + k]);
+                out.shift_bi[variant(x, k) * cc + y2] += put(corpus.shift_bi[x * c + y] as f64 * lead2[(x * c + y) * (nk + 1) + k]);
             }
             for z in 0..c {
                 let t = tri(x, y, z);

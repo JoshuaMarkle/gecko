@@ -53,9 +53,10 @@ pub fn mirror_map(g: &Geometry) -> Option<Vec<usize>> {
     for (i, k) in g.key.iter().enumerate() {
         let x = 2.0 * mid - (k.pos[0] + k.size[0]);
         let mirrored = crate::Finger::ALL[9 - k.finger.index()];
-        let j = g.key.iter().position(|o| {
-            (o.pos[0] - x).abs() < 1e-3 && (o.pos[1] - k.pos[1]).abs() < 1e-3 && o.finger == mirrored && o.row == k.row
-        })?;
+        let j = g
+            .key
+            .iter()
+            .position(|o| (o.pos[0] - x).abs() < 1e-3 && (o.pos[1] - k.pos[1]).abs() < 1e-3 && o.finger == mirrored && o.row == k.row)?;
         m[i] = j;
     }
     Some(m)

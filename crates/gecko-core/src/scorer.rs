@@ -422,7 +422,9 @@ impl Scorer {
         (out.has_pair, out.has_far, out.has_sym, out.has_tri) = (false, false, false, false);
         for (d, table) in METRICS.iter().zip(&out.tables) {
             let w = out.profile.weight(d.id);
-            if w == 0.0 { continue; }
+            if w == 0.0 {
+                continue;
+            }
             let signed = if d.dir == Dir::Max { -w } else { w };
             match (d.order, table) {
                 (Order::Load, _) => match d.id {
@@ -431,29 +433,52 @@ impl Scorer {
                     "M03" => out.w_rss = w as f64,
                     "M07" => out.w_peak = w as f64,
                     "M09" => out.w_thumb = w as f64,
-                    _ => {},
+                    _ => {}
                 },
                 (order, Some(table)) => {
                     let target = match order {
                         Order::Mono => &mut out.c1,
-                        Order::Bi => { out.has_pair = true; &mut out.c2 },
-                        Order::Skip => { out.has_pair = true; &mut out.ck },
-                        Order::SkipFar => { out.has_pair = true; out.has_far = true; &mut out.ckf },
-                        Order::SymBi => { out.has_pair = true; out.has_sym = true; &mut out.cy },
-                        Order::Tri => { out.has_tri = true; &mut out.c3 },
+                        Order::Bi => {
+                            out.has_pair = true;
+                            &mut out.c2
+                        }
+                        Order::Skip => {
+                            out.has_pair = true;
+                            &mut out.ck
+                        }
+                        Order::SkipFar => {
+                            out.has_pair = true;
+                            out.has_far = true;
+                            &mut out.ckf
+                        }
+                        Order::SymBi => {
+                            out.has_pair = true;
+                            out.has_sym = true;
+                            &mut out.cy
+                        }
+                        Order::Tri => {
+                            out.has_tri = true;
+                            &mut out.c3
+                        }
                         Order::Brackets => &mut out.cb,
                         Order::Load => unreachable!(),
                     };
-                    for (target, value) in target.iter_mut().zip(table) { *target += signed * value; }
-                },
-                _ => {},
+                    for (target, value) in target.iter_mut().zip(table) {
+                        *target += signed * value;
+                    }
+                }
+                _ => {}
             }
         }
         out.has_load = [out.w_load, out.w_hand, out.w_rss, out.w_peak, out.w_thumb].iter().any(|&w| w != 0.0);
         out.brackets = if out.cb.iter().any(|&c| c != 0.0) { out.bracket_all.clone() } else { Vec::new() };
         let (effort, layer) = (out.profile.weight("M01"), out.profile.weight("Y01"));
-        for ((cost, e), p) in out.csh.iter_mut().zip(&out.shift_effort).zip(&out.shift_press) { *cost = effort * e + layer * p; }
-        for (cost, p) in out.csb.iter_mut().zip(&out.shift_pair) { *cost = layer * p; }
+        for ((cost, e), p) in out.csh.iter_mut().zip(&out.shift_effort).zip(&out.shift_press) {
+            *cost = effort * e + layer * p;
+        }
+        for (cost, p) in out.csb.iter_mut().zip(&out.shift_pair) {
+            *cost = layer * p;
+        }
         out.has_shift_pair = out.has_shift && out.csb.iter().any(|&c| c != 0.0) && out.fsb.iter().any(|&f| f > 0.0);
         Ok(out)
     }
@@ -474,9 +499,9 @@ impl Scorer {
         // Repeated symbols (empty slots) take the next unused id with that char.
         let mut used = 0u128;
         for &c in &flat {
-            let s = (0..self.n).find(|&i| self.chars[i] == c && used & (1 << i) == 0).ok_or_else(|| {
-                Error::invalid("layout", format!("'{}' uses symbol '{c}' not in this scorer's symbol set", layout.name))
-            })?;
+            let s = (0..self.n)
+                .find(|&i| self.chars[i] == c && used & (1 << i) == 0)
+                .ok_or_else(|| Error::invalid("layout", format!("'{}' uses symbol '{c}' not in this scorer's symbol set", layout.name)))?;
             used |= 1 << s;
             sym.push(s as u8);
         }
@@ -507,11 +532,7 @@ impl Scorer {
             pos[s as usize] = slot as u8;
         }
         let load = self.loads(&pos);
-        let tri_cost = if self.has_tri {
-            self.tri_all.iter().map(|e| self.trigram_cost(&pos, e)).collect()
-        } else {
-            Vec::new()
-        };
+        let tri_cost = if self.has_tri { self.tri_all.iter().map(|e| self.trigram_cost(&pos, e)).collect() } else { Vec::new() };
         let mut st = State { pos, sym, load, score: 0.0, tri_cost };
         st.score = self.full(&st);
         st
@@ -768,7 +789,8 @@ impl Scorer {
                         _ => false,
                     };
                     if !seen {
-                        acc += (e.f * ((cost(e, false, true) - cost(e, false, false)) - (cost(e, true, true) - cost(e, true, false)))) as f64;
+                        acc +=
+                            (e.f * ((cost(e, false, true) - cost(e, false, false)) - (cost(e, true, true) - cost(e, true, false)))) as f64;
                     }
                 }
             }
@@ -777,18 +799,24 @@ impl Scorer {
         // Y03 is sparse, so update only bracket pairs spanning the two swaps.
         for e in &self.brackets {
             let (x, y) = (e.x as usize, e.y as usize);
-            if !((x == r || x == s) && (y == u || y == v)
-                || (y == r || y == s) && (x == u || x == v)) {
+            if !((x == r || x == s) && (y == u || y == v) || (y == r || y == s) && (x == u || x == v)) {
                 continue;
             }
             let slot = |z: usize, back: bool, uv: bool| {
-                if uv && z == u { pv } else if uv && z == v { pu }
-                else if back && z == r { pr } else if back && z == s { ps }
-                else { pos[z] as usize }
+                if uv && z == u {
+                    pv
+                } else if uv && z == v {
+                    pu
+                } else if back && z == r {
+                    pr
+                } else if back && z == s {
+                    ps
+                } else {
+                    pos[z] as usize
+                }
             };
             let cost = |back, uv| self.cb[slot(x, back, uv) * n + slot(y, back, uv)];
-            d += (e.f * ((cost(false, true) - cost(false, false))
-                - (cost(true, true) - cost(true, false)))) as f64;
+            d += (e.f * ((cost(false, true) - cost(false, false)) - (cost(true, true) - cost(true, false)))) as f64;
         }
         d
     }
@@ -921,6 +949,139 @@ impl Scorer {
     pub fn finger_of_slot(&self, slot: usize) -> usize {
         self.finger[slot] as usize
     }
+
+    /// `full` split into (mono + pair terms, trigram terms, load terms).
+    pub fn parts(&self, st: &State) -> (f64, f64, f64) {
+        let n = self.n;
+        let pos = &st.pos;
+        let tri: f64 = if self.has_tri {
+            self.tri_all
+                .iter()
+                .map(|e| {
+                    e.f as f64
+                        * self.c3[(pos[e.x as usize] as usize * n + pos[e.y as usize] as usize) * n + pos[e.z as usize] as usize] as f64
+                })
+                .sum()
+        } else {
+            0.0
+        };
+        let load = self.load_cost(&self.loads(pos));
+        (self.full(st) - tri - load, tri, load)
+    }
+
+    /// The objective as quadratic-assignment terms for lower bounds (`crate::bound`).
+    /// With `trigrams`, each trigram is relaxed to pair terms that never exceed its cost.
+    /// `None` if a load term has a negative weight (no simple bound on it).
+    pub(crate) fn qap_terms(&self, trigrams: bool) -> Option<QapTerms> {
+        if [self.w_load, self.w_hand, self.w_rss, self.w_peak, self.w_thumb].iter().any(|&w| w < 0.0) {
+            return None;
+        }
+        let n = self.n;
+        let mut mono = vec![0.0f64; n * n];
+        for x in 0..n {
+            for i in 0..n {
+                let mut v = self.f1[x] as f64 * self.c1[i] as f64;
+                if self.has_shift {
+                    v += self.fsh[x] as f64 * self.csh[i] as f64;
+                }
+                mono[x * n + i] = v;
+            }
+        }
+        let mut chans: Vec<(Vec<f32>, Vec<f32>)> = Vec::new();
+        if self.has_pair {
+            chans.push((self.f2.clone(), self.c2.clone()));
+            chans.push((self.fk.clone(), self.ck.clone()));
+            if self.has_far {
+                chans.push((self.fkf.clone(), self.ckf.clone()));
+            }
+            if self.has_sym {
+                chans.push((self.fy.clone(), self.cy.clone()));
+            }
+        }
+        if self.has_shift_pair {
+            chans.push((self.fsb.clone(), self.csb.clone()));
+        }
+        if !self.brackets.is_empty() {
+            let mut fb = vec![0.0f32; n * n];
+            for e in &self.brackets {
+                fb[e.x as usize * n + e.y as usize] += e.f;
+            }
+            chans.push((fb, self.cb.clone()));
+        }
+        if trigrams && self.has_tri {
+            let c3 = |i: usize, j: usize, k: usize| self.c3[(i * n + j) * n + k];
+            // Distinct x y z: c3[i,j,k] ≥ ⅓(min_k c3 + min_i c3 + min_j c3), the third key on
+            // any slot other than the two fixed ones. Repeated symbols: exact pair/mono terms.
+            let mut tabs: [Vec<f32>; 6] = std::array::from_fn(|_| vec![0.0f32; n * n]);
+            for i in 0..n {
+                for j in 0..n {
+                    let (mut a, mut b, mut c) = (f32::INFINITY, f32::INFINITY, f32::INFINITY);
+                    for k in 0..n {
+                        if k != i && k != j {
+                            a = a.min(c3(i, j, k)); // (x, y) at (i, j)
+                            b = b.min(c3(k, i, j)); // (y, z) at (i, j)
+                            c = c.min(c3(i, k, j)); // (x, z) at (i, j)
+                        }
+                    }
+                    let ij = i * n + j;
+                    let fin = |v: f32| if v.is_finite() { v } else { 0.0 };
+                    tabs[0][ij] = fin(a);
+                    tabs[1][ij] = fin(b);
+                    tabs[2][ij] = fin(c);
+                    tabs[3][ij] = c3(i, j, i); // x = z: pair (x, y)
+                    tabs[4][ij] = c3(i, i, j); // x = y: pair (x, z)
+                    tabs[5][ij] = c3(i, j, j); // y = z: pair (x, y)
+                }
+            }
+            let mut flows: [Vec<f32>; 6] = std::array::from_fn(|_| vec![0.0f32; n * n]);
+            for e in &self.tri_all {
+                let (x, y, z) = (e.x as usize, e.y as usize, e.z as usize);
+                match (x == y, y == z, x == z) {
+                    (true, true, _) => {
+                        for i in 0..n {
+                            mono[x * n + i] += e.f as f64 * c3(i, i, i) as f64;
+                        }
+                    }
+                    (false, false, true) => flows[3][x * n + y] += e.f,
+                    (true, false, false) => flows[4][x * n + z] += e.f,
+                    (false, true, false) => flows[5][x * n + y] += e.f,
+                    _ => {
+                        let t = e.f / 3.0;
+                        flows[0][x * n + y] += t;
+                        flows[1][y * n + z] += t;
+                        flows[2][x * n + z] += t;
+                    }
+                }
+            }
+            for (f, c) in flows.into_iter().zip(tabs) {
+                if f.iter().any(|&v| v != 0.0) {
+                    chans.push((f, c));
+                }
+            }
+        }
+        // Same-symbol pairs (x = x) sit on one slot: fold them into the mono terms.
+        for (f, c) in &chans {
+            for x in 0..n {
+                let fx = f[x * n + x] as f64;
+                if fx != 0.0 {
+                    for i in 0..n {
+                        mono[x * n + i] += fx * c[i * n + i] as f64;
+                    }
+                }
+            }
+        }
+        Some(QapTerms { n, mono, chans })
+    }
+}
+
+/// The objective as `Σ mono[x, p(x)] + Σ_{x≠y} Σ_ch F[x, y]·C[p(x), p(y)]` (see
+/// [`Scorer::qap_terms`]); load terms (all weights ≥ 0) are dropped, which only lowers it.
+pub(crate) struct QapTerms {
+    pub n: usize,
+    /// `mono[x * n + i]`: symbol x on slot i, including same-symbol pair terms.
+    pub mono: Vec<f64>,
+    /// (flow `F[x * n + y]`, cost `C[i * n + j]`) per pair channel.
+    pub chans: Vec<(Vec<f32>, Vec<f32>)>,
 }
 
 /// Unfolded Shift cost tables for the `⇧` slots `keys` (all zero without one): the Shift key

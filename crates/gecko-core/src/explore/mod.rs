@@ -182,8 +182,7 @@ pub fn run(
             last_write = Instant::now();
         }
         let (optima, hits, edges) = archive.counts();
-        let explore =
-            Some(ExploreProgress { phase: "search".into(), optima: optima as u64, hits, edges: edges as u64, version });
+        let explore = Some(ExploreProgress { phase: "search".into(), optima: optima as u64, hits, edges: edges as u64, version });
         on_progress(&Progress { elapsed_ms, evals, best: pg.best, best_chars: pg.best_chars.clone(), explore });
     });
     let mut out = out;
