@@ -1,19 +1,17 @@
-// Left panel: inputs grouped by a segmented control (Layout, Board, Corpus, Profile, Search).
+// Input forms. Board, Hand, Corpus, Profile and Search are top-level tabs (`InputPage`);
+// the start layout, pins and reference stay beside the editor on Optimize (`LayoutPanel`).
+// All of them edit the one shared store (`inputs.ts`), threaded through as props.
 
-import { useState, type ReactNode } from "react";
+import { useState, type ReactElement, type ReactNode } from "react";
 import type { CorpusInfo, Geometry, LayoutInfo, Meta, Profile } from "../api";
 import { checkLayout, fitChars, fmtCount, layoutText, parseLayoutText, slotCount } from "../format";
+import type { SearchSettings } from "../inputs";
 
-export type Group = "layout" | "board" | "corpus" | "profile" | "search";
-const GROUPS: [Group, string][] = [["layout", "Layout"], ["board", "Board"], ["corpus", "Corpus"], ["profile", "Profile"], ["search", "Search"]];
+export type InputTab = "board" | "hand" | "corpus" | "profile" | "search";
 
 const ALGOS: [string, string][] = [["sa", "Simulated annealing"], ["bls", "Breakout local search"], ["hc", "Hill climbing"], ["ga", "Genetic algorithm"]];
 
-export interface SearchSettings { algo: string; timeS: number; threads: number; seed: number; saSteps: number; gaPop: number }
-
-interface Props {
-  group: Group;
-  setGroup: (g: Group) => void;
+export interface InputProps {
   meta: Meta;
   layouts: LayoutInfo[];
   geometries: Geometry[];
@@ -38,6 +36,7 @@ interface Props {
   setSearch: (s: SearchSettings) => void;
   running: boolean;
 }
+type Props = InputProps;
 
 function Sec({ id, title, note, children }: { id: string; title: string; note?: string; children: ReactNode }) {
   const key = `gecko.sec.${id}`;
@@ -219,19 +218,55 @@ function SearchGroup(p: Props) {
   );
 }
 
-export function InputsPanel(p: Props) {
+function HandGroup() {
+  return (
+    <Sec id="hand" title="Hand model" note="not yet adjustable">
+      <div className="hint">Effort comes from the board's per-key base effort and the profile's finger targets. Hand measurements
+        (finger lengths, reach, joint limits) and the live skeleton arrive with the hand module.</div>
+    </Sec>
+  );
+}
+
+const PAGES: Record<InputTab, [string, string, (p: Props) => ReactElement]> = {
+  board: ["Board", "the physical keyboard every layout is placed on", BoardGroup],
+  hand: ["Hand", "the hand that types on the board", HandGroup],
+  corpus: ["Corpus", "the text the layout is scored on", CorpusGroup],
+  profile: ["Profile", "what a good layout means: metric weights and targets", ProfileGroup],
+  search: ["Search", "how Play optimizes: algorithm, budget, seed", SearchGroup],
+};
+
+/** One input tab: a single centred column of sections. */
+export function InputPage({ tab, ...p }: Props & { tab: InputTab }) {
+  const [title, note, Group] = PAGES[tab];
+  return (
+    <div className="inputpage">
+      <div className="pane">
+        <div className="panehead"><b>{title}</b><span className="hint">{note}</span></div>
+        <div className="scroll"><Group {...p} /></div>
+      </div>
+    </div>
+  );
+}
+
+/** Optimize's left panel: the start layout and its editor, pins, the reference, and a summary of the other inputs. */
+export function LayoutPanel(p: Props & { onGo: (tab: InputTab) => void }) {
+  const algo = ALGOS.find(([a]) => a === p.search.algo)?.[1] ?? p.search.algo;
+  const base = p.profiles.find((x) => x.id === p.profileId);
+  const edited = base && JSON.stringify({ ...base, id: undefined }) !== JSON.stringify({ ...p.profile, id: undefined });
+  const go = (tab: InputTab, label: string, value: string) => (
+    <button className="kv link" onClick={() => p.onGo(tab)} title={`Change on the ${label} tab`}><span>{label}</span><span>{value}</span></button>
+  );
   return (
     <>
-      <div className="panehead"><b>Inputs</b><span className="hint">hover a label for help</span></div>
-      <div className="seg groups">
-        {GROUPS.map(([g, label]) => <button key={g} className={p.group === g ? "on" : ""} onClick={() => p.setGroup(g)}>{label}</button>)}
-      </div>
+      <div className="panehead"><b>Layout</b><span className="hint">hover a label for help</span></div>
       <div className="scroll">
-        {p.group === "layout" && <LayoutGroup {...p} />}
-        {p.group === "board" && <BoardGroup {...p} />}
-        {p.group === "corpus" && <CorpusGroup {...p} />}
-        {p.group === "profile" && <ProfileGroup {...p} />}
-        {p.group === "search" && <SearchGroup {...p} />}
+        <LayoutGroup {...p} />
+        <Sec id="lay-inputs" title="Inputs" note="click to change">
+          {go("board", "Board", p.geometry.name)}
+          {go("corpus", "Corpus", p.corpus?.name ?? "–")}
+          {go("profile", "Profile", p.profile.name + (edited ? " (edited)" : ""))}
+          {go("search", "Search", `${algo} · ${p.search.timeS}s · ${p.search.threads} threads`)}
+        </Sec>
       </div>
     </>
   );

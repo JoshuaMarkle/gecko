@@ -11,7 +11,7 @@ import { heatColor } from "../../colors";
 import { logGrid, paretoFront, rankOrder, rowChars, sameTables, swapList, symIds, type Swap } from "../../explore";
 import { fmt, fmtCount, fmtTime } from "../../format";
 import { loadAtlasView, type AtlasView, type Scorer } from "../../wasm";
-import type { SearchSettings } from "../InputsPanel";
+import type { SearchSettings } from "../../inputs";
 import { ConsensusBoard } from "./Board";
 import { Correlogram, Discovery, Families, Funnels, Landscape, ParallelCoords, Stability, stabilityRows, type Axis, type Family, type Funnel } from "./Panels";
 import { Picked, type PickedInfo } from "./Picked";
@@ -344,7 +344,7 @@ export function ExploreView(p: Props) {
             </div>
           </details>
           <details className="sec" open>
-            <summary>New exploration<span className="note">uses Inputs › Layout, Board, Corpus, Profile</span></summary>
+            <summary>New exploration<span className="note">uses the Board, Corpus and Profile tabs and the Optimize layout</span></summary>
             <div className="body">
               <div className="row"><label title="Wall-clock budget">Budget</label><input type="number" min={5} value={p.search.timeS} onChange={(e) => p.setSearch({ ...p.search, timeS: Math.max(5, +e.target.value || 60) })} /><span className="unit">s</span></div>
               <div className="row"><label title="Worker threads">Threads</label><input type="number" min={1} max={p.meta.threads} value={p.search.threads} onChange={(e) => p.setSearch({ ...p.search, threads: Math.max(1, Math.min(p.meta.threads, +e.target.value || 1)) })} /><span className="unit" /></div>
@@ -357,7 +357,7 @@ export function ExploreView(p: Props) {
             <div className="body">
               <div className="seg">
                 <button className={rankBy === "atlas" ? "on" : ""} onClick={() => setRankBy("atlas")} title="The weights the atlas was explored with">Atlas profile</button>
-                <button className={rankBy === "current" ? "on" : ""} onClick={() => setRankBy("current")} title="Inputs › Profile (edit weights below or on Home)">Current profile</button>
+                <button className={rankBy === "current" ? "on" : ""} onClick={() => setRankBy("current")} title="The Profile tab (edit weights below or on that tab)">Current profile</button>
               </div>
               {tablesDiffer && <div className="notice warn">Finger targets, SFB settings or trigram coverage differ from the atlas; only the weights are applied.</div>}
               {rankBy === "current" && scoredDefs.map((d) => (
