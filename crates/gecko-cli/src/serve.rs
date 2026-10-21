@@ -12,7 +12,7 @@ use axum::extract::{Path, State};
 use axum::http::{header, StatusCode};
 use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, post};
+use axum::routing::{any, get, post};
 use axum::{Json, Router};
 use futures_util::stream::{self, Stream, StreamExt};
 use gecko_core::optimize::{Algo, Control, Params};
@@ -24,7 +24,6 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use tokio::sync::broadcast;
 use tokio_stream::wrappers::BroadcastStream;
-use tower_http::services::{ServeDir, ServeFile};
 
 #[derive(Clone)]
 struct Msg {
@@ -75,36 +74,42 @@ impl<E: std::fmt::Display> From<E> for ApiError {
 
 type ApiResult = std::result::Result<Json<Value>, ApiError>;
 
-pub fn serve(store: Store, port: u16, web: PathBuf) -> Result<()> {
+fn router(store: Store, web: Option<PathBuf>) -> Router {
+    let ui = crate::web_assets::router(&store.root, web);
+    let app: AppState = Arc::new(App { store, live: Mutex::new(HashMap::new()) });
+    let api = Router::new()
+        .route("/meta", get(meta))
+        .route("/layouts", get(layouts))
+        .route("/geometries", get(geometries))
+        .route("/profiles", get(profiles))
+        .route("/corpora", get(corpora))
+        .route("/corpora/{name}", get(corpus_bin))
+        .route("/score", post(score))
+        .route("/runs", get(list_runs).post(start_run))
+        .route("/runs/{id}", get(get_run))
+        .route("/runs/{id}/events", get(run_events))
+        .route("/runs/{id}/cancel", post(cancel_run))
+        .route("/runs/{id}/pause", post(pause_run))
+        .route("/runs/{id}/resume", post(resume_run))
+        .route("/runs/{id}/atlas", get(atlas_summary))
+        .route("/runs/{id}/atlas/{file}", get(atlas_file))
+        .route("/swap-matrix", post(swap_matrix))
+        .route("/", any(|| async { ApiError(StatusCode::NOT_FOUND, "unknown API route".into()) }))
+        .fallback(|| async { ApiError(StatusCode::NOT_FOUND, "unknown API route".into()) })
+        .with_state(app);
+    Router::new()
+        .nest("/api", api)
+        .route("/api/", any(|| async { ApiError(StatusCode::NOT_FOUND, "unknown API route".into()) }))
+        .fallback_service(ui)
+}
+
+pub fn serve(store: Store, port: u16, web: Option<PathBuf>) -> Result<()> {
     let rt = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;
     rt.block_on(async move {
-        if !web.join("index.html").is_file() {
-            eprintln!("warning: {} has no index.html; build the UI with `cd web && npm install && npm run build`", web.display());
-        }
-        let app: AppState = Arc::new(App { store, live: Mutex::new(HashMap::new()) });
-        let static_files = ServeDir::new(&web).fallback(ServeFile::new(web.join("index.html")));
-        let router = Router::new()
-            .route("/api/meta", get(meta))
-            .route("/api/layouts", get(layouts))
-            .route("/api/geometries", get(geometries))
-            .route("/api/profiles", get(profiles))
-            .route("/api/corpora", get(corpora))
-            .route("/api/corpora/{name}", get(corpus_bin))
-            .route("/api/score", post(score))
-            .route("/api/runs", get(list_runs).post(start_run))
-            .route("/api/runs/{id}", get(get_run))
-            .route("/api/runs/{id}/events", get(run_events))
-            .route("/api/runs/{id}/cancel", post(cancel_run))
-            .route("/api/runs/{id}/pause", post(pause_run))
-            .route("/api/runs/{id}/resume", post(resume_run))
-            .route("/api/runs/{id}/atlas", get(atlas_summary))
-            .route("/api/runs/{id}/atlas/{file}", get(atlas_file))
-            .route("/api/swap-matrix", post(swap_matrix))
-            .fallback_service(static_files)
-            .with_state(app);
+        let router = router(store, web);
         let addr = std::net::SocketAddr::from(([127, 0, 0, 1], port));
         let listener = tokio::net::TcpListener::bind(addr).await?;
-        eprintln!("gecko serve: http://{addr}  (web: {})", web.display());
+        eprintln!("gecko serve: http://{}", listener.local_addr()?);
         axum::serve(listener, router)
             .with_graceful_shutdown(async {
                 let _ = tokio::signal::ctrl_c().await;
@@ -461,4 +466,27 @@ async fn run_events(
         _ => stream::empty().boxed(),
     };
     Ok(Sse::new(replay.chain(tail).map(to_event)).keep_alive(KeepAlive::default()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::{to_bytes, Body};
+    use axum::http::Request;
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn api_routes_and_json_404s_take_precedence_over_the_spa() {
+        let root = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+        let app = router(Store::open(root).unwrap(), None);
+        let response = app.clone().oneshot(Request::builder().uri("/api/meta").body(Body::empty()).unwrap()).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        for path in ["/api/unknown-route", "/api", "/api/"] {
+            let response = app.clone().oneshot(Request::builder().uri(path).body(Body::empty()).unwrap()).await.unwrap();
+            assert_eq!(response.status(), StatusCode::NOT_FOUND, "{path}");
+            assert_eq!(response.headers()[header::CONTENT_TYPE], "application/json");
+            let body: Value = serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+            assert_eq!(body["schema"], SCHEMA);
+        }
+    }
 }

@@ -2,6 +2,7 @@
 
 mod explore_cmd;
 mod serve;
+mod web_assets;
 
 use std::path::PathBuf;
 
@@ -309,7 +310,7 @@ enum Cmd {
     Serve {
         #[arg(long, default_value_t = 7777)]
         port: u16,
-        /// Directory with the built web app (default: <root>/web/dist).
+        /// Override the web app directory (default: embedded UI, or <root>/web/dist without embed-web).
         #[arg(long)]
         web: Option<PathBuf>,
     },
@@ -723,10 +724,15 @@ fn main() {
 }
 
 fn real_main(cli: Cli) -> Result<()> {
-    let fallback = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+    let repo_root = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+    // Portable release bundles keep gecko.toml/data beside the executable. Current-directory
+    // discovery still wins, so launching in a project retains its inputs and runs.
+    let executable_root =
+        std::env::current_exe().ok().and_then(|p| p.parent().map(std::path::Path::to_path_buf)).filter(|p| p.join("gecko.toml").is_file());
+    let fallback = executable_root.as_deref().unwrap_or(&repo_root);
     let store = match &cli.root {
         Some(r) => Store::open(r)?,
-        None => Store::discover(&std::env::current_dir()?, Some(&fallback))?,
+        None => Store::discover(&std::env::current_dir()?, Some(fallback))?,
     };
     let ctx = Ctx { store, json: cli.json };
     match cli.cmd {
@@ -1422,7 +1428,6 @@ fn real_main(cli: Cli) -> Result<()> {
             }
         }
         Cmd::Serve { port, web } => {
-            let web = web.unwrap_or_else(|| ctx.store.root.join("web/dist"));
             serve::serve(ctx.store, port, web)?;
         }
     }
