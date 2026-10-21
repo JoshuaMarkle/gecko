@@ -37,7 +37,7 @@ Notation: `f(x)` corpus frequency; keys `i,j,k`; fingers LP LR LM LI LT | RT RI 
 | B08 | Hand alternation | + | P1 | Consecutive keys on different hands. |
 | B09 | Weak-finger pair | − | P1 | Pinky–ring adjacency and other awkward finger pairs. |
 | B10 | Row jump (same hand) | − | P1 | Vertical distance between SH keys. |
-| B11 | Movement pattern cost | − | P2 | Full cost table over (finger pair, direction, row change), KLO-style. Generalizes B04–B10. |
+| B11 | Movement pattern cost | − | P2 | KLO-style cost per same-hand finger pair: `pair · direction · (0.1 + rows² + lateral)`. Pair = KLO `finger_switch_factor`, ring pairs × Häger-Ross coupling; direction ×(1+2·Δlength) for short-up/long-down scissors; lateral = columns beyond finger spacing (LSB). Implemented; default weight 0.5 on top of B14. Generalizes B04–B10. |
 | B12 | Predicted bigram time | − | P2 | Empirical inter-key interval (IKI) model per key/finger pair, fit from timing data. |
 | B14 | Geometric stretch | − | P0 | Oxeylyzer 2 formula on key positions + finger length offsets; covers LSB, scissors, crossings on any geometry. Implemented; replaces B04/B05 in the default profile. |
 | B13 | No switch after off-home key | − | P2 | Hand stays after a key that pulls it off home position (KLO). |
