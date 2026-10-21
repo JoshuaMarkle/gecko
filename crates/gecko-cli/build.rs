@@ -30,10 +30,13 @@ fn main() {
     );
     let mut files = Vec::new();
     collect(&dist, &mut files).expect("read web/dist for embed-web");
-    let mut assets: Vec<_> = files.into_iter().map(|file| {
-        let name = file.strip_prefix(&dist).unwrap().to_str().expect("UTF-8 web asset name").replace('\\', "/");
-        (name, file)
-    }).collect();
+    let mut assets: Vec<_> = files
+        .into_iter()
+        .map(|file| {
+            let name = file.strip_prefix(&dist).unwrap().to_str().expect("UTF-8 web asset name").replace('\\', "/");
+            (name, file)
+        })
+        .collect();
     // Lookup uses normalized URL names, whose order must also match on Windows.
     assets.sort_by(|a, b| a.0.cmp(&b.0));
     let mut source = String::from("pub const ASSETS: &[(&str, &[u8])] = &[\n");

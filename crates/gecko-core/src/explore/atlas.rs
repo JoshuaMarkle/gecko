@@ -270,7 +270,9 @@ pub struct Coverage {
 
 /// Load an atlas from a run directory (`limit`: keep only the best optima).
 pub fn load(dir: &std::path::Path, limit: Option<usize>) -> Result<(Summary, Atlas)> {
-    let rd = |f: &str| std::fs::read(dir.join(f)).map_err(|e| Error::invalid("atlas", format!("{}: {e} (not an explore run?)", dir.join(f).display())));
+    let rd = |f: &str| {
+        std::fs::read(dir.join(f)).map_err(|e| Error::invalid("atlas", format!("{}: {e} (not an explore run?)", dir.join(f).display())))
+    };
     let summary: Summary = serde_json::from_slice(&rd("atlas.json")?).map_err(|e| Error::parse("atlas.json", e))?;
     let (slots, metrics, optima) = read_optima(&rd("optima.bin")?, limit)?;
     let edges = read_edges(&rd("edges.bin")?, optima.len())?;

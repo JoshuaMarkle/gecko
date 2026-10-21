@@ -19,8 +19,8 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{geometry::LayerMode, hash, Error, Geometry, Result};
 use crate::magic::{Magic, MagicFile, MAGIC, REPEAT};
+use crate::{geometry::LayerMode, hash, Error, Geometry, Result};
 
 pub const SPACE: char = '\u{2423}'; // ␣
 pub const ENTER: char = '\u{23CE}'; // ⏎
@@ -356,7 +356,11 @@ impl Layout {
         let l = Layout {
             geometry: g.name.clone(),
             chars: fit(&self.chars, &|k| k.fill_symbol()),
-            layers: self.layers.iter().map(|ly| Layer { name: ly.name.clone(), chars: fit(&ly.chars, &|k| k.fill.as_ref().map(|_| EMPTY)) }).collect(),
+            layers: self
+                .layers
+                .iter()
+                .map(|ly| Layer { name: ly.name.clone(), chars: fit(&ly.chars, &|k| k.fill.as_ref().map(|_| EMPTY)) })
+                .collect(),
             ..self.clone()
         };
         l.check_geometry(g)?;
@@ -403,8 +407,14 @@ impl Layout {
             .enumerate()
             .map(|(li, (ly, rows))| LayerFile { name: ly.name.clone(), mode: mode(li), rows })
             .collect();
-        let f =
-            LayoutFile { name: self.name.clone(), geometry: self.geometry.clone(), source: self.source.clone(), rows: self.rows(g), layer, magic: self.magic.iter().map(Magic::to_file).collect() };
+        let f = LayoutFile {
+            name: self.name.clone(),
+            geometry: self.geometry.clone(),
+            source: self.source.clone(),
+            rows: self.rows(g),
+            layer,
+            magic: self.magic.iter().map(Magic::to_file).collect(),
+        };
         toml::to_string(&f).unwrap_or_default()
     }
 

@@ -117,7 +117,8 @@ When `--algo nsga2` or `--algo rwsa` is selected, `best.json` contains the non-d
 - `--json` on every command; stable schema with `"schema": 1`.
 - Human output is compact tables. Progress goes to stderr, results to stdout.
 - Exit code 0 on success, non-zero with a one-line `error:` on failure.
-- `optimize` always writes `runs/<timestamp>-<algo>-<hash>/` and prints its id.
+- `optimize` always writes `runs/<timestamp>-<algo>-<hash>/` and prints its id. It then prints
+  a lower bound and the best layout's optimality gap (`bound` in `best.json`, `algorithms/bounds.md`).
 - `--evals` budgets are deterministic for a given seed and thread count; `--time` is not.
 - `verify` loads geometry and corpus by their recorded names (the profile is stored in
   `config.json`). If a hash differs it fails without re-running. Otherwise it re-runs with the

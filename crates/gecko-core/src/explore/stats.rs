@@ -205,7 +205,8 @@ pub fn pca2(x: &[f32], d: usize, max_fit: usize) -> (Vec<f32>, [f64; 2]) {
         }
     }
     mean.iter_mut().for_each(|v| *v /= fit.len() as f64);
-    let total_var: f64 = fit.iter().map(|&i| (0..d).map(|j| (x[i * d + j] as f64 - mean[j]).powi(2)).sum::<f64>()).sum::<f64>() / fit.len() as f64;
+    let total_var: f64 =
+        fit.iter().map(|&i| (0..d).map(|j| (x[i * d + j] as f64 - mean[j]).powi(2)).sum::<f64>()).sum::<f64>() / fit.len() as f64;
     // C·v without forming C: (1/n) Xcᵀ (Xc v).
     let cov_mul = |v: &[f64]| -> Vec<f64> {
         let mut out = vec![0f64; d];
@@ -290,7 +291,9 @@ pub fn consensus(syms: &[u8], s: usize, rows: &[u32]) -> Vec<f32> {
 pub fn slot_entropy(p: &[f32], s: usize) -> Vec<f32> {
     let hmax = (s as f64).ln().max(1e-12);
     (0..s)
-        .map(|slot| (-p[slot * s..(slot + 1) * s].iter().filter(|&&v| v > 0.0).map(|&v| v as f64 * (v as f64).ln()).sum::<f64>() / hmax) as f32)
+        .map(|slot| {
+            (-p[slot * s..(slot + 1) * s].iter().filter(|&&v| v > 0.0).map(|&v| v as f64 * (v as f64).ln()).sum::<f64>() / hmax) as f32
+        })
         .collect()
 }
 

@@ -141,7 +141,12 @@ pub fn landscape(ctx: &Ctx, inputs: &Inputs, from: Option<&str>, samples: usize,
     } else {
         println!("{} random layouts ({} · {} · {})", scores.len(), l.geometry.name, l.profile.name, l.corpus.name);
         println!("  score {mean:.3} ± {sd:.3}   min {:.3}  1% {:.3}  median {:.3}", q(0.0), q(0.01), q(0.5));
-        println!("  correlation length {ell:.2} swaps  (ρ(1) {:.3}, ρ(5) {:.3}, {} walks × {walk_len})", rho[1], rho[5.min(rho.len() - 1)], p.walks.len());
+        println!(
+            "  correlation length {ell:.2} swaps  (ρ(1) {:.3}, ρ(5) {:.3}, {} walks × {walk_len})",
+            rho[1],
+            rho[5.min(rho.len() - 1)],
+            p.walks.len()
+        );
         println!("  mirror-symmetric scores: {}", if symmetric { "yes" } else { "no" });
         println!("\n{:<14} {:>9} {:>11} {:>8}", "layout", "score", "% random <", "z");
         for (name, s, pct, z) in &refs {
@@ -161,7 +166,10 @@ pub fn atlas_cmd(ctx: &Ctx, id: &str, inputs: &Inputs, top: usize, cut: usize, f
         None => config.profile.clone(),
     };
     if profile.table_hash() != config.profile.table_hash() {
-        eprintln!("warning: {} differs from the atlas profile in targets/sfb/trigram coverage; re-scoring uses its weights only", profile.name);
+        eprintln!(
+            "warning: {} differs from the atlas profile in targets/sfb/trigram coverage; re-scoring uses its weights only",
+            profile.name
+        );
     }
     let w = stats::Weights::new(&profile, &at.metrics);
     let s = at.slots;
@@ -239,10 +247,15 @@ pub fn atlas_cmd(ctx: &Ctx, id: &str, inputs: &Inputs, top: usize, cut: usize, f
     }
     println!("\nconsensus of the best {} (modal symbol; digit = share in tenths, · = all agree)", cons_rows.len());
     let modal_chars: String = modal.iter().map(|x| x.0).collect();
-    let shares: String = modal.iter().map(|x| if x.1 >= 0.999 { '·' } else { char::from(b'0' + (x.1 * 10.0).floor().min(9.0) as u8) }).collect();
+    let shares: String =
+        modal.iter().map(|x| if x.1 >= 0.999 { '·' } else { char::from(b'0' + (x.1 * 10.0).floor().min(9.0) as u8) }).collect();
     let (a, b) = (rows(&modal_chars, &g), rows(&shares, &g));
     for (x, y) in a.split(' ').zip(b.split(' ')) {
-        println!("  {}    {}", x.chars().map(|c| format!("{c} ")).collect::<String>(), y.chars().map(|c| format!("{c} ")).collect::<String>());
+        println!(
+            "  {}    {}",
+            x.chars().map(|c| format!("{c} ")).collect::<String>(),
+            y.chars().map(|c| format!("{c} ")).collect::<String>()
+        );
     }
     Ok(())
 }
@@ -307,7 +320,14 @@ pub fn qd(ctx: &Ctx, a: QdArgs) -> Result<()> {
     run::execute(&prep, &spec, &Control::default(), |p| {
         if !quiet {
             let e = p.explore.clone().unwrap_or_default();
-            eprint!("\r  {:>6.1}s  {:<6} {:>5} cells  {:>9} offspring  best {:.4}   ", p.elapsed_ms as f64 / 1000.0, e.phase, e.optima, e.hits, p.best);
+            eprint!(
+                "\r  {:>6.1}s  {:<6} {:>5} cells  {:>9} offspring  best {:.4}   ",
+                p.elapsed_ms as f64 / 1000.0,
+                e.phase,
+                e.optima,
+                e.hits,
+                p.best
+            );
         }
     })?;
     if !quiet {
@@ -350,7 +370,8 @@ fn print_qd(s: &QdSummary, g: &gecko_core::Geometry) {
     }
     println!("\n  score deciles (0 = best tenth, · = empty)");
     for y in (0..ny).rev() {
-        let row: String = (0..nx).map(|x| grid[x + nx * y]).map(|v| if v.is_finite() { char::from(b'0' + decile(v) as u8) } else { '·' }).collect();
+        let row: String =
+            (0..nx).map(|x| grid[x + nx * y]).map(|v| if v.is_finite() { char::from(b'0' + decile(v) as u8) } else { '·' }).collect();
         let label = s.axes.get(1).map_or(String::new(), |a| format!("{:>7.2}", a.lo + (a.hi - a.lo) * (y as f64 + 0.5) / ny as f64));
         println!("  {label} {}", row.chars().map(|c| format!("{c} ")).collect::<String>());
     }

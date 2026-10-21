@@ -38,7 +38,8 @@ fn board(key: Vec<Key>) -> Geometry {
         key,
         comfort: BTreeMap::new(),
         comfort_tables: BTreeMap::new(),
-        layer_modes: Vec::new(), layer_keys: Vec::new(),
+        layer_modes: Vec::new(),
+        layer_keys: Vec::new(),
     };
     g.validate().unwrap();
     g
@@ -296,8 +297,7 @@ fn b14_stretch_crossed_fingers() {
 fn e04_e05_comfort() {
     // Comfort tables by (row, col); unlisted pairs score 1.0; same-key pairs are forced to 1.0.
     let mut g = tiny();
-    g.load_comfort("E04", "a_row,a_col,b_row,b_col,score\n# b→c\n1,3,1,4,0.2\n# a→e\n0,2,1,6,0.9\n# b→b (ignored)\n1,3,1,3,0.0")
-        .unwrap();
+    g.load_comfort("E04", "a_row,a_col,b_row,b_col,score\n# b→c\n1,3,1,4,0.2\n# a→e\n0,2,1,6,0.9\n# b→b (ignored)\n1,3,1,3,0.0").unwrap();
     g.load_comfort("E05", "a_row,a_col,b_row,b_col,score\n# e→f\n1,6,1,7,0.5").unwrap();
     let (c, p, l) = (tiny_corpus(), profile(""), tiny_layout());
     // E04: bc 10 · (1 − 0.2) + ae 20 · (1 − 0.9) = 8 + 2

@@ -863,8 +863,8 @@ fn real_main(cli: Cli) -> Result<()> {
             inputs,
         } => {
             let l = ctx.load(&inputs)?;
-            let algo =
-                Algo::parse(&algo).with_context(|| format!("unknown algo '{algo}' (hc, sa, ga, memetic, bls, explore, tabu, qd, nsga2, rwsa)"))?;
+            let algo = Algo::parse(&algo)
+                .with_context(|| format!("unknown algo '{algo}' (hc, sa, ga, memetic, bls, explore, tabu, qd, nsga2, rwsa)"))?;
             let start = ctx.layout(from.as_deref().unwrap_or(&ctx.store.defaults.reference), &l)?;
             let mut params = Params {
                 algo,
@@ -904,9 +904,15 @@ fn real_main(cli: Cli) -> Result<()> {
             if let Some(n) = migrants {
                 params.memetic.migrants = n;
             }
-            if let Some(ids) = objectives { params.nsga2.objectives = ids; }
-            if let Some(generations) = nsga_generations { params.nsga2.generations = generations; }
-            if let Some(size) = front_size { params.nsga2.archive_size = size; }
+            if let Some(ids) = objectives {
+                params.nsga2.objectives = ids;
+            }
+            if let Some(generations) = nsga_generations {
+                params.nsga2.generations = generations;
+            }
+            if let Some(size) = front_size {
+                params.nsga2.archive_size = size;
+            }
             if let Some(m) = moves {
                 params.moves = parse_moves(&m)?;
             }
@@ -936,7 +942,13 @@ fn real_main(cli: Cli) -> Result<()> {
                     res.elapsed_ms as f64 / 1000.0,
                     res.evals_per_sec / 1e6
                 );
-                if !res.front.is_empty() { println!("Pareto front: {} layouts over {}", res.front.len(), res.objectives.iter().map(|o| o.id.as_str()).collect::<Vec<_>>().join(", ")); }
+                if !res.front.is_empty() {
+                    println!(
+                        "Pareto front: {} layouts over {}",
+                        res.front.len(),
+                        res.objectives.iter().map(|o| o.id.as_str()).collect::<Vec<_>>().join(", ")
+                    );
+                }
                 for r in res.best.iter().take(5) {
                     println!("#{:<2} {:>8.3}  {}", r.rank, r.score, r.rows.join(" "));
                 }
@@ -945,6 +957,13 @@ fn real_main(cli: Cli) -> Result<()> {
                     let (sc, st) = score_layout(&l, &layout)?;
                     println!("\nbest\n  {}\n", layout_rows(&layout, &l.geometry));
                     print_breakdown(&breakdown(&sc, &st));
+                }
+                if let Some(b) = &res.bound {
+                    println!(
+                        "\nlower bound ({}, {} symbols, {} iterations, {} ms)\n  total  {:>9.3} (plain GL {:.3}) ≤ optimum; best {:.3} is within {:.1}%\n  pairs  {:>9.3} (plain GL {:.3}) ≤ optimum; best {:.3} is within {:.1}%  (mono + bigram/skipgram part only)",
+                        b.method, b.symbols, b.iters, b.elapsed_ms, b.total.lower, b.total.gilmore_lawler, b.total.value, b.total.gap_pct,
+                        b.pair.lower, b.pair.gilmore_lawler, b.pair.value, b.pair.gap_pct
+                    );
                 }
             }
         }
@@ -1384,7 +1403,8 @@ fn real_main(cli: Cli) -> Result<()> {
                 p.name = out.clone().unwrap_or_else(|| "fit-likes".into());
                 p.description = format!(
                     "Pairwise cmini likes fit, seed {seed}, {} train/{} held-out layouts; held-out accuracy {}. Opt-in popularity model.",
-                    fit.training_layouts.len(), fit.held_out_layouts.len(),
+                    fit.training_layouts.len(),
+                    fit.held_out_layouts.len(),
                     fit.held_out_accuracy.map_or_else(|| "unavailable".into(), |a| format!("{:.1}%", 100.0 * a))
                 );
                 p.weights = fit.weights.clone();
@@ -1393,8 +1413,12 @@ fn real_main(cli: Cli) -> Result<()> {
                 if ctx.json {
                     ctx.print(json!({"schema": SCHEMA, "fit": fit, "profile": p}));
                 } else {
-                    eprintln!("likes: {} training pairs, {} held-out pairs; accuracy {}", fit.training_pairs, fit.held_out_pairs,
-                        fit.held_out_accuracy.map_or_else(|| "unavailable".into(), |a| format!("{:.1}%", 100.0 * a)));
+                    eprintln!(
+                        "likes: {} training pairs, {} held-out pairs; accuracy {}",
+                        fit.training_pairs,
+                        fit.held_out_pairs,
+                        fit.held_out_accuracy.map_or_else(|| "unavailable".into(), |a| format!("{:.1}%", 100.0 * a))
+                    );
                 }
                 emit_profile(&ctx, &p, out.as_deref())?;
                 return Ok(());

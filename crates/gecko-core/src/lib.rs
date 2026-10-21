@@ -4,6 +4,7 @@
 // Table code indexes several parallel arrays by the same symbol/slot id; range loops read clearer.
 #![allow(clippy::needless_range_loop)]
 
+pub mod bound;
 pub mod calibrate;
 pub mod community;
 pub mod corpus;
@@ -27,8 +28,8 @@ pub mod scorer;
 pub mod store;
 
 pub use corpus::Corpus;
-pub use flat2d::Flat;
 pub use error::{Error, Result};
+pub use flat2d::Flat;
 pub use geometry::{Finger, Geometry, Hand, Key, LayerMode};
 pub use layout::Layout;
 pub use parametric::ParametricGeometry;

@@ -255,7 +255,10 @@ impl Geometry {
             return Err(Error::invalid("geometry", "no keys"));
         }
         if self.key.len() > crate::scorer::MAX_KEYS {
-            return Err(Error::invalid("geometry", format!("more than {} keys (layers included) is not supported", crate::scorer::MAX_KEYS)));
+            return Err(Error::invalid(
+                "geometry",
+                format!("more than {} keys (layers included) is not supported", crate::scorer::MAX_KEYS),
+            ));
         }
         if self.comfort_tables.values().any(|t| t.len() != self.len() * self.len()) {
             return Err(Error::invalid("geometry", "comfort tables must have N×N entries"));
@@ -372,7 +375,9 @@ impl Geometry {
         let (n0, n) = (self.len(), g.len());
         for t in g.comfort_tables.values_mut() {
             let src = std::mem::take(t);
-            *t = (0..n * n).map(|ij| src[g.key[ij / n].phys.map_or(ij / n, |p| p as usize) * n0 + g.key[ij % n].phys.map_or(ij % n, |p| p as usize)]).collect();
+            *t = (0..n * n)
+                .map(|ij| src[g.key[ij / n].phys.map_or(ij / n, |p| p as usize) * n0 + g.key[ij % n].phys.map_or(ij % n, |p| p as usize)])
+                .collect();
         }
         g.validate()?;
         Ok(g)

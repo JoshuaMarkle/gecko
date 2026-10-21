@@ -135,7 +135,9 @@ pub(super) fn offspring(pop: &[State], slots: &[usize], p: &GaParams, rng: &mut 
 
 /// Shared swap mutation restricted to movable slots.
 pub(super) fn mutate(slots: &[usize], sym: &mut [u8], parent: &[u8], mutation_rate: f64, rng: &mut Rng) {
-    if slots.len() < 2 { return; }
+    if slots.len() < 2 {
+        return;
+    }
     let mut swaps = 0;
     while rng.f64() < mutation_rate / (1.0 + mutation_rate) {
         swaps += 1;
