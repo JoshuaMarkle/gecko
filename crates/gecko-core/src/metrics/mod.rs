@@ -86,6 +86,14 @@ pub static METRICS: &[MetricDef] = &[
     m("M01", "Effort", "", Order::Mono, Dir::Min, "Average base key effort per keystroke."),
     m("M02", "Finger load error", "%", Order::Load, Dir::Min, "RMS gap between finger loads and the profile's target loads."),
     m("M04", "Left hand", "%", Order::Load, Dir::Min, "Share of keystrokes on the left hand; scored as squared distance from 50%."),
+    m(
+        "M09",
+        "Thumb load",
+        "%",
+        Order::Load,
+        Dir::Min,
+        "Share of keystrokes on the thumbs; scored as squared distance from the profile's `thumb_target`.",
+    ),
     m("M05", "Home row", "%", Order::Mono, Dir::Max, "Share of keystrokes on the home row."),
     m("M06", "Center columns", "%", Order::Mono, Dir::Min, "Share of keystrokes on the index stretch columns."),
     m("B08", "Hand alternation", "%", Order::Bi, Dir::Max, "Consecutive keys on different hands."),
@@ -97,6 +105,8 @@ pub static METRICS: &[MetricDef] = &[
     m("T06", "Redirects", "%", Order::Tri, Dir::Min, "Three same-hand keys that change direction."),
     m("T07", "Bad redirects", "%", Order::Tri, Dir::Min, "Redirects that do not use the index finger."),
     m("T08", "SFT", "%", Order::Tri, Dir::Min, "Same-finger trigrams: all three keys on one finger."),
+    m("T12", "Thumb rolls", "%", Order::Tri, Dir::Max, "Trigrams with a thumb key next to a key on the same hand (other finger)."),
+    m("T13", "Thumb alternates", "%", Order::Tri, Dir::Max, "Trigrams with a thumb where every step into or out of the thumb changes hands."),
     m(
         "E04",
         "Engram formula",

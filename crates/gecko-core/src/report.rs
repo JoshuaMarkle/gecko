@@ -5,7 +5,7 @@ use serde::Serialize;
 
 use crate::geometry::{Finger, FINGERS};
 use crate::metrics::{Dir, Order, METRICS};
-use crate::scorer::{hand_cost, load_error_cost, Scorer, State};
+use crate::scorer::{hand_cost, left_share, load_error_cost, thumb_cost, thumb_share, Scorer, State};
 
 #[derive(Clone, Debug, Serialize)]
 pub struct MetricValue {
@@ -103,7 +103,8 @@ pub fn breakdown(sc: &Scorer, st: &State) -> Breakdown {
             }
             (Order::Load, _) => match d.id {
                 "M02" => load_error_cost(&st.load, sc.target()).sqrt(),
-                "M04" => 100.0 * st.load[..5].iter().sum::<f64>() / st.load.iter().sum::<f64>().max(1e-12),
+                "M04" => left_share(&st.load),
+                "M09" => thumb_share(&st.load),
                 _ => 0.0,
             },
             _ => 0.0,
@@ -114,6 +115,7 @@ pub fn breakdown(sc: &Scorer, st: &State) -> Breakdown {
             (Dir::Info, _) => 0.0,
             (_, "M02") => w * load_error_cost(&st.load, sc.target()),
             (_, "M04") => w * hand_cost(&st.load),
+            (_, "M09") => w * thumb_cost(&st.load, sc.thumb_target()),
             (Dir::Min, _) => w * value,
             (Dir::Max, _) => -w * value,
         };
