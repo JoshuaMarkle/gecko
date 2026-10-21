@@ -10,6 +10,9 @@ use crate::report::breakdown;
 use crate::rng::Rng;
 use crate::{Corpus, Error, Geometry, Layout, Profile, Result, Scorer, State};
 
+mod rank;
+pub use rank::{fit_preferences, RankingFit};
+
 /// `profile` with every scored metric at weight 1 and no scales, so a breakdown's `weighted`
 /// column is each metric's raw cost (the quantity a weight multiplies).
 fn unit_profile(profile: &Profile) -> Profile {

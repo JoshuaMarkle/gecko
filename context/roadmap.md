@@ -71,7 +71,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 44. [ ] [#32](https://github.com/JoshuaMarkle/gecko/issues/32) `G2` Fast cost-table rebuild when keys move · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
 45. [ ] [#33](https://github.com/JoshuaMarkle/gecko/issues/33) `H2` Hand module: skeleton from measurements · M · after [#6](https://github.com/JoshuaMarkle/gecko/issues/6), [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
 46. [ ] [#34](https://github.com/JoshuaMarkle/gecko/issues/34) `J1` Export key poses (JSON/CSV) and KLE · S · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
-47. [ ] [#35](https://github.com/JoshuaMarkle/gecko/issues/35) `C7` Learning-to-rank profile weights · M · after [#26](https://github.com/JoshuaMarkle/gecko/issues/26)
+47. [x] [#35](https://github.com/JoshuaMarkle/gecko/issues/35) `C7` Learning-to-rank profile weights · M · after [#26](https://github.com/JoshuaMarkle/gecko/issues/26)
 48. [ ] [#36](https://github.com/JoshuaMarkle/gecko/issues/36) `J2` Export to ergogen points · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
 49. [ ] [#90](https://github.com/JoshuaMarkle/gecko/issues/90) `L5` Profile tab: organized weights with live ranking · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82)
 50. [ ] [#37](https://github.com/JoshuaMarkle/gecko/issues/37) `B6` Lower bound (Gilmore–Lawler) and optimality gap · M

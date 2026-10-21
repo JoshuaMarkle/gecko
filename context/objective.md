@@ -97,6 +97,11 @@ the exact unweighted f32 cost and preserves the existing arithmetic. Future work
 - `trigram_coverage` (default 0.99) keeps the most frequent trigrams covering that share
   and renormalizes; scoring, deltas and reports all use the same truncated table, so they
   stay consistent. About 2× faster search than exact (1.0).
+- `gecko profile fit --target likes` learns non-negative weights with pairwise logistic loss
+  on unique liked cmini layouts, holding out 20% of whole layouts before computing scales.
+  The opt-in `learned` profile gets 53.8% held-out pair accuracy vs default 52.0% and
+  Engram 49.4% (seed 1); weak popularity evidence, not a replacement for comfort weights.
+  Method, hashes and exact fit: `research/profile-ranking.md`.
 - Profiles are TOML in `data/profiles/` (`default`, `sfb`, `engram` = independent judge, E05 only):
   weights, soft targets, constraints. Profiles are versioned; runs record the hash.
 
