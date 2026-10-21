@@ -375,3 +375,26 @@ fn engram_comfort_table() {
     assert!(c(at(0, 3), at(1, 3)) < 0.5, "same-finger reach");
     assert_eq!(c(at(1, 1), at(1, 1)), 1.0, "repeats are left to B02");
 }
+
+#[test]
+fn hrm_slots_and_misfire_table() {
+    let g = ansi();
+    let hrm: Vec<usize> = (0..g.len()).filter(|&i| g.hrm(i)).collect();
+    assert_eq!(hrm, vec![at(1, 0), at(1, 1), at(1, 2), at(1, 3), at(1, 6), at(1, 7), at(1, 8), at(1, 9)], "home keys, not g/h");
+    let d = gecko_core::metrics::def("Y04").unwrap();
+    let t = gecko_core::metrics::table(&g, &all_weights(), d).unwrap();
+    let c = |a: usize, b: usize| t[a * 30 + b];
+    assert_eq!(c(at(1, 1), at(0, 3)), 100.0, "roll out of a mod onto another finger");
+    assert_eq!(c(at(0, 3), at(1, 1)), 0.0, "roll into a mod: no hold yet");
+    assert_eq!(c(at(1, 3), at(0, 3)), 0.0, "same finger releases first");
+    assert_eq!(c(at(1, 3), at(1, 6)), 0.0, "other hand");
+    // Explicit `hrm` overrides the default; layer copies never hold a mod.
+    let mut g2 = g.clone();
+    g2.key[at(1, 0)].hrm = Some(false);
+    g2.key[at(1, 4)].hrm = Some(true);
+    assert!(!g2.hrm(at(1, 0)) && g2.hrm(at(1, 4)));
+    let sb = thumb_board("corne-36");
+    let lg = sb.layered(&[sb.len() - 1]).unwrap();
+    assert!((sb.len()..lg.len()).all(|i| !lg.hrm(i)));
+    assert_eq!((0..sb.len()).filter(|&i| lg.hrm(i)).count(), 8);
+}

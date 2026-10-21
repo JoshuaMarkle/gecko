@@ -130,6 +130,14 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Code-symbol bigrams (`()`, `->`, `!=`, …) typed with one finger on two keys or across a layer change, as % of symbol bigrams.",
     ),
+    m(
+        "Y04",
+        "HRM misfires",
+        "%",
+        Order::Bi,
+        Dir::Min,
+        "Same-hand rolls out of a home-row mod key (geometry `hrm`) onto another finger, where the hold can misfire.",
+    ),
 ];
 
 pub fn def(id: &str) -> Option<&'static MetricDef> {
@@ -197,6 +205,9 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
             }
         }),
         "Y02" => pair(&|i, j| pct(same_finger(i, j) || k[i].layer != k[j].layer)),
+        // The mod key is still down when another finger of its hand presses: a fast roll that
+        // a tap-hold resolver can read as a hold. Same-finger pairs release first.
+        "Y04" => pair(&|i, j| pct(g.hrm(i) && same_hand(i, j) && k[i].finger != k[j].finger)),
         id if id.starts_with('T') => Some(trigram::table(g, trigram::class_for(id)?)),
         _ => None,
     }
