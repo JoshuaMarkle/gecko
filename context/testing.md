@@ -32,8 +32,15 @@ entries from the same machine only.
 
 ## Web
 
-TypeScript type check + a few Vitest tests for data shaping. A smoke test that the
-WASM scorer matches the CLI on reference layouts.
+TypeScript type check + Vitest tests for data shaping. `cd web && npm run test:parity`
+builds the browser WASM package and native CLI, generates fresh `gecko compare --json`
+expectations, and runs Node tests against the actual WASM binary. Every reference layout
+is checked under every bundled profile on ansi-30 / english: total score and each metric's
+raw value and weighted contribution must agree within 1e-6 relative (exactly zero when
+the CLI value is zero). Rust, Node, and `wasm-pack` are required; no running server is needed.
+The fixture is regenerated on every run at `web/.cache/wasm-cli.json` (ignored by Git).
+The Rust example `wasm_parity_fixture` exports fully resolved inputs via `Store`, including
+comfort tables and profile defaults, then invokes the real CLI to get expected results.
 
 ## Implemented (`crates/gecko-core/tests/scorer.rs`, `tests/corpora.rs`, `tests/metrics.rs` + unit tests)
 
@@ -70,19 +77,27 @@ text exactly for mono/bigrams and beats no rewrite for trigrams/skipgrams; delta
 a magic key (proptest); `[[magic]]` TOML round-trip; Magic Sturdy's rules halve its SFBs on
 `english` and the rule search matches or beats them.
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
-WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
+WASM == CLI: `web/scripts/wasm-parity.mjs` tests all 10 references × all 4 profiles
+using the same web-target package loaded by the browser.
+
+Bundled splits (`tests/boards.rs`): every Corne/Sweep/Lily58/Kyria/ErgoDox/Dactyl key
+matches pinned QMK-derived KLE inputs; counts, stagger, alpha fingers, fills, reference fits,
+TOML round-trips, and all-symbol score deltas (including ErgoDox above 64 slots) are checked.
 
 Integration coverage: corpus extension and adaptive-key rewriting retain Shift counts; tabu
-mixed deltas include Shift and bracket placement. Reference snapshots include S04, row
+mixed deltas include Shift and bracket placement. Trigram-cache updates and rollback swaps are
+covered by the delta/full properties and extended-neighbourhood regressions. Full evaluation
+recomputes trigram terms independently of the cache. Reference snapshots include S04, row
 effort offsets and Y03.
 
 ## CI
 
 `.github/workflows/ci.yml` runs the `make test` checks on every push and PR, in two jobs:
 `rust` (`cargo test --release`, `cargo clippy --all-targets -- -D warnings`) and `web`
-(`npm ci`, `npm run wasm`, `npm run typecheck`, `npm test`). Cargo and npm caches are kept
+(`npm ci`, `npm run test:parity`, `npm run typecheck`, `npm test`). Cargo and npm caches are kept
 between runs. The WASM package is built before the type check because `web/src/wasm/pkg`
-is generated and not committed.
+is generated and not committed. The parity command builds it first; failures upload the
+generated CLI fixture as a CI artifact for inspection. `make test` also runs parity.
 
 ## Snapshots (`insta`)
 

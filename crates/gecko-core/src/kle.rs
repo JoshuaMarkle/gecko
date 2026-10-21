@@ -321,6 +321,9 @@ fn cluster_rows(keys: &[KleKey], centers: &[[f32; 2]]) -> Vec<Vec<usize>> {
     for col in &columns {
         let off = match prev {
             None => 0,
+            // Equal-height finger columns retain their top-to-bottom numbering. A strong
+            // stagger (Sweep pinky → ring is 0.62u) must not invent an extra logical row.
+            Some((po, pc)) if col.len() == pc.len() && col.len() >= 3 => po,
             Some((po, pc)) => {
                 let cost = |s: i32| {
                     let (mut sum, mut cnt) = (0f32, 0);
