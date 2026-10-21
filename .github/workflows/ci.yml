@@ -47,6 +47,11 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci --no-audit --no-fund
       # web/src/wasm/pkg is generated, not committed; typecheck needs it.
-      - run: npm run wasm
+      - run: npm run test:parity
       - run: npm run typecheck
       - run: npm test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: wasm-cli-fixture
+          path: web/.cache/wasm-cli.json
