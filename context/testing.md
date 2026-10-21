@@ -37,7 +37,9 @@ layout TOML round-trip. Explore (`tests/explore.rs` + unit tests in `explore/`):
 re-scoring == full score (proptest); on a mirror-symmetric 6-key board the archive equals the
 brute-forced set of canonical local optima; ansi atlas consistency (pins, constrained
 records, every unconstrained record locally optimal); distances, PCA, funnels, Chao1.
-BLS and explore are in the brute-force and determinism tests.
+BLS and explore are in the brute-force and determinism tests. 2D drawing (`tests/flat2d.rs`):
+flat boards unchanged, a rigidly tilted board recovered, a curved tented split board with no
+overlaps and row/column order kept, layer keys copy their physical key.
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
 

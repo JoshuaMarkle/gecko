@@ -54,6 +54,12 @@ on each snapshot (throttled 2.5 s). Reference layouts are scored via `/api/score
 neighbourhoods use WASM when the geometry and corpus match the loaded scorer, else
 `/api/swap-matrix`.
 
+## 2D boards
+
+The heatmap and the Explore mini keyboards (`KeyGrid`, consensus, thumbnails) draw
+`geometry.flat` (gecko-core `Geometry::flat2d`, so curved boards get a clean projection) via
+`format.ts` `flatKeys` / `flatBounds`, with each key's in-plane rotation.
+
 ## 3D rendering
 
 Each key is a keycap (sharp base, tapered walls with smooth rounded corners, flat top; `capGeometry`, cached per size) placed from the geometry's `pos`, `rot`, `size` (1 unit = 1u =

@@ -17,8 +17,13 @@ export interface Key {
   fill?: string;
 }
 
+/** A key in the board's 2D drawing (gecko-core `Geometry::flat2d`): top-left corner, rotation in degrees about its center. */
+export interface Flat { pos: [number, number]; rot: number }
+
 export interface Geometry {
   id: string; name: string; description: string; key: Key[];
+  /** 2D drawing, one per key (served by `/api/geometries`; curved boards projected, overlaps removed). */
+  flat?: Flat[];
   /** Comfort metric id → table name, and the loaded N×N tables (passed through to WASM). */
   comfort?: Record<string, string>; comfort_tables?: Record<string, number[]>;
 }

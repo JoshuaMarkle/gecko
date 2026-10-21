@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Geometry, Key } from "./api";
-import { checkLayout, fitChars, layerSlots, rowsOf, swapChars, undirected, verdict } from "./format";
+import { checkLayout, fitChars, flatBounds, flatKeys, layerSlots, rowsOf, swapChars, undirected, verdict } from "./format";
 
 const key = (row: number): Key => ({ pos: [0, row, 0], rot: [0, 0, 0], size: [1, 1], finger: "LI", row, col: 0, home: false, stretch: false, effort: 1 });
 const g: Geometry = { id: "t", name: "t", description: "", key: [key(0), key(0), key(1), key(1), key(1)] };
@@ -37,5 +37,19 @@ describe("format", () => {
     expect(layerSlots(t, "ab\u2423\u00B7")).toEqual([[0, 1, 2, 3]]);
     // Base with layer 1 held by LT: layer 1 skips the LT key.
     expect(layerSlots(t, "ab\u2460\u00B7" + "()" + "\u00B7")).toEqual([[0, 1, 2, 3], [4, 5, null, 6]]);
+  });
+});
+
+describe("flatKeys", () => {
+  it("uses geometry.flat when served, else x, y and z-rotation", () => {
+    const k0 = { ...g.key[0], pos: [1, 2, 0.5] as [number, number, number], rot: [10, 0, 30] as [number, number, number] };
+    const t: Geometry = { ...g, key: [k0] };
+    expect(flatKeys(t)[0]).toEqual({ x: 1, y: 2, w: 1, h: 1, rot: 30 });
+    expect(flatKeys({ ...t, flat: [{ pos: [3, 4], rot: -5 }] })[0]).toEqual({ x: 3, y: 4, w: 1, h: 1, rot: -5 });
+  });
+  it("bounds include rotation", () => {
+    const b = flatBounds([{ x: 0, y: 0, w: 1, h: 1, rot: 45 }]);
+    expect(b.x1 - b.x0).toBeCloseTo(Math.SQRT2);
+    expect(b.y0).toBeCloseTo(0.5 - Math.SQRT1_2);
   });
 });
