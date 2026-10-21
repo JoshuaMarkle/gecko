@@ -64,12 +64,25 @@ Every optimizer uses `delta_swap(layout, a, b)`; full evaluation is for verifica
 and reports. A property test enforces `full(after) − full(before) == delta`.
 
 Trigrams are stored sparsely per symbol (CSR of non-zero trigrams containing it), so a swap
-touches only trigrams with `a` or `b`. Current speed (`gecko perf`, i9-13900H, 1 thread):
-≈ 570k swap deltas/s with the default profile (trigrams and far skipgrams on). The far-skipgram
-channel is compiled out of the delta when no metric uses it (~10% faster).
+touches only trigrams with `a` or `b`. Each `State` caches the current folded cost of every
+nonzero trigram; deltas read the cached old cost, and `apply` refreshes only touched entries
+(including rollback swaps). `full` independently recomputes every term for verification.
+The cache is empty when no trigram metric is weighted; evaluating/applying swaps allocates
+nothing. Sparse entries retain stable cache IDs, avoiding an extra indirect trigram lookup.
 
-Next speed tricks, in order of expected payoff: cache per-trigram current cost in the state;
-pre-multiplying frequencies into cost tables where the layout term allows it; SIMD.
+Measured 2026-10-21 on the i9-13900H, ansi-30 / english / default, alternating five
+`taskset -c 2 gecko perf --json` samples per binary: baseline median 318,249 deltas/s,
+cached median 370,267 deltas/s (**+16.3%**). Individual runs vary under concurrent builds;
+these are single-thread results, below the ≥10M/s aggregate target. `bench/history.jsonl`
+records the before/after measurements as well (including deliberately retained contended
+runs as low as 104k/s; compare timings under equivalent load). The far-skipgram channel
+is compiled out of the delta when no metric uses it.
+
+An initial CSR of indices into the shared trigram list regressed (~303–310k/s), so it was
+rejected in favor of inline sparse entries with cache IDs. Frequency pre-multiplication is
+not shared across layout positions: frequencies are symbol-specific and costs slot-specific.
+Caching frequency-weighted contributions would change f32 rounding, so the cache retains
+the exact unweighted f32 cost and preserves the existing arithmetic. Future work: SIMD.
 
 ## Normalization and profiles
 
