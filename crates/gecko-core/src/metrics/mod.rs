@@ -2,7 +2,7 @@
 //! `research/metrics-catalog.md`. Each linear metric is a table indexed by slot (mono),
 //! slot pair (bi, skip) or slot triple (tri), in natural units (%, or a per-keystroke
 //! average). The scorer folds them with profile weights; see `context/objective.md`.
-//! Some tables depend on profile parameters (`Profile::sfb`), so they are built per profile.
+//! Some tables depend on profile parameters (`Profile::sfb`, `Profile::row_offset`), so they are built per profile.
 
 pub mod trigram;
 
@@ -99,7 +99,14 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Stretch (B14) between keys 1 and 3 of a trigram per 100 skipgrams: disjoint LSB / scissors (Kühlmak).",
     ),
-    m("M01", "Effort", "", Order::Mono, Dir::Min, "Average base key effort per keystroke, plus the Shift key's effort per Shift press."),
+    m(
+        "M01",
+        "Effort",
+        "",
+        Order::Mono,
+        Dir::Min,
+        "Average key effort per keystroke: geometry base effort plus the profile's per-finger `row_offset`, plus Shift key effort per Shift press.",
+    ),
     m("M02", "Finger load error", "%", Order::Load, Dir::Min, "RMS gap between finger loads and the profile's target loads."),
     m("M04", "Left hand", "%", Order::Load, Dir::Min, "Share of keystrokes on the left hand; scored as squared distance from 50%."),
     m("M05", "Home row", "%", Order::Mono, Dir::Max, "Share of keystrokes on the home row."),
@@ -183,7 +190,7 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
     };
     let pct = |b: bool| if b { 100.0 } else { 0.0 };
     match d.id {
-        "M01" => mono(&|i| k[i].effort),
+        "M01" => mono(&|i| k[i].effort + row_offset(g, p, i)),
         "M05" => mono(&|i| pct(k[i].home || k[i].row == home_row(g))),
         "M06" => mono(&|i| pct(k[i].stretch)),
         "B01" | "S01" | "S02" => pair(&|i, j| pct(same_finger(i, j))),
@@ -339,6 +346,17 @@ fn finger_overlap(oa: u8, ob: u8) -> f32 {
         (3, 4) => -2.5,
         _ => 0.0,
     }
+}
+
+/// Profile effort offset for slot `i`: `row_offset[finger][0]` above the home row, `[1]` below
+/// it, 0 on the home row, for thumbs, and on geometries without home keys.
+pub fn row_offset(g: &Geometry, p: &Profile, i: usize) -> f32 {
+    let k = &g.key[i];
+    let home = home_row(g);
+    if k.finger.is_thumb() || home == i8::MIN || k.row == home {
+        return 0.0;
+    }
+    p.row_offset[k.finger.ord() as usize][usize::from(k.row > home)]
 }
 
 /// The logical row that holds the home keys (most `home = true` keys).

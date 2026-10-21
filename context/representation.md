@@ -20,6 +20,10 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   comfortable, keys matched by row/col). The store loads them into `comfort_tables`, which are
   served with the geometry so the WASM scorer has them. ansi-30: E04 Engram formula, E05 fitted
   from Engram's raw choices (`research/scripts/fit_engram_bt.py`).
+- `effort` is the base per-press cost. Profiles add a per-finger row offset on top
+  (`row_offset`, pinky ring middle index × [above home, below home]; thumbs and home row 0):
+  the default/code profiles make the top row cheaper for middle/ring and the bottom row
+  cheaper for index (KLO's key-cost asymmetry), on any geometry. M01 uses `effort + offset`.
 - Positions are always 3D. Flat boards use z = 0 and only z-rotation. `pos` is the
   unrotated top-left corner; rotation is about the key center (as the 3D viewer draws it).
 - 2D drawing: `Geometry::flat2d()` (`flat2d.rs`) gives `{pos: [x, y], rot}` per key. Flat
