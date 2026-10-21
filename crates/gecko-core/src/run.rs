@@ -244,3 +244,81 @@ pub fn list(runs: &Path) -> Vec<RunSummary> {
     v.sort_by(|a, b| b.id.cmp(&a.id));
     v
 }
+
+/// One recorded-vs-recomputed comparison in a [`Verification`].
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Check {
+    pub name: String,
+    pub expected: String,
+    pub actual: String,
+    pub ok: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Verification {
+    pub schema: u32,
+    pub id: String,
+    pub ok: bool,
+    /// Input hashes, eval count, then each ranked layout (`best#<rank>`).
+    pub checks: Vec<Check>,
+    /// The re-run's result (not written to the run directory).
+    pub rerun: Option<RunResult>,
+}
+
+fn check(name: &str, expected: impl ToString, actual: impl ToString) -> Check {
+    let (expected, actual) = (expected.to_string(), actual.to_string());
+    Check { name: name.to_string(), ok: expected == actual, expected, actual }
+}
+
+/// Re-run a saved `--evals` run from its `config.json` and compare against its `best.json`.
+/// Inputs are resolved by name from `store` and must hash as recorded; if any differs the
+/// optimizer is not re-run. The re-run writes to a temporary directory, never to the run.
+pub fn verify(store: &crate::store::Store, dir: &Path) -> Result<Verification> {
+    let config = load_config(dir)?;
+    let recorded = load_result(dir)?;
+    if config.params.evals.is_none() {
+        return Err(Error::invalid(
+            "verify",
+            format!("run {} has a time budget; only --evals runs are reproducible", config.id),
+        ));
+    }
+    let geometry = store.geometry(&config.geometry.name)?;
+    let corpus = store.corpus(&config.corpus.name)?;
+    let mut checks = vec![
+        check("geometry", &config.geometry.hash, hash::hex(geometry.hash())),
+        check("corpus", &config.corpus.hash, hash::hex(corpus.hash())),
+        check("profile", &config.profile_hash, hash::hex(config.profile.hash())),
+    ];
+    if checks.iter().any(|c| !c.ok) {
+        return Ok(Verification { schema: SCHEMA, id: config.id, ok: false, checks, rerun: None });
+    }
+    let start = Layout::from_flat("start", &geometry, config.start.chars().collect())?;
+    let spec = RunSpec {
+        geometry: &geometry,
+        corpus: &corpus,
+        profile: &config.profile,
+        start: &start,
+        pins: &config.pins,
+        params: config.params.clone(),
+    };
+    let tmp = std::env::temp_dir().join(format!("gecko-verify-{}-{}", std::process::id(), config.id));
+    std::fs::create_dir_all(&tmp)?;
+    let prep = Prepared { config: config.clone(), dir: tmp.clone() };
+    let res = execute(&prep, &spec, &Control::default(), |_| {});
+    let _ = std::fs::remove_dir_all(&tmp);
+    let res = res?;
+    checks.push(check("evals", recorded.evals, res.evals));
+    checks.push(check("ranked", recorded.best.len(), res.best.len()));
+    for (a, b) in recorded.best.iter().zip(&res.best) {
+        // Same chars and score to 1e-9 relative (the score is recomputed from the layout).
+        let same = a.chars == b.chars && (a.score - b.score).abs() <= 1e-9 * a.score.abs().max(1.0);
+        checks.push(Check {
+            name: format!("best#{}", a.rank),
+            expected: format!("{:.6} {}", a.score, a.chars),
+            actual: format!("{:.6} {}", b.score, b.chars),
+            ok: same,
+        });
+    }
+    let ok = checks.iter().all(|c| c.ok);
+    Ok(Verification { schema: SCHEMA, id: config.id, ok, checks, rerun: Some(res) })
+}

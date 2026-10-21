@@ -62,6 +62,8 @@ BLS and explore are in the brute-force and determinism tests.
 External validation (`tests/validation.rs`): every non-thumb finger triple in cmini's
 `table.json` (pinned in `tests/fixtures/cmini-table.json`) gets the matching trigram class;
 ansi-30 distances `rg` 1.6 u, `my` 2.66 u, `vt` 2.02 u match the Layouts Doc.
+Run reproducibility (`tests/verify.rs`): an `--evals` run passes `run::verify`; a tampered
+`best.json`, a changed input hash or a time-budget run fails.
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
 
