@@ -164,7 +164,7 @@ pub fn run(
     let probe_ms = t0.elapsed().as_millis() as u64;
 
     let archive = Archive::new(sc, mirror.clone(), ep.max_optima, 16, params.bls.exclusion_dist);
-    let sctx = Ctx { scorer: sc, movable: ctx.movable.clone(), start: ctx.start.clone(), observer: Some(&archive) };
+    let sctx = ctx.clone().with_observer(&archive);
     let mut p = params.clone();
     p.algo = Algo::Explore;
     if let Some(t) = p.time_ms {
