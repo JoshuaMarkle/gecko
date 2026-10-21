@@ -106,6 +106,10 @@ between runs. The WASM package is built before the type check because `web/src/w
 is generated and not committed. The parity command builds it first; failures upload the
 generated CLI fixture as a CI artifact for inspection. `make test` also runs parity.
 
+`.github/workflows/claude.yml` runs `anthropics/claude-code-action` when the repo owner writes
+`@claude` in an issue, issue/PR comment or review. It needs the secret `ANTHROPIC_API_KEY` (or
+`CLAUDE_CODE_OAUTH_TOKEN`) and the Claude GitHub app; the agent follows `AGENTS.md`.
+
 
 ## Snapshots (`insta`)
 

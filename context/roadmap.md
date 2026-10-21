@@ -35,7 +35,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 8. [x] [#78](https://github.com/JoshuaMarkle/gecko/issues/78) `A8` `gecko verify run:<id>` · S
 9. [x] [#79](https://github.com/JoshuaMarkle/gecko/issues/79) `A9` Issue and PR templates for agent work · S
 10. [ ] [#80](https://github.com/JoshuaMarkle/gecko/issues/80) `A10` Claude Code GitHub Action · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
-11. [ ] [#81](https://github.com/JoshuaMarkle/gecko/issues/81) `A11` Release builds with the web UI embedded · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
+11. [x] [#81](https://github.com/JoshuaMarkle/gecko/issues/81) `A11` Release builds with the web UI embedded · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
 12. [x] [#2](https://github.com/JoshuaMarkle/gecko/issues/2) `B1` Tabu search (robust tabu, RoTS) optimizer · M
 13. [x] [#3](https://github.com/JoshuaMarkle/gecko/issues/3) `C1` B11 finger-pair movement table · M
 14. [x] [#4](https://github.com/JoshuaMarkle/gecko/issues/4) `D1` Model Shift · M
@@ -56,7 +56,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 29. [x] [#19](https://github.com/JoshuaMarkle/gecko/issues/19) `D3` Y03 paired symbol placement · S
 30. [ ] [#86](https://github.com/JoshuaMarkle/gecko/issues/86) `E5` Export layout image (SVG/PNG) · S · after [#83](https://github.com/JoshuaMarkle/gecko/issues/83)
 31. [ ] [#87](https://github.com/JoshuaMarkle/gecko/issues/87) `L10` Mini keyboards everywhere · M · after [#83](https://github.com/JoshuaMarkle/gecko/issues/83)
-32. [ ] [#21](https://github.com/JoshuaMarkle/gecko/issues/21) `B4` NSGA-II Pareto fronts · M
+32. [x] [#21](https://github.com/JoshuaMarkle/gecko/issues/21) `B4` NSGA-II Pareto fronts · M
 33. [x] [#22](https://github.com/JoshuaMarkle/gecko/issues/22) `D4` Y04 home-row-mod misfire risk · S
 34. [x] [#23](https://github.com/JoshuaMarkle/gecko/issues/23) `C5` Worst words report per metric · S
 35. [x] [#24](https://github.com/JoshuaMarkle/gecko/issues/24) `D5` Thumb trigram classes + M09 thumb load · S
