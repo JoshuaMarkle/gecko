@@ -11,6 +11,7 @@ pub mod explore;
 pub mod geometry;
 pub mod hash;
 pub mod layout;
+pub mod magic;
 pub mod metrics;
 pub mod optimize;
 pub mod profile;

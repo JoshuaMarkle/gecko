@@ -10,9 +10,14 @@
 //! `[l - 1]` (`{layer1}` = `①`). For scoring, a layered layout flattens onto the virtual
 //! geometry of [`Geometry::layered`]: base keys, then each layer's keys except those on the
 //! holding finger ([`Layout::flat`]); the flat char string round-trips via [`Layout::from_flat`].
+//!
+//! Adaptive keys (`magic`): keys whose output depends on the previous symbol, with their rules
+//! ([`crate::magic`]). The scorer rewrites the corpus for them; the flat char string does not
+//! carry rules, so they travel separately (`Layout::magic`, run configs).
 
 use serde::{Deserialize, Serialize};
 
+use crate::magic::{Magic, MagicFile, MAGIC, REPEAT};
 use crate::{hash, Error, Geometry, Result};
 
 pub const SPACE: char = '\u{2423}'; // ␣
@@ -36,6 +41,8 @@ pub const TOKENS: &[(char, &[&str])] = &[
     (LAYER_KEYS[0], &["layer1", "l1"]),
     (LAYER_KEYS[1], &["layer2", "l2"]),
     (LAYER_KEYS[2], &["layer3", "l3"]),
+    (MAGIC, &["magic", "mgc"]),
+    (REPEAT, &["repeat", "rep"]),
 ];
 
 pub fn is_layer_key(c: char) -> bool {
@@ -86,6 +93,9 @@ pub struct LayoutFile {
     /// Layers 1, 2, … (`[[layer]]` tables), each with rows like the base.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub layer: Vec<LayerFile>,
+    /// Adaptive keys (`[[magic]]` tables).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub magic: Vec<MagicFile>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -113,6 +123,9 @@ pub struct Layout {
     pub chars: Vec<char>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub layers: Vec<Layer>,
+    /// Adaptive keys; each key's glyph is on the layout.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub magic: Vec<Magic>,
 }
 
 impl Layout {
@@ -123,7 +136,9 @@ impl Layout {
             let name = if lf.name.is_empty() { format!("layer{}", i + 1) } else { lf.name.clone() };
             l.layers.push(Layer { name, chars: parse_symbols(&lf.rows.concat())? });
         }
+        l.magic = f.magic.iter().map(Magic::from_file).collect::<Result<_>>()?;
         l.check_unique()?;
+        l.check_magic()?;
         Ok(l)
     }
 
@@ -137,7 +152,14 @@ impl Layout {
     }
 
     pub fn from_chars(name: &str, geometry: &str, source: &str, chars: Vec<char>) -> Result<Self> {
-        let l = Layout { name: name.to_string(), geometry: geometry.to_string(), source: source.to_string(), chars, layers: Vec::new() };
+        let l = Layout {
+            name: name.to_string(),
+            geometry: geometry.to_string(),
+            source: source.to_string(),
+            chars,
+            layers: Vec::new(),
+            magic: Vec::new(),
+        };
         l.check_unique()?;
         Ok(l)
     }
@@ -216,6 +238,24 @@ impl Layout {
         Ok(())
     }
 
+    /// Every adaptive key is on the layout once (else its presses would be dropped).
+    pub fn check_magic(&self) -> Result<()> {
+        for m in &self.magic {
+            m.check()?;
+            if !self.chars.iter().chain(self.layers.iter().flat_map(|l| l.chars.iter())).any(|&c| c == m.key) {
+                return Err(Error::invalid("layout", format!("'{}': adaptive key '{}' is not on the layout", self.name, m.key)));
+            }
+        }
+        Ok(())
+    }
+
+    /// These adaptive keys, checked against the layout.
+    pub fn with_magic(mut self, magic: Vec<Magic>) -> Result<Self> {
+        self.magic = magic;
+        self.check_magic()?;
+        Ok(self)
+    }
+
     pub fn check_geometry(&self, g: &Geometry) -> Result<()> {
         for chars in std::iter::once(&self.chars).chain(self.layers.iter().map(|l| &l.chars)) {
             if chars.len() != g.len() {
@@ -236,7 +276,7 @@ impl Layout {
     pub fn fit(&self, g: &Geometry) -> Result<Layout> {
         if self.layers.is_empty() && self.chars.len() > g.len() {
             let l = Self::from_flat(&self.name, g, self.chars.clone())?;
-            return Ok(Layout { source: self.source.clone(), ..l });
+            return Ok(Layout { source: self.source.clone(), magic: self.magic.clone(), ..l });
         }
         let open = g.key.iter().filter(|k| k.fill.is_none()).count();
         let fit = |chars: &[char], fill: &dyn Fn(&crate::Key) -> Option<char>| -> Vec<char> {
@@ -288,15 +328,24 @@ impl Layout {
 
     pub fn to_toml(&self, g: &Geometry) -> String {
         let layer = self.layers.iter().zip(self.layer_rows(g)).map(|(ly, rows)| LayerFile { name: ly.name.clone(), rows }).collect();
-        let f =
-            LayoutFile { name: self.name.clone(), geometry: self.geometry.clone(), source: self.source.clone(), rows: self.rows(g), layer };
+        let f = LayoutFile {
+            name: self.name.clone(),
+            geometry: self.geometry.clone(),
+            source: self.source.clone(),
+            rows: self.rows(g),
+            layer,
+            magic: self.magic.iter().map(Magic::to_file).collect(),
+        };
         toml::to_string(&f).unwrap_or_default()
     }
 
-    /// Hash of (geometry, symbols). Identifies a layout independent of its name.
+    /// Hash of (geometry, symbols, adaptive rules). Identifies a layout independent of its name.
     pub fn hash(&self) -> u64 {
-        let s: String = std::iter::once(self.geometry.as_str()).chain(std::iter::once("|")).collect::<String>()
+        let mut s: String = std::iter::once(self.geometry.as_str()).chain(std::iter::once("|")).collect::<String>()
             + &self.chars.iter().chain(self.layers.iter().flat_map(|l| l.chars.iter())).collect::<String>();
+        for m in &self.magic {
+            s += &format!("|{}{}:{}", m.key, if m.repeat { "+" } else { "" }, crate::magic::format_rules(&m.rules));
+        }
         hash::fnv1a(s.as_bytes())
     }
 }
