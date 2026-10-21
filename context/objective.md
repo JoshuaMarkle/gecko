@@ -7,7 +7,7 @@ B14 geometric stretch (Oxeylyzer 2), B11 finger-pair movement (KLO), M01 effort,
 M03 finger balance (RSS), M07 peak finger load, M04 hand balance, M05 home row, M06 center columns,
 B08 alternation, T01–T08 trigram classes, T09 contortions, T10 irregular trigrams,
 E04/E05 Engram key-pair discomfort (formula / measured; geometry `[comfort]` tables),
-B02 repeats (info), Y01 layer switches (and Shift), Y02 code-symbol bigrams, Y03 paired brackets. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
+B02 repeats (info), Y01 layer switches (and Shift), Y02 code-symbol bigrams, Y03 paired brackets, Y04 home-row-mod misfires. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
 lateral multiplier and per-finger factors, and S02's `skip_decay`. Profile `row_offset`
 (pinky ring middle index × [above, below] home) adds per-finger row costs to M01's geometry effort.
 
@@ -129,3 +129,16 @@ fronts (NSGA-II). Reports always show the per-metric breakdown.
   before. A one-shot Shift costs the same for single capitals; caps runs are scored as held.
 - Not modeled yet: the layer/Shift key's own keystroke in finger load, thumb-trigram classes,
   layer state beyond one bigram (toggle assumes each bigram starts from `i`'s layer). Profile `code` weights Y01/Y02/Y03 (scales are rough estimates).
+
+## Home-row mods (Y04)
+
+- Bigram table: 100 when the first key is a home-row mod (`Geometry::hrm`) and the second is
+  a different finger of the same hand, including its thumb. That roll presses the next key
+  while the mod is still down, which is how tap-hold resolvers misfire. Same-finger pairs
+  release first, rolls into a mod and other-hand pairs are free. Layer copies are never
+  mods. Reads "% of bigrams at risk".
+- No bundled profile weights it, because HRMs are opt-in. References on english/ansi-30: QWERTY
+  9.9 %, Sturdy/Dvorak 16 %, Colemak 22 %, Workman 26 %, spread ≈ 4.25. With that scale, weight
+  0.25 leaves the default optimum unchanged (15.1 %). Weight 1 cuts Y04 to 5.6 % by moving
+  letters off the home row (M05 58 → 31 %), so it costs a lot. Runs `20261021-104858-sa-3817de78`
+  and `20261021-104833-sa-be473459` vs default `20261021-104823-sa-8909360f` (SA, seed 1, 10 s).

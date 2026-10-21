@@ -27,7 +27,7 @@ done (BLS, `gecko explore` atlas, Explore view). Next: tabu, lower bounds, MAP-E
 | 2 | **Optimizers:** hill climb, SA, GA, tabu, memetic; algorithm leaderboard | Finds layouts that beat the best known layouts under our profile |
 | 3 | **Full metric set:** P1/P2 metrics, profiles, rank-sum and Pareto selection | |
 | 4 | **Web UI:** run browser, compare, interactive editor, 3D viewer | |
-| 5 | **Symbol layers:** symbols, layers, modifiers, code corpora | Started: thumb keys/tokens, hold layers (Y01, Y02), paired brackets (Y03), hold/one-shot/toggle layer modes, Shift, `code` corpus, layer view in the UI. Open: Y04 |
+| 5 | **Symbol layers:** symbols, layers, modifiers, code corpora | Started: thumb keys/tokens, hold layers (Y01, Y02), paired brackets (Y03), hold/one-shot/toggle layer modes, Shift, `code` corpus, layer view in the UI. Y04 HRM misfires |
 | 6 | **2D geometry:** optimize key x, y, rotation on a plane, no overlaps | |
 | 7 | **3D geometry:** add z, tilt, tent; hand model | |
 | 8 | **Free-form 3D:** curved keyboards, full 6-DoF keys, thumb clusters, no intersections | |

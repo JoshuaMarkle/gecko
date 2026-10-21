@@ -110,6 +110,10 @@ pub struct Key {
     /// Index-finger stretch column (center columns on a standard board).
     #[serde(default)]
     pub stretch: bool,
+    /// Home-row mod (tap-hold modifier) on this key, for Y04. Unset = the default: a home key
+    /// on a finger (not thumb, not stretch column). See [`Geometry::hrm`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hrm: Option<bool>,
     pub effort: f32,
     /// Symbol this key gets when a layout lists only the keys without a fill (a 30-key layout
     /// on a board with thumb keys): a token name (`space`, `enter`, `bspc`, `tab`, `esc`,
@@ -323,6 +327,14 @@ impl Geometry {
     /// Slots `i` and `j` are the same physical key (possibly on different layers).
     pub fn same_key(&self, i: usize, j: usize) -> bool {
         self.phys(i) == self.phys(j)
+    }
+
+    /// Slot `i` is a home-row mod key (Y04): a base-layer key with `hrm = true`, or, when
+    /// `hrm` is unset, a home key on a finger outside the stretch columns (one per finger on
+    /// the bundled boards). Layer copies never are: a layer is held, so the key has no tap-hold.
+    pub fn hrm(&self, i: usize) -> bool {
+        let k = &self.key[i];
+        k.layer == 0 && k.hrm.unwrap_or(k.home && !k.stretch && !k.finger.is_thumb())
     }
 
     /// Number of physical keys (all keys unless layered).
