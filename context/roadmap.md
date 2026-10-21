@@ -40,7 +40,7 @@ When an item closes, tick it here. When scope changes, edit the issue first.
 13. [ ] [#3](https://github.com/JoshuaMarkle/gecko/issues/3) `C1` B11 finger-pair movement table · M
 14. [ ] [#4](https://github.com/JoshuaMarkle/gecko/issues/4) `D1` Model Shift · M
 15. [ ] [#5](https://github.com/JoshuaMarkle/gecko/issues/5) `E1` KLE JSON importer · M
-16. [ ] [#6](https://github.com/JoshuaMarkle/gecko/issues/6) `H1` Verify hand-model parameters · S
+16. [x] [#6](https://github.com/JoshuaMarkle/gecko/issues/6) `H1` Verify hand-model parameters · S
 17. [ ] [#82](https://github.com/JoshuaMarkle/gecko/issues/82) `L1` Navbar restructure: inputs become top-level tabs · M
 18. [ ] [#8](https://github.com/JoshuaMarkle/gecko/issues/8) `B2` More neighbourhoods: 3-cycle, column swap, depth-2 swaps · S
 19. [ ] [#9](https://github.com/JoshuaMarkle/gecko/issues/9) `C2` S04 skipgram LSB / scissor / stretch · S
