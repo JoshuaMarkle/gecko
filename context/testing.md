@@ -141,3 +141,16 @@ Relative finger effort: scorer regression covers inverse-cost normalization, abs
 active thumbs, independent hands, scale invariance, directional reach costs, invalid zero
 costs, and all pair swaps against full evaluation. Web tests cover generated targets,
 mirrored edits, unlocking/relinking hands, and positive typing-cost limits.
+
+Hand model (`tests/hand.rs`): IK recovers the natural curl and reports exact shortfalls; home
+keys cheapest per finger on six boards; mirrored boards give mirrored costs; reach ordering by
+hand size; a moved key becomes unreachable; ergonomic boards beat flat ones on G01/G05 with
+QWERTY; profile `[hand]` round-trips, changes the table hash and scales B14. Thumb: cluster keys
+near rest are cheap, a far key is out of reach, tilted keywell thumb keys press better. G03:
+ANSI ≈ 12° ulnar with palms flat, splits ≈ 0°, a tent lowers pronation, Dactyl < Corne < ANSI,
+wider elbows deviate more, sideways misses add cost, bad `[hand.body]` rejected. G01/G03/G05 are
+in `all_weights`, so the delta == full tests cover them; the tent test covers G01/G05's frame
+invariance and that tenting lowers G03. Web: `hand.test.ts` covers `withHand` / `handSpec` /
+`bodyOf`, the TS thumb (rest, reach, segment lengths) and `toLocal`. The Tabu `delta_shift`
+check allows 3e-5 relative: f32 pair tables valued 0–100 can leave a few ULP after cancelling
+(seen on Y02 when the per-metric test weights shift).

@@ -105,29 +105,76 @@ impl Geometry {
         if self.is_flat() {
             return self.key.iter().map(|k| k.pos).collect();
         }
-        let tops: Vec<V3> =
-            self.key.iter().map(|k| sub(contact(k), [k.size[0] as f64 / 2.0, k.size[1] as f64 / 2.0, CAP_HEIGHT])).collect();
+        let tops = self.fit_points();
         let mut out: Vec<[f32; 3]> = tops.iter().map(|p| [p[0] as f32, p[1] as f32, p[2] as f32]).collect();
         for hand in [Hand::L, Hand::R] {
-            let fit: Vec<V3> = (0..self.len())
-                .filter(|&i| self.key[i].phys.is_none() && self.key[i].hand() == hand && !self.key[i].finger.is_thumb())
-                .map(|i| tops[i])
-                .collect();
-            if fit.len() < 3 {
-                continue;
-            }
-            let n = plane_normal(&fit);
-            let len = fit.len() as f64;
-            let c = fit.iter().fold([0.0; 3], |a, q| add(a, [q[0] / len, q[1] / len, q[2] / len]));
-            let u = norm(sub([1.0, 0.0, 0.0], [n[0] * n[0], n[0] * n[1], n[0] * n[2]]));
-            let u = if dot(u, u) < 0.5 { norm(cross([0.0, 1.0, 0.0], n)) } else { u };
-            let v = cross(n, u);
+            let Some(f) = self.hand_frame(hand) else { continue };
             for i in (0..self.len()).filter(|&i| self.key[i].hand() == hand) {
-                let d = sub(tops[i], c);
-                let p = add(c, [dot(d, u), dot(d, v), dot(d, n)]);
+                let p = f.point(tops[i]);
                 out[i] = [p[0] as f32, p[1] as f32, p[2] as f32];
             }
         }
         out
+    }
+
+    /// Keycap top centres offset like `pos` (minus half the size and the cap height).
+    fn fit_points(&self) -> Vec<V3> {
+        self.key.iter().map(|k| sub(contact(k), [k.size[0] as f64 / 2.0, k.size[1] as f64 / 2.0, CAP_HEIGHT])).collect()
+    }
+
+    /// A hand's measuring frame (see [`Geometry::metric_points`]); `None` on flat boards and
+    /// for a hand with fewer than three finger keys.
+    pub fn hand_frame(&self, hand: Hand) -> Option<Frame> {
+        if self.is_flat() {
+            return None;
+        }
+        let tops = self.fit_points();
+        let fit: Vec<V3> = (0..self.len())
+            .filter(|&i| self.key[i].phys.is_none() && self.key[i].hand() == hand && !self.key[i].finger.is_thumb())
+            .map(|i| tops[i])
+            .collect();
+        if fit.len() < 3 {
+            return None;
+        }
+        let n = plane_normal(&fit);
+        let len = fit.len() as f64;
+        let c = fit.iter().fold([0.0; 3], |a, q| add(a, [q[0] / len, q[1] / len, q[2] / len]));
+        let u = norm(sub([1.0, 0.0, 0.0], [n[0] * n[0], n[0] * n[1], n[0] * n[2]]));
+        let u = if dot(u, u) < 0.5 { norm(cross([0.0, 1.0, 0.0], n)) } else { u };
+        Some(Frame { c, u, v: cross(n, u), n })
+    }
+}
+
+/// A hand's measuring frame: centroid `c` and axes `u` (≈ board x), `v` (toward the user within
+/// the plane), `n` (plane normal), board space.
+#[derive(Clone, Copy, Debug)]
+pub struct Frame {
+    pub c: V3,
+    pub u: V3,
+    pub v: V3,
+    pub n: V3,
+}
+
+impl Frame {
+    /// A board-space point in this frame (kept about the centroid).
+    pub fn point(&self, p: V3) -> V3 {
+        let d = sub(p, self.c);
+        add(self.c, self.dir(d))
+    }
+
+    /// A board-space direction in this frame.
+    pub fn dir(&self, d: V3) -> V3 {
+        [dot(d, self.u), dot(d, self.v), dot(d, self.n)]
+    }
+
+    /// Inverse of [`Frame::point`]: a point in this frame back in board space.
+    pub fn unpoint(&self, p: V3) -> V3 {
+        add(self.c, self.undir(sub(p, self.c)))
+    }
+
+    /// Inverse of [`Frame::dir`].
+    pub fn undir(&self, d: V3) -> V3 {
+        let (u, v, n) = (self.u, self.v, self.n);
+        [d[0] * u[0] + d[1] * v[0] + d[2] * n[0], d[0] * u[1] + d[1] * v[1] + d[2] * n[1], d[0] * u[2] + d[1] * v[2] + d[2] * n[2]]
     }
 }

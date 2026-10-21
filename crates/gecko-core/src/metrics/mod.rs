@@ -2,7 +2,7 @@
 //! `research/metrics-catalog.md`. Each linear metric is a table indexed by slot (mono),
 //! slot pair (bi, skip) or slot triple (tri), in natural units (%, or a per-keystroke
 //! average). The scorer folds them with profile weights; see `context/objective.md`.
-//! Some tables depend on profile parameters (`Profile::sfb`, `Profile::row_offset`), so they are built per profile.
+//! Some tables depend on profile parameters (`Profile::sfb`, `Profile::row_offset`, `Profile::hand`), so they are built per profile.
 
 pub mod trigram;
 
@@ -151,6 +151,30 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Share of keystrokes on the thumbs; scored as squared distance from the profile's `thumb_target`.",
     ),
+    m(
+        "G01",
+        "Reach",
+        "",
+        Order::Mono,
+        Dir::Min,
+        "Hand-model reach cost per keystroke: joint deviation from the natural curl, sideways splay and fingertip shortfall with the hand placed on the home keys (profile `hand`, default average).",
+    ),
+    m(
+        "G05",
+        "Press angle",
+        "",
+        Order::Mono,
+        Dir::Min,
+        "Hand-model press misalignment per keystroke: (angle / 45°)² between the fingertip's press direction and the keycap normal (fingers: the distal phalanx, within the finger's plane; thumbs: a push along the CMC→tip line).",
+    ),
+    m(
+        "G03",
+        "Wrist posture",
+        "",
+        Order::Mono,
+        Dir::Min,
+        "Hand-model wrist cost per keystroke: ulnar/radial deviation, extension and forearm pronation of the resting hand (elbows from profile `hand.body`; split halves placed to suit the arm), plus the extra deviation of sideways reaches.",
+    ),
     m("M05", "Home row", "%", Order::Mono, Dir::Max, "Share of keystrokes on the home row."),
     m("M06", "Center columns", "%", Order::Mono, Dir::Min, "Share of keystrokes on the index stretch columns."),
     m("B08", "Hand alternation", "%", Order::Bi, Dir::Max, "Consecutive keys on different hands."),
@@ -281,6 +305,7 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
     let k = &g.key;
     // Fingertip targets (3D boards: keycap tops in each hand's frame; flat boards: `pos`).
     let pts = g.metric_points();
+    let spread = hand_spread(p);
     // Layer copies of a key are the same physical key: no finger movement between them.
     let same_finger = |i: usize, j: usize| !g.same_key(i, j) && k[i].finger == k[j].finger;
     let same_hand = |i: usize, j: usize| k[i].hand() == k[j].hand();
@@ -294,12 +319,22 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
     let pct = |b: bool| if b { 100.0 } else { 0.0 };
     match d.id {
         "M01" => mono(&|i| key_effort(g, p, i) + g.holder(i).map_or(0.0, |h| key_effort(g, p, h))),
+        "G01" | "G03" | "G05" => {
+            let h = p.hand.clone().unwrap_or_default();
+            let c = crate::hand::costs_with(g, &h.dims(), &h.body());
+            let v = match d.id {
+                "G01" => c.reach,
+                "G03" => c.wrist,
+                _ => c.align,
+            };
+            mono(&|i| v[i] + g.holder(i).map_or(0.0, |h| v[h]))
+        }
         "M05" => mono(&|i| pct(k[i].home || k[i].row == home_row(g))),
         "M06" => mono(&|i| pct(k[i].stretch)),
         "B01" | "S01" | "S02" => pair(&|i, j| pct(same_finger(i, j))),
         "B02" => pair(&|i, j| pct(g.same_key(i, j))),
         "B03" | "S03" => pair(&|i, j| if same_finger(i, j) { 100.0 * finger_speed_at(g, &pts, &p.sfb, i, j) } else { 0.0 }),
-        "B14" | "S04" => pair(&|i, j| 100.0 * stretch_at(g, &pts, i, j)),
+        "B14" | "S04" => pair(&|i, j| 100.0 * stretch_at(g, &pts, spread, i, j)),
         "B11" => pair(&|i, j| 100.0 * movement(g, i, j)),
         "E04" | "E05" => {
             let c = g.comfort_tables.get(d.id)?;
@@ -321,9 +356,9 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
                 0.0
             }
         }),
-        "S05" => pair(&|i, j| 100.0 * stretch_at(g, &pts, i, j)),
+        "S05" => pair(&|i, j| 100.0 * stretch_at(g, &pts, spread, i, j)),
         "T09" => {
-            let st: Vec<f32> = (0..n * n).map(|ij| stretch_at(g, &pts, ij / n, ij % n)).collect();
+            let st: Vec<f32> = (0..n * n).map(|ij| stretch_at(g, &pts, spread, ij / n, ij % n)).collect();
             tri(g, &|i, j, l| {
                 let (s1, s2) = (st[i * n + j], st[j * n + l]);
                 if s1 > 0.0 && s2 > 0.0 {
@@ -477,13 +512,23 @@ pub fn finger_speed_at(g: &Geometry, pts: &[[f32; 3]], s: &SfbParams, i: usize, 
 /// on the same hand and different fingers, in key units; 0 otherwise. Keys collapse to their
 /// centres (edge offset 0.5); each finger's length offset shifts its keys in y; moving a finger
 /// to the wrong side of its neighbour counts as a crossing. Positive only beyond the
-/// `1.35 u` per finger of spread a relaxed hand covers.
+/// [`SPREAD`] per finger of spread a relaxed hand covers.
 pub fn stretch(g: &Geometry, i: usize, j: usize) -> f32 {
-    stretch_at(g, &g.metric_points(), i, j)
+    stretch_at(g, &g.metric_points(), SPREAD, i, j)
 }
 
-/// [`stretch`] with precomputed [`Geometry::metric_points`] (in-plane x and y; height ignored).
-pub fn stretch_at(g: &Geometry, pts: &[[f32; 3]], i: usize, j: usize) -> f32 {
+/// Sideways spread per finger a relaxed average hand covers without stretching (u; Oxeylyzer 2).
+pub const SPREAD: f32 = 1.35;
+
+/// [`SPREAD`] scaled by the profile hand's span (thumb tip to pinky tip) over the average's;
+/// exactly [`SPREAD`] without a `hand`, so hand-less profiles keep their scores.
+pub fn hand_spread(p: &Profile) -> f32 {
+    p.hand.as_ref().map_or(SPREAD, |h| SPREAD * h.dims().span / crate::hand::AVERAGE.span)
+}
+
+/// [`stretch`] with precomputed [`Geometry::metric_points`] (in-plane x and y; height ignored)
+/// and the relaxed per-finger `spread` (u).
+pub fn stretch_at(g: &Geometry, pts: &[[f32; 3]], spread: f32, i: usize, j: usize) -> f32 {
     let (a, b) = (&g.key[i], &g.key[j]);
     if a.finger == b.finger || a.hand() != b.hand() {
         return 0.0;
@@ -498,7 +543,7 @@ pub fn stretch_at(g: &Geometry, pts: &[[f32; 3]], i: usize, j: usize) -> f32 {
     let crossed = if fa > fb { xa < xb + xo } else { xa + xo > xb };
     let dx = if crossed { -dx } else { dx };
     let overlap = (xo - 1.3 * dx + dy / 3.0).max(0.0);
-    let s = dx.hypot(dy) + overlap - 1.35 * fa.abs_diff(fb) as f32;
+    let s = dx.hypot(dy) + overlap - spread * fa.abs_diff(fb) as f32;
     if s > 0.001 {
         s
     } else {

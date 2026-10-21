@@ -25,7 +25,7 @@ interface Props {
 
 /** Constraint groups for building a board: [id, title, note, fields [key, label, help, default, min, max, step, unit]]. */
 type Field = [string, string, string, number, number, number, number, string];
-const CONSTRAINTS: [string, string, string, Field[]][] = [
+export const CONSTRAINTS: [string, string, string, Field[]][] = [
   ["grid", "Rows and columns", "main key matrix", [
     ["rows", "Rows", "Rows in the main matrix (thumb cluster excluded).", 3, 1, 6, 1, ""],
     ["cols", "Columns / hand", "Columns per hand, outer pinky column included.", 5, 3, 8, 1, ""],

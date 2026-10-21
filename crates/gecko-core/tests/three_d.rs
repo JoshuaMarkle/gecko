@@ -98,7 +98,8 @@ fn tenting_a_flat_board_changes_no_metric() {
     split.lift = 1.5;
     let tented = p.generate().unwrap();
     assert!(!tented.is_flat());
-    // The metrics see each half in its own plane, so a rigid tent leaves every value equal.
+    // The metrics see each half in its own plane, so a rigid tent leaves every value equal,
+    // except G03, which measures the forearm's roll: tenting turns the palms toward each other.
     for profile in ["default", "sfb"] {
         let profile = store.profile(profile).unwrap();
         let layout = store.layout("qwerty", "corne-36").unwrap().fit(&flat).unwrap();
@@ -106,6 +107,10 @@ fn tenting_a_flat_board_changes_no_metric() {
         let b = Scorer::new(&tented, &corpus, &profile, &layout).unwrap();
         let (a, b) = (breakdown(&a, &a.identity()), breakdown(&b, &b.identity()));
         for (a, b) in a.metrics.iter().zip(&b.metrics) {
+            if a.id == "G03" {
+                assert!(b.value < a.value - 0.3, "G03: tenting lowers pronation: {} vs {}", a.value, b.value);
+                continue;
+            }
             assert!((a.value - b.value).abs() < 1e-3 * a.value.abs().max(1.0), "{}: {} vs {}", a.id, a.value, b.value);
         }
     }

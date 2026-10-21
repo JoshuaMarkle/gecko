@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } 
 import { api, type Analysis, type CorpusInfo, type Geometry, type LayoutInfo, type Meta, type Profile, type Progress, type RunDetail, type RunSummary } from "./api";
 import { AnalysisView } from "./components/AnalysisView";
 import { ExploreView } from "./components/explore/ExploreView";
-import { IconBoard, IconExplore, IconHand, IconHome, IconLanguage, IconPause, IconPlay, IconProfile, IconRuns, IconSearch, IconStats, IconStop } from "./components/Icons";
+import { IconBoard, IconExplore, IconHand, IconHome, IconLanguage, IconPause, IconPlay, IconProfile, IconRuns, IconSearch, IconStats, IconStop, IconSummary } from "./components/Icons";
 import { ResultsView } from "./components/ResultsView";
 import { BoardView } from "./components/views/BoardView";
 import { HandView } from "./components/views/HandView";
@@ -14,15 +14,16 @@ import { HomeView, type Block } from "./components/views/HomeView";
 import { LanguageView } from "./components/views/LanguageView";
 import { ProfileView } from "./components/views/ProfileView";
 import { algoName, SearchView } from "./components/views/SearchView";
+import { SummaryView } from "./components/views/SummaryView";
 import { EMPTY, fitChars, fmt, fmtCount, fmtTime, layerSlots, swapChars } from "./format";
-import { handDims, handLength } from "./hand";
+import { handDims, handLength, withHand } from "./hand";
 import { useInputs, usePref } from "./inputs";
 import { useLanguages } from "./languages";
 import { asView, INPUT_TABS, RESULT_TABS, type InputTabName, type View } from "./tabs";
 import { Scorer, wasmReady } from "./wasm";
 
 const ICONS: Record<View, () => ReactElement> = {
-  board: IconBoard, hand: IconHand, language: IconLanguage, profile: IconProfile, search: IconSearch,
+  board: IconBoard, hand: IconHand, language: IconLanguage, profile: IconProfile, search: IconSearch, summary: IconSummary,
   home: IconHome, explore: IconExplore, analysis: IconStats, saved: IconRuns,
 };
 
@@ -257,7 +258,7 @@ export function App() {
   const hasModel = !!model && model.chars === chars;
   const shownLabel = live?.running ? "Live best" : hasModel ? model!.label : label;
   const baseProfile = profiles.find((x) => x.id === profileId);
-  const profileEdited = !!baseProfile && JSON.stringify({ ...baseProfile, id: undefined }) !== JSON.stringify({ ...profile, id: undefined });
+  const profileEdited = !!baseProfile && JSON.stringify({ ...withHand(baseProfile, hand), id: undefined }) !== JSON.stringify({ ...profile, id: undefined });
 
   // ---- navbar: working model / live status ----
   const status = live?.running
@@ -343,7 +344,7 @@ export function App() {
         {view === "hand" && <HandView geometry={geometry} chars={baseView.chars} hand={hand} setHand={setHand} />}
         {view === "language" && <LanguageView langs={langs} corpusId={corpusId} setCorpusId={setCorpusId} />}
         {view === "profile" && (
-          <ProfileView meta={meta} profiles={profiles} profileId={profileId} setProfileId={setProfileId} profile={profile} setProfile={setProfile}
+          <ProfileView meta={meta} profiles={profiles} profileId={profileId} setProfileId={setProfileId} profile={profile} setProfile={setProfile} hand={hand}
             geometry={geometry} chars={viewChars} layouts={layouts} a={analysis} />
         )}
         {view === "search" && (
@@ -351,6 +352,7 @@ export function App() {
             running={!!live?.running} runs={runs} chars={editChars} label={hasModel ? model!.label : label} a={analysis} pins={pins} setPins={setPins}
             onSwap={swap} canUndo={chars !== startChars} onUndo={() => setChars(startChars, "start")} onLoad={(c, l) => setChars(c, l)} />
         )}
+        {view === "summary" && <SummaryView inputs={inputs} meta={meta} geometry={geometry} corpus={corpus} profile={profile} layouts={layouts} />}
         {view === "home" && (
           <HomeView blocks={blocks} onGo={(t: InputTabName) => setView(t)} geometry={geometry} view={baseView} label={shownLabel} hasModel={hasModel}
             running={!!live?.running && live.algo !== "explore"} a={analysis} refA={refAnalysis} refName={refName} progress={progress} run={runDetail}

@@ -2,10 +2,10 @@
 // search, working model). The input tabs edit it and Play reads it, so a run started from any
 // tab uses the same inputs.
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Geometry, Profile } from "./api";
 import { withFingerEffort } from "./fingerEffort";
-import type { HandSettings } from "./hand";
+import { HAND_WEIGHTS, withHand, type HandSettings } from "./hand";
 
 export interface SearchSettings {
   algo: string; timeS: number; threads: number; seed: number; saSteps: number; gaPop: number;
@@ -48,9 +48,17 @@ export function useInputs() {
   const [geomId, setGeomId] = usePref("geometry", "");
   const [corpusId, setCorpusId] = usePref("corpus", "");
   const [profileId, setProfileId] = usePref("profile", "");
-  /** The live (possibly edited) profile; sent with each run as `profile_override`. */
+  /** The live (possibly edited) profile; returned with the hand merged in (`withHand`) and sent with each run as `profile_override`. */
   const [profile, setProfileRaw] = useState<Profile | null>(null);
-  const setProfile = (p: Profile | null) => setProfileRaw(p ? withFingerEffort(p) : null);
+  // Profiles come back from the views with the hand merged in; keep the stored one hand-free, and
+  // drop G01 / G05 weights `withHand` added unless they were edited.
+  const setProfile = (p: Profile | null) => setProfileRaw((cur) => {
+    if (!p) return null;
+    const { hand: _h, ...rest } = withFingerEffort(p);
+    const weights = { ...rest.weights };
+    for (const [id, [w]] of Object.entries(HAND_WEIGHTS)) if (!(id in (cur?.weights ?? {})) && weights[id] === w) delete weights[id];
+    return { ...rest, weights };
+  });
   const [refId, setRefId] = usePref("reference", "");
   const [chars, setChars] = usePref("chars", "");
   const [label, setLabel] = usePref("label", "");
@@ -62,8 +70,10 @@ export function useInputs() {
   const [constraints, setConstraints] = usePref<Constraints>("constraints", {});
   const [hand, setHand] = usePref<HandSettings>("hand", { use: false, preset: "average", custom: null });
   const [model, setModel] = usePref<WorkingModel | null>("model", null);
+  // What every score and run gets: the edited profile with the Hand tab's hand merged in.
+  const scoring = useMemo(() => (profile ? withHand(profile, hand) : null), [profile, hand]);
   return {
-    geomId, setGeomId, corpusId, setCorpusId, profileId, setProfileId, profile, setProfile, refId, setRefId,
+    geomId, setGeomId, corpusId, setCorpusId, profileId, setProfileId, profile: scoring, setProfile, refId, setRefId,
     chars, setChars, label, setLabel, startChars, setStartChars, pins, setPins, search, setSearch,
     customBoards, setCustomBoards, constraints, setConstraints, hand, setHand, model, setModel,
   };

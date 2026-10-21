@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   adjustPlacement, AVERAGE, dimsVector, WRIST0, fingerAt, fingerChain, fingerKey, FOUR, keysDown, handLength, normalCdf, placeHand, planTyping,
   population, poseHand, scaleDims, similarity, sizeBand, type FingerName, type Side, type Stroke, type V3,
+  HAND_WEIGHTS, handSpec, withHand, type HandSettings, Thumb, handLayout, toLocal, toWorld, bodyOf, BODY,
 } from "./hand";
+import type { Profile } from "./api";
 
 const dist = (a: V3, b: V3) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 const U = 1 / 19.05;
@@ -206,5 +208,70 @@ describe("hand sizes", () => {
   });
   it("population is deterministic", () => {
     expect(population(5, 3)).toEqual(population(5, 3));
+  });
+});
+
+describe("hand in the scored profile", () => {
+  const base: Profile = { name: "p", description: "", weights: { B01: 1 }, finger_target: [], trigram_coverage: 0.99, scale: { B01: 2 } };
+  const on: HandSettings = { use: true, preset: "large", custom: null };
+
+  it("adds the hand and G01 / G03 / G05 at the hand profile's weights when on", () => {
+    const p = withHand(base, on);
+    expect(p.hand).toEqual({ size: "large" });
+    expect(p.weights).toEqual({ B01: 1, G01: HAND_WEIGHTS.G01[0], G03: HAND_WEIGHTS.G03[0], G05: HAND_WEIGHTS.G05[0] });
+    expect(p.scale?.G01).toBe(HAND_WEIGHTS.G01[1]);
+    expect(base.weights.G01).toBeUndefined();
+  });
+
+  it("keeps weights the profile sets, 0 included, and drops the hand when off", () => {
+    const set = { ...base, weights: { B01: 1, G01: 0 } };
+    expect(withHand(set, on).weights.G01).toBe(0);
+    const off = withHand({ ...base, hand: { size: "small" } }, { ...on, use: false });
+    expect(off.hand).toBeUndefined();
+    expect(off.weights).toEqual(base.weights);
+  });
+
+  it("sends custom measurements in the scorer's snake_case", () => {
+    const spec = handSpec({ use: true, preset: "custom", custom: { ...AVERAGE, palmWidth: 90 } });
+    expect(spec.dims?.palm_width).toBe(90);
+    expect(spec.dims?.middle).toEqual(AVERAGE.middle);
+    expect(handSpec({ use: true, preset: "custom", custom: null })).toEqual({ size: "average" });
+  });
+
+  it("sends arms only when set, and scales default arms with the hand", () => {
+    const arms = { elbowWidth: 500, forearm: 260 };
+    expect(handSpec({ ...on, body: arms }).body).toEqual({ elbow_width: 500, forearm: 260 });
+    expect(bodyOf({ ...on, preset: "average" })).toEqual(BODY);
+    expect(bodyOf(on).elbowWidth).toBeGreaterThan(BODY.elbowWidth);
+  });
+});
+
+describe("thumb", () => {
+  const t = new Thumb(AVERAGE);
+  const rest = handLayout(AVERAGE).thumbRest;
+
+  it("rests on its rest point and reaches nearby targets within its limits", () => {
+    const r = t.solve(rest);
+    expect(r.miss).toBeLessThan(0.5);
+    r.q.forEach((v, j) => expect(Math.abs(v - t.neutral[j])).toBeLessThan(1e-3));
+    const near = t.solve([rest[0] + 12, rest[1], rest[2] + 6]);
+    expect(near.miss).toBeLessThan(0.5);
+    expect(dist(t.joints(near.q)[3], [rest[0] + 12, rest[1], rest[2] + 6])).toBeLessThan(0.5);
+  });
+
+  it("falls short of far targets, keeping its segment lengths", () => {
+    const far = t.solve([rest[0] - 60, rest[1], rest[2] - 60]);
+    expect(far.miss).toBeGreaterThan(20);
+    const j = t.joints(far.q);
+    AVERAGE.thumb.forEach((l, i) => expect(dist(j[i], j[i + 1])).toBeCloseTo(l, 6));
+  });
+
+  it("toLocal inverts toWorld for both hands", () => {
+    const pl = { wrist: [3, 1, 2] as V3, yaw: 0.3, roll: -0.2 };
+    for (const side of ["L", "R"] as Side[]) {
+      const p: V3 = [12, -7, -80];
+      const back = toLocal(side, pl, U, toWorld(side, pl, U, p));
+      expect(dist(back, p)).toBeLessThan(1e-9);
+    }
   });
 });

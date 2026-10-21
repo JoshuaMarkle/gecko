@@ -9,6 +9,8 @@ import { FitBoard, type Cell, type KeyArc } from "../Board2D";
 import { FingerLoad } from "../Charts";
 import { defaultFingerEffort, editFingerEffort, fingerTargets, symmetricEffort, withFingerEffort } from "../../fingerEffort";
 import { Frame, Num, Toggle } from "../Form";
+import { withHand, type HandSettings, type HandSpec } from "../../hand";
+import { useHandCosts } from "../../handCosts";
 
 interface Props {
   meta: Meta;
@@ -17,13 +19,15 @@ interface Props {
   setProfileId: (id: string) => void;
   profile: Profile;
   setProfile: (p: Profile) => void;
+  /** The Hand tab's settings: merged into the saved profile for the "edited" check and reset. */
+  hand: HandSettings;
   geometry: Geometry;
   chars: string;
   layouts: LayoutInfo[];
   a: Analysis | null;
 }
 
-type Visual = "load" | "reach" | "sfb" | "stretch" | "rolls" | "redirects" | "comfort" | "layers" | "shortcuts" | "precision";
+type Visual = "load" | "reach" | "hand" | "sfb" | "stretch" | "rolls" | "redirects" | "comfort" | "layers" | "shortcuts" | "precision";
 interface Section { id: Visual; title: string; ids: string[]; what: string; why: string; how: string }
 
 const SECTIONS: Section[] = [
@@ -35,6 +39,10 @@ const SECTIONS: Section[] = [
     what: "Where frequent keys sit: per-key effort, home-row use, the stretch columns, row jumps and total finger travel.",
     why: "The home row costs nothing to reach; every row change or centre-column stretch is motion.",
     how: "Higher Effort and Movement weights pull frequent symbols toward cheap keys; Home row is a reward and lowers the score as it rises." },
+  { id: "hand", title: "Hand model", ids: ["G01", "G05", "G03"],
+    what: "Reach, press angle and wrist posture from the hand model: each key's cost for this hand, with the hand resting on the home keys (set the hand and arms on the Hand tab).",
+    why: "Keys the fingertips reach with little joint deviation, and press head-on, are faster and kinder; straight, less-pronated wrists strain less. The costs follow the board's shape and the hand's size.",
+    how: "Reach pulls frequent symbols onto keys this hand reaches easily; Press angle and Wrist posture mostly separate boards (keywells, splits and tents win). Turning on Use hand in optimization adds all three at the hand profile's weights." },
   { id: "sfb", title: "Same-finger", ids: ["B01", "B02", "B03", "S01", "S02", "S03", "T02", "T08"],
     what: "Consecutive (SFB) and one-apart (SFS) keystrokes on the same finger, and how far that finger travels.",
     why: "A finger cannot start the next key until it lifts from the last; same-finger pairs are the biggest single speed cost.",
@@ -70,9 +78,9 @@ const SECTIONS: Section[] = [
 ];
 
 const sectionOf = (id: string): Visual => SECTIONS.find((s) => s.ids.includes(id))?.id
-  ?? ({ M: "reach", B: "stretch", S: "sfb", T: "rolls", E: "comfort", Y: "layers", L: "shortcuts" } as Record<string, Visual>)[id[0]] ?? "precision";
+  ?? ({ M: "reach", G: "hand", B: "stretch", S: "sfb", T: "rolls", E: "comfort", Y: "layers", L: "shortcuts" } as Record<string, Visual>)[id[0]] ?? "precision";
 
-function Visualize({ id, geometry, chars, a, layouts }: { id: Visual; geometry: Geometry; chars: string; a: Analysis | null; layouts: LayoutInfo[] }) {
+function Visualize({ id, geometry, chars, a, layouts, hand }: { id: Visual; geometry: Geometry; chars: string; a: Analysis | null; layouts: LayoutInfo[]; hand: HandSpec }) {
   const sym = [...chars];
   const n = geometry.key.length;
   const slotOf = new Map(sym.slice(0, n).map((c, i) => [c, i]));
@@ -93,7 +101,7 @@ function Visualize({ id, geometry, chars, a, layouts }: { id: Visual; geometry: 
       {caption}
     </div>
   );
-  if (!a && id !== "precision") return <div className="empty">Scoring…</div>;
+  if (!a && id !== "precision" && id !== "hand") return <div className="empty">Scoring…</div>;
   const maxHeat = Math.max(...(a?.heat ?? [1]), 1e-9);
   switch (id) {
     case "load":
@@ -113,6 +121,8 @@ function Visualize({ id, geometry, chars, a, layouts }: { id: Visual; geometry: 
         return { fill: heatColor(t * 0.85), text: heatText(t * 0.85), main: label(i), sub: es[i].toFixed(1), ring: geometry.key[i].home };
       }, undefined, <div className="legend static"><span>darker = geometry base effort (before profile costs) · ringed = home keys</span></div>);
     }
+    case "hand":
+      return <HandVisual geometry={geometry} hand={hand} label={label} />;
     case "sfb":
       return board((i) => ({ ...plain(i), fill: mix(fingerColor(geometry.key[i].finger), 0.35) }), [...arcsOf(a!.bigrams, ["sfb"]), ...arcsOf(a!.skipgrams, ["sfs"], 15).map((x) => ({ ...x, w: x.w * 0.5 }))],
         legend([["SFB (strong) and SFS (faint) on one finger", PAIR_KINDS.sfb[1]]]));
@@ -153,6 +163,22 @@ function Visualize({ id, geometry, chars, a, layouts }: { id: Visual; geometry: 
   }
 }
 
+/** G01 reach cost per key for the profile's hand (average when the profile has none). */
+function HandVisual({ geometry, hand, label }: { geometry: Geometry; hand: HandSpec; label: (i: number) => string }) {
+  const c = useHandCosts(geometry, hand);
+  if (!c) return <div className="empty">Solving the hand…</div>;
+  const hi = Math.max(...c.reach, 1e-9);
+  return (
+    <div className="visual">
+      <FitBoard geometry={geometry} max={60} pad={16} cells={(i) => {
+        const t = Math.min(1, c.reach[i] / Math.min(hi, 4)) * 0.85;
+        return { fill: heatColor(t), text: heatText(t), main: label(i), sub: c.reach[i].toFixed(1), ring: c.miss[i] > 0 };
+      }} />
+      <div className="legend static"><span>darker = higher reach cost (G01) · ringed = the fingertip falls short with the hand on the home keys</span></div>
+    </div>
+  );
+}
+
 /** Finger color blended toward white by (1 − t). */
 function mix(hex: string, t: number): string {
   const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
@@ -165,7 +191,7 @@ export function ProfileView(p: Props) {
   const [focus, setFocus] = useState<Visual>("load");
   const scroller = useRef<HTMLDivElement>(null);
   const saved = p.profiles.find((x) => x.id === p.profileId);
-  const base = saved ? withFingerEffort(saved) : undefined;
+  const base = saved ? withHand(withFingerEffort(saved), p.hand) : undefined;
   const effort = pr.finger_effort ?? defaultFingerEffort();
   const targets = fingerTargets(effort, p.geometry);
   const changed = base && JSON.stringify({ ...base, id: undefined }) !== JSON.stringify({ ...pr, id: undefined });
@@ -268,7 +294,7 @@ export function ProfileView(p: Props) {
       }
       main={
         <div className="viewport light">
-          <Visualize id={focus} geometry={p.geometry} chars={p.chars} a={p.a} layouts={p.layouts} />
+          <Visualize id={focus} geometry={p.geometry} chars={p.chars} a={p.a} layouts={p.layouts} hand={pr.hand ?? { size: "average" }} />
           <div className="viewlabel"><span>{sec.title}</span><span className="muted">on the current layout</span></div>
         </div>
       }

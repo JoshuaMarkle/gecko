@@ -23,3 +23,4 @@ export const IconPause = () => <Svg fill><rect x="4" y="3" width="2.6" height="1
 export const IconHome = () => <Svg><path d="M2.5 7.5 8 3l5.5 4.5" /><path d="M4 6.5v7h8v-7" /><path d="M6.8 13.5v-3.2h2.4v3.2" /></Svg>;
 export const IconLanguage = () => <Svg><path d="M2 3.5h6M5 2v1.5M3.5 3.5c.5 2.5 2 4.3 4 5.2M6.5 3.5c-.4 2.2-1.8 4.3-4 5.5" /><path d="M8.5 14l2.8-7 2.8 7M9.5 11.8h3.6" /></Svg>;
 export const IconStop = () => <Svg fill><rect x="3.5" y="3.5" width="9" height="9" rx="1.2" /></Svg>;
+export const IconSummary = () => <Svg><rect x="2" y="2" width="12" height="12" rx="1" /><path d="M2 6h12M2 10h12M6 2v12M10 2v12" /></Svg>;

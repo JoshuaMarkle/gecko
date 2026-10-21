@@ -17,7 +17,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 | E · Data & interop | Board import, more boards and corpora. |
 | F · Web UI | Views for the new features. |
 | G · 2D geometry | Phase 6: optimize key x, y, rotation on a plane. |
-| H · Hand model & 3D | Phase 7: hand model, IK reach costs, z/tilt/tent. |
+| H · Hand model & 3D | Phase 7: hand model, IK reach costs, z/tilt/tent. Hand model landed 2026-10-21 (`context/hand-model.md`): #33 via profile `[hand]` presets/dims (no `data/hands/`), #40 as planar IK with limits (not the Cosmos closed form), #52 recomputes every key per scorer (cheap) instead of caching per pose. 4-DoF thumb and #63 G03 landed the same day (arms from profile `[hand.body]`; splits assumed aligned with the forearm). |
 | I · Free-form 3D | Phase 8: per-key 6-DoF poses, thumb clusters. |
 | J · Physical output | Turn an optimized board into something buildable. |
 | K · Learned costs | Phase 9: timing models, personal calibration. |
@@ -69,7 +69,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 42. [ ] [#31](https://github.com/JoshuaMarkle/gecko/issues/31) `K1` E01 IKI timing model from the 136M keystrokes data · L · after [#20](https://github.com/JoshuaMarkle/gecko/issues/20)
 43. [x] [#89](https://github.com/JoshuaMarkle/gecko/issues/89) `D8` Magic / repeat (adaptive) keys · M
 44. [ ] [#32](https://github.com/JoshuaMarkle/gecko/issues/32) `G2` Fast cost-table rebuild when keys move · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
-45. [ ] [#33](https://github.com/JoshuaMarkle/gecko/issues/33) `H2` Hand module: skeleton from measurements · M · after [#6](https://github.com/JoshuaMarkle/gecko/issues/6), [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
+45. [x] [#33](https://github.com/JoshuaMarkle/gecko/issues/33) `H2` Hand module: skeleton from measurements · M · after [#6](https://github.com/JoshuaMarkle/gecko/issues/6), [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
 46. [ ] [#34](https://github.com/JoshuaMarkle/gecko/issues/34) `J1` Export key poses (JSON/CSV) and KLE · S · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
 47. [x] [#35](https://github.com/JoshuaMarkle/gecko/issues/35) `C7` Learning-to-rank profile weights · M · after [#26](https://github.com/JoshuaMarkle/gecko/issues/26)
 48. [ ] [#36](https://github.com/JoshuaMarkle/gecko/issues/36) `J2` Export to ergogen points · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
@@ -78,7 +78,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 51. [ ] [#38](https://github.com/JoshuaMarkle/gecko/issues/38) `F1` Web: Pareto front and MAP-Elites views · M · after [#21](https://github.com/JoshuaMarkle/gecko/issues/21), [#29](https://github.com/JoshuaMarkle/gecko/issues/29)
 52. [ ] [#91](https://github.com/JoshuaMarkle/gecko/issues/91) `D9` Combos and chords · M · after [#10](https://github.com/JoshuaMarkle/gecko/issues/10)
 53. [ ] [#39](https://github.com/JoshuaMarkle/gecko/issues/39) `G3` G04 2D collision (OBB, SAT) · S
-54. [ ] [#40](https://github.com/JoshuaMarkle/gecko/issues/40) `H3` Finger IK with joint limits · L · after [#33](https://github.com/JoshuaMarkle/gecko/issues/33)
+54. [x] [#40](https://github.com/JoshuaMarkle/gecko/issues/40) `H3` Finger IK with joint limits · L · after [#33](https://github.com/JoshuaMarkle/gecko/issues/33)
 55. [x] [#92](https://github.com/JoshuaMarkle/gecko/issues/92) `L7` Hand tab: hand parameters with live skeleton · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82), [#33](https://github.com/JoshuaMarkle/gecko/issues/33)
 56. [x] [#41](https://github.com/JoshuaMarkle/gecko/issues/41) `C8` L01 shortcut placement and L02 familiarity · S
 57. [ ] [#42](https://github.com/JoshuaMarkle/gecko/issues/42) `G4` Geometry-driven costs: G02 travel + 2D reach proxy · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
@@ -98,18 +98,18 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 71. [ ] [#50](https://github.com/JoshuaMarkle/gecko/issues/50) `K3` Web: pairwise comfort study · M · after [#46](https://github.com/JoshuaMarkle/gecko/issues/46)
 72. [ ] [#99](https://github.com/JoshuaMarkle/gecko/issues/99) `L11` Runs tab: gallery and run comparison · M · after [#87](https://github.com/JoshuaMarkle/gecko/issues/87), [#98](https://github.com/JoshuaMarkle/gecko/issues/98)
 73. [ ] [#51](https://github.com/JoshuaMarkle/gecko/issues/51) `F4` Web: contribution waterfall vs a reference layout · S
-74. [ ] [#52](https://github.com/JoshuaMarkle/gecko/issues/52) `H4` G01 reach cost and G05 press alignment · M · after [#40](https://github.com/JoshuaMarkle/gecko/issues/40), [#32](https://github.com/JoshuaMarkle/gecko/issues/32)
+74. [x] [#52](https://github.com/JoshuaMarkle/gecko/issues/52) `H4` G01 reach cost and G05 press alignment · M · after [#40](https://github.com/JoshuaMarkle/gecko/issues/40), [#32](https://github.com/JoshuaMarkle/gecko/issues/32)
 75. [ ] [#53](https://github.com/JoshuaMarkle/gecko/issues/53) `F5` Web: process views (per-worker convergence, temperature/acceptance) · M
 76. [ ] [#54](https://github.com/JoshuaMarkle/gecko/issues/54) `G6` Bilevel geometry + layout search · L · after [#32](https://github.com/JoshuaMarkle/gecko/issues/32), [#39](https://github.com/JoshuaMarkle/gecko/issues/39), [#42](https://github.com/JoshuaMarkle/gecko/issues/42), [#48](https://github.com/JoshuaMarkle/gecko/issues/48)
 77. [ ] [#55](https://github.com/JoshuaMarkle/gecko/issues/55) `B8` Adaptive fidelity scoring · M
 78. [ ] [#56](https://github.com/JoshuaMarkle/gecko/issues/56) `K4` E02 personal keystroke logs · M · after [#31](https://github.com/JoshuaMarkle/gecko/issues/31)
-79. [ ] [#57](https://github.com/JoshuaMarkle/gecko/issues/57) `H5` Hand model validation suite · S · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52)
+79. [x] [#57](https://github.com/JoshuaMarkle/gecko/issues/57) `H5` Hand model validation suite · S · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52)
 80. [ ] [#100](https://github.com/JoshuaMarkle/gecko/issues/100) `F8` Remaining search-space views · L
 81. [ ] [#59](https://github.com/JoshuaMarkle/gecko/issues/59) `H6` 3D parametric params: z, tilt, tent, curvature · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
 82. [ ] [#60](https://github.com/JoshuaMarkle/gecko/issues/60) `B9` Rank-sum selection over many runs (`gecko select`) · S
 83. [ ] [#61](https://github.com/JoshuaMarkle/gecko/issues/61) `K5` E03 learned profile weights · M · after [#31](https://github.com/JoshuaMarkle/gecko/issues/31), [#35](https://github.com/JoshuaMarkle/gecko/issues/35)
 84. [ ] [#62](https://github.com/JoshuaMarkle/gecko/issues/62) `G7` `gecko geom` CLI · S · after [#54](https://github.com/JoshuaMarkle/gecko/issues/54)
-85. [ ] [#63](https://github.com/JoshuaMarkle/gecko/issues/63) `H7` G03 wrist posture cost · S · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52), [#59](https://github.com/JoshuaMarkle/gecko/issues/59)
+85. [x] [#63](https://github.com/JoshuaMarkle/gecko/issues/63) `H7` G03 wrist posture cost · S · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52), [#59](https://github.com/JoshuaMarkle/gecko/issues/59)
 86. [ ] [#64](https://github.com/JoshuaMarkle/gecko/issues/64) `J3` Export to Cosmos expert config · M · after [#59](https://github.com/JoshuaMarkle/gecko/issues/59)
 87. [ ] [#67](https://github.com/JoshuaMarkle/gecko/issues/67) `G9` Web: geometry runs (before/after board overlay) · S · after [#54](https://github.com/JoshuaMarkle/gecko/issues/54)
 88. [ ] [#66](https://github.com/JoshuaMarkle/gecko/issues/66) `H8` 3D collision (keycap + switch, GJK) · M · after [#39](https://github.com/JoshuaMarkle/gecko/issues/39)

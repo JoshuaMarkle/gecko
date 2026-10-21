@@ -21,6 +21,7 @@ optimization on top. Rust core + CLI + server + WASM; TypeScript web UI with a 3
 | Orientation | `context/goals.md`, `context/architecture.md` |
 | Data formats (geometry, layout, corpus, runs) | `context/representation.md` |
 | Metrics, scoring, profiles | `context/objective.md`, `research/metrics-catalog.md` |
+| Hand model, reach / press-angle / wrist-posture costs | `context/hand-model.md` |
 | An optimizer | `context/algorithms/README.md` + `context/algorithms/<name>.md` |
 | CLI | `context/cli.md` |
 | Web UI / 3D | `context/web.md`, `context/design.md` (visual design), `context/frontend.md` (planned redesign) |

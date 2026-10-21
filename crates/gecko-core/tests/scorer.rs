@@ -150,7 +150,9 @@ proptest! {
                     }
                     let want = sc.delta_linear(&st, u, v);
                     let got = before[u * 30 + v] + sc.delta_shift(&st, r, s, u, v);
-                    prop_assert!((want - got).abs() < 1e-5 * want.abs().max(1.0), "({u},{v}) after ({r},{s}): {got} vs {want}");
+                    // f32 pair tables valued 0–100: a cancelling sum can leave a few ULP (~6e-6 seen
+                    // on Y02); typical error is ~1e-9 and a wrong term is far above this bound.
+                    prop_assert!((want - got).abs() < 3e-5 * want.abs().max(1.0), "({u},{v}) after ({r},{s}): {got} vs {want}");
                 }
             }
         }

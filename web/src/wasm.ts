@@ -1,7 +1,8 @@
 // Loads the gecko-wasm scorer (same Rust code as the CLI). Built by `npm run wasm`.
 
-import init, { AtlasView, Engine, corpus_from_text, corpus_stats, flat2d as flat2dRaw } from "./wasm/pkg/gecko_wasm.js";
+import init, { AtlasView, Engine, corpus_from_text, corpus_stats, flat2d as flat2dRaw, hand_costs } from "./wasm/pkg/gecko_wasm.js";
 import type { Analysis, Flat, Geometry, Profile } from "./api";
+import type { HandSpec } from "./hand";
 
 let ready: Promise<unknown> | null = null;
 
@@ -65,4 +66,19 @@ export async function corpusStats(bytes: Uint8Array, top = 20): Promise<CorpusSt
 export async function corpusFromText(name: string, charset: string, text: string): Promise<Uint8Array> {
   await wasmReady();
   return corpus_from_text(name, charset, text);
+}
+
+/** Wrist angles in degrees: ulnar (+) / radial (−) deviation, extension (+) / flexion (−), pronation (90 = palm down). */
+export interface Posture { deviation: number; extension: number; pronation: number }
+
+/**
+ * Hand-model costs per key (gecko-core `hand::costs_with`): G01 reach, G05 press angle, G03 wrist
+ * posture, fingertip shortfall in mm; and each hand's resting posture (L, R).
+ */
+export interface HandCosts { reach: number[]; align: number[]; wrist: number[]; miss: number[]; placed: [boolean, boolean]; posture: [Posture, Posture] }
+
+export async function handCosts(g: Geometry, spec: HandSpec): Promise<HandCosts> {
+  await wasmReady();
+  const { flat: _f, ...rest } = g;
+  return JSON.parse(hand_costs(JSON.stringify(rest), JSON.stringify(spec))) as HandCosts;
 }

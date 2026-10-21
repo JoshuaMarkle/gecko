@@ -6,10 +6,24 @@ B04 LSB, B05 scissors, B06 half scissors, B07 bigram rolls in, B09 pinky–ring 
 B14 geometric stretch (Oxeylyzer 2), B11 finger-pair movement (KLO), M01 effort, M02 finger-load error,
 M03 finger balance (RSS), M07 peak finger load, M04 hand balance, M09 thumb load, M05 home row, M06 center columns,
 B08 alternation, T01–T08 and T12–T13 (thumb) trigram classes, T09 contortions, T10 irregular trigrams,
-E04/E05 Engram key-pair discomfort (formula / measured; geometry `[comfort]` tables),
+E04/E05 Engram key-pair discomfort (formula / measured; geometry `[comfort]` tables), G01 reach,
+G05 press angle and G03 wrist posture (hand model, profile `[hand]`; `context/hand-model.md`),
 B02 repeats (info), Y01 layer switches (and Shift), Y02 code-symbol bigrams, Y03 paired brackets, Y04 home-row-mod misfires. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
 lateral multiplier and per-finger factors, and S02's `skip_decay`. Profile `row_offset`
 (pinky ring middle index × [above, below] home) adds per-finger row costs to M01's geometry effort.
+
+## Hand model (G01, G03, G05)
+
+Mono tables from `gecko_core::hand` (`context/hand-model.md`): each hand is placed on its home
+keys and every key solved by finger IK (planar fingers, 4-DoF thumb). G01 = joint deviation from
+rest + splay + fingertip shortfall; G05 = press misalignment; G03 = wrist deviation, extension
+and pronation of the resting hand against the forearm (elbows from `[hand.body]`), plus the
+deviation of sideways reaches. Layer slots add the holder's cost (like M01). Profile `[hand]`
+(`size` or `dims`, optional `body`) sets the hand; without it G01/G03/G05 use the average hand and
+arms and B14's relaxed spread stays 1.35 u (with it: × span / 200 mm). Bundled `default` weights
+them 0; `hand` weights G01 1.0, G05 0.5, G03 1.0 and halves M01. Scales (stdev over references,
+english / ansi-30): G01 0.198, G05 0.060; G03 has none (its spread over layouts is ~0.004: a
+board metric, weighted in natural units). Folded at construction; no hot-loop cost.
 
 ## B11 finger-pair movement
 
@@ -102,7 +116,7 @@ the exact unweighted f32 cost and preserves the existing arithmetic. Future work
   The opt-in `learned` profile gets 53.8% held-out pair accuracy vs default 52.0% and
   Engram 49.4% (seed 1); weak popularity evidence, not a replacement for comfort weights.
   Method, hashes and exact fit: `research/profile-ranking.md`.
-- Profiles are TOML in `data/profiles/` (`default`, `sfb`, `engram` = independent judge, E05 only):
+- Profiles are TOML in `data/profiles/` (`default`, `sfb`, `hand` = default + hand model, `engram` = independent judge, E05 only):
   weights, soft targets, constraints. Profiles are versioned; runs record the hash.
 
 ## Calibration
