@@ -37,7 +37,9 @@ layout TOML round-trip. Explore (`tests/explore.rs` + unit tests in `explore/`):
 re-scoring == full score (proptest); on a mirror-symmetric 6-key board the archive equals the
 brute-forced set of canonical local optima; ansi atlas consistency (pins, constrained
 records, every unconstrained record locally optimal); distances, PCA, funnels, Chao1.
-BLS and explore are in the brute-force and determinism tests.
+BLS, explore and tabu are in the brute-force and determinism tests. Tabu's incremental Δ
+matrix: `delta_shift` == recomputed `delta_linear` for every disjoint pair after a swap
+(proptest), and delta == linear + load.
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
 
