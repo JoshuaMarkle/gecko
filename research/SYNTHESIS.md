@@ -149,7 +149,8 @@ local search). ([ml-approaches](sources/ml-approaches.md))
 
 - Engram study protocol details (which hands, which keyboards) before using its scores on
   column-staggered boards.
-- Exact Buchholz segment ratios and joint ROM values before hard-coding the hand model.
+- ~~Exact Buchholz segment ratios and joint ROM values~~: checked in
+  [hand-models](sources/hand-models.md) (#6). Still open: finger-metacarpal lengths, MCP abduction ROM.
 - Whether 136M data is downloadable from the user's machine (blocked from the research env).
 - carpalx defaults are taken from a mirror's config files; matches the formulas on the archived
   site but individual values are **(verify)**.
