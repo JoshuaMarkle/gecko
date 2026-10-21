@@ -49,6 +49,15 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   (`name`, `rows`); layered layouts live in `data/layouts/layered/` (example `corne-code`), so
   `compare` keeps ranking like-for-like layouts. Keys on the finger that holds a layer are
   unusable on it (written `·`).
+- Community layouts: `gecko layouts import-cmini <cmini checkout>` writes one bundle,
+  `data/community/cmini.json` (schema 1; one layout per line: `name, author, board, likes,
+  rows`, plus `dup_of`/`mirror` and a `skipped` list with `<kind>: <detail>` reasons). Kept
+  out of `data/layouts/` so `compare` and `list layouts` stay on the curated references; use
+  them as `cmini:<name>`. Only the 30-key core (rows 0–2, cols 0–9) is kept, as written;
+  a layout is skipped if a letter sits off the core (thumb letters, a 31st column), a letter
+  is missing, or its fingering is non-standard (angle boards may use the angle-mod bottom row).
+  Empty core keys become `·`. Duplicates: same 30 keys or their left–right mirror; the
+  group's representative has the most likes. Likes = number of users in `likes.json`.
 - Scoring flattens a layered layout onto `Geometry::layered`: the base keys, then each layer's
   usable keys as virtual keys (`layer`, `phys` set; `layer_keys` = holders). Metrics see each
   symbol at its physical key (layer copies of one key are the same key: repeats, not SFBs);
