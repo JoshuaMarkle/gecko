@@ -24,6 +24,9 @@ use crate::{Corpus, Error, Geometry, Layout, Profile, Result};
 /// Max symbols / slots (layer slots included) supported by the stack buffers in the hot loop.
 pub const MAX_KEYS: usize = 128;
 
+/// `Scorer::hold` entry for base-layer slots.
+const NO_HOLD: u8 = u8::MAX;
+
 pub struct Scorer {
     pub n: usize,
     /// Symbol id → char. Symbol ids are the start layout's slot order.
@@ -79,6 +82,9 @@ pub struct Scorer {
     tri_pair_start: Vec<u32>,
     tri_pair: Vec<TriEntry>,
     finger: Vec<u8>,
+    /// Finger holding the layer key of each slot ([`NO_HOLD`] on the base layer): a layer
+    /// keystroke loads both fingers.
+    hold: Vec<u8>,
     w_load: f64,
     w_hand: f64,
     w_rss: f64,
@@ -114,7 +120,7 @@ pub struct State {
     pub pos: Vec<u8>,
     /// `sym[slot] = symbol`
     pub sym: Vec<u8>,
-    /// Finger loads in % of keystrokes.
+    /// Finger loads in % of keystrokes; a layer keystroke also loads its layer key's finger.
     pub load: [f64; FINGERS],
     pub score: f64,
 }
@@ -365,6 +371,7 @@ impl Scorer {
             tri_pair_start,
             tri_pair,
             finger: geometry.key.iter().map(|k| k.finger.index() as u8).collect(),
+            hold: (0..n).map(|i| geometry.holder(i).map_or(NO_HOLD, |h| geometry.key[h].finger.index() as u8)).collect(),
             w_load,
             w_hand,
             w_rss,
@@ -432,9 +439,32 @@ impl Scorer {
     pub fn loads(&self, pos: &[u8]) -> [f64; FINGERS] {
         let mut l = [0.0; FINGERS];
         for (x, &p) in pos.iter().enumerate() {
-            l[self.finger[p as usize] as usize] += 100.0 * self.f1[x] as f64;
+            let v = 100.0 * self.f1[x] as f64;
+            l[self.finger[p as usize] as usize] += v;
+            if self.hold[p as usize] != NO_HOLD {
+                l[self.hold[p as usize] as usize] += v;
+            }
         }
         l
+    }
+
+    /// Move `moved` % of keystrokes onto slot `pa`'s fingers and off slot `pb`'s (a swap).
+    #[inline]
+    fn shift_load(&self, l: &mut [f64; FINGERS], pa: usize, pb: usize, moved: f64) {
+        l[self.finger[pa] as usize] += moved;
+        l[self.finger[pb] as usize] -= moved;
+        if self.hold[pa] != NO_HOLD {
+            l[self.hold[pa] as usize] += moved;
+        }
+        if self.hold[pb] != NO_HOLD {
+            l[self.hold[pb] as usize] -= moved;
+        }
+    }
+
+    /// Slots `pa` and `pb` load the same fingers (a swap leaves loads unchanged).
+    #[inline]
+    fn same_load(&self, pa: usize, pb: usize) -> bool {
+        self.finger[pa] == self.finger[pb] && self.hold[pa] == self.hold[pb]
     }
 
     fn load_cost(&self, load: &[f64; FINGERS]) -> f64 {
@@ -578,14 +608,13 @@ impl Scorer {
         if !self.has_load {
             return 0.0;
         }
-        let (fa, fb) = (self.finger[st.pos[a] as usize] as usize, self.finger[st.pos[b] as usize] as usize);
-        if fa == fb {
+        let (pa, pb) = (st.pos[a] as usize, st.pos[b] as usize);
+        if self.same_load(pa, pb) {
             return 0.0;
         }
         let mut l = st.load;
         let moved = 100.0 * (self.f1[b] as f64 - self.f1[a] as f64);
-        l[fa] += moved;
-        l[fb] -= moved;
+        self.shift_load(&mut l, pa, pb, moved);
         self.load_cost(&l) - self.load_cost(&st.load)
     }
 
@@ -708,11 +737,8 @@ impl Scorer {
     #[inline]
     pub fn apply(&self, st: &mut State, a: usize, b: usize, delta: f64) {
         let (pa, pb) = (st.pos[a] as usize, st.pos[b] as usize);
-        let (fa, fb) = (self.finger[pa] as usize, self.finger[pb] as usize);
-        if fa != fb {
-            let moved = 100.0 * (self.f1[b] as f64 - self.f1[a] as f64);
-            st.load[fa] += moved;
-            st.load[fb] -= moved;
+        if !self.same_load(pa, pb) {
+            self.shift_load(&mut st.load, pa, pb, 100.0 * (self.f1[b] as f64 - self.f1[a] as f64));
         }
         st.pos.swap(a, b);
         st.sym.swap(pa, pb);

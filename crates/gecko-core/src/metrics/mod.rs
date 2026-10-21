@@ -127,7 +127,7 @@ pub static METRICS: &[MetricDef] = &[
         "",
         Order::Mono,
         Dir::Min,
-        "Average key effort per keystroke: geometry base effort plus the profile's per-finger `row_offset`, plus Shift key effort per Shift press.",
+        "Average key effort per keystroke: geometry base effort plus the profile's per-finger `row_offset`, plus layer key effort and Shift key effort per Shift press.",
     ),
     m("M02", "Finger load error", "%", Order::Load, Dir::Min, "RMS gap between finger loads and the profile's target loads."),
     m("M03", "Finger balance", "%", Order::Load, Dir::Min, "Root-sum-square of non-thumb finger shares; lowest when load is even."),
@@ -266,7 +266,7 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
     };
     let pct = |b: bool| if b { 100.0 } else { 0.0 };
     match d.id {
-        "M01" => mono(&|i| k[i].effort + row_offset(g, p, i)),
+        "M01" => mono(&|i| k[i].effort + row_offset(g, p, i) + g.holder(i).map_or(0.0, |h| k[h].effort + row_offset(g, p, h))),
         "M05" => mono(&|i| pct(k[i].home || k[i].row == home_row(g))),
         "M06" => mono(&|i| pct(k[i].stretch)),
         "B01" | "S01" | "S02" => pair(&|i, j| pct(same_finger(i, j))),

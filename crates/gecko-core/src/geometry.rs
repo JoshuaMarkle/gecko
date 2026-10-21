@@ -337,6 +337,12 @@ impl Geometry {
         k.layer == 0 && k.hrm.unwrap_or(k.home && !k.stretch && !k.finger.is_thumb())
     }
 
+    /// Physical key holding the layer of slot `i` (`None` on the base layer).
+    pub fn holder(&self, i: usize) -> Option<usize> {
+        let l = self.key[i].layer as usize;
+        (l > 0).then(|| self.layer_keys[l - 1])
+    }
+
     /// Number of physical keys (all keys unless layered).
     pub fn physical_len(&self) -> usize {
         self.key.iter().filter(|k| k.layer == 0).count()
@@ -348,7 +354,7 @@ impl Geometry {
     /// is busy holding); one-shot and toggle layers drop only the layer key itself (on a toggle
     /// layer it is the key that leaves). Every metric then sees a layered symbol at its
     /// physical key; layer-key presses are scored by Y01/Y02. Comfort tables expand by
-    /// physical key.
+    /// physical key; the layer key adds to effort and finger loads.
     pub fn layered(&self, holders: &[(usize, LayerMode)]) -> Result<Geometry> {
         if !self.layer_keys.is_empty() || self.key.iter().any(|k| k.layer != 0) {
             return Err(Error::invalid("geometry", "already layered"));
