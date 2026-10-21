@@ -2,6 +2,28 @@
 
 import type { Dir, Geometry, MetricValue, Pair } from "./api";
 
+/** A key as drawn in 2D: top-left `x, y`, size `w, h`, rotation `rot` (degrees) about its center. */
+export interface FlatKey { x: number; y: number; w: number; h: number; rot: number }
+
+/** The board's 2D drawing: `geometry.flat` (gecko-core `Geometry::flat2d`) or, without it, x, y and z-rotation. */
+export function flatKeys(g: Geometry): FlatKey[] {
+  return g.key.map((k, i) => {
+    const f = g.flat?.[i];
+    return { x: f ? f.pos[0] : k.pos[0], y: f ? f.pos[1] : k.pos[1], w: k.size[0], h: k.size[1], rot: f ? f.rot : k.rot[2] };
+  });
+}
+
+/** Bounding box of drawn keys, rotation included. */
+export function flatBounds(ks: FlatKey[]): { x0: number; x1: number; y0: number; y1: number } {
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const k of ks) {
+    const t = (k.rot * Math.PI) / 180, c = Math.abs(Math.cos(t)), s = Math.abs(Math.sin(t));
+    const hw = (k.w * c + k.h * s) / 2, hh = (k.w * s + k.h * c) / 2, cx = k.x + k.w / 2, cy = k.y + k.h / 2;
+    x0 = Math.min(x0, cx - hw); x1 = Math.max(x1, cx + hw); y0 = Math.min(y0, cy - hh); y1 = Math.max(y1, cy + hh);
+  }
+  return { x0, x1, y0, y1 };
+}
+
 /** Merge directional pairs (ab, ba) into one undirected pair; frequencies add. Most frequent first. */
 export function undirected(pairs: Pair[]): Pair[] {
   const m = new Map<string, Pair>();

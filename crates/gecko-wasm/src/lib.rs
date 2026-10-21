@@ -47,6 +47,13 @@ impl Engine {
     }
 }
 
+/// 2D drawing of a geometry (`Geometry::flat2d`) as JSON `[{pos: [x, y], rot}]` per key.
+#[wasm_bindgen]
+pub fn flat2d(geometry_json: &str) -> Result<String, JsError> {
+    let geometry: Geometry = serde_json::from_str(geometry_json).map_err(js)?;
+    serde_json::to_string(&geometry.flat2d()).map_err(js)
+}
+
 /// An explore atlas held in WASM memory: the browser re-ranks it under edited weights and
 /// computes embeddings, consensus, families and funnels with the same code as `gecko atlas`.
 #[wasm_bindgen]

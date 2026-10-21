@@ -20,7 +20,14 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   comfortable, keys matched by row/col). The store loads them into `comfort_tables`, which are
   served with the geometry so the WASM scorer has them. ansi-30: E04 Engram formula, E05 fitted
   from Engram's raw choices (`research/scripts/fit_engram_bt.py`).
-- Positions are always 3D. Flat boards use z = 0 and only z-rotation.
+- Positions are always 3D. Flat boards use z = 0 and only z-rotation. `pos` is the
+  unrotated top-left corner; rotation is about the key center (as the 3D viewer draws it).
+- 2D drawing: `Geometry::flat2d()` (`flat2d.rs`) gives `{pos: [x, y], rot}` per key. Flat
+  boards return their own x, y, rot z. Others: key centers projected onto the best-fit (PCA)
+  plane — per hand when the halves' planes differ by > 5° (tented splits) — keeping each half's
+  centroid and each key's in-plane rotation; then overlapping keys (2D OBB, SAT) are pushed
+  apart along the minimum translation vector, half each, until none overlap. `/api/geometries`
+  serves it as `flat`; WASM exports `flat2d(geometry_json)`.
 - KLE JSON importer for any existing board (planned).
 - At scorer build, precompute dense tables indexed by slot:
   - pair `[N×N]`: same finger, same hand, distance, dx, dy, finger order/direction,
