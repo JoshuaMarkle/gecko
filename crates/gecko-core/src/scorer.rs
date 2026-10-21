@@ -420,6 +420,7 @@ impl Scorer {
         let mut g = self.geometry.clone();
         g.key.retain(|k| k.layer == 0);
         g.layer_keys.clear();
+        g.layer_modes.clear();
         let (n0, n) = (g.len(), self.n);
         for t in g.comfort_tables.values_mut() {
             *t = (0..n0 * n0).map(|ij| t[(ij / n0) * n + ij % n0]).collect();
@@ -642,7 +643,7 @@ impl Scorer {
         // Slots before the r/s swap.
         let (pr, ps, pu, pv) = (pos[s] as usize, pos[r] as usize, pos[u] as usize, pos[v] as usize);
         let mut d = 0.0f64;
-        if self.has_pair {
+        if self.has_pair || self.has_shift_pair {
             let chan = |f: &[f32], c: &[f32]| {
                 let fwd = f[u * n + r] - f[v * n + r] - f[u * n + s] + f[v * n + s];
                 let rev = f[r * n + u] - f[r * n + v] - f[s * n + u] + f[s * n + v];
@@ -656,6 +657,9 @@ impl Scorer {
             }
             if self.has_sym {
                 d += chan(&self.fy, &self.cy);
+            }
+            if self.has_shift_pair {
+                d += chan(&self.fsb, &self.csb);
             }
         }
         if self.has_tri {
@@ -699,6 +703,22 @@ impl Scorer {
                 }
             }
             d += acc;
+        }
+        // Y03 is sparse, so update only bracket pairs spanning the two swaps.
+        for e in &self.brackets {
+            let (x, y) = (e.x as usize, e.y as usize);
+            if !((x == r || x == s) && (y == u || y == v)
+                || (y == r || y == s) && (x == u || x == v)) {
+                continue;
+            }
+            let slot = |z: usize, back: bool, uv: bool| {
+                if uv && z == u { pv } else if uv && z == v { pu }
+                else if back && z == r { pr } else if back && z == s { ps }
+                else { pos[z] as usize }
+            };
+            let cost = |back, uv| self.cb[slot(x, back, uv) * n + slot(y, back, uv)];
+            d += (e.f * ((cost(false, true) - cost(false, false))
+                - (cost(true, true) - cost(true, false)))) as f64;
         }
         d
     }

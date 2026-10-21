@@ -472,7 +472,8 @@ pub fn run(
     }
     let seed_ms = t0.elapsed().as_millis() as u64;
 
-    let qctx = Ctx { scorer: sc, movable: ctx.movable.clone(), start: ctx.start.clone(), observer: Some(&grid) };
+    let mut qctx = Ctx::new(sc, ctx.movable.clone(), ctx.start.clone()).with_moves(ctx.moves.clone());
+    qctx.observer = Some(&grid);
     let mut p = params.clone();
     p.algo = Algo::Qd;
     if let Some(t) = p.time_ms {

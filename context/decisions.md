@@ -1,6 +1,7 @@
 # Decisions
 
 Newest last. Format: date — decision — why. Agents add entries for any non-obvious choice.
+
 - 2026-10-20 — Rust core, CLI, server, WASM. — Speed in the hot loop; one scorer shared by CLI and browser.
 - 2026-10-20 — TypeScript (not plain JS) for the web UI. — Types help agents work reliably with little supervision; the user is fine with TS for that reason.
 - 2026-10-20 — React + react-three-fiber for the UI. — Widely known by agents; good Three.js integration.
@@ -98,3 +99,4 @@ Newest last. Format: date — decision — why. Agents add entries for any non-o
 - 2026-10-21 — Rules key on the previous *output* symbol and are always used when they apply; first listed key wins; no briefs (multi-symbol outputs) or magic-after-magic overrides. — Makes the rewrite a function of the original text (one symbol of context), matching how Magic Sturdy's bigram rules are used; briefs need word-level counts.
 - 2026-10-21 — Rules live on `Layout.magic` and in run `config.json`, not in the flat char string. — Keeps every char-string path (runs, atlas, WASM) unchanged; `run:<id>` reattaches them. The web UI does not show or edit rules yet.
 - 2026-10-21 — `gecko magic` searches rules by lazy greedy over all on-layout pairs with exact re-scoring, plus a prune pass; `--min-gain 0.01` default. — Top-follower candidate lists missed the key rules (`eu`, `ao` are rare followers but costly SFBs); exact scoring is ≈2 ms per candidate, ~750 evals per search.
+- 2026-10-21 — Integrated PRs #125–133 with merge commits, preserving prior main features. Tabu mixed-delta updates include Shift and sparse bracket terms; layer-holder loads use the shared non-linear load path for every load metric. MAP-Elites retains configured neighbourhoods, and corpus extension/adaptive rewriting preserve Shift tables (adaptive context shares are estimates). — Independently developed PRs shared an older base; textual merges alone cannot preserve these interactions.

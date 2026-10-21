@@ -96,6 +96,7 @@ fn curved() -> Geometry {
                 stretch: false,
                 effort: 1.0,
                 fill: None,
+        hrm: None,
                 layer: 0,
                 phys: None,
             });
@@ -114,7 +115,7 @@ fn curved() -> Geometry {
             push(tx + t as f32 * 1.02, well * 40f32.to_radians().sin() + 0.8, -1.2, 0.0, 3, t + 10 * half as i8, thumb);
         }
     }
-    Geometry { name: "curved-test".into(), description: String::new(), key, comfort: Default::default(), comfort_tables: Default::default(), layer_keys: Vec::new() }
+    Geometry { name: "curved-test".into(), description: String::new(), key, comfort: Default::default(), comfort_tables: Default::default(), layer_modes: Vec::new(), layer_keys: Vec::new() }
 }
 
 #[test]
@@ -132,7 +133,7 @@ fn curved_board_has_no_overlaps() {
 
 #[test]
 fn layered_keys_copy_their_physical_key() {
-    let g = curved().layered(&[15]).unwrap();
+    let g = curved().layered(&[(15, gecko_core::LayerMode::Hold)]).unwrap();
     let flat = g.flat2d();
     for i in 0..g.len() {
         assert_eq!(flat[i], flat[g.phys(i)]);
