@@ -245,24 +245,17 @@ enum Cmd {
         #[command(subcommand)]
         cmd: CorpusCmd,
     },
-<<<<<<< HEAD
     /// Geometry tools.
     Geometry {
         #[command(subcommand)]
         cmd: GeometryCmd,
     },
     /// Import layouts from other analyzers, export them back.
-=======
-    /// Community layout tools (cmini).
->>>>>>> origin/fix/issue-26
     Layouts {
         #[command(subcommand)]
         cmd: LayoutsCmd,
     },
-<<<<<<< HEAD
     },
-=======
->>>>>>> origin/fix/issue-26
     /// Profile calibration tools.
     Profile {
         #[command(subcommand)]
@@ -288,7 +281,8 @@ enum CorpusCmd {
         sources: Vec<PathBuf>,
         #[arg(long, default_value = "english")]
         out: String,
-        /// Symbols to count, or `default` / `code` (adds digits, all ASCII punctuation, Enter).
+        /// Symbols to count, or `default` / `code` (adds digits, all ASCII punctuation, Enter) /
+        /// `nav` (code plus arrows `←↓↑→`).
         #[arg(long, default_value = "default")]
         charset: String,
         /// File extensions to read from directories, comma-separated (e.g. `rs,py,ts`).
@@ -303,6 +297,18 @@ enum CorpusCmd {
     Mix {
         /// `<corpus>[:weight]` (weight 1 when omitted).
         parts: Vec<String>,
+        #[arg(long)]
+        out: String,
+    },
+    /// Add arrow keys `←↓↑→` to a corpus from a cursor-movement model (text has none):
+    /// `gecko corpus nav code --share 0.03 --out code-nav`.
+    Nav {
+        base: String,
+        /// Arrow share of all keystrokes.
+        #[arg(long, default_value_t = 0.03)]
+        share: f64,
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
         #[arg(long)]
         out: String,
     },
@@ -365,10 +371,6 @@ enum LayoutsCmd {
         #[command(flatten)]
         inputs: Inputs,
     },
-}
-
-#[derive(Subcommand)]
-enum LayoutsCmd {
     /// Import a cmini checkout (layouts/*.json, likes.json, authors.json) into
     /// data/community/cmini.json: 30-key cores, likes, duplicates and mirrors marked.
     ImportCmini { dir: PathBuf },
@@ -1021,6 +1023,9 @@ fn real_main(cli: Cli) -> Result<()> {
             let refs: Vec<(&Corpus, f64)> = loaded.iter().map(|(c, w)| (c, *w)).collect();
             write_corpus(&ctx, &Corpus::mix(&out, &refs)?, parts.len())?;
         }
+        Cmd::Corpus { cmd: CorpusCmd::Nav { base, share, seed, out } } => {
+            write_corpus(&ctx, &ctx.store.corpus(&base)?.with_nav(&out, share, seed)?, 1)?;
+        }
         Cmd::Corpus { cmd: CorpusCmd::Import { dir, out, charset, fold } } => {
             let mut c = Corpus::new(&out, gecko_core::corpus::charset_named(&charset));
             let words = dir.join("words.json");
@@ -1048,7 +1053,6 @@ fn real_main(cli: Cli) -> Result<()> {
             };
             write_corpus(&ctx, &c, files)?;
         }
-<<<<<<< HEAD
         Cmd::Geometry { cmd: GeometryCmd::ImportKle { file, out, force } } => {
             let text = std::fs::read_to_string(&file).with_context(|| format!("reading {}", file.display()))?;
             let g = gecko_core::kle::import(&out, &text)?;
@@ -1118,8 +1122,6 @@ fn real_main(cli: Cli) -> Result<()> {
                 print!("{}", if text.ends_with('\n') { text } else { text + "\n" });
             }
         }
-        }
-=======
         Cmd::Layouts { cmd: LayoutsCmd::ImportCmini { dir } } => {
             let b = gecko_core::community::import_cmini_dir(&dir)?;
             let path = ctx.store.community_path();
@@ -1193,7 +1195,6 @@ fn real_main(cli: Cli) -> Result<()> {
                 }
             }
         }
->>>>>>> origin/fix/issue-26
         Cmd::Profile { cmd: ProfileCmd::Normalize { layouts, out, inputs } } => {
             let l = ctx.load(&inputs)?;
             let (refs, basis) = reference_layouts(&ctx, &l, layouts)?;

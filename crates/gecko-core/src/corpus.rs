@@ -20,7 +20,8 @@
 //! skipgrams) are estimated by assuming consecutive words are independent (see
 //! `add_word_boundaries`).
 
-use crate::layout::{ENTER as ENTER_SYM, SPACE as SPACE_SYM};
+use crate::layout::{ARROWS, ENTER as ENTER_SYM, SPACE as SPACE_SYM};
+use crate::rng::Rng;
 use crate::{hash, Error, Result};
 
 pub const DEFAULT_CHARSET: &str = "abcdefghijklmnopqrstuvwxyz,./;'-\u{2423}";
@@ -28,11 +29,15 @@ pub const DEFAULT_CHARSET: &str = "abcdefghijklmnopqrstuvwxyz,./;'-\u{2423}";
 /// Enter (`--charset code`).
 pub const CODE_CHARSET: &str = "abcdefghijklmnopqrstuvwxyz,./;'-\u{2423}0123456789()[]{}<>=+*&|!?:\"_#$%^~`@\\\u{23CE}";
 
-/// A charset argument: `default`, `code`, or the literal symbols.
+/// The code charset plus the arrow keys `←↓↑→` (`--charset nav`).
+pub const NAV_CHARSET: &str = "abcdefghijklmnopqrstuvwxyz,./;'-\u{2423}0123456789()[]{}<>=+*&|!?:\"_#$%^~`@\\\u{23CE}\u{2190}\u{2193}\u{2191}\u{2192}";
+
+/// A charset argument: `default`, `code`, `nav`, or the literal symbols.
 pub fn charset_named(s: &str) -> &str {
     match s {
         "default" => DEFAULT_CHARSET,
         "code" => CODE_CHARSET,
+        "nav" => NAV_CHARSET,
         _ => s,
     }
 }
@@ -308,7 +313,7 @@ impl Corpus {
                     (s, s != OTHER)
                 }
             } else {
-                (OTHER, false)
+                (self.index_of(ch).map_or(OTHER, |i| i as u8), false)
             };
             if t == space && out.last() == Some(&space) {
                 continue;
@@ -529,6 +534,105 @@ impl Corpus {
         hash::fnv1a(&self.to_bytes())
     }
 
+    /// This corpus over `charset ∪ extra` (extra symbols appended, zero counts).
+    pub fn extended(&self, name: &str, extra: &[char]) -> Result<Self> {
+        let mut cs = self.charset.clone();
+        cs.extend(extra.iter().filter(|c| !self.charset.contains(c)));
+        if cs.len() >= SPACE as usize {
+            return Err(Error::invalid("corpus", "too many symbols"));
+        }
+        let (c, n) = (self.size(), cs.len());
+        let mut out = Corpus::new(name, &cs.iter().collect::<String>());
+        out.mono[..c].copy_from_slice(&self.mono);
+        for x in 0..c {
+            for y in 0..c {
+                out.bi[x * n + y] = self.bi[x * c + y];
+                out.skip[x * n + y] = self.skip[x * c + y];
+                out.skip2[x * n + y] = self.skip2[x * c + y];
+                out.skip3[x * n + y] = self.skip3[x * c + y];
+                for z in 0..c {
+                    out.tri[(x * n + y) * n + z] = self.tri[(x * c + y) * c + z];
+                }
+            }
+        }
+        Ok(out)
+    }
+
+    /// This corpus plus arrow keys `←↓↑→` making up `share` of all keystrokes. Text corpora
+    /// have no cursor movement, so the arrows come from a model (seeded, deterministic): a
+    /// stream typed from this corpus' bigram chain where, before each keystroke, a run of
+    /// arrows starts with probability 0.1; runs continue with probability 2/3 (mean length 3)
+    /// and keep their direction with probability 0.85; directions ← 25 %, ↓ 30 %, ↑ 20 %,
+    /// → 25 %. After a run the next symbol is drawn from the monograms (the cursor moved). The
+    /// result mixes this corpus (weight 1 − w) with that stream (w = share / arrow share of
+    /// the stream), so all non-arrow statistics stay mostly exact.
+    pub fn with_nav(&self, name: &str, share: f64, seed: u64) -> Result<Self> {
+        const LEN: usize = 2_000_000;
+        const START: f64 = 0.1;
+        const CONT: f64 = 2.0 / 3.0;
+        const SAME: f64 = 0.85;
+        const DIR: [f64; 4] = [0.25, 0.30, 0.20, 0.25];
+        let base = self.extended(name, &ARROWS)?;
+        let arrow: Vec<u8> = ARROWS.iter().map(|&a| base.index_of(a).unwrap() as u8).collect();
+        let c = self.size();
+        // Cumulative rows for sampling: row c is the monograms.
+        let mut cum = vec![0u64; (c + 1) * c];
+        for x in 0..=c {
+            let mut acc = 0;
+            for y in 0..c {
+                acc += if x == c { self.mono[y] } else { self.bi[x * c + y] };
+                cum[x * c + y] = acc;
+            }
+        }
+        if cum[c * c + c - 1] == 0 {
+            return Err(Error::invalid("corpus", "empty corpus"));
+        }
+        let mut rng = Rng::new(seed);
+        let draw = |rng: &mut Rng, row: usize| -> Option<u8> {
+            let r = &cum[row * c..row * c + c];
+            let tot = r[c - 1];
+            (tot > 0).then(|| r.partition_point(|&v| v <= (rng.f64() * tot as f64) as u64).min(c - 1) as u8)
+        };
+        let pick_dir = |rng: &mut Rng, not: Option<usize>| -> usize {
+            loop {
+                let mut u = rng.f64();
+                let d = DIR.iter().position(|&p| { u -= p; u < 0.0 }).unwrap_or(3);
+                if Some(d) != not {
+                    return d;
+                }
+            }
+        };
+        let mut t: Vec<u8> = Vec::with_capacity(LEN + 64);
+        let mut prev: Option<u8> = None;
+        while t.len() < LEN {
+            if rng.f64() < START {
+                let mut d = pick_dir(&mut rng, None);
+                loop {
+                    t.push(arrow[d]);
+                    if rng.f64() >= CONT {
+                        break;
+                    }
+                    if rng.f64() >= SAME {
+                        d = pick_dir(&mut rng, Some(d));
+                    }
+                }
+                prev = None;
+                continue;
+            }
+            let x = prev.and_then(|p| draw(&mut rng, p as usize)).or_else(|| draw(&mut rng, c)).unwrap();
+            t.push(x);
+            prev = Some(x);
+        }
+        let mut stream = Corpus::new(name, &base.charset.iter().collect::<String>());
+        stream.count(&t, 1, 1);
+        let a = arrow.iter().map(|&i| stream.mono[i as usize]).sum::<u64>() as f64 / stream.total_chars().max(1) as f64;
+        if !(share > 0.0 && share < a) {
+            return Err(Error::invalid("corpus nav", format!("share must be in (0, {a:.2})")));
+        }
+        let w = share / a;
+        Corpus::mix(name, &[(&base, 1.0 - w), (&stream, w)])
+    }
+
     /// Weighted mix of corpora with the same charset (each normalized first; Shift counts
     /// scale with mono, so presses per keystroke are kept).
     pub fn mix(name: &str, parts: &[(&Corpus, f64)]) -> Result<Self> {
@@ -568,6 +672,26 @@ impl Corpus {
 #[allow(clippy::identity_op, clippy::erasing_op)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn nav_adds_arrows_at_share() {
+        let mut c = Corpus::new("t", "abc\u{2423}");
+        c.add_text("abc cab bca abba cc a b c");
+        let e = c.extended("e", &ARROWS).unwrap();
+        assert_eq!(e.size(), 8);
+        let (ia, ib) = (e.index_of('a').unwrap(), e.index_of('b').unwrap());
+        assert_eq!(e.bi[ia * 8 + ib], c.bi[0 * 4 + 1]);
+        let n = c.with_nav("n", 0.05, 1).unwrap();
+        let arrows: u64 = ARROWS.iter().map(|&a| n.mono[n.index_of(a).unwrap()]).sum();
+        let share = arrows as f64 / n.total_chars() as f64;
+        assert!((share - 0.05).abs() < 1e-4, "{share}");
+        let (l, r) = (n.index_of(ARROWS[0]).unwrap(), n.index_of(ARROWS[3]).unwrap());
+        assert!(n.bi[r * 8 + r] > n.bi[r * 8 + l], "runs keep their direction");
+        assert!(c.with_nav("n", 0.9, 1).is_err());
+        let mut t = Corpus::new("t", NAV_CHARSET);
+        t.add_text("a\u{2192}\u{2192}b");
+        assert_eq!(t.bi[t.index_of(ARROWS[3]).unwrap() * t.size() + t.index_of('b').unwrap()], 1);
+    }
 
     #[test]
     fn counts_and_round_trip() {

@@ -98,6 +98,7 @@ const TOKEN_NAMES: Record<string, string> = {
   space: "\u2423", spc: "\u2423", enter: "\u23CE", ent: "\u23CE", ret: "\u23CE", bspc: "\u232B", backspace: "\u232B",
   tab: "\u21E5", esc: "\u238B", escape: "\u238B", none: "\u00B7", empty: "\u00B7", _: "\u00B7",
   shift: "\u21E7", sft: "\u21E7",
+  left: "\u2190", down: "\u2193", up: "\u2191", right: "\u2192",
   layer1: LAYER_KEYS[0], l1: LAYER_KEYS[0], layer2: LAYER_KEYS[1], l2: LAYER_KEYS[1], layer3: LAYER_KEYS[2], l3: LAYER_KEYS[2],
   os1: ONESHOT_KEYS[0], oneshot1: ONESHOT_KEYS[0], os2: ONESHOT_KEYS[1], oneshot2: ONESHOT_KEYS[1], os3: ONESHOT_KEYS[2], oneshot3: ONESHOT_KEYS[2],
   tg1: TOGGLE_KEYS[0], toggle1: TOGGLE_KEYS[0], tg2: TOGGLE_KEYS[1], toggle2: TOGGLE_KEYS[1], tg3: TOGGLE_KEYS[2], toggle3: TOGGLE_KEYS[2],
@@ -198,7 +199,7 @@ export function scoredMetrics(ms: MetricValue[]): MetricValue[] {
 }
 
 /** Special-key token glyphs (gecko-core `layout::TOKENS`) and the empty-slot glyph. */
-export const TOKENS = "\u2423\u23CE\u232B\u21E5\u238B\u21E7" + LAYER_KEYS.join("") + ONESHOT_KEYS.join("") + TOGGLE_KEYS.join("");
+export const TOKENS = "\u2423\u23CE\u232B\u21E5\u238B\u21E7\u2190\u2193\u2191\u2192" + LAYER_KEYS.join("") + ONESHOT_KEYS.join("") + TOGGLE_KEYS.join("");
 export const EMPTY = "\u00B7";
 /** Shift (gecko-core `layout::SHIFT`); like the empty slot it may repeat (one per hand). */
 export const SHIFT = "\u21E7";

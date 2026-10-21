@@ -22,6 +22,12 @@ pub const ENTER: char = '\u{23CE}'; // ⏎
 pub const BACKSPACE: char = '\u{232B}'; // ⌫
 pub const TAB: char = '\u{21E5}'; // ⇥
 pub const ESC: char = '\u{238B}'; // ⎋
+pub const LEFT: char = '\u{2190}'; // ←
+pub const UP: char = '\u{2191}'; // ↑
+pub const RIGHT: char = '\u{2192}'; // →
+pub const DOWN: char = '\u{2193}'; // ↓
+/// Arrow keys in Vim order (h j k l).
+pub const ARROWS: [char; 4] = [LEFT, DOWN, UP, RIGHT];
 /// A slot with no symbol (zero frequency). Not unique: a layout may have several.
 pub const EMPTY: char = '\u{00B7}'; // ·
 /// Shift (`⇧`): a base key held for uppercase and shifted symbols. Fixed like layer keys; a
@@ -42,6 +48,10 @@ pub const TOKENS: &[(char, &[&str])] = &[
     (BACKSPACE, &["bspc", "backspace"]),
     (TAB, &["tab"]),
     (ESC, &["esc", "escape"]),
+    (LEFT, &["left"]),
+    (DOWN, &["down"]),
+    (UP, &["up"]),
+    (RIGHT, &["right"]),
     (EMPTY, &["none", "empty", "_"]),
     (SHIFT, &["shift", "sft"]),
     (LAYER_KEYS[0], &["layer1", "l1"]),
