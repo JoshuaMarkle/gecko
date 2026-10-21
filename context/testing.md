@@ -67,7 +67,9 @@ External validation (`tests/validation.rs`): every non-thumb finger triple in cm
 `table.json` (pinned in `tests/fixtures/cmini-table.json`) gets the matching trigram class;
 ansi-30 distances `rg` 1.6 u, `my` 2.66 u, `vt` 2.02 u match the Layouts Doc.
 Run reproducibility (`tests/verify.rs`): an `--evals` run passes `run::verify`; a tampered
-`best.json`, a changed input hash or a time-budget run fails.
+`best.json`, a changed input hash or a time-budget run fails. 2D drawing (`tests/flat2d.rs`):
+flat boards unchanged, a rigidly tilted board recovered, a curved tented split board with no
+overlaps and row/column order kept, layer keys copy their physical key.
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
 

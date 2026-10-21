@@ -8,6 +8,7 @@ pub mod calibrate;
 pub mod corpus;
 pub mod error;
 pub mod explore;
+pub mod flat2d;
 pub mod geometry;
 pub mod hash;
 pub mod kle;
@@ -22,6 +23,7 @@ pub mod scorer;
 pub mod store;
 
 pub use corpus::Corpus;
+pub use flat2d::Flat;
 pub use error::{Error, Result};
 pub use geometry::{Finger, Geometry, Hand, Key, LayerMode};
 pub use layout::Layout;

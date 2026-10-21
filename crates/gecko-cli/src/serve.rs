@@ -147,6 +147,7 @@ async fn geometries(State(app): State<AppState>) -> ApiResult {
         let g = app.store.geometry(&id)?;
         let mut v = serde_json::to_value(&g)?;
         v["id"] = json!(id);
+        v["flat"] = serde_json::to_value(g.flat2d())?;
         out.push(v);
     }
     Ok(Json(json!(out)))

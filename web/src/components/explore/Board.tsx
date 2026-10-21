@@ -3,31 +3,26 @@
 
 import type { Geometry } from "../../api";
 import { ACCENT, HAIR, heatColor, heatText } from "../../colors";
+import { flatBounds, flatKeys } from "../../format";
 import { useSize } from "../Charts";
 
 export interface Cell { fill: string; text: string; main: string; sub?: string; title?: string; ring?: boolean }
 
-function bounds(g: Geometry) {
-  const ks = g.key;
-  return {
-    x0: Math.min(...ks.map((k) => k.pos[0])), x1: Math.max(...ks.map((k) => k.pos[0] + k.size[0])),
-    y0: Math.min(...ks.map((k) => k.pos[1])), y1: Math.max(...ks.map((k) => k.pos[1] + k.size[1])),
-  };
-}
-
 /** Keys at their geometry positions, `u` px per key unit. */
 export function KeyGrid({ geometry, cells, u, onKey }: { geometry: Geometry; cells: (slot: number) => Cell; u: number; onKey?: (slot: number) => void }) {
-  const b = bounds(geometry);
+  const ks = flatKeys(geometry);
+  const b = flatBounds(ks);
   const w = (b.x1 - b.x0) * u + 4, h = (b.y1 - b.y0) * u + 4;
   const small = u < 30;
   return (
     <svg width={w} height={h} className="keygrid">
-      {geometry.key.map((k, i) => {
+      {ks.map((k, i) => {
         const c = cells(i);
-        const x = 2 + (k.pos[0] - b.x0) * u, y = 2 + (k.pos[1] - b.y0) * u;
-        const kw = k.size[0] * u - (small ? 2 : 4), kh = k.size[1] * u - (small ? 2 : 4);
+        const x = 2 + (k.x - b.x0) * u, y = 2 + (k.y - b.y0) * u;
+        const kw = k.w * u - (small ? 2 : 4), kh = k.h * u - (small ? 2 : 4);
         return (
-          <g key={i} onClick={onKey ? () => onKey(i) : undefined} style={onKey ? { cursor: "pointer" } : undefined}>
+          <g key={i} onClick={onKey ? () => onKey(i) : undefined} style={onKey ? { cursor: "pointer" } : undefined}
+            transform={k.rot ? `rotate(${k.rot} ${x + 1 + kw / 2} ${y + 1 + kh / 2})` : undefined}>
             {c.title && <title>{c.title}</title>}
             <rect x={x + 1} y={y + 1} width={kw} height={kh} rx={small ? 2 : 6} fill={c.fill} stroke={c.ring ? ACCENT : HAIR} strokeWidth={c.ring ? 2 : 1} />
             <text x={x + 1 + kw / 2} y={y + 1 + (c.sub && !small ? kh * 0.4 : kh / 2) + (small ? 3.5 : 4)} textAnchor="middle"
@@ -46,7 +41,7 @@ export function ConsensusBoard({ geometry, cons, ent, alphabet, current }: {
 }) {
   const [box, { w, h }] = useSize<HTMLDivElement>();
   const s = alphabet.length;
-  const b = bounds(geometry);
+  const b = flatBounds(flatKeys(geometry));
   const u = Math.min((w - 8) / (b.x1 - b.x0), (h - 8) / (b.y1 - b.y0), 64);
   const cells = (slot: number): Cell => {
     const row = Array.from(cons.subarray(slot * s, (slot + 1) * s)).map((p, sym) => ({ p, sym })).filter((x) => x.p > 0).sort((a, c) => c.p - a.p);

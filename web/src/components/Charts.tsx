@@ -4,7 +4,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import type { Analysis, Geometry, MetricValue, Ngram, Progress } from "../api";
 import { ACCENT, fingerColor, heatColor, heatText, HAIR, INK, MUTED } from "../colors";
-import { fmt, fmtTime, scoredMetrics } from "../format";
+import { flatBounds, flatKeys, fmt, fmtTime, scoredMetrics } from "../format";
 
 export function useSize<T extends HTMLElement>() {
   const ref = useRef<T>(null);
@@ -143,11 +143,8 @@ export function FingerLoad({ a, refA, refName }: { a: Analysis; refA?: Analysis;
 /** 2D heatmap of the board: key size from geometry, fill from keystroke share. */
 export function Heatmap({ geometry, chars, a, selected, onKey }: { geometry: Geometry; chars: string; a: Analysis; selected: number | null; onKey: (i: number) => void }) {
   const [box, { w, h }] = useSize<HTMLDivElement>();
-  const ks = geometry.key;
-  const x0 = Math.min(...ks.map((k) => k.pos[0]));
-  const x1 = Math.max(...ks.map((k) => k.pos[0] + k.size[0]));
-  const y0 = Math.min(...ks.map((k) => k.pos[1]));
-  const y1 = Math.max(...ks.map((k) => k.pos[1] + k.size[1]));
+  const ks = flatKeys(geometry);
+  const { x0, x1, y0, y1 } = flatBounds(ks);
   const u = Math.min((w - 20) / (x1 - x0), (h - 30) / (y1 - y0), 64);
   const ox = (w - u * (x1 - x0)) / 2;
   const max = Math.max(...a.heat, 1e-9);
@@ -156,13 +153,14 @@ export function Heatmap({ geometry, chars, a, selected, onKey }: { geometry: Geo
       <svg width={w} height={h}>
         {ks.map((k, i) => {
           const t = a.heat[i] / max;
-          const x = ox + (k.pos[0] - x0) * u;
-          const y = 8 + (k.pos[1] - y0) * u;
+          const x = ox + (k.x - x0) * u;
+          const y = 8 + (k.y - y0) * u;
+          const kw = k.w * u, kh = k.h * u;
           return (
-            <g key={i} onClick={() => onKey(i)} style={{ cursor: "pointer" }}>
-              <rect x={x + 2} y={y + 2} width={k.size[0] * u - 4} height={k.size[1] * u - 4} rx={6} fill={heatColor(t)} stroke={selected === i ? ACCENT : HAIR} strokeWidth={selected === i ? 2 : 1} />
-              <text x={x + (k.size[0] * u) / 2} y={y + (k.size[1] * u) / 2 + 1} textAnchor="middle" style={{ fill: heatText(t), fontWeight: 600, fontSize: Math.max(11, u * 0.3) }}>{(chars[i] ?? "").toUpperCase()}</text>
-              <text x={x + (k.size[0] * u) / 2} y={y + k.size[1] * u - 8} textAnchor="middle" style={{ fill: heatText(t), fontSize: 9, opacity: 0.8 }}>{fmt(a.heat[i], 1)}</text>
+            <g key={i} onClick={() => onKey(i)} style={{ cursor: "pointer" }} transform={k.rot ? `rotate(${k.rot} ${x + kw / 2} ${y + kh / 2})` : undefined}>
+              <rect x={x + 2} y={y + 2} width={kw - 4} height={kh - 4} rx={6} fill={heatColor(t)} stroke={selected === i ? ACCENT : HAIR} strokeWidth={selected === i ? 2 : 1} />
+              <text x={x + kw / 2} y={y + kh / 2 + 1} textAnchor="middle" style={{ fill: heatText(t), fontWeight: 600, fontSize: Math.max(11, u * 0.3) }}>{(chars[i] ?? "").toUpperCase()}</text>
+              <text x={x + kw / 2} y={y + kh - 8} textAnchor="middle" style={{ fill: heatText(t), fontSize: 9, opacity: 0.8 }}>{fmt(a.heat[i], 1)}</text>
             </g>
           );
         })}
