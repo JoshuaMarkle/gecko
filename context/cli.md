@@ -10,10 +10,11 @@ gecko compare  [<layout>...] [--corpora a,b,c]                   # rank layouts 
                                                                   #   --corpora: score/rank per corpus (L05)
 gecko analyze  <layout> [--top 10] [--words]                      # finger loads, worst SFB/SFS/LSB/scissors; JSON adds all bigrams/skipgrams with a `kind`;
                                                                   #   --words: worst real words per metric (needs -c shai or mt-10k)
-gecko optimize [--algo sa|hc|ga|memetic|bls|tabu|explore|qd] [--time 30s | --evals N] [--seed 1] [--threads N]
+gecko optimize [--algo sa|hc|ga|memetic|bls|tabu|explore|qd|nsga2|rwsa] [--time 30s | --evals N] [--seed 1] [--threads N]
                [--pin ",./;"] [--from <layout>] [--top 10] [--sa-steps N] [--ga-pop N]
                [--memetic-pop 24] [--local-search hc|tabu] [--local-steps 12] [--islands N]
                [--migration-interval 5] [--migrants 2]
+               [--objectives B01,T03,M01] [--nsga-generations N] [--front-size N]
                [--moves swap|columns,cycle3,depth2|all] [--depth2-width 32]
 gecko bench    [--algos hc,sa,ga,bls,tabu] [--seeds 3] [--time 5s]         # algorithm leaderboard
                [--moves "swap/cycle3/depth2"] [--depth2-width N]      # one row per algo × variant
@@ -101,6 +102,15 @@ words belong to neither. `--top` sets the words per metric. JSON adds a top-leve
 - `ngrams`: the word's n-grams with non-zero cost, in typing order.
 
 Corpora without a word list (`english`, `code`, `mt-450k`, mixes) give an `error:`.
+
+### Multi-objective optimization (NSGA-II / RWSA)
+
+When `--algo nsga2` or `--algo rwsa` is selected, `best.json` contains the non-dominated Pareto front over the chosen `--objectives` (default `B01,T03,M01`):
+- `objectives`: list of evaluated criteria with their unit, optimization direction (`min`/`max`), and cost description.
+- `front`: list of non-dominated layouts with standard layout fields (`rank`, `score`, `chars`, `rows`, `hash`, `breakdown`) plus:
+  - `raw`: vector of metric values in native units (e.g. percentages or effort).
+  - `costs`: vector of normalized minimization costs used during dominance sorting.
+
 
 ## Conventions
 

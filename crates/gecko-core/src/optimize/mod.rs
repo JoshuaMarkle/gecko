@@ -4,6 +4,7 @@
 pub mod anneal;
 pub mod bls;
 pub mod genetic;
+pub mod nsga2;
 pub mod hill_climb;
 pub mod map_elites;
 pub mod memetic;
@@ -39,10 +40,14 @@ pub enum Algo {
     Tabu,
     /// MAP-Elites quality-diversity search.
     Qd,
+    /// NSGA-II multiobjective search.
+    Nsga2,
+    /// Random-weight simulated annealing with a Pareto archive.
+    Rwsa,
 }
 
 impl Algo {
-    pub const ALL: [Algo; 8] = [Algo::Hc, Algo::Sa, Algo::Ga, Algo::Memetic, Algo::Bls, Algo::Explore, Algo::Tabu, Algo::Qd];
+    pub const ALL: [Algo; 10] = [Algo::Hc, Algo::Sa, Algo::Ga, Algo::Memetic, Algo::Bls, Algo::Explore, Algo::Tabu, Algo::Qd, Algo::Nsga2, Algo::Rwsa];
     pub fn name(self) -> &'static str {
         match self {
             Algo::Hc => "hc",
@@ -53,6 +58,8 @@ impl Algo {
             Algo::Explore => "explore",
             Algo::Tabu => "tabu",
             Algo::Qd => "qd",
+            Algo::Nsga2 => "nsga2",
+            Algo::Rwsa => "rwsa",
         }
     }
     pub fn parse(s: &str) -> Option<Algo> {
@@ -89,6 +96,8 @@ pub struct Params {
     pub moves: moves::MoveParams,
     #[serde(default)]
     pub qd: map_elites::QdParams,
+    #[serde(default)]
+    pub nsga2: nsga2::NsgaParams,
 }
 
 impl Default for Params {
@@ -108,6 +117,7 @@ impl Default for Params {
             tabu: Default::default(),
             moves: Default::default(),
             qd: Default::default(),
+            nsga2: Default::default(),
         }
     }
 }
@@ -349,6 +359,11 @@ pub struct Outcome {
     pub evals: u64,
     pub elapsed_ms: u64,
     pub evals_per_sec: f64,
+    /// Pareto objective metadata and non-dominated candidates (empty for scalar algorithms).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub objectives: Vec<nsga2::Objective>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub front: Vec<nsga2::Point>,
 }
 
 /// Fill in auto parameters (SA steps = 0) from the budget. With an evaluation budget this is
@@ -431,6 +446,7 @@ fn make(algo: Algo, p: &Params) -> Box<dyn Optimizer + Send> {
         Algo::Explore => Box::new(bls::Bls::new(p.bls.clone(), p.top, true)),
         Algo::Tabu => Box::new(tabu::Tabu::new(p.tabu.clone(), p.top)),
         Algo::Qd => Box::new(map_elites::MapElites::new(p.qd.clone(), p.top)),
+        Algo::Nsga2 | Algo::Rwsa => unreachable!("Pareto algorithms use their population runner"),
     }
 }
 
@@ -440,6 +456,9 @@ fn make(algo: Algo, p: &Params) -> Box<dyn Optimizer + Send> {
 pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mut on_progress: impl FnMut(&Progress)) -> Outcome {
     if params.algo == Algo::Memetic {
         return memetic::run(ctx, params, interval, control, on_progress);
+    }
+    if matches!(params.algo, Algo::Nsga2 | Algo::Rwsa) {
+        return nsga2::run(ctx, params, interval, control, on_progress);
     }
     let threads = params.threads.max(1);
     let params = &resolve_auto(ctx, params);
@@ -555,5 +574,7 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mu
         evals,
         elapsed_ms: elapsed.as_millis() as u64,
         evals_per_sec: evals as f64 / elapsed.as_secs_f64().max(1e-9),
+        objectives: Vec::new(),
+        front: Vec::new(),
     }
 }
