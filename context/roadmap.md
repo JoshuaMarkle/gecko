@@ -27,7 +27,7 @@ When an item closes, tick it here. When scope changes, edit the issue first.
 
 1. [x] [#1](https://github.com/JoshuaMarkle/gecko/issues/1) `A1` CI: GitHub Actions for Rust and web checks · S
 2. [x] [#7](https://github.com/JoshuaMarkle/gecko/issues/7) `A2` Metric unit tests with hand-computed answers · M
-3. [ ] [#12](https://github.com/JoshuaMarkle/gecko/issues/12) `A3` insta snapshots of reference layout scores · S
+3. [x] [#12](https://github.com/JoshuaMarkle/gecko/issues/12) `A3` insta snapshots of reference layout scores · S
 4. [ ] [#16](https://github.com/JoshuaMarkle/gecko/issues/16) `A4` Automated WASM == CLI test · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
 5. [ ] [#18](https://github.com/JoshuaMarkle/gecko/issues/18) `A5` criterion benches + bench/history.jsonl · S
 6. [ ] [#20](https://github.com/JoshuaMarkle/gecko/issues/20) `A6` Scorer speed: cache per-trigram cost in State · M · after [#18](https://github.com/JoshuaMarkle/gecko/issues/18)

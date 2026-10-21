@@ -5,3 +5,5 @@
 /runs/*
 !/runs/.gitkeep
 /data/corpora/src/
+*.snap.new
+*.pending-snap
