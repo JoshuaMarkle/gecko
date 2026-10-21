@@ -166,7 +166,7 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 
   | Name | Source | Size | QWERTY SFB |
   |---|---|---|---|
-  | `english` | 10 Project Gutenberg novels (raw text in `data/corpora/src/`, not committed) | 7.5M chars incl. space | 6.63 % |
+  | `english` | 10 Project Gutenberg novels (raw text in `data/corpora/src/`, not committed; other corpora's sources go in `data/corpora/src/<name>/`, served by `/api/corpora/{name}/sources`) | 7.5M chars incl. space | 6.63 % |
   | `shai` | cmini `corpora/shai/words.json` (iweb-based English; the community default) | 520M | 6.70 % |
   | `mt-10k` | cmini `corpora/english-10k` (Monkeytype 10k word list, each word once) | 82k | 8.40 % |
   | `mt-450k` | cmini `corpora/english-450k` (Monkeytype 450k list) | 4.8M | 8.30 % |

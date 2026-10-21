@@ -96,43 +96,39 @@ The only lift is the active segment of a segmented control (white segment, 1px h
 
 ## App shell (`web/`)
 
-CSS grid: a toolbar over one tab. The toolbar follows the Unity editor: tabs left, transport
-controls dead centre, run progress right.
+A navbar over one view. The navbar follows the Unity editor: tabs left, transport dead
+centre, working model right.
 
-- **Toolbar**: three equal-weight columns so the transport stays centred.
-  - Left: icon tabs in two segmented tracks, in design-process order. Inputs: Board, Hand,
-    Corpus, Profile, Search. Work: Optimize, Explore, Stats, Runs. Active tab is a white
-    segment. No wordmark. The transport and progress stay on every tab.
-  - Centre: one joined transport cluster (rounded only at its outer ends, square seams):
-    a black `--ink` "Start optimization" button with a play icon (reads "Resume" while
-    paused, "Optimizing…" while running), then Pause (toggle) and End (stop now, results
-    kept) icons. Pause while paused is an `--accent` fill, the toolbar's single blue mark.
-    Disabled Start is `--muted`; disabled icons are `--faint`.
-  - Right: run status line over the 4px progress bar. Paused time does not advance it.
-- Icons: 16px, 1.4px stroke or solid glyphs, `currentColor`, in 30×22 hit targets (toolbar is 36px tall; tracks and the transport cluster are 26px)
+- **Navbar** (40px): three columns (`1fr auto 1fr`) so the transport stays centred.
+  - Left: icon tabs in two segmented tracks with small muted group labels and a hairline
+    divider: Inputs (Board, Hand, Language, Profile, Search), Results (Home, Explore,
+    Analysis, Saved). Active tab is a white segment.
+  - Centre: one joined cluster of three icon buttons: Play (`--ink` fill; resumes while
+    paused), Pause (toggle; `--accent` while paused, the navbar's single blue mark), Stop.
+    The run percent sits just right of the cluster, outside the centred group.
+  - Right: view actions (Summarize on Language, outline button), then the working model:
+    name in 650 + score in `--muted`; "No model" in `--muted`; during a run a one-line mono
+    status (`SA · 1.2M evals · best 3.41`).
+- Errors show in a bar under the navbar (error notice + Dismiss).
+- Icons: 16px, 1.4px stroke or solid glyphs, `currentColor`, in 30×22 hit targets
   (`components/Icons.tsx`). Every icon button has a `title` and `aria-label`.
-- **Input tabs** (Board, Hand, Corpus, Profile, Search): one centred column (max 560px,
-  hairlines either side, `--soft` margins) of collapsible sections. Search starts with the
-  Algorithm picker and shows only that algorithm's settings. Collapsed sections are
-  remembered per browser.
-- **Optimize**: layout (left) | 3D view over charts (centre) | result (right).
-  - Left, Layout: start layout and compare-with, the Edit box, pins, then an Inputs summary
-    (board, corpus, profile, search) whose rows open the matching tab.
-  - Centre: the 3D keyboard (on `--soft`) with view controls top-right on one row: a 3D
-    toggle (default on; off = flat top-down), then the overlay picker (Default = uncolored
-    keys, Heat, Fingers, N-grams). Below it, chart tabs as one segmented track:
-    Convergence, Metrics, Finger load, Heatmap, Worst n-grams.
-  - Right, Result: run errors (notice), the layout with its `Best` badge and score, the
-    layout string (mono, copyable), per-metric table vs reference, run results, runs list,
-    and exports (JSON, layout TOML).
-  - Side panels and the chart pane resize by dragging their hairline edge (double-click
-    resets). Below 1360px wide the side panels start narrower.
-- **Runs**: runs table (left) | selected run (right): convergence, best layouts with
-  delta vs reference (click loads one into the editor), and the run's reproducibility facts.
-- **Stats**: the current layout's score and delta, then cards (1px `--hair`,
-  `--r-md`) in a two-column grid: heatmap, metrics table, score contributions, finger load,
-  and worst n-grams full width. One column below 1100px.
-
+- **Three-panel frame** (`Form.tsx` `Frame`; every input tab and Home): sidebar (`--side`,
+  full height, title row with an optional right-aligned control, scrolling body, optional
+  footer) | main visual (`--soft`, top right) over the bottom panel (`--bottom` = 38%,
+  hairline above). Overlays on the main visual: label top-left (white chip), view controls
+  top-right (segmented on white), hints bottom-left, legends bottom-right.
+- Sidebar sections are collapsible (`Sec`, remembered per browser) or, on Profile, flat
+  sections whose focused one gets a 2px `--accent` left edge. Disabled groups (Hand off)
+  fade to 45%.
+- Cards (board cards, Home summary blocks): 1px `--hair`, `--r-md`; selected card =
+  `--accent` border + inset ring. Status labels (Language) and flags (Home) are `--soft`
+  chips with a 3px left edge in the semantic color (success = summarized / on, warning =
+  outdated, hair = off).
+- **Saved**: runs table (left) | selected run (right): convergence, best layouts as 2D
+  thumbnails with delta vs reference, reproducibility facts.
+- **Analysis**: the current layout's score and delta, then cards in a two-column grid:
+  heatmap, metrics table, score contributions, finger load, worst n-grams. One column below
+  1100px.
 - **Explore**: atlas controls (left) | linked cards in a two-column grid (centre) | picked
   layout (right). Point clouds are canvas scatters, grey by score (darker = better), best in
   ink and picked in `--accent` with a 2px surface ring; drag to brush, double-click clears,

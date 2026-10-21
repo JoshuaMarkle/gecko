@@ -62,7 +62,7 @@ export function Picked({ p, geometry, swaps, onOpen, onCopy, copied }: {
         </div>
         <div className="layoutrows">{rowsOf(p.chars, geometry).map((r) => [...r].join(" ")).join("\n")}</div>
         <div className="btns">
-          <button className="btn primary" onClick={onOpen}>Open in editor</button>
+          <button className="btn primary" onClick={onOpen}>Open in Home</button>
           <button className="btn soft small" onClick={onCopy}>{copied ? "Copied" : "Copy layout"}</button>
         </div>
       </div>

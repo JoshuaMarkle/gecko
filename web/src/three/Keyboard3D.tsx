@@ -3,9 +3,9 @@
 // Layered layouts show one layer at a time: the caller passes that layer's symbols per key and
 // `muted` keys (on the finger holding the layer key), which are dimmed and not clickable.
 
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Edges, Grid, OrbitControls, QuadraticBezierLine } from "@react-three/drei";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { Geometry, Key } from "../api";
@@ -26,10 +26,15 @@ interface Props {
   overlay: Overlay;
   mode: ViewMode;
   selected: number | null;
-  onKey: (slot: number) => void;
+  /** Clicked key (-1: background) and the click's client coordinates. */
+  onKey: (slot: number, at?: { x: number; y: number }) => void;
+  /** Changing this resets the camera and starts a slow rotation; any interaction eases it to a stop. 0 = never rotate. */
+  spin?: number;
+  /** Extra scene content in board-centred coordinates (see `boardBounds`, `place`). */
+  children?: ReactNode;
 }
 
-const CAP_H = 0.42;
+export const CAP_H = 0.42;
 /** Keycap profile: walls lean in by TAPER from base to top; plan-view corner radii at base and top. */
 const TAPER = 0.09;
 const R_BASE = 0.09;
@@ -136,8 +141,16 @@ function legend(ch: string, color: string): THREE.CanvasTexture {
   return t;
 }
 
+/** Key bounds of a geometry in board units: centre and size (the 3D scene is centred on it). */
+export function boardBounds(keys: Key[]): { cx: number; cy: number; w: number; h: number } {
+  const xs = keys.flatMap((k) => [k.pos[0], k.pos[0] + k.size[0]]);
+  const ys = keys.flatMap((k) => [k.pos[1], k.pos[1] + k.size[1]]);
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, w: x1 - x0, h: y1 - y0 };
+}
+
 /** Board-space (x right, y toward user, z up) → three (x right, y up, z toward viewer). */
-function place(k: Key, cx: number, cy: number): { p: [number, number, number]; r: [number, number, number] } {
+export function place(k: Key, cx: number, cy: number): { p: [number, number, number]; r: [number, number, number] } {
   const d = Math.PI / 180;
   return {
     p: [k.pos[0] + k.size[0] / 2 - cx, k.pos[2], k.pos[1] + k.size[1] / 2 - cy],
@@ -146,7 +159,7 @@ function place(k: Key, cx: number, cy: number): { p: [number, number, number]; r
 }
 
 function Keycap({ k, cx, cy, ch, color, text, selected, onClick }: {
-  k: Key; cx: number; cy: number; ch: string; color: string; text: string; selected: boolean; onClick: () => void;
+  k: Key; cx: number; cy: number; ch: string; color: string; text: string; selected: boolean; onClick: (at: { x: number; y: number }) => void;
 }) {
   const [hover, setHover] = useState(false);
   const { p, r } = place(k, cx, cy);
@@ -157,7 +170,7 @@ function Keycap({ k, cx, cy, ch, color, text, selected, onClick }: {
     <group position={[p[0], p[1] + CAP_H / 2 + lift, p[2]]} rotation={r}>
       <mesh
         geometry={capGeometry(w, h)}
-        onClick={(e) => { e.stopPropagation(); onClick(); }}
+        onClick={(e) => { e.stopPropagation(); onClick({ x: e.nativeEvent.clientX, y: e.nativeEvent.clientY }); }}
         onPointerOver={(e) => { e.stopPropagation(); setHover(true); document.body.style.cursor = "pointer"; }}
         onPointerOut={() => { setHover(false); document.body.style.cursor = ""; }}
       >
@@ -172,7 +185,21 @@ function Keycap({ k, cx, cy, ch, color, text, selected, onClick }: {
   );
 }
 
-function CameraRig({ mode, w, h }: { mode: ViewMode; w: number; h: number }) {
+/** Slow orbit while `on`; eases to a stop once `stop` is set. */
+function AutoRotate({ on, stop }: { on: boolean; stop: boolean }) {
+  const { controls } = useThree() as unknown as { controls: { autoRotate: boolean; autoRotateSpeed: number } | null };
+  const speed = useRef(0);
+  useEffect(() => { speed.current = on ? 0.7 : 0; }, [on]);
+  useFrame(() => {
+    if (!controls) return;
+    if (stop) speed.current = speed.current < 0.01 ? 0 : speed.current * 0.93;
+    controls.autoRotate = speed.current > 0;
+    controls.autoRotateSpeed = speed.current;
+  });
+  return null;
+}
+
+function CameraRig({ mode, w, h, reset }: { mode: ViewMode; w: number; h: number; reset: number }) {
   const { camera, controls, size } = useThree() as unknown as {
     camera: THREE.PerspectiveCamera; controls: { target: THREE.Vector3; update: () => void } | null; size: { width: number; height: number };
   };
@@ -191,18 +218,17 @@ function CameraRig({ mode, w, h }: { mode: ViewMode; w: number; h: number }) {
       controls.target.set(0, 0, 0);
       controls.update();
     }
-  }, [mode, w, h, aspect, camera, controls]);
+  }, [mode, w, h, aspect, camera, controls, reset]);
   return null;
 }
 
-export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, selected, onKey }: Props) {
+export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, selected, onKey, spin = 0, children }: Props) {
   const keys = geometry.key;
-  const bounds = useMemo(() => {
-    const xs = keys.flatMap((k) => [k.pos[0], k.pos[0] + k.size[0]]);
-    const ys = keys.flatMap((k) => [k.pos[1], k.pos[1] + k.size[1]]);
-    const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-    return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, w: x1 - x0, h: y1 - y0 };
-  }, [keys]);
+  const bounds = useMemo(() => boardBounds(keys), [keys]);
+  // Auto-rotate: a new `spin` restarts it; the first interaction stops it until the next one.
+  const [touched, setTouched] = useState(false);
+  useEffect(() => setTouched(false), [spin]);
+  const touch = () => { if (!touched) setTouched(true); };
   const caseGeo = useMemo(() => caseGeometry(bounds.w + 2 * CASE_PAD, bounds.h + 2 * CASE_PAD), [bounds.w, bounds.h]);
   useEffect(() => () => caseGeo.dispose(), [caseGeo]);
   const maxHeat = Math.max(...heat, 1e-9);
@@ -210,14 +236,16 @@ export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, 
   const slotOf = useMemo(() => new Map(sym.map((c, i) => [c, i])), [sym]);
 
   return (
-    <Canvas camera={{ fov: 32, near: 0.1, far: 200 }} dpr={[1, 2]} onPointerMissed={() => onKey(-1)}>
+    <Canvas camera={{ fov: 32, near: 0.1, far: 200 }} dpr={[1, 2]} onPointerMissed={() => onKey(-1)}
+      onPointerEnter={spin ? touch : undefined} onPointerDown={spin ? touch : undefined} onWheel={spin ? touch : undefined}>
       <color attach="background" args={["#f3f3f3"]} />
       <ambientLight intensity={1.8} />
       <directionalLight position={[3, 10, -6]} intensity={4.2} />
       <directionalLight position={[-6, 6, 4]} intensity={0.4} />
       {/* Floor grid under the case: 1u cells, 5u sections, fading out with distance. */}
       <Grid position={[0, -CASE_H - 0.001, 0]} infiniteGrid cellSize={1} sectionSize={5} cellThickness={0.6} sectionThickness={1} cellColor="#dcdcdc" sectionColor="#c4c4c4" fadeDistance={40} fadeStrength={1.5} />
-      <CameraRig mode={mode} w={bounds.w} h={bounds.h} />
+      <CameraRig mode={mode} w={bounds.w} h={bounds.h} reset={spin} />
+      {spin > 0 && <AutoRotate on={mode === "3d"} stop={touched} key={spin} />}
       <mesh geometry={caseGeo}>
         <meshStandardMaterial color="#d2d2d2" roughness={0.9} />
       </mesh>
@@ -228,7 +256,7 @@ export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, 
         const color = off ? MUTED : overlay === "heat" ? heatColor(t) : overlay === "fingers" || overlay === "ngrams" ? fingerColor(k.finger) : CAP;
         const text = overlay === "heat" ? heatText(t) : INK;
         return (
-          <Keycap key={i} k={k} cx={bounds.cx} cy={bounds.cy} ch={ch} color={color} text={text} selected={selected === i} onClick={() => onKey(i)} />
+          <Keycap key={i} k={k} cx={bounds.cx} cy={bounds.cy} ch={ch} color={color} text={text} selected={selected === i} onClick={(at) => onKey(i, at)} />
         );
       })}
       {overlay === "ngrams" && arcs.map((a, n) => {
@@ -253,6 +281,7 @@ export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, 
           />
         );
       })}
+      {children}
       <OrbitControls makeDefault enableRotate={mode === "3d"} enablePan enableDamping dampingFactor={0.12} maxPolarAngle={Math.PI / 2.05} minDistance={3} maxDistance={40} />
     </Canvas>
   );
