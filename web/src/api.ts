@@ -150,4 +150,5 @@ export const api = {
 export interface ScoreRequest { geometry: string; corpus: string; profile_override: Profile; chars: string; top?: number }
 export interface RunRequest extends ScoreRequest {
   algo: string; time_ms: number; threads: number; seed: number; pins: string; sa_steps?: number; ga_pop?: number;
+  memetic?: { ga: { pop_size: number }; local_search: "hc" | "tabu"; local_steps: number; islands: number; migration_interval: number; migrants: number };
 }

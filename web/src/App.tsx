@@ -216,6 +216,11 @@ export function App() {
       const r = await api.startRun({
         geometry: geometry.id, corpus: corpus.id, profile_override: profile, chars, algo, time_ms: search.timeS * 1000,
         threads: search.threads, seed: search.seed, pins, sa_steps: search.saSteps, ga_pop: search.gaPop,
+        memetic: search.algo === "memetic" ? {
+          ga: { pop_size: search.memeticPop ?? 24 }, local_search: search.localSearch ?? "hc",
+          local_steps: search.localSteps ?? 12, islands: search.islands ?? 0,
+          migration_interval: search.migrationInterval ?? 5, migrants: search.migrants ?? 2,
+        } : undefined,
       });
       setLive({ id: r.id, algo, progress: [], running: true, started: Date.now(), budgetMs: search.timeS * 1000, pausedAt: null, pausedMs: 0 });
       if (!explore) setTab("convergence");
