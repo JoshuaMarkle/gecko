@@ -4,7 +4,7 @@ The feature backlog in the order to build it. Source of truth: GitHub issues #1�
 
 **Picking work:** take the lowest-numbered open item whose blockers are closed. No dates: items are done one after another. Size (S/M/L) is relative effort only.
 
-When an item closes, tick it here. When scope changes, edit the issue first.
+When an item closes, tick it here. When scope changes, edit the issue first. New items use `.github/ISSUE_TEMPLATE/feature.md`; PRs follow `.github/pull_request_template.md`.
 
 ## Tracks
 
@@ -33,7 +33,7 @@ When an item closes, tick it here. When scope changes, edit the issue first.
 6. [ ] [#20](https://github.com/JoshuaMarkle/gecko/issues/20) `A6` Scorer speed: cache per-trigram cost in State · M · after [#18](https://github.com/JoshuaMarkle/gecko/issues/18)
 7. [ ] [#28](https://github.com/JoshuaMarkle/gecko/issues/28) `A7` Validate trigram classes and pair distances against external data · S
 8. [ ] [#78](https://github.com/JoshuaMarkle/gecko/issues/78) `A8` `gecko verify run:<id>` · S
-9. [ ] [#79](https://github.com/JoshuaMarkle/gecko/issues/79) `A9` Issue and PR templates for agent work · S
+9. [x] [#79](https://github.com/JoshuaMarkle/gecko/issues/79) `A9` Issue and PR templates for agent work · S
 10. [ ] [#80](https://github.com/JoshuaMarkle/gecko/issues/80) `A10` Claude Code GitHub Action · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
 11. [ ] [#81](https://github.com/JoshuaMarkle/gecko/issues/81) `A11` Release builds with the web UI embedded · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
 12. [ ] [#2](https://github.com/JoshuaMarkle/gecko/issues/2) `B1` Tabu search (robust tabu, RoTS) optimizer · M
