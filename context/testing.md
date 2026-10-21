@@ -80,8 +80,13 @@ Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI: `web/scripts/wasm-parity.mjs` tests all 10 references × all 4 profiles
 using the same web-target package loaded by the browser.
 
-Bundled splits (`tests/boards.rs`): every Corne/Sweep/Lily58/Kyria/ErgoDox/Dactyl key
-matches pinned QMK-derived KLE inputs; counts, stagger, alpha fingers, fills, reference fits,
+3D boards (`tests/three_d.rs`): `rot` Euler round trip and axes; the Dactyl's poses equal the
+parametric keywell fixture (an independent formulation of the same math); 18.4 mm between
+neighbouring keycap tops in every column, tent direction, mirror symmetry; tenting Corne
+changes no metric; Dactyl delta == full. Web: tilted keys are pressed along their normal.
+
+Bundled splits (`tests/boards.rs`): every flat split's key (Corne/Sweep/Lily58/Kyria/ErgoDox)
+matches pinned QMK-derived KLE inputs (the 3D Dactyl keeps their slots only); counts, stagger, alpha fingers, fills, reference fits,
 TOML round-trips, and all-symbol score deltas (including ErgoDox above 64 slots) are checked.
 
 Integration coverage: corpus extension and adaptive-key rewriting retain Shift counts; tabu

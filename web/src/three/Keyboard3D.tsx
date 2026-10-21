@@ -166,6 +166,14 @@ export function place(k: Key, cx: number, cy: number): { p: [number, number, num
   };
 }
 
+/** Centre of a keycap's top surface (where the fingertip presses) and its unit normal, in scene coordinates. */
+export function keyTop(k: Key, cx: number, cy: number): { p: [number, number, number]; n: [number, number, number] } {
+  const { p, r } = place(k, cx, cy);
+  const n = new THREE.Vector3(0, 1, 0).applyEuler(new THREE.Euler(r[0], r[1], r[2]));
+  const h = CAP_H / 2;
+  return { p: [p[0] + n.x * h, p[1] + h + n.y * h, p[2] + n.z * h], n: [n.x, n.y, n.z] };
+}
+
 function Keycap({ k, cx, cy, ch, color, text, selected, onClick, bind }: {
   k: Key; cx: number; cy: number; ch: string; color: string; text: string; selected: boolean; onClick: (at: { x: number; y: number }) => void;
   bind?: (g: THREE.Group | null) => void;
@@ -175,8 +183,10 @@ function Keycap({ k, cx, cy, ch, color, text, selected, onClick, bind }: {
   const w = k.size[0] - 0.08;
   const h = k.size[1] - 0.08;
   const lift = selected ? 0.12 : hover ? 0.04 : 0;
+  const n = keyTop(k, cx, cy).n;
+  const rest = [p[0] + n[0] * lift, p[1] + CAP_H / 2 + n[1] * lift, p[2] + n[2] * lift];
   return (
-    <group ref={bind} position={[p[0], p[1] + CAP_H / 2 + lift, p[2]]} rotation={r} userData={{ y: p[1] + CAP_H / 2 + lift, color }}>
+    <group ref={bind} position={rest as [number, number, number]} rotation={r} userData={{ rest, n, color }}>
       <mesh
         geometry={capGeometry(w, h)}
         onClick={(e) => { e.stopPropagation(); onClick({ x: e.nativeEvent.clientX, y: e.nativeEvent.clientY }); }}
@@ -195,7 +205,7 @@ function Keycap({ k, cx, cy, ch, color, text, selected, onClick, bind }: {
 }
 
 /**
- * Pressed keys: each frame, keys with a press state sink by its depth and turn PRESSED; keys
+ * Pressed keys: each frame, keys with a press state sink along their axis by its depth and turn PRESSED; keys
  * that come back up return to their rest height and color (kept in the group's userData).
  */
 function PressAnimator({ pressed, groups }: { pressed: MutableRefObject<Float32Array>; groups: MutableRefObject<(THREE.Group | null)[]> }) {
@@ -207,7 +217,10 @@ function PressAnimator({ pressed, groups }: { pressed: MutableRefObject<Float32A
       const a = amt[i] ?? 0;
       if (a <= 0 && !down.current[i]) return;
       const mat = (g.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial;
-      g.position.y = g.userData.y - a * KEY_TRAVEL / 19.05;
+      // Sink along the key's own axis (tilted keys on 3D boards).
+      const { rest, n } = g.userData as { rest: number[]; n: number[] };
+      const d = a * KEY_TRAVEL / 19.05;
+      g.position.set(rest[0] - n[0] * d, rest[1] - n[1] * d, rest[2] - n[2] * d);
       mat.color.set(a > 0 ? PRESSED : g.userData.color);
       down.current[i] = a > 0;
     });

@@ -1,4 +1,5 @@
-//! Parametric flat boards: mirrored zones, column stagger/splay, and thumb arcs.
+//! Parametric boards: mirrored zones, column stagger/splay, thumb arcs, and optional 3D
+//! shape (Dactyl-style row/column curvature, column lift, tent, tilt).
 //! Coordinates are generated as key centers, then converted to GECKO's top-left poses.
 //! See `context/geometry.md` for the transform order and `.param.toml` format.
 
@@ -6,6 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
+use crate::pose;
 use crate::{Error, Finger, Geometry, Hand, Key, Result};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -35,6 +37,21 @@ pub struct Split {
     /// Left-hand pivot in board coordinates; mirrored for the right hand.
     #[serde(default)]
     pub pivot: [f64; 2],
+    /// Degrees; raises each half's inner edge (left half about +y through `pivot`).
+    #[serde(default)]
+    pub tent: f64,
+    /// Degrees; positive raises the far (top-row) edge, negative is the "negative slope".
+    #[serde(default)]
+    pub tilt: f64,
+    /// Height added to both halves, in u.
+    #[serde(default)]
+    pub lift: f64,
+}
+
+impl Split {
+    fn is_3d(&self) -> bool {
+        self.tent != 0.0 || self.tilt != 0.0 || self.lift != 0.0
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -62,7 +79,38 @@ pub struct Zone {
     /// Bend the column baseline around a circle, with arc length equal to spread.
     /// Absent = straight; negative radius bends away from the user.
     pub arc_radius: Option<f64>,
+    /// Degrees between successive rows: rows sit on an arc through the home row, with the
+    /// keycap tops `row_pitch` apart (a concave column, Dactyl's α). 0 = flat.
+    #[serde(default)]
+    pub row_curve: f64,
+    /// Degrees between successive columns: columns sit on an arc with their keycap tops
+    /// `spread` apart (Dactyl's β). Not combined with `arc_radius`. 0 = flat.
+    #[serde(default)]
+    pub col_curve: f64,
+    /// Column index (may be fractional) left level by `col_curve`.
+    #[serde(default)]
+    pub center_col: f64,
+    /// Degrees about the anchor, after `rotate`: raise the zone's +x side.
+    #[serde(default)]
+    pub tent: f64,
+    /// Degrees about the anchor, after `tent`: raise the zone's far edge.
+    #[serde(default)]
+    pub tilt: f64,
+    /// Height of the anchor, in u.
+    #[serde(default)]
+    pub lift: f64,
     pub column: Vec<Column>,
+}
+
+impl Zone {
+    fn is_3d(&self) -> bool {
+        self.row_curve != 0.0
+            || self.col_curve != 0.0
+            || self.tent != 0.0
+            || self.tilt != 0.0
+            || self.lift != 0.0
+            || self.column.iter().any(|c| c.lift != 0.0)
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -77,6 +125,9 @@ pub struct Column {
     /// Degrees about this column's home-row key center.
     #[serde(default)]
     pub splay: f64,
+    /// Height of this column, in u (Dactyl's per-column z offset).
+    #[serde(default)]
+    pub lift: f64,
     #[serde(default = "unit_size")]
     pub size: [f64; 2],
     #[serde(default)]
@@ -114,6 +165,33 @@ fn narrow(value: f64) -> Result<f32> {
     // Mirroring zero must not change a geometry's content hash to a -0 representation.
     Ok(if value == 0.0 { 0.0 } else { value })
 }
+/// Per column: (baseline x, height) of its home keycap top on the `col_curve` arc. Successive
+/// columns are `spread` apart along chords whose direction bisects the two columns' tilts, so
+/// equal spreads lie exactly on a circle (Dactyl's column radius). Flat zones: (distance, 0).
+fn column_curve(zone: &Zone) -> Vec<(f64, f64)> {
+    let tilt = |i: usize| (zone.col_curve * (i as f64 - zone.center_col)).to_radians();
+    let mut out = vec![(0.0, 0.0)];
+    for i in 1..zone.column.len() {
+        let (x, z) = out[i - 1];
+        let mid = (tilt(i - 1) + tilt(i)) / 2.0;
+        let s = zone.column[i].spread;
+        out.push(if zone.col_curve == 0.0 { (x + s, 0.0) } else { (x + s * mid.cos(), z + s * mid.sin()) });
+    }
+    out
+}
+
+/// A key `k` rows from home (signed, + toward the user) on the `row_curve` arc: offset of its
+/// keycap top from the home key's, and its tilt in degrees. Adjacent tops are `row_pitch` apart.
+fn row_offset(zone: &Zone, k: f64) -> ([f64; 3], f64) {
+    if zone.row_curve == 0.0 {
+        return ([0.0, k * zone.row_pitch, 0.0], 0.0);
+    }
+    let r = zone.row_pitch / (2.0 * (zone.row_curve.to_radians() / 2.0).sin());
+    let theta = k * zone.row_curve;
+    let (s, c) = theta.to_radians().sin_cos();
+    ([0.0, r * s, r * (1.0 - c)], theta)
+}
+
 fn mirrored(finger: Finger) -> Finger {
     Finger::ALL[9 - finger.index()]
 }
@@ -130,7 +208,10 @@ impl ParametricGeometry {
             return Err(invalid("no zones"));
         }
         if let Some(split) = &self.split {
-            if [split.axis, split.spread, split.angle, split.pivot[0], split.pivot[1]].iter().any(|v| !v.is_finite()) {
+            if [split.axis, split.spread, split.angle, split.pivot[0], split.pivot[1], split.tent, split.tilt, split.lift]
+                .iter()
+                .any(|v| !v.is_finite())
+            {
                 return Err(invalid("split parameters must be finite"));
             }
         }
@@ -161,8 +242,19 @@ impl ParametricGeometry {
             if zone.arc_radius.is_some_and(|r| !r.is_finite() || r == 0.0) {
                 return Err(bad("arc_radius must be finite and nonzero (omit it for a straight zone)"));
             }
+            if [zone.row_curve, zone.col_curve, zone.center_col, zone.tent, zone.tilt, zone.lift].iter().any(|v| !v.is_finite())
+                || zone.row_curve.abs() >= 60.0
+                || zone.col_curve.abs() >= 60.0
+            {
+                return Err(bad("3D parameters must be finite; curvatures below 60° per step"));
+            }
+            if zone.col_curve != 0.0 && zone.arc_radius.is_some() {
+                return Err(bad("col_curve and arc_radius cannot be combined"));
+            }
             for (i, column) in zone.column.iter().enumerate() {
-                if [column.spread, column.stagger, column.splay].iter().any(|v| !v.is_finite()) || (i > 0 && column.spread <= 0.0) {
+                if [column.spread, column.stagger, column.splay, column.lift].iter().any(|v| !v.is_finite())
+                    || (i > 0 && column.spread <= 0.0)
+                {
                     return Err(bad("column spread must be positive; spread/stagger/splay must be finite"));
                 }
                 if column.size.iter().any(|v| !v.is_finite() || (*v as f32) <= 0.0 || *v > f32::MAX as f64) {
@@ -189,6 +281,9 @@ impl ParametricGeometry {
         let mut keys = Vec::new();
         for zone in &self.zone {
             let home = zone.rows.iter().position(|row| *row == zone.home_row).unwrap_or(0) as f64;
+            let split = if zone.mirror { self.split.as_ref() } else { None };
+            let three_d = zone.is_3d() || split.is_some_and(Split::is_3d);
+            let lifts = column_curve(zone);
             let mut distance = 0.0;
             for (ci, column) in zone.column.iter().enumerate() {
                 if ci > 0 {
@@ -197,6 +292,8 @@ impl ParametricGeometry {
                 let (base, tangent) = if let Some(radius) = zone.arc_radius {
                     let angle = distance / radius;
                     ([radius * angle.sin(), radius * (1.0 - angle.cos())], angle.to_degrees())
+                } else if zone.col_curve != 0.0 {
+                    ([lifts[ci].0, 0.0], 0.0)
                 } else {
                     ([distance, 0.0], 0.0)
                 };
@@ -205,21 +302,59 @@ impl ParametricGeometry {
                     let local = add(column_home, rotate([0.0, (ri as f64 - home) * zone.row_pitch], tangent + column.splay));
                     let center = add(zone.anchor, rotate(local, zone.rotate));
                     let rotation = tangent + column.splay + zone.rotate;
-                    for right in [false, true].into_iter().take(if zone.mirror { 2 } else { 1 }) {
-                        let (mut center, mut rotation) = (center, rotation);
-                        if zone.mirror {
-                            let split = self.split.as_ref().expect("validated mirrored zone");
-                            center = add(split.pivot, rotate([center[0] - split.pivot[0], center[1] - split.pivot[1]], -split.angle / 2.0));
-                            rotation -= split.angle / 2.0;
-                            if right {
-                                center[0] = 2.0 * split.axis + split.spread - center[0];
-                                rotation = -rotation;
-                            }
+                    // 3D boards: the keycap top centre and orientation (see `pose`).
+                    let pose3 = three_d.then(|| {
+                        let q =
+                            pose::mul(&pose::rot_z(tangent + column.splay), &pose::rot_y(zone.col_curve * (ci as f64 - zone.center_col)));
+                        let (offset, theta) = row_offset(zone, ri as f64 - home);
+                        let home3 = [column_home[0], column_home[1], lifts[ci].1 + column.lift];
+                        let local = pose::add(home3, pose::apply(&q, offset));
+                        let z = pose::mul(&pose::mul(&pose::rot_x(zone.tilt), &pose::rot_y(zone.tent)), &pose::rot_z(zone.rotate));
+                        let mut top = pose::add([zone.anchor[0], zone.anchor[1], pose::CAP_HEIGHT + zone.lift], pose::apply(&z, local));
+                        let mut m = pose::mul(&z, &pose::mul(&q, &pose::rot_x(-theta)));
+                        if let Some(split) = split {
+                            let pivot = [split.pivot[0], split.pivot[1], pose::CAP_HEIGHT];
+                            let s =
+                                pose::mul(&pose::mul(&pose::rot_x(split.tilt), &pose::rot_y(split.tent)), &pose::rot_z(-split.angle / 2.0));
+                            top = pose::add(
+                                pose::add(pivot, pose::apply(&s, [top[0] - pivot[0], top[1] - pivot[1], top[2] - pivot[2]])),
+                                [0.0, 0.0, split.lift],
+                            );
+                            m = pose::mul(&s, &m);
                         }
+                        (top, m)
+                    });
+                    for right in [false, true].into_iter().take(if zone.mirror { 2 } else { 1 }) {
+                        let (pos, rot) = if let Some((top, m)) = pose3 {
+                            let mut pos = pose::pos_from_contact(top, &m, column.size);
+                            let mut rot = pose::euler(&m);
+                            if right {
+                                let split = split.expect("validated mirrored zone");
+                                // Mirror the key centre, then return to the top-left convention.
+                                pos[0] = 2.0 * split.axis + split.spread - pos[0] - column.size[0];
+                                rot = pose::mirror_rot(rot);
+                            }
+                            ([narrow(pos[0])?, narrow(pos[1])?, narrow(pos[2])?], [narrow(rot[0])?, narrow(rot[1])?, narrow(rot[2])?])
+                        } else {
+                            let (mut center, mut rotation) = (center, rotation);
+                            if let Some(split) = split {
+                                center =
+                                    add(split.pivot, rotate([center[0] - split.pivot[0], center[1] - split.pivot[1]], -split.angle / 2.0));
+                                rotation -= split.angle / 2.0;
+                                if right {
+                                    center[0] = 2.0 * split.axis + split.spread - center[0];
+                                    rotation = -rotation;
+                                }
+                            }
+                            (
+                                [narrow(center[0] - column.size[0] / 2.0)?, narrow(center[1] - column.size[1] / 2.0)?, 0.0],
+                                [0.0, 0.0, narrow(rotation)?],
+                            )
+                        };
                         let col = if right { 2 * zone.column.len() - 1 - ci } else { ci };
                         keys.push(Key {
-                            pos: [narrow(center[0] - column.size[0] / 2.0)?, narrow(center[1] - column.size[1] / 2.0)?, 0.0],
-                            rot: [0.0, 0.0, narrow(rotation)?],
+                            pos,
+                            rot,
                             size: [narrow(column.size[0])?, narrow(column.size[1])?],
                             finger: if right { mirrored(column.finger) } else { column.finger },
                             row,

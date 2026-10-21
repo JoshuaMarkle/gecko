@@ -34,7 +34,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 7. [x] [#28](https://github.com/JoshuaMarkle/gecko/issues/28) `A7` Validate trigram classes and pair distances against external data · S
 8. [x] [#78](https://github.com/JoshuaMarkle/gecko/issues/78) `A8` `gecko verify run:<id>` · S
 9. [x] [#79](https://github.com/JoshuaMarkle/gecko/issues/79) `A9` Issue and PR templates for agent work · S
-10. [ ] [#80](https://github.com/JoshuaMarkle/gecko/issues/80) `A10` Claude Code GitHub Action · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
+10. [x] [#80](https://github.com/JoshuaMarkle/gecko/issues/80) `A10` Claude Code GitHub Action · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
 11. [x] [#81](https://github.com/JoshuaMarkle/gecko/issues/81) `A11` Release builds with the web UI embedded · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
 12. [x] [#2](https://github.com/JoshuaMarkle/gecko/issues/2) `B1` Tabu search (robust tabu, RoTS) optimizer · M
 13. [x] [#3](https://github.com/JoshuaMarkle/gecko/issues/3) `C1` B11 finger-pair movement table · M
@@ -50,7 +50,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 23. [x] [#13](https://github.com/JoshuaMarkle/gecko/issues/13) `B3` Memetic algorithm (GA + local search, islands) · M · after [#8](https://github.com/JoshuaMarkle/gecko/issues/8)
 24. [x] [#14](https://github.com/JoshuaMarkle/gecko/issues/14) `C3` Asymmetric row costs per finger · S
 25. [x] [#15](https://github.com/JoshuaMarkle/gecko/issues/15) `E3` Chat and multilingual corpora · S
-26. [ ] [#84](https://github.com/JoshuaMarkle/gecko/issues/84) `L2` Board tab: board catalog, current board, start layout · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82), [#11](https://github.com/JoshuaMarkle/gecko/issues/11)
+26. [x] [#84](https://github.com/JoshuaMarkle/gecko/issues/84) `L2` Board tab: board catalog, current board, start layout · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82), [#11](https://github.com/JoshuaMarkle/gecko/issues/11)
 27. [x] [#17](https://github.com/JoshuaMarkle/gecko/issues/17) `C4` Remaining P1/P2 metrics · M
 28. [x] [#85](https://github.com/JoshuaMarkle/gecko/issues/85) `E4` Import layouts from Oxeylyzer, genkey and cmini formats · S
 29. [x] [#19](https://github.com/JoshuaMarkle/gecko/issues/19) `D3` Y03 paired symbol placement · S
@@ -63,7 +63,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 36. [x] [#25](https://github.com/JoshuaMarkle/gecko/issues/25) `G1` Parametric 2D geometry model · M · after [#3](https://github.com/JoshuaMarkle/gecko/issues/3), [#17](https://github.com/JoshuaMarkle/gecko/issues/17)
 37. [x] [#26](https://github.com/JoshuaMarkle/gecko/issues/26) `C6` cmini community layout importer + ranking tests · M
 38. [x] [#27](https://github.com/JoshuaMarkle/gecko/issues/27) `D6` Count the layer key's own keystroke in effort and finger load · S
-39. [ ] [#88](https://github.com/JoshuaMarkle/gecko/issues/88) `L4` Corpus tab: stats and sample text · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82)
+39. [x] [#88](https://github.com/JoshuaMarkle/gecko/issues/88) `L4` Corpus tab: stats and sample text · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82)
 40. [x] [#29](https://github.com/JoshuaMarkle/gecko/issues/29) `B5` MAP-Elites quality-diversity archive · M
 41. [x] [#30](https://github.com/JoshuaMarkle/gecko/issues/30) `D7` Number and navigation layer optimization · S
 42. [ ] [#31](https://github.com/JoshuaMarkle/gecko/issues/31) `K1` E01 IKI timing model from the 136M keystrokes data · L · after [#20](https://github.com/JoshuaMarkle/gecko/issues/20)
@@ -79,11 +79,11 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 52. [ ] [#91](https://github.com/JoshuaMarkle/gecko/issues/91) `D9` Combos and chords · M · after [#10](https://github.com/JoshuaMarkle/gecko/issues/10)
 53. [ ] [#39](https://github.com/JoshuaMarkle/gecko/issues/39) `G3` G04 2D collision (OBB, SAT) · S
 54. [ ] [#40](https://github.com/JoshuaMarkle/gecko/issues/40) `H3` Finger IK with joint limits · L · after [#33](https://github.com/JoshuaMarkle/gecko/issues/33)
-55. [ ] [#92](https://github.com/JoshuaMarkle/gecko/issues/92) `L7` Hand tab: hand parameters with live skeleton · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82), [#33](https://github.com/JoshuaMarkle/gecko/issues/33)
+55. [x] [#92](https://github.com/JoshuaMarkle/gecko/issues/92) `L7` Hand tab: hand parameters with live skeleton · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82), [#33](https://github.com/JoshuaMarkle/gecko/issues/33)
 56. [x] [#41](https://github.com/JoshuaMarkle/gecko/issues/41) `C8` L01 shortcut placement and L02 familiarity · S
 57. [ ] [#42](https://github.com/JoshuaMarkle/gecko/issues/42) `G4` Geometry-driven costs: G02 travel + 2D reach proxy · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
 58. [ ] [#93](https://github.com/JoshuaMarkle/gecko/issues/93) `L3` Board tab: Unity-style key editing · M · after [#84](https://github.com/JoshuaMarkle/gecko/issues/84), [#39](https://github.com/JoshuaMarkle/gecko/issues/39)
-59. [ ] [#94](https://github.com/JoshuaMarkle/gecko/issues/94) `L6` Search tab: algorithm and budget settings · S · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82)
+59. [x] [#94](https://github.com/JoshuaMarkle/gecko/issues/94) `L6` Search tab: algorithm and budget settings · S · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82)
 60. [ ] [#43](https://github.com/JoshuaMarkle/gecko/issues/43) `B7` MIP oracle for sub-problems (HiGHS / CP-SAT) · L · after [#37](https://github.com/JoshuaMarkle/gecko/issues/37)
 61. [ ] [#44](https://github.com/JoshuaMarkle/gecko/issues/44) `C9` L06 held-out corpus generalization · S
 62. [ ] [#45](https://github.com/JoshuaMarkle/gecko/issues/45) `F2` Web: bench views · M
@@ -116,7 +116,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 89. [ ] [#101](https://github.com/JoshuaMarkle/gecko/issues/101) `G10` Switch type: MX vs Choc · S · after [#39](https://github.com/JoshuaMarkle/gecko/issues/39)
 90. [ ] [#68](https://github.com/JoshuaMarkle/gecko/issues/68) `H9` Web: posed hand in the 3D viewer · M · after [#40](https://github.com/JoshuaMarkle/gecko/issues/40)
 91. [ ] [#69](https://github.com/JoshuaMarkle/gecko/issues/69) `H10` 3D bilevel search · M · after [#59](https://github.com/JoshuaMarkle/gecko/issues/59), [#63](https://github.com/JoshuaMarkle/gecko/issues/63), [#66](https://github.com/JoshuaMarkle/gecko/issues/66), [#54](https://github.com/JoshuaMarkle/gecko/issues/54)
-92. [ ] [#102](https://github.com/JoshuaMarkle/gecko/issues/102) `L8` Typing simulation tab · L · after [#92](https://github.com/JoshuaMarkle/gecko/issues/92), [#40](https://github.com/JoshuaMarkle/gecko/issues/40), [#68](https://github.com/JoshuaMarkle/gecko/issues/68)
+92. [x] [#102](https://github.com/JoshuaMarkle/gecko/issues/102) `L8` Typing simulation tab · L · after [#92](https://github.com/JoshuaMarkle/gecko/issues/92), [#40](https://github.com/JoshuaMarkle/gecko/issues/40), [#68](https://github.com/JoshuaMarkle/gecko/issues/68)
 93. [ ] [#103](https://github.com/JoshuaMarkle/gecko/issues/103) `H11` Optimize for a range of hand sizes · M · after [#69](https://github.com/JoshuaMarkle/gecko/issues/69)
 94. [ ] [#70](https://github.com/JoshuaMarkle/gecko/issues/70) `I1` Free-form per-key 6-DoF poses · L · after [#69](https://github.com/JoshuaMarkle/gecko/issues/69)
 95. [ ] [#71](https://github.com/JoshuaMarkle/gecko/issues/71) `I2` Thumb cluster optimization (G06) · M · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52)

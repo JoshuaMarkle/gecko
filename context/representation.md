@@ -16,7 +16,9 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   `sweep-34` (3x5+2), `lily58` (58), `kyria` (50), `ergodox` (76), and
   `dactyl-manuform-5x6` (64). Split boards use pinned QMK flat configurator projections;
   source KLE, provenance and limitations: `data/geometries/sources/README.md`. Corne/Sweep
-  stagger now matches those inputs. Dactyl is a flat projection, without bowl curvature or tenting.
+  stagger now matches those inputs. Dactyl is 3D: its slots follow QMK, its poses come from
+  the Dactyl-Manuform generator's math (`sources/dactyl_manuform.py`): concave keywell,
+  15° tent, six-key thumb fan.
 - Thumb keys use fingers `LT`/`RT` on row 3 (larger boards also have filled auxiliary keys
   on that row; number rows are -1). Optional `fill` per key (token
   name or one char): what the key gets when a layout lists only the keys without a fill, so
@@ -35,7 +37,9 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   the default/code profiles make the top row cheaper for middle/ring and the bottom row
   cheaper for index (KLO's key-cost asymmetry), on any geometry. M01 uses `effort + offset`.
 - Positions are always 3D. Flat boards use z = 0 and only z-rotation. `pos` is the
-  unrotated top-left corner; rotation is about the key center (as the 3D viewer draws it).
+  unrotated top-left corner at the bottom of the keycap; rotation is about the keycap's
+  centre (as the 3D viewer draws it). `rot` convention, keycap top / normal and the points
+  metrics measure between on 3D boards: [geometry.md](geometry.md#3d-shape) (`gecko_core::pose`).
 - 2D drawing: `Geometry::flat2d()` (`flat2d.rs`) gives `{pos: [x, y], rot}` per key. Flat
   boards return their own x, y, rot z. Others: key centers projected onto the best-fit (PCA)
   plane — per hand when the halves' planes differ by > 5° (tented splits) — keeping each half's

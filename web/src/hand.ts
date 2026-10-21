@@ -368,8 +368,12 @@ export function poseHand(side: Side, pl: Placement, targets: Record<FingerName, 
 
 // ---------- typing ----------
 
-/** One keystroke: which finger presses where (world), the character typed, and the board key (none: a virtual key, e.g. a space bar the board lacks). */
-export interface Stroke { side: Side; finger: FingerName; pos: V3; ch: string; key?: number }
+/**
+ * One keystroke: which finger presses where (world, the keycap top), the character typed, the
+ * board key (none: a virtual key, e.g. a space bar the board lacks) and the keycap's normal
+ * (default straight up; tilted on 3D boards), along which the fingertip presses.
+ */
+export interface Stroke { side: Side; finger: FingerName; pos: V3; ch: string; key?: number; n?: V3 }
 
 /** Why a press could not come sooner: the rhythm (target speed), the same finger still busy, or the previous press not yet released (serial motion). */
 export type Limit = "rhythm" | "finger" | "serial";
@@ -600,7 +604,8 @@ export function fingerAt(list: Press[] | undefined, home: V3, t: number, u: numb
     if (t < pr.arrive) return { pos: pr.pos, state: "ready" };
     if (t < pr.up) {
       const dip = KEY_TRAVEL * u * pressDepth(pr, t);
-      return { pos: [pr.pos[0], pr.pos[1] - dip, pr.pos[2]], state: "press" };
+      const n = pr.n ?? [0, 1, 0];
+      return { pos: [pr.pos[0] - n[0] * dip, pr.pos[1] - n[1] * dip, pr.pos[2] - n[2] * dip], state: "press" };
     }
     if (Number.isFinite(pr.back)) {
       if (t < pr.back) return { pos: travel(pr.pos, home, (t - pr.up) / Math.max(pr.back - pr.up, 1e-6), u), state: "move" };

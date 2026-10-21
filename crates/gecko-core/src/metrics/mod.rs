@@ -279,6 +279,8 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
         Some(t)
     };
     let k = &g.key;
+    // Fingertip targets (3D boards: keycap tops in each hand's frame; flat boards: `pos`).
+    let pts = g.metric_points();
     // Layer copies of a key are the same physical key: no finger movement between them.
     let same_finger = |i: usize, j: usize| !g.same_key(i, j) && k[i].finger == k[j].finger;
     let same_hand = |i: usize, j: usize| k[i].hand() == k[j].hand();
@@ -296,8 +298,8 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
         "M06" => mono(&|i| pct(k[i].stretch)),
         "B01" | "S01" | "S02" => pair(&|i, j| pct(same_finger(i, j))),
         "B02" => pair(&|i, j| pct(g.same_key(i, j))),
-        "B03" | "S03" => pair(&|i, j| if same_finger(i, j) { 100.0 * finger_speed(g, &p.sfb, i, j) } else { 0.0 }),
-        "B14" | "S04" => pair(&|i, j| 100.0 * stretch(g, i, j)),
+        "B03" | "S03" => pair(&|i, j| if same_finger(i, j) { 100.0 * finger_speed_at(g, &pts, &p.sfb, i, j) } else { 0.0 }),
+        "B14" | "S04" => pair(&|i, j| 100.0 * stretch_at(g, &pts, i, j)),
         "B11" => pair(&|i, j| 100.0 * movement(g, i, j)),
         "E04" | "E05" => {
             let c = g.comfort_tables.get(d.id)?;
@@ -314,14 +316,14 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
         "B10" => pair(&|i, j| {
             let sh = same_hand(i, j) && !g.same_key(i, j) && !k[i].finger.is_thumb() && !k[j].finger.is_thumb();
             if sh {
-                100.0 * (k[i].pos[1] - k[j].pos[1]).abs()
+                100.0 * (pts[i][1] - pts[j][1]).abs()
             } else {
                 0.0
             }
         }),
-        "S05" => pair(&|i, j| 100.0 * stretch(g, i, j)),
+        "S05" => pair(&|i, j| 100.0 * stretch_at(g, &pts, i, j)),
         "T09" => {
-            let st: Vec<f32> = (0..n * n).map(|ij| stretch(g, ij / n, ij % n)).collect();
+            let st: Vec<f32> = (0..n * n).map(|ij| stretch_at(g, &pts, ij / n, ij % n)).collect();
             tri(g, &|i, j, l| {
                 let (s1, s2) = (st[i * n + j], st[j * n + l]);
                 if s1 > 0.0 && s2 > 0.0 {
@@ -341,7 +343,7 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
             let oneshot = k[i].layer != 0 && layer_mode(g, k[i].layer as usize) == LayerMode::Oneshot;
             pct(same_finger(i, j) || k[i].layer != k[j].layer || oneshot)
         }),
-        "Y03" => pair(&|i, j| bracket_cost(g, i, j)),
+        "Y03" => pair(&|i, j| bracket_cost_at(g, &pts, i, j)),
         // The mod key is still down when another finger of its hand presses: a fast roll that
         // a tap-hold resolver can read as a hold. Same-finger pairs release first.
         "Y04" => pair(&|i, j| pct(g.hrm(i) && same_hand(i, j) && k[i].finger != k[j].finger)),
@@ -431,6 +433,11 @@ pub fn bad_bigram(g: &Geometry, i: usize, j: usize) -> bool {
 /// mirrored (same row, finger and column kind on opposite hands, opener on the left hand);
 /// 50 for the same shapes in reversed order; 100 otherwise.
 pub fn bracket_cost(g: &Geometry, i: usize, j: usize) -> f32 {
+    bracket_cost_at(g, &g.metric_points(), i, j)
+}
+
+/// [`bracket_cost`] with precomputed [`Geometry::metric_points`].
+pub fn bracket_cost_at(g: &Geometry, pts: &[[f32; 3]], i: usize, j: usize) -> f32 {
     let (a, b) = (&g.key[i], &g.key[j]);
     if a.layer != b.layer || g.same_key(i, j) || a.row != b.row {
         return 100.0;
@@ -440,7 +447,7 @@ pub fn bracket_cost(g: &Geometry, i: usize, j: usize) -> f32 {
     if !adjacent && !mirrored {
         return 100.0;
     }
-    let in_order = if adjacent { a.pos[0] < b.pos[0] } else { a.hand() == Hand::L };
+    let in_order = if adjacent { pts[i][0] < pts[j][0] } else { a.hand() == Hand::L };
     if in_order {
         0.0
     } else {
@@ -450,7 +457,12 @@ pub fn bracket_cost(g: &Geometry, i: usize, j: usize) -> f32 {
 
 /// Same-finger movement cost `g(d) · finger_factor` for slots `i`, `j` (B03, S03).
 pub fn finger_speed(g: &Geometry, s: &SfbParams, i: usize, j: usize) -> f32 {
-    let (a, b) = (g.key[i].pos, g.key[j].pos);
+    finger_speed_at(g, &g.metric_points(), s, i, j)
+}
+
+/// [`finger_speed`] with precomputed [`Geometry::metric_points`].
+pub fn finger_speed_at(g: &Geometry, pts: &[[f32; 3]], s: &SfbParams, i: usize, j: usize) -> f32 {
+    let (a, b) = (pts[i], pts[j]);
     let (dx, dy, dz) = (s.lateral * (a[0] - b[0]), a[1] - b[1], a[2] - b[2]);
     let d = (dx * dx + dy * dy + dz * dz).sqrt();
     let gd = match s.distance {
@@ -467,13 +479,18 @@ pub fn finger_speed(g: &Geometry, s: &SfbParams, i: usize, j: usize) -> f32 {
 /// to the wrong side of its neighbour counts as a crossing. Positive only beyond the
 /// `1.35 u` per finger of spread a relaxed hand covers.
 pub fn stretch(g: &Geometry, i: usize, j: usize) -> f32 {
+    stretch_at(g, &g.metric_points(), i, j)
+}
+
+/// [`stretch`] with precomputed [`Geometry::metric_points`] (in-plane x and y; height ignored).
+pub fn stretch_at(g: &Geometry, pts: &[[f32; 3]], i: usize, j: usize) -> f32 {
     let (a, b) = (&g.key[i], &g.key[j]);
     if a.finger == b.finger || a.hand() != b.hand() {
         return 0.0;
     }
     let (fa, fb) = (a.finger.index(), b.finger.index());
-    let (xa, xb) = (a.pos[0], b.pos[0]);
-    let (ya, yb) = (a.pos[1] + a.finger.length_offset(), b.pos[1] + b.finger.length_offset());
+    let (xa, xb) = (pts[i][0], pts[j][0]);
+    let (ya, yb) = (pts[i][1] + a.finger.length_offset(), pts[j][1] + b.finger.length_offset());
     let dx = (xa - xb).abs();
     let dy = (ya - yb).abs();
     let xo = finger_overlap(a.finger.ord(), b.finger.ord());

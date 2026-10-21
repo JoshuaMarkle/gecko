@@ -70,11 +70,18 @@ fn tiny() -> ParametricGeometry {
             home_stretch: false,
             col_start: 0,
             arc_radius: None,
+            row_curve: 0.0,
+            col_curve: 0.0,
+            center_col: 0.0,
+            tent: 0.0,
+            tilt: 0.0,
+            lift: 0.0,
             column: vec![Column {
                 finger: Finger::LP,
                 spread: 1.0,
                 stagger: 0.0,
                 splay: 0.0,
+                lift: 0.0,
                 size: [1.0, 1.0],
                 stretch: false,
                 effort: vec![1.0; 3],
@@ -105,7 +112,7 @@ fn stagger_and_column_splay_rotate_around_the_home_key() {
 fn split_angle_pivot_and_spread_mirror_centers_and_fingers() {
     let mut p = tiny();
     p.zone[0].mirror = true;
-    p.split = Some(Split { axis: 2.0, spread: 1.0, angle: 90.0, pivot: [0.5, 1.5] });
+    p.split = Some(Split { axis: 2.0, spread: 1.0, angle: 90.0, pivot: [0.5, 1.5], tent: 0.0, tilt: 0.0, lift: 0.0 });
     let g = p.generate().unwrap();
     assert_eq!(g.row_lengths(), [2, 2, 2]);
     // Top center rotates -45° about the home center, then the right hand reflects
