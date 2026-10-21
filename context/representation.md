@@ -21,7 +21,23 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   served with the geometry so the WASM scorer has them. ansi-30: E04 Engram formula, E05 fitted
   from Engram's raw choices (`research/scripts/fit_engram_bt.py`).
 - Positions are always 3D. Flat boards use z = 0 and only z-rotation.
-- KLE JSON importer for any existing board (planned).
+- KLE import (`gecko geometry import-kle`, `gecko_core::kle`): the downloaded JSON or the
+  editor's raw data. Position, size and z-rotation (`r` about `rx, ry`; GECKO `pos` is the
+  top-left of the unrotated key, rotated about its center) are exact; decals are skipped, ISO
+  Enter's second rectangle ignored. The rest is a guess to edit by hand:
+  - Rows: unrotated keys sharing an x center form columns, numbered top-down and shifted to
+    match the left neighbour (column stagger); other keys join the row within 0.5u in y.
+  - ≥ 4 rows: the last is the thumb row (`LT`/`RT`, row 3) and home is two above it; 3 rows:
+    home is the middle one. Row numbers count from the top alpha row (0); a number row is -1.
+  - Home row keys under 1.5u split into hands at a gap ≥ 1.5u, else by count (left gets the
+    smaller half). From the inside: index stretch (if ≥ 5 per hand), index, middle, ring,
+    pinky home, extra pinky columns. Every other key takes the nearest home column's finger
+    (ties go left, so ANSI's B is left index); `col` is the position in its row.
+  - Efforts: ortho-30's table by row and finger, +1 per row beyond top/bottom, +0.8 per unit
+    outside the pinky column; thumbs 1.0 + 0.5 per unit from the hand's rest thumb (nearest to
+    half a key inside the index home). No `fill`s: add them for 30-key layouts to fit.
+  - `kle::export` writes one KLE row per key (2D only); every bundled board round-trips
+    export → import with the same fingers, rows and columns.
 - At scorer build, precompute dense tables indexed by slot:
   - pair `[N×N]`: same finger, same hand, distance, dx, dy, finger order/direction,
     LSB flag, scissor flag, row jump.

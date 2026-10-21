@@ -24,6 +24,8 @@ gecko perf     [--layout qwerty]                                  # full evals/s
 gecko corpus build <files or dirs...> [--out english] [--charset default|code|<symbols>] [--ext txt]
 gecko corpus mix <corpus>[:weight]... --out <name>                     # weighted mix, same charset
 gecko corpus import <cmini corpus dir> --out <name> [--charset ...]   # words.json or n-gram JSON
+gecko geometry import-kle <file.json> --out <name> [--force]       # KLE board → data/geometries/<name>.toml
+                                                                  #   (fingers/rows/home/effort guessed; edit after)
 gecko profile normalize [-p profile] [--layouts a,b] [--out name]   # weights → spread units
 gecko profile fit [--target E05] [--layouts a,b] [--out name]       # fit weights to a judge metric
 gecko list     layouts|geometries|profiles|corpora|runs|metrics

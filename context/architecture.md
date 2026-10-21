@@ -32,7 +32,8 @@ gecko/
 
 | Module | Responsibility |
 |---|---|
-| `geometry` | Keys (pos, rot, size, finger, effort), fingers, hands; TOML parse |
+| `geometry` | Keys (pos, rot, size, finger, effort), fingers, hands; TOML parse and print |
+| `kle` | KLE JSON import (guessed fingers/rows/home/effort) and export |
 | `layout` | Slot-ordered symbols; rows ↔ flat; TOML; hash |
 | `corpus` | Text → n-gram count tables; binary `.gkc` format; mixing |
 | `profile` | Metric weights, finger targets, trigram coverage |
