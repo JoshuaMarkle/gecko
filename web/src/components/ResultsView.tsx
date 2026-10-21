@@ -1,8 +1,9 @@
-// Results view: every saved run on the left; the selected run's convergence, ranked layouts
-// and reproducibility details on the right.
+// Saved view: every saved run on the left; the selected run's convergence, ranked layouts
+// (2D thumbnails) and reproducibility details on the right.
 
-import type { Progress, RunDetail, RunSummary } from "../api";
-import { fmt, fmtCount, fmtTime } from "../format";
+import type { Geometry, Progress, RunDetail, RunSummary } from "../api";
+import { fitChars, fmt, fmtCount, fmtTime } from "../format";
+import { Thumb } from "./Board2D";
 import { Convergence } from "./Charts";
 
 interface Props {
@@ -12,14 +13,16 @@ interface Props {
   rank: number | null;
   refScore?: number;
   refName: string;
+  geometries: Geometry[];
   onOpenRun: (id: string) => void;
   onPickRank: (i: number) => void;
-  onShowOptimize: () => void;
+  onShowHome: () => void;
 }
 
 export function ResultsView(p: Props) {
   const res = p.run?.result;
   const cfg = p.run?.config;
+  const geo = cfg ? p.geometries.find((g) => g.name === cfg.geometry.name) : undefined;
   return (
     <div className="results">
       <section className="pane">
@@ -51,7 +54,7 @@ export function ResultsView(p: Props) {
             <div className="panehead">
               <b>{cfg.params.algo} run</b>
               <span className="hint mono">{cfg.id}</span>
-              {res && <button className="btn soft small" style={{ marginLeft: "auto" }} onClick={p.onShowOptimize}>Open in Optimize</button>}
+              {res && <button className="btn soft small" style={{ marginLeft: "auto" }} onClick={p.onShowHome}>Open in Home</button>}
             </div>
             <div className="scroll">
               <div className="pad">
@@ -59,7 +62,7 @@ export function ResultsView(p: Props) {
               </div>
               {res && (
                 <details className="sec" open>
-                  <summary>Best layouts<span className="note">click to load into the editor</span></summary>
+                  <summary>Best layouts<span className="note">click one to make it the working model</span></summary>
                   <div className="body">
                     <table className="tbl">
                       <thead><tr><th>#</th><th style={{ textAlign: "left" }}>layout</th><th>score</th><th>vs {p.refName}</th></tr></thead>
@@ -67,7 +70,7 @@ export function ResultsView(p: Props) {
                         {res.best.map((b, i) => (
                           <tr key={b.hash} className={`click ${p.rank === i ? "sel" : ""}`} onClick={() => p.onPickRank(i)}>
                             <td>{b.rank}</td>
-                            <td className="l mono">{b.rows.join(" ")}</td>
+                            <td className="l">{geo ? <Thumb geometry={geo} chars={fitChars(b.chars, geo)} u={15} /> : <span className="mono">{b.rows.join(" ")}</span>}</td>
                             <td>{fmt(b.score, 3)}</td>
                             <td>{p.refScore !== undefined ? fmt(b.score - p.refScore, 3) : "–"}</td>
                           </tr>

@@ -1,63 +1,33 @@
-// App shell (context/design.md): toolbar (tabs | transport | progress) over one tab.
-// Tabs follow the design process: inputs (Board, Hand, Corpus, Profile, Search), then
-// Optimize (layout | 3D view over charts | result), Explore, Stats (current layout), Runs.
+// App shell (context/web.md, frontend.md): navbar (input tabs | result tabs · play / pause /
+// stop centred, run % beside · working model) over one view. Inputs: Board, Hand, Language,
+// Profile, Search (three-panel layout). Results: Home, Explore, Analysis, Saved.
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from "react";
-import { api, type Analysis, type PairKind, type CorpusInfo, type Geometry, type LayoutInfo, type Meta, type Profile, type Progress, type RunDetail, type RunSummary } from "./api";
-import { Convergence, FingerLoad, Heatmap, MetricBars, WorstNgrams } from "./components/Charts";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import { api, type Analysis, type CorpusInfo, type Geometry, type LayoutInfo, type Meta, type Profile, type Progress, type RunDetail, type RunSummary } from "./api";
 import { AnalysisView } from "./components/AnalysisView";
 import { ExploreView } from "./components/explore/ExploreView";
-import { IconBoard, IconCorpus, IconExplore, IconHand, IconOptimize, IconPause, IconPlay, IconProfile, IconRuns, IconSearch, IconSkip, IconStats } from "./components/Icons";
-import { InputPage, LayoutPanel, type InputProps, type InputTab } from "./components/Inputs";
-import { ResultPanel } from "./components/ResultPanel";
+import { IconBoard, IconExplore, IconHand, IconHome, IconLanguage, IconPause, IconPlay, IconProfile, IconRuns, IconSearch, IconStats, IconStop } from "./components/Icons";
 import { ResultsView } from "./components/ResultsView";
-import { fingerLegend, PAIR_KINDS } from "./colors";
-import { EMPTY, fitChars, fmt, fmtCount, fmtTime, layerKey, layerSlots, rowsOf, swapChars, undirected } from "./format";
-import { Keyboard3D, type Arc, type Overlay, type ViewMode } from "./three/Keyboard3D";
+import { BoardView } from "./components/views/BoardView";
+import { HandView } from "./components/views/HandView";
+import { HomeView, type Block } from "./components/views/HomeView";
+import { LanguageView } from "./components/views/LanguageView";
+import { ProfileView } from "./components/views/ProfileView";
+import { algoName, SearchView } from "./components/views/SearchView";
+import { EMPTY, fitChars, fmt, fmtCount, fmtTime, layerSlots, swapChars } from "./format";
+import { handDims, handLength } from "./hand";
 import { useInputs, usePref } from "./inputs";
-import { Scorer } from "./wasm";
+import { useLanguages } from "./languages";
+import { asView, INPUT_TABS, RESULT_TABS, type InputTabName, type View } from "./tabs";
+import { Scorer, wasmReady } from "./wasm";
 
-type Tab = "convergence" | "metrics" | "fingers" | "heatmap" | "ngrams";
-const TABS: [Tab, string][] = [["convergence", "Convergence"], ["metrics", "Metrics"], ["fingers", "Finger load"], ["heatmap", "Heatmap"], ["ngrams", "Worst n-grams"]];
-type View = InputTab | "optimize" | "explore" | "stats" | "runs";
-// Two tracks: the inputs, then what you do with them.
-const INPUT_VIEWS: [View, string, () => ReactElement][] = [
-  ["board", "Board", IconBoard], ["hand", "Hand", IconHand], ["corpus", "Corpus", IconCorpus], ["profile", "Profile", IconProfile], ["search", "Search", IconSearch],
-];
-const WORK_VIEWS: [View, string, () => ReactElement][] = [
-  ["optimize", "Optimize", IconOptimize], ["explore", "Explore the search space", IconExplore], ["stats", "Stats", IconStats], ["runs", "Runs", IconRuns],
-];
-const OLD_VIEWS: Record<string, View> = { home: "optimize", results: "runs", analysis: "stats" };
-const asView = (v: string): View => OLD_VIEWS[v] ?? ([...INPUT_VIEWS, ...WORK_VIEWS].some(([x]) => x === v) ? (v as View) : "optimize");
-
-function Gutter({ dir, onDrag, onReset }: { dir: "v" | "h"; onDrag: (delta: number) => void; onReset: () => void }) {
-  const [drag, setDrag] = useState(false);
-  return (
-    <div className={`gutter ${dir} ${drag ? "drag" : ""}`} title="Drag to resize. Double-click to reset." onDoubleClick={onReset}
-      onPointerDown={(e) => {
-        e.preventDefault();
-        let last = dir === "v" ? e.clientX : e.clientY;
-        setDrag(true);
-        document.body.classList.add("resizing");
-        const move = (ev: PointerEvent) => { const cur = dir === "v" ? ev.clientX : ev.clientY; onDrag(cur - last); last = cur; };
-        const up = () => { setDrag(false); document.body.classList.remove("resizing"); window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
-        window.addEventListener("pointermove", move);
-        window.addEventListener("pointerup", up);
-      }} />
-  );
-}
-
-function download(name: string, text: string, type = "application/json") {
-  const url = URL.createObjectURL(new Blob([text], { type }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+const ICONS: Record<View, () => ReactElement> = {
+  board: IconBoard, hand: IconHand, language: IconLanguage, profile: IconProfile, search: IconSearch,
+  home: IconHome, explore: IconExplore, analysis: IconStats, saved: IconRuns,
+};
 
 // Pause bookkeeping mirrors the server: paused time does not use up the budget.
-interface Live { id: string; algo: string; progress: Progress[]; running: boolean; started: number; budgetMs: number; pausedAt: number | null; pausedMs: number }
+interface Live { id: string; algo: string; progress: Progress[]; running: boolean; started: number; budgetMs: number | null; budgetEvals: number | null; pausedAt: number | null; pausedMs: number }
 
 export function App() {
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -72,38 +42,33 @@ export function App() {
   const {
     geomId, setGeomId, corpusId, setCorpusId, profileId, setProfileId: setProfileIdRaw, profile, setProfile, refId, setRefId,
     chars, setChars: setCharsRaw, label, setLabel, startChars, setStartChars, pins, setPins, search, setSearch,
+    customBoards, setCustomBoards, constraints, setConstraints, hand, setHand, model, setModel,
   } = inputs;
-  const [viewPref, setView] = usePref<string>("view", "optimize");
+  const [viewPref, setView] = usePref<string>("view", "home");
   const view = asView(viewPref);
-  const [tab, setTab] = usePref<Tab>("tab", "convergence");
-  const [overlayPref, setOverlay] = usePref<Overlay | "sfb">("overlay", "none");
-  const overlay: Overlay = overlayPref === "sfb" ? "ngrams" : overlayPref; // "sfb" was the old n-gram overlay
-  const [pairOrder, setPairOrder] = usePref<"bigrams" | "skipgrams">("pairOrder", "bigrams");
-  const [hiddenKinds, setHiddenKinds] = usePref<PairKind[]>("pairsHidden", ["same_hand", "alternate"]);
-  const [mode, setMode] = usePref<ViewMode>("mode", "3d");
-  const [sizes, setSizes] = usePref("sizes", { side: 0, res: 0, plot: 0 });
+  const [boardCustom, setBoardCustom] = usePref("boardCustom", false);
+  const langs = useLanguages(corpora);
 
   const [scorer, setScorer] = useState<Scorer | null>(null);
   const [scorerKey, setScorerKey] = useState("");
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [refAnalysis, setRefAnalysis] = useState<Analysis | null>(null);
-  /** Selected slot (an index into the flat layered string, not a key). */
+  /** Selected slot on the Analysis heatmap (an index into the flat layered string). */
   const [selected, setSelected] = useState<number | null>(null);
-  const [layer, setLayer] = useState(0);
   const [live, setLive] = useState<Live | null>(null);
   const [runDetail, setRunDetail] = useState<RunDetail | null>(null);
   const [rank, setRank] = useState<number | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
   const esRef = useRef<EventSource | null>(null);
 
   // ---- initial load ----
   useEffect(() => {
+    wasmReady().catch(() => {});
     (async () => {
       try {
         const [m, l, g, p, c, r] = await Promise.all([api.meta(), api.layouts(), api.geometries(), api.profiles(), api.corpora(), api.runs()]);
         setMeta(m); setLayouts(l); setGeometries(g); setProfiles(p); setCorpora(c); setRuns(r);
         const d = m.defaults;
-        if (!g.some((x) => x.id === geomId)) setGeomId(d.geometry);
+        if (!g.some((x) => x.id === geomId) && !customBoards.some((x) => x.id === geomId)) setGeomId(d.geometry);
         if (!c.some((x) => x.id === corpusId)) setCorpusId(c.find((x) => x.id === d.corpus)?.id ?? c[0]?.id ?? "");
         const pid = p.some((x) => x.id === profileId) ? profileId : d.profile;
         setProfileIdRaw(pid);
@@ -120,9 +85,12 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const geometry = geometries.find((g) => g.id === geomId) ?? geometries[0];
+  const allBoards = useMemo(() => [...geometries, ...customBoards], [geometries, customBoards]);
+  const geometry = allBoards.find((g) => g.id === geomId) ?? geometries[0];
+  const isCustomBoard = customBoards.some((g) => g.id === geometry?.id);
   const corpus = corpora.find((c) => c.id === corpusId);
   const reference = layouts.find((l) => l.id === refId);
+  const refName = reference?.name ?? "reference";
 
   // ---- WASM scorer per (geometry, corpus) ----
   useEffect(() => {
@@ -144,25 +112,24 @@ export function App() {
   const previewChars = live?.running && live.algo !== "explore" ? live.progress[live.progress.length - 1]?.best_chars : undefined;
   const viewChars = geometry ? fitChars(previewChars ?? chars, geometry) : previewChars ?? chars;
   const editChars = geometry ? fitChars(chars, geometry) : chars;
-  // Layers: the 3D view shows one layer at a time; `slots[layer][key]` indexes `viewChars`.
+  // The 3D views show the base layer; `slots[0][key]` indexes `viewChars`.
   const slots = useMemo(() => (geometry ? layerSlots(geometry, viewChars) : [[]]), [geometry, viewChars]);
-  const shownLayer = Math.min(layer, slots.length - 1);
-  const layerView = useMemo(() => {
+  const baseView = useMemo(() => {
     const a = [...viewChars];
-    const s = slots[shownLayer];
     return {
-      chars: s.map((i) => (i === null ? EMPTY : a[i])).join(""),
-      heat: s.map((i) => (i === null ? 0 : analysis?.heat[i] ?? 0)),
-      muted: s.map((i) => i === null),
+      chars: slots[0].map((i) => (i === null ? EMPTY : a[i])).join(""),
+      heat: slots[0].map((i) => (i === null ? 0 : analysis?.heat[i] ?? 0)),
+      muted: slots[0].map((i) => i === null),
     };
-  }, [slots, shownLayer, viewChars, analysis]);
+  }, [slots, viewChars, analysis]);
 
-  // ---- scoring (WASM first, server fallback) ----
+  // ---- scoring (WASM first, server fallback; custom boards are WASM only) ----
   const scoreChars = useCallback(async (c: string): Promise<Analysis | null> => {
     if (!profile || !geometry || !corpus || !c) return null;
     if (scorer) return scorer.analyze(c, profile, 10);
+    if (isCustomBoard) return null;
     return (await api.score({ geometry: geometry.id, corpus: corpus.id, profile_override: profile, chars: c })).analysis;
-  }, [scorer, profile, geometry, corpus]);
+  }, [scorer, profile, geometry, corpus, isCustomBoard]);
 
   useEffect(() => {
     let alive = true;
@@ -180,18 +147,21 @@ export function App() {
   // ---- actions ----
   const setChars = (c: string, l: string) => { setCharsRaw(c); setLabel(l); setStartChars(c); setSelected(null); setRank(null); };
   const setProfileId = (id: string) => { setProfileIdRaw(id); const p = profiles.find((x) => x.id === id); if (p) setProfile(p); };
+  const swap = (i: number, j: number) => { setCharsRaw(swapChars(editChars, i, j)); setLabel("edited"); setRank(null); };
+  /** Make a layout the working model (and the loaded layout runs start from on Auto). */
+  const adopt = (c: string, l: string, score: number | null, run?: string) => {
+    setCharsRaw(c); setLabel(l); setStartChars(c); setSelected(null);
+    setModel({ chars: c, label: l, score, run });
+  };
 
-  /** `k` is a key of the shown layer (or a slot when `asSlot`, from the 2D heatmap). */
-  const onKey = (k: number, asSlot = false) => {
+  /** Analysis heatmap: click two keys (slots) to swap them. */
+  const onSlot = (i: number) => {
     if (live?.running) return;
-    if (k < 0) { setSelected(null); return; }
-    const i = asSlot ? k : slots[shownLayer][k];
-    if (i === null || i === undefined) return;
+    if (i < 0) { setSelected(null); return; }
     if (selected === null) { setSelected(i); return; }
-    if (selected !== i) { setCharsRaw(swapChars(editChars, selected, i)); setLabel("edited"); setRank(null); }
+    if (selected !== i) swap(selected, i);
     setSelected(null);
   };
-  const selectedKey = selected === null ? null : slots[shownLayer].indexOf(selected);
 
   const refreshRuns = () => api.runs().then(setRuns).catch(() => {});
 
@@ -199,10 +169,8 @@ export function App() {
     try {
       const d = await api.run(id);
       setRunDetail(d);
-      if (pickBest && d.result?.best[0]) {
-        setCharsRaw(d.result.best[0].chars); setLabel(`${d.config.params.algo} run #1`); setStartChars(d.result.best[0].chars); setRank(0); setSelected(null);
-      }
-      setTab("convergence");
+      const b = d.result?.best[0];
+      if (pickBest && b) { adopt(b.chars, `${d.config.params.algo} run #1`, b.score, id); setRank(0); }
     } catch (e) {
       setErr((e as Error).message);
     }
@@ -210,11 +178,16 @@ export function App() {
 
   const startRun = async (explore = false) => {
     if (!profile || !geometry || !corpus) return;
+    if (isCustomBoard) { setErr("Custom boards cannot be optimized yet: the server needs a geometry upload route. Pick a bundled board to run."); return; }
     setErr(null);
     const algo = explore ? "explore" : search.algo;
+    const start = search.start && search.start !== "auto" ? layouts.find((l) => l.id === search.start)?.chars ?? chars : chars;
+    const byEvals = !explore && search.budget === "evals";
+    const evals = search.evals ?? 50_000_000;
     try {
       const r = await api.startRun({
-        geometry: geometry.id, corpus: corpus.id, profile_override: profile, chars, algo, time_ms: search.timeS * 1000,
+        geometry: geometry.id, corpus: corpus.id, profile_override: profile, chars: start, algo,
+        ...(byEvals ? { evals } : { time_ms: search.timeS * 1000 }),
         threads: search.threads, seed: search.seed, pins, sa_steps: search.saSteps, ga_pop: search.gaPop,
         memetic: search.algo === "memetic" ? {
           ga: { pop_size: search.memeticPop ?? 24 }, local_search: search.localSearch ?? "hc",
@@ -222,8 +195,7 @@ export function App() {
           migration_interval: search.migrationInterval ?? 5, migrants: search.migrants ?? 2,
         } : undefined,
       });
-      setLive({ id: r.id, algo, progress: [], running: true, started: Date.now(), budgetMs: search.timeS * 1000, pausedAt: null, pausedMs: 0 });
-      if (!explore) setTab("convergence");
+      setLive({ id: r.id, algo, progress: [], running: true, started: Date.now(), budgetMs: byEvals ? null : search.timeS * 1000, budgetEvals: byEvals ? evals : null, pausedAt: null, pausedMs: 0 });
       refreshRuns();
       esRef.current?.close();
       const es = new EventSource(`/api/runs/${encodeURIComponent(r.id)}/events`);
@@ -268,193 +240,135 @@ export function App() {
   }, [live?.running]);
 
   const progress = live && (live.running || runDetail?.config.id !== live.id) ? live.progress : runDetail?.progress ?? live?.progress ?? [];
-  const lastP = progress[progress.length - 1];
   const paused = !!live?.running && live.pausedAt !== null;
   const activeMs = live ? (live.pausedAt ?? now) - live.started - live.pausedMs : 0;
   const liveP = live?.progress[live.progress.length - 1];
-  const status = live?.running
-    ? liveP?.explore
-      ? `${paused ? "paused" : liveP.explore.phase === "probe" ? "probing landscape" : "exploring"} · ${fmtCount(liveP.explore.optima)} optima · best ${fmt(liveP.best, 3)}`
-      : `${paused ? "paused" : "running"} · ${fmtCount(lastP?.evals ?? 0)} evals · best ${lastP ? fmt(lastP.best, 3) : "–"}`
-    : runDetail?.result ? `done · ${runDetail.config.params.algo} · ${fmtTime(runDetail.result.elapsed_ms)}` : "idle";
-  const frac = live?.running ? Math.min(1, activeMs / live.budgetMs) : live ? 1 : 0;
-
-  // N-gram overlay: every pair of the chosen order, undirected, one arc each.
-  const pairs = useMemo(() => undirected(analysis?.[pairOrder] ?? []), [analysis, pairOrder]);
-  const kindTotals = useMemo(() => {
-    const t = new Map<PairKind, number>();
-    for (const p of pairs) t.set(p.kind, (t.get(p.kind) ?? 0) + p.freq);
-    return t;
-  }, [pairs]);
-  const arcs = useMemo((): Arc[] => {
-    // Width and opacity are relative to the most frequent visible pair.
-    const shown = pairs.filter((p) => !hiddenKinds.includes(p.kind));
-    const max = Math.max(...shown.map((p) => p.freq), 1e-9);
-    return shown.map((p) => ({ ngram: p.ngram, w: Math.sqrt(p.freq / max), color: PAIR_KINDS[p.kind][1] }));
-  }, [pairs, hiddenKinds]);
-  const pairKinds: PairKind[] = pairOrder === "bigrams" ? ["sfb", "lsb", "scissor", "same_hand", "alternate"] : ["sfs", "same_hand", "alternate"];
-
-  const shellStyle = useMemo(() => {
-    const s: Record<string, string> = {};
-    if (sizes.side) s["--side"] = `${sizes.side}px`;
-    if (sizes.res) s["--res"] = `${sizes.res}px`;
-    if (sizes.plot) s["--plot"] = `${sizes.plot}px`;
-    return s as CSSProperties;
-  }, [sizes]);
-  const px = (v: string) => parseFloat(getComputedStyle(document.querySelector(".shell")!).getPropertyValue(v));
-
-  const copy = (text: string, which: string) => { navigator.clipboard?.writeText(text).then(() => { setCopied(which); setTimeout(() => setCopied(null), 1200); }).catch(() => {}); };
+  const frac = !live ? null : !live.running ? 1
+    : live.budgetEvals ? Math.min(1, (liveP?.evals ?? 0) / live.budgetEvals) : Math.min(1, activeMs / (live.budgetMs ?? 1));
 
   if (!meta || !geometry || !profile) {
     return <div className="empty" style={{ height: "100%" }}>{err ? <div className="notice error" style={{ maxWidth: 520 }}>{err}</div> : "Loading…"}</div>;
   }
+
   const pickRank = (i: number) => {
     const b = runDetail?.result?.best[i];
-    if (b) { setCharsRaw(b.chars); setStartChars(b.chars); setRank(i); setLabel(`${runDetail!.config.params.algo} run #${i + 1}`); setSelected(null); }
+    if (b) { adopt(b.chars, `${runDetail!.config.params.algo} run #${i + 1}`, b.score, runDetail!.config.id); setRank(i); }
   };
-  const isBest = rank === 0 && label.includes("run #1");
-  const rankLabel = rank !== null && runDetail ? `${runDetail.config.params.algo} run #${rank + 1}` : label;
-  const inputTab = INPUT_VIEWS.some(([v]) => v === view) ? (view as InputTab) : null;
-  const inputProps: InputProps = {
-    meta, layouts, geometries, corpora, profiles, geometry, corpus, chars, setChars, startChars, pins, setPins, refId, setRefId,
-    setGeomId, setCorpusId, profileId, setProfileId, profile, setProfile, search, setSearch, running: !!live?.running,
-  };
+  const hasModel = !!model && model.chars === chars;
+  const shownLabel = live?.running ? "Live best" : hasModel ? model!.label : label;
+  const baseProfile = profiles.find((x) => x.id === profileId);
+  const profileEdited = !!baseProfile && JSON.stringify({ ...baseProfile, id: undefined }) !== JSON.stringify({ ...profile, id: undefined });
+
+  // ---- navbar: working model / live status ----
+  const status = live?.running
+    ? liveP?.explore
+      ? `${paused ? "Paused · " : ""}Explore · ${fmtCount(liveP.explore.optima)} optima · best ${fmt(liveP.best, 3)}`
+      : `${paused ? "Paused · " : ""}${live.algo.toUpperCase()} · ${fmtCount(liveP?.evals ?? 0)} evals · best ${liveP ? fmt(liveP.best, 3) : "–"}`
+    : null;
+  const modelScore = model ? (model.chars === chars && analysis ? analysis.breakdown.score : model.score) : null;
+
+  const blocks: Block[] = [
+    { tab: "board", title: "Board", rows: [["Board", geometry.name], ["Keys", `${geometry.key.length}`]],
+      flags: [["Custom board", isCustomBoard], ["Custom constraints", Object.values(constraints).some((c) => c.on)]] },
+    { tab: "hand", title: "Hand", rows: [["Preset", hand.preset[0].toUpperCase() + hand.preset.slice(1)], ["Hand length", `${handLength(handDims(hand)).toFixed(0)} mm`]],
+      flags: [["Hand", hand.use]] },
+    { tab: "language", title: "Language", rows: [["Language", corpus?.name ?? "–"], ["Characters", fmtCount(corpus?.chars ?? 0)]] },
+    { tab: "profile", title: "Profile", rows: [["Profile", `${profile.name}${profileEdited ? " (edited)" : ""}`],
+      ["Weighted metrics", `${Object.values(profile.weights).filter((w) => w > 0).length}`]] },
+    { tab: "search", title: "Search", rows: [["Algorithm", algoName(search.algo)],
+      ["Budget", search.budget === "evals" ? `${fmtCount(search.evals ?? 50_000_000)} evals` : `${search.timeS}s`],
+      ["Threads · seed", `${search.threads} · ${search.seed}`],
+      ["Start", search.start && search.start !== "auto" ? layouts.find((l) => l.id === search.start)?.name ?? search.start : `Auto · ${label}`],
+      ["Pins", pins || "none"]],
+      flags: [["Stop early", search.stopConf != null]] },
+  ];
+
+  const sel = langs.selected;
+  const canSummarize = !!sel && sel.local && sel.status !== "Summarized" && !!sel.sources?.length && langs.busy === null;
 
   return (
-    <div className="shell" style={shellStyle}>
+    <div className="shell">
       <header id="top">
         <nav className="views" aria-label="Tabs">
-          {[INPUT_VIEWS, WORK_VIEWS].map((track, i) => (
-            <div key={i} className="toolgroup" aria-label={i === 0 ? "Inputs" : "Work"}>
-              {track.map(([v, name, Icon]) => (
-                <button key={v} className={`tool ${view === v ? "on" : ""}`} onClick={() => setView(v)} title={name} aria-label={name} aria-pressed={view === v}><Icon /></button>
-              ))}
+          {([["Inputs", INPUT_TABS], ["Results", RESULT_TABS]] as const).map(([group, tabs], gi) => (
+            <div key={group} className="tabgroup">
+              {gi > 0 && <span className="tabdivider" aria-hidden="true" />}
+              <span className="grouplabel">{group}</span>
+              <div className="toolgroup" aria-label={group}>
+                {tabs.map(([v, name]) => {
+                  const Icon = ICONS[v];
+                  return <button key={v} className={`tool ${view === v ? "on" : ""}`} onClick={() => setView(v)} title={name} aria-label={name} aria-pressed={view === v}><Icon /></button>;
+                })}
+              </div>
             </div>
           ))}
         </nav>
-        <div className="transport" aria-label="Optimization">
-          <button className="start" onClick={play} disabled={!corpus || (live?.running && !paused)}
-            title={paused ? "Resume" : live?.running ? "Running" : view === "explore" ? `Explore the search space (${search.timeS}s)` : `Run optimization (${search.algo}, ${search.timeS}s)`}>
-            <IconPlay />{paused ? "Resume" : live?.running ? (live.algo === "explore" ? "Exploring…" : "Optimizing…") : view === "explore" ? "Start exploration" : "Start optimization"}</button>
-          <button className={`tool ${paused ? "on" : ""}`} onClick={() => setPaused(!paused)} disabled={!live?.running}
-            title={paused ? "Resume" : "Pause"} aria-label="Pause" aria-pressed={paused}><IconPause /></button>
-          <button className="tool" onClick={stopRun} disabled={!live?.running} title="End optimization now (results are kept)" aria-label="End optimization"><IconSkip /></button>
+        <div className="transportwrap">
+          <div className="transport" aria-label="Optimization">
+            <button className="play" onClick={play} disabled={!corpus || (live?.running && !paused)} aria-label={paused ? "Resume" : "Play"}
+              title={paused ? "Resume" : live?.running ? "Running" : view === "explore" ? `Explore the search space (${search.timeS}s)` : `Optimize: ${algoName(search.algo)}, ${search.budget === "evals" ? `${fmtCount(search.evals ?? 50_000_000)} evals` : `${search.timeS}s`}`}>
+              <IconPlay />
+            </button>
+            <button className={`tool ${paused ? "on" : ""}`} onClick={() => setPaused(!paused)} disabled={!live?.running}
+              title={paused ? "Resume" : "Pause"} aria-label="Pause" aria-pressed={paused}><IconPause /></button>
+            <button className="tool" onClick={stopRun} disabled={!live?.running} title="Stop now (results are kept)" aria-label="Stop"><IconStop /></button>
+          </div>
+          {frac !== null && <span className="runpct" title={live?.running ? `${fmtTime(activeMs)} elapsed` : "done"}>{Math.round(100 * frac)}%</span>}
         </div>
-        <div className="runbox">
-          <div className="statusline"><span>{status}</span><span>{live?.running ? `${fmtTime(activeMs)} / ${fmtTime(live.budgetMs)}` : ""}</span></div>
-          <progress value={frac} max={1} />
+        <div className="navright">
+          {view === "language" && sel?.local && (
+            <button className="btn outline small" disabled={!canSummarize} onClick={() => sel && langs.summarize(sel.id)}
+              title={!sel.sources?.length ? "Add sources first" : sel.status === "Summarized" ? "Statistics are current" : "Build statistics from the sources"}>
+              {langs.busy ? "Summarizing…" : "Summarize"}
+            </button>
+          )}
+          {view === "language" && sel && !sel.local && <button className="btn outline small" disabled title="Bundled languages are already summarized">Summarize</button>}
+          <div className="model" title={model ? `Working model: ${model.label}` : "No working model yet: run an optimization or pick a saved layout"}>
+            {status ? <span className="mono">{status}</span>
+              : model ? <><b>{model.label}</b>{modelScore !== null && <span className="muted">{fmt(modelScore, 3)}</span>}</>
+              : <span className="muted">No model</span>}
+          </div>
         </div>
       </header>
 
-      {inputTab && (
-        <div className="page">
-          <InputPage tab={inputTab} {...inputProps} />
-        </div>
-      )}
+      {err && <div className="errbar"><div className="notice error">{err}</div><button className="btn soft small" onClick={() => setErr(null)}>Dismiss</button></div>}
 
-      {view === "optimize" && <>
-      <aside id="left" className="side">
-        <LayoutPanel {...inputProps} onGo={setView} />
-        <Gutter dir="v" onDrag={(d) => setSizes({ ...sizes, side: Math.max(260, Math.min(640, px("--side") + d)) })} onReset={() => setSizes({ ...sizes, side: 0 })} />
-      </aside>
-
-      <main id="view">
-        <Keyboard3D geometry={geometry} chars={layerView.chars} heat={layerView.heat} muted={layerView.muted} arcs={arcs} overlay={overlay} mode={mode}
-          selected={selectedKey !== null && selectedKey >= 0 ? selectedKey : null} onKey={(k) => onKey(k)} />
-        <div className="viewlabel">
-          <span>{live?.running ? "live best" : rankLabel}</span>
-          {analysis && <span className="muted">{fmt(analysis.breakdown.score, 3)}</span>}
-          {isBest && !live?.running && <span className="badge best">Best</span>}
-        </div>
-        <div className="viewctl">
-          {slots.length > 1 && (
-            <div className="seg inline" aria-label="Layer">
-              {slots.map((_, l) => {
-                const lk = l === 0 ? null : layerKey([...viewChars].slice(0, slots[0].length), l);
-                const how = !lk ? "" : lk.mode === "hold" ? `hold ${lk.glyph} (keys on that finger are unusable, shown dimmed)`
-                  : lk.mode === "oneshot" ? `one-shot ${lk.glyph}: tap before each symbol` : `toggle ${lk.glyph}: tap to enter and to leave`;
-                return (
-                  <button key={l} className={shownLayer === l ? "on" : ""} aria-pressed={shownLayer === l}
-                    title={l === 0 ? "Base layer" : `Layer ${l}: ${how}`}
-                    onClick={() => setLayer(l)}>{l === 0 ? "Base" : `${lk?.glyph ?? ""} Layer ${l}`}</button>
-                );
-              })}
-            </div>
-          )}
-          <div className="seg inline">
-            <button className={mode === "3d" ? "on" : ""} aria-pressed={mode === "3d"} title="3D view (off: flat top-down)" onClick={() => setMode(mode === "3d" ? "top" : "3d")}>3D</button>
-          </div>
-          <div className="seg inline">
-            {([["none", "Default"], ["heat", "Heat"], ["fingers", "Fingers"], ["ngrams", "N-grams"]] as [Overlay, string][]).map(([o, n]) => <button key={o} className={overlay === o ? "on" : ""} onClick={() => setOverlay(o)}>{n}</button>)}
-          </div>
-        </div>
-        <div className="viewhint">{selected !== null ? `Swap ${([...editChars][selected] ?? "").toUpperCase()} with… (click another key${slots.length > 1 ? ", on any layer" : ""})` : live?.running ? "Showing the best layout so far." : mode === "3d" ? "Click two keys to swap them. Drag to orbit." : "Click two keys to swap them."}</div>
-        {overlay === "fingers" && <div className="legend">{fingerLegend.map(([n, c]) => <span key={n}><i style={{ background: c }} />{n}</span>)}</div>}
-        {overlay === "heat" && <div className="legend"><span>darker = more keystrokes</span></div>}
-        {overlay === "ngrams" && (
-          <div className="legend">
-            <div className="seg inline">
-              {([["bigrams", "Bigrams"], ["skipgrams", "Skipgrams"]] as const).map(([o, n]) => <button key={o} className={pairOrder === o ? "on" : ""} onClick={() => setPairOrder(o)}>{n}</button>)}
-            </div>
-            {pairKinds.map((k) => (
-              <button key={k} className={hiddenKinds.includes(k) ? "off" : ""} title="Show / hide" onClick={() => setHiddenKinds(hiddenKinds.includes(k) ? hiddenKinds.filter((x) => x !== k) : [...hiddenKinds, k])}>
-                <i style={{ background: PAIR_KINDS[k][1] }} />{PAIR_KINDS[k][0]} <span className="muted">{fmt(kindTotals.get(k) ?? 0, 1)}%</span>
-              </button>
-            ))}
-          </div>
+      <main className="page">
+        {view === "board" && (
+          <BoardView geometries={geometries} customBoards={customBoards} setCustomBoards={setCustomBoards} geometry={geometry} setGeomId={setGeomId}
+            constraints={constraints} setConstraints={setConstraints} custom={boardCustom} setCustom={setBoardCustom} />
         )}
-      </main>
-
-      <section id="plotwrap">
-        <Gutter dir="h" onDrag={(d) => setSizes({ ...sizes, plot: Math.max(160, Math.min(window.innerHeight - 220, px("--plot") - d)) })} onReset={() => setSizes({ ...sizes, plot: 0 })} />
-        <div className="tabs">
-          <div className="seg inline">
-            {TABS.map(([t, n]) => <button key={t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{n}</button>)}
-          </div>
-        </div>
-        <div className="plot">
-          {tab === "convergence" && <Convergence progress={progress} reference={refAnalysis?.breakdown.score} refName={reference?.name ?? "reference"} />}
-          {tab === "metrics" && analysis && <MetricBars cur={analysis} ref={refAnalysis ?? undefined} refName={reference?.name ?? "reference"} />}
-          {tab === "fingers" && analysis && <FingerLoad a={analysis} refA={refAnalysis ?? undefined} refName={reference?.name ?? "reference"} />}
-          {tab === "heatmap" && analysis && <Heatmap geometry={geometry} chars={viewChars} a={analysis} selected={selected} onKey={(i) => onKey(i, true)} />}
-          {tab === "ngrams" && analysis && <WorstNgrams a={analysis} />}
-        </div>
-      </section>
-
-      <aside id="right" className="side">
-        <ResultPanel err={err} geometry={geometry} chars={viewChars} label={live?.running ? "Live best" : rankLabel} isBest={isBest && !live?.running} a={analysis} refA={refAnalysis}
-          refName={reference?.name ?? "reference"} run={runDetail} rank={rank}
-          onPickRank={pickRank}
-          runs={runs} onOpenRun={(id) => openRun(id)}
-          onExportJson={() => analysis && download(`gecko-${viewChars.length}.json`, JSON.stringify({ schema: 1, chars: viewChars, rows: rowsOf(viewChars, geometry), profile, analysis }, null, 2))}
-          onExportToml={() => download("layout.toml", `name = "${rankLabel.replace(/"/g, "'")}"\ngeometry = "${geometry.name}"\nsource = "gecko web"\nrows = [${rowsOf(viewChars, geometry).map((r) => (r.includes("'") ? `"${r}"` : `'${r}'`)).join(", ")}]\n`, "application/toml")}
-          onCopy={(t) => copy(t, t.startsWith("gecko") ? "cli" : "rows")} copied={copied} />
-        <Gutter dir="v" onDrag={(d) => setSizes({ ...sizes, res: Math.max(280, Math.min(640, px("--res") - d)) })} onReset={() => setSizes({ ...sizes, res: 0 })} />
-      </aside>
-      </>}
-
-      {view === "runs" && (
-        <div className="page">
-          <ResultsView runs={runs} run={runDetail} progress={progress} rank={rank} refScore={refAnalysis?.breakdown.score} refName={reference?.name ?? "reference"}
-            onOpenRun={(id) => openRun(id)} onPickRank={pickRank} onShowOptimize={() => setView("optimize")} />
-        </div>
-      )}
-
-      {view === "explore" && (
-        <div className="page">
+        {view === "hand" && <HandView geometry={geometry} chars={baseView.chars} hand={hand} setHand={setHand} />}
+        {view === "language" && <LanguageView langs={langs} corpusId={corpusId} setCorpusId={setCorpusId} />}
+        {view === "profile" && (
+          <ProfileView meta={meta} profiles={profiles} profileId={profileId} setProfileId={setProfileId} profile={profile} setProfile={setProfile}
+            geometry={geometry} chars={viewChars} layouts={layouts} a={analysis} />
+        )}
+        {view === "search" && (
+          <SearchView meta={meta} layouts={layouts} geometry={geometry} corpusName={corpus?.name ?? ""} profileName={profile.name} search={search} setSearch={setSearch}
+            running={!!live?.running} runs={runs} chars={editChars} label={hasModel ? model!.label : label} a={analysis} pins={pins} setPins={setPins}
+            onSwap={swap} canUndo={chars !== startChars} onUndo={() => setChars(startChars, "start")} onLoad={(c, l) => setChars(c, l)} />
+        )}
+        {view === "home" && (
+          <HomeView blocks={blocks} onGo={(t: InputTabName) => setView(t)} geometry={geometry} view={baseView} label={shownLabel} hasModel={hasModel}
+            running={!!live?.running && live.algo !== "explore"} a={analysis} refA={refAnalysis} refName={refName} progress={progress} run={runDetail}
+            runs={runs} corpusName={corpus?.name ?? ""} profileName={profile.name} />
+        )}
+        {view === "explore" && (
           <ExploreView meta={meta} runs={runs} geometries={geometries} corpora={corpora} layouts={layouts} profile={profile} setProfile={setProfile}
             scorer={scorer} scorerKey={scorerKey} search={search} setSearch={setSearch} onStart={() => startRun(true)}
             live={live && live.algo === "explore" ? { id: live.id, version: liveP?.explore?.version ?? 0, running: live.running } : null}
-            onOpen={(c, l) => { setChars(c, l); setView("optimize"); }} />
-        </div>
-      )}
-
-      {view === "stats" && (
-        <div className="page">
-          <AnalysisView geometry={geometry} chars={viewChars} label={live?.running ? "Live best" : rankLabel} a={analysis} refA={refAnalysis}
-            refName={reference?.name ?? "reference"} selected={selected} onKey={(i) => onKey(i, true)} />
-        </div>
-      )}
+            onOpen={(c, l) => { adopt(c, l, null); setView("home"); }} />
+        )}
+        {view === "analysis" && (
+          <AnalysisView geometry={geometry} chars={viewChars} label={shownLabel} a={analysis} refA={refAnalysis}
+            refName={refName} selected={selected} onKey={onSlot} />
+        )}
+        {view === "saved" && (
+          <ResultsView runs={runs} run={runDetail} progress={progress} rank={rank} refScore={refAnalysis?.breakdown.score} refName={refName} geometries={allBoards}
+            onOpenRun={(id) => openRun(id, false)} onPickRank={pickRank} onShowHome={() => setView("home")} />
+        )}
+      </main>
     </div>
   );
 }

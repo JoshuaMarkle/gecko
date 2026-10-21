@@ -84,6 +84,8 @@ fn router(store: Store, web: Option<PathBuf>) -> Router {
         .route("/profiles", get(profiles))
         .route("/corpora", get(corpora))
         .route("/corpora/{name}", get(corpus_bin))
+        .route("/corpora/{name}/sources", get(corpus_sources))
+        .route("/corpora/{name}/sources/{file}", get(corpus_source))
         .route("/score", post(score))
         .route("/runs", get(list_runs).post(start_run))
         .route("/runs/{id}", get(get_run))
@@ -184,6 +186,42 @@ async fn corpus_bin(State(app): State<AppState>, Path(name): Path<String>) -> st
     }
     let bytes = std::fs::read(app.store.corpus_path(&name)).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
     Ok(([(header::CONTENT_TYPE, "application/octet-stream")], bytes).into_response())
+}
+
+/// Source texts of a corpus: `data/corpora/src/<name>/`, or for `english` the loose files in
+/// `data/corpora/src/` (the Gutenberg novels it was built from). Sorted by file name.
+fn source_files(app: &App, name: &str) -> Vec<PathBuf> {
+    let src = app.store.corpus_path(name).with_file_name("src");
+    let dir = src.join(name);
+    let dir = if dir.is_dir() { dir } else if name == "english" { src } else { return Vec::new() };
+    let mut out: Vec<PathBuf> = std::fs::read_dir(dir).into_iter().flatten().flatten().map(|e| e.path()).filter(|p| p.is_file()).collect();
+    out.sort();
+    out
+}
+
+fn safe_name(s: &str) -> std::result::Result<(), ApiError> {
+    if s.contains('/') || s.contains('\\') || s.contains("..") {
+        return Err(ApiError(StatusCode::BAD_REQUEST, "bad name".into()));
+    }
+    Ok(())
+}
+
+async fn corpus_sources(State(app): State<AppState>, Path(name): Path<String>) -> ApiResult {
+    safe_name(&name)?;
+    let files: Vec<Value> = source_files(&app, &name)
+        .iter()
+        .map(|p| json!({"name": p.file_name().unwrap_or_default().to_string_lossy(), "bytes": p.metadata().map(|m| m.len()).unwrap_or(0)}))
+        .collect();
+    Ok(Json(json!(files)))
+}
+
+async fn corpus_source(State(app): State<AppState>, Path((name, file)): Path<(String, String)>) -> std::result::Result<Response, ApiError> {
+    safe_name(&name)?;
+    safe_name(&file)?;
+    let path = source_files(&app, &name).into_iter().find(|p| p.file_name().is_some_and(|f| f.to_string_lossy() == file));
+    let path = path.ok_or_else(|| ApiError(StatusCode::NOT_FOUND, format!("no source '{file}' for corpus '{name}'")))?;
+    let text = std::fs::read(&path).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
+    Ok(([(header::CONTENT_TYPE, "text/plain; charset=utf-8")], String::from_utf8_lossy(&text).into_owned()).into_response())
 }
 
 /// Shared input for scoring and runs: names default to gecko.toml; `profile_override` wins over `profile`.
@@ -488,5 +526,20 @@ mod tests {
             let body: Value = serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
             assert_eq!(body["schema"], SCHEMA);
         }
+    }
+
+    #[tokio::test]
+    async fn corpus_sources_list_and_reject_traversal() {
+        let root = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+        let app = router(Store::open(root).unwrap(), None);
+        let get = |uri: &str| app.clone().oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap());
+        let response = get("/api/corpora/english/sources").await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body: Value = serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+        assert!(body.is_array());
+        let response = get("/api/corpora/english/sources/..%2Fenglish.gkc").await.unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        let response = get("/api/corpora/english/sources/missing.txt").await.unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 }

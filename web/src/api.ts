@@ -98,7 +98,10 @@ export interface AtlasSummary {
   distinct_dist: number; distinct: AtlasBest[];
 }
 export interface Ranked { rank: number; score: number; chars: string; rows: string[]; hash: string; breakdown: Breakdown }
-export interface RunResult { schema: number; id: string; geometry: string; evals: number; elapsed_ms: number; evals_per_sec: number; best: Ranked[] }
+/** A lower bound and the optimality gap of a run's best layout (gecko-core `bound::Gap`). */
+export interface BoundGap { lower: number; gilmore_lawler: number; value: number; gap_pct: number }
+export interface BoundReport { method: string; symbols: number; iters: number; total: BoundGap; pair: BoundGap; elapsed_ms: number }
+export interface RunResult { schema: number; id: string; geometry: string; evals: number; elapsed_ms: number; evals_per_sec: number; best: Ranked[]; bound?: BoundReport }
 export interface RunParams { algo: string; seed: number; threads: number; time_ms: number | null; evals: number | null; top: number }
 export interface RunConfig {
   id: string;
@@ -126,6 +129,9 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
 const post = <T>(path: string, body: unknown) =>
   req<T>(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 
+/** A source text of a corpus (`GET /api/corpora/{name}/sources`). */
+export interface SourceInfo { name: string; bytes: number }
+
 export const api = {
   meta: () => req<Meta>("/api/meta"),
   layouts: () => req<LayoutInfo[]>("/api/layouts"),
@@ -149,6 +155,6 @@ export const api = {
 
 export interface ScoreRequest { geometry: string; corpus: string; profile_override: Profile; chars: string; top?: number }
 export interface RunRequest extends ScoreRequest {
-  algo: string; time_ms: number; threads: number; seed: number; pins: string; sa_steps?: number; ga_pop?: number;
+  algo: string; time_ms?: number; evals?: number; threads: number; seed: number; pins: string; sa_steps?: number; ga_pop?: number;
   memetic?: { ga: { pop_size: number }; local_search: "hc" | "tabu"; local_steps: number; islands: number; migration_interval: number; migrants: number };
 }

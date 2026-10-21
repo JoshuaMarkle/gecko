@@ -115,7 +115,7 @@ export function FingerLoad({ a, refA, refName }: { a: Analysis; refA?: Analysis;
   return (
     <div ref={box} style={{ height: "100%" }}>
       <svg width={w} height={h}>
-        <text x={m.l} y={10}>% of keystrokes per finger — bar: current, light: {refName}, tick: target</text>
+        <text x={m.l} y={10}>% of keystrokes per finger — bar: current{refA ? `, light: ${refName}` : ""}, tick: target</text>
         {niceTicks(0, max, 4).map((t) => (
           <g key={t}>
             <line x1={m.l} x2={w - m.r} y1={sy(t)} y2={sy(t)} stroke={HAIR} />

@@ -1,9 +1,32 @@
-// Layout analysis view: every chart for the current layout at once, against the reference.
+// Analysis view: every chart for the current layout at once, against the reference.
 
 import type { Analysis, Geometry } from "../api";
-import { fmt } from "../format";
+import { fmt, verdict } from "../format";
 import { FingerLoad, Heatmap, MetricBars, WorstNgrams } from "./Charts";
-import { MetricTable } from "./ResultPanel";
+
+/** Per-metric value vs reference and weighted contribution, with a better/worse dot. */
+export function MetricTable({ a, refA, refName }: { a: Analysis; refA: Analysis | null; refName: string }) {
+  return (
+    <table className="tbl">
+      <thead><tr><th>metric</th><th>value</th><th>{refName}</th><th>score</th><th /></tr></thead>
+      <tbody>
+        {a.breakdown.metrics.map((m) => {
+          const r = refA?.breakdown.metrics.find((x) => x.id === m.id);
+          const v = r ? verdict(m.dir, m.value, r.value) : "same";
+          return (
+            <tr key={m.id} className={m.weight === 0 ? "off" : ""} title={`${m.id}${m.dir === "max" ? " (higher is better)" : m.dir === "info" ? " (info only)" : " (lower is better)"}`}>
+              <td>{m.name}</td>
+              <td>{fmt(m.value)}{m.unit === "%" ? "%" : ""}</td>
+              <td>{r ? `${fmt(r.value)}${m.unit === "%" ? "%" : ""}` : ""}</td>
+              <td>{m.weight === 0 ? "–" : fmt(m.weighted, 3)}</td>
+              <td>{v !== "same" && m.weight > 0 && <span className={`dot ${v}`} />}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
 
 interface Props {
   geometry: Geometry;

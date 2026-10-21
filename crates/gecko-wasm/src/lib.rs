@@ -54,6 +54,49 @@ pub fn flat2d(geometry_json: &str) -> Result<String, JsError> {
     serde_json::to_string(&geometry.flat2d()).map_err(js)
 }
 
+/// Top `top` entries of an n-gram table as `[[ngram, % of the table], …]`, most frequent first.
+fn top_grams(cs: &[char], table: &[u64], n: usize, top: usize) -> Vec<(String, f64)> {
+    let total: u64 = table.iter().sum();
+    let c = cs.len();
+    let mut idx: Vec<usize> = (0..table.len()).filter(|&i| table[i] > 0).collect();
+    idx.sort_by(|&a, &b| table[b].cmp(&table[a]));
+    idx.truncate(top);
+    idx.into_iter()
+        .map(|i| {
+            let gram: String = (0..n).rev().map(|d| cs[(i / c.pow(d as u32)) % c]).collect();
+            (gram, 100.0 * table[i] as f64 / total.max(1) as f64)
+        })
+        .collect()
+}
+
+/// Summary statistics of a `.gkc` corpus for the Language view: size, charset and the most
+/// frequent symbols, bigrams, skipgrams and trigrams (% of each table).
+#[wasm_bindgen]
+pub fn corpus_stats(corpus: &[u8], top: usize) -> Result<String, JsError> {
+    let c = Corpus::from_bytes(corpus).map_err(js)?;
+    let cs = &c.charset;
+    let v = serde_json::json!({
+        "schema": SCHEMA,
+        "name": c.name,
+        "chars": c.total_chars(),
+        "charset": cs.iter().collect::<String>(),
+        "mono": top_grams(cs, &c.mono, 1, cs.len()),
+        "bigrams": top_grams(cs, &c.bi, 2, top),
+        "skipgrams": top_grams(cs, &c.skip, 2, top),
+        "trigrams": top_grams(cs, &c.tri, 3, top),
+    });
+    Ok(v.to_string())
+}
+
+/// Build a `.gkc` corpus from raw text (`gecko corpus build` on one text) with a named
+/// (`default`, `code`, `nav`) or literal charset.
+#[wasm_bindgen]
+pub fn corpus_from_text(name: &str, charset: &str, text: &str) -> Vec<u8> {
+    let mut c = Corpus::new(name, gecko_core::corpus::charset_named(charset));
+    c.add_text(text);
+    c.to_bytes()
+}
+
 /// An explore atlas held in WASM memory: the browser re-ranks it under edited weights and
 /// computes embeddings, consensus, families and funnels with the same code as `gecko atlas`.
 #[wasm_bindgen]
