@@ -13,7 +13,7 @@ Notation: `f(x)` corpus frequency; keys `i,j,k`; fingers LP LR LM LI LT | RT RI 
 
 | ID | Metric | Dir | Pri | Definition / notes |
 |---|---|---|---|---|
-| M01 | Key effort (heatmap) | − | P0 | Σ f(c)·effort(slot). Effort table per geometry (carpalx base effort, Oxeylyzer heatmap). |
+| M01 | Key effort (heatmap) | − | P0 | Σ f(c)·effort(slot). Effort table per geometry (carpalx base effort, Oxeylyzer heatmap) plus profile `row_offset` per finger (KLO asymmetry). |
 | M02 | Finger load | ± | P0 | Share per finger vs a target distribution (e.g. index > middle > ring > pinky). |
 | M03 | Finger balance (RSS) | − | P1 | √Σ(finger cost²): penalizes uneven load without a separate target (Kühlmak). |
 | M04 | Hand balance | ± | P0 | L:R share; flag beyond 60:40. |

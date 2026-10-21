@@ -5,6 +5,10 @@ scale_basis = "stdev over the 10 reference layouts on english / ansi-30 (gecko p
 # Target % per finger: LP LR LM LI LT RT RI RM RR RP
 finger_target = [8.0, 11.0, 15.0, 16.0, 0.0, 0.0, 16.0, 15.0, 11.0, 8.0]
 
+# M01 effort added off the home row per finger (pinky ring middle index), [above, below] home.
+# KLO's key costs: the top row is easy for middle/ring, the bottom row easy for index.
+row_offset = [[0.0, 0.0], [-0.1, 0.1], [-0.2, 0.2], [0.2, -0.2]]
+
 # Weights are in spread units: the scorer applies weight / scale, and each scale is the metric's
 # standard deviation over the reference layouts, so weight 1 = "one reference spread" and weights
 # compare directly. Direction comes from the metric (rewards like rolls subtract). Larger = care
