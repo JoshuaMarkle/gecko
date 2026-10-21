@@ -22,6 +22,22 @@
   10+ seeds, report mean/best/stdev of final score and time-to-target.
 - Keep a `bench/history.jsonl` so performance regressions are visible.
 
+Implemented: `cargo bench -p gecko-core` (`crates/gecko-core/benches/scorer.rs`) runs
+`full_eval`, `swap_delta/single` and `swaps_all_cores/<n>_threads` (random swap deltas with
+improvements applied, one `State` per thread) on the `gecko.toml` defaults with QWERTY.
+`gecko perf --record` appends one JSON line to `bench/history.jsonl`:
+`{date, commit, layout, geometry, corpus, profile, full_per_sec, delta_per_sec}` (`commit` gets
+`-dirty` when the tree has uncommitted changes). Record after any scorer change; compare
+entries from the same machine only.
+
+Implemented: `cargo bench -p gecko-core` (`crates/gecko-core/benches/scorer.rs`) runs
+`full_eval`, `swap_delta/single` and `swaps_all_cores/<n>_threads` (random swap deltas with
+improvements applied, one `State` per thread) on the `gecko.toml` defaults with QWERTY.
+`gecko perf --record` appends one JSON line to `bench/history.jsonl`:
+`{date, commit, layout, geometry, corpus, profile, full_per_sec, delta_per_sec}` (`commit` gets
+`-dirty` when the tree has uncommitted changes). Record after any scorer change; compare
+entries from the same machine only.
+
 ## Web
 
 TypeScript type check + a few Vitest tests for data shaping. A smoke test that the
@@ -45,8 +61,6 @@ records, every unconstrained record locally optimal); distances, PCA, funnels, C
 BLS and explore are in the brute-force and determinism tests.
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
-
-Still to add: criterion benches + `bench/history.jsonl`.
 
 ## CI
 
