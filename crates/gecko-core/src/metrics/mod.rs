@@ -208,6 +208,14 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Bracket pairs (`()`, `[]`, `{}`, `<>`) not adjacent or mirrored on one layer, weighted by use; reversed order counts half.",
     ),
+    m(
+        "Y04",
+        "HRM misfires",
+        "%",
+        Order::Bi,
+        Dir::Min,
+        "Same-hand rolls out of a home-row mod key (geometry `hrm`) onto another finger, where the hold can misfire.",
+    ),
 ];
 
 /// Open/close symbol pairs scored by Y03.
@@ -299,6 +307,9 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
             pct(same_finger(i, j) || k[i].layer != k[j].layer || oneshot)
         }),
         "Y03" => pair(&|i, j| bracket_cost(g, i, j)),
+        // The mod key is still down when another finger of its hand presses: a fast roll that
+        // a tap-hold resolver can read as a hold. Same-finger pairs release first.
+        "Y04" => pair(&|i, j| pct(g.hrm(i) && same_hand(i, j) && k[i].finger != k[j].finger)),
         id if id.starts_with('T') => Some(trigram::table(g, trigram::class_for(id)?)),
         _ => None,
     }
