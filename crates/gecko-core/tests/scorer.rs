@@ -149,6 +149,16 @@ fn layered_layouts_round_trip_and_score() {
     assert!((b.score - st.score).abs() < 1e-6 * st.score.abs().max(1.0));
     let y01 = b.metrics.iter().find(|m| m.id == "Y01").unwrap().value;
     assert!(y01 > 0.0 && y01 < 100.0, "Y01 {y01}");
+    // A layer keystroke also loads the layer key's finger and adds its effort (M01).
+    let vg = &sc.geometry;
+    let layer_share: f64 = (0..sc.n).filter(|&x| vg.holder(st.pos[x] as usize).is_some()).map(|x| 100.0 * sc.f1()[x] as f64).sum();
+    assert!(layer_share > 0.0);
+    assert!((st.load.iter().sum::<f64>() - 100.0 - layer_share).abs() < 1e-3);
+    let m01 = sc.table(gecko_core::metrics::index_of("M01").unwrap()).unwrap();
+    let v = (36..sc.n).find(|&v| vg.holder(v).is_some()).unwrap();
+    let h = vg.holder(v).unwrap();
+    assert!((m01[v] - vg.key[vg.phys(v)].effort - vg.key[h].effort).abs() < 1e-6);
+    assert_eq!(m01[vg.phys(v)], vg.key[vg.phys(v)].effort);
     // A symbol on the holding finger's keys is rejected.
     let mut bad = l.clone();
     let lt = g.key.iter().position(|k| k.finger == gecko_core::Finger::LT).unwrap();

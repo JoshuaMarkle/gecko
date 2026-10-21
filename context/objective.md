@@ -87,5 +87,8 @@ fronts (NSGA-II). Reports always show the per-metric breakdown.
   punctuation symbols, normalized on their own; cost 100 when they are on one finger (two keys)
   or on different layers. Reads "% of symbol bigrams that are awkward". Adds one term to the
   pair delta only when weighted.
-- Not modeled yet: the layer key's own keystroke in effort/finger load, one-shot layers,
+- The layer key's own keystroke: every layer symbol is typed with its layer key held, so M01
+  adds the holder key's effort to each layer slot and finger loads (M02, M04) count the
+  keystroke on the holder's finger too (loads then sum to more than 100%).
+- Not modeled yet: one-shot layers,
   thumb-trigram classes. Profile `code` weights both (scales are rough estimates).
