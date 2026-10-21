@@ -9,11 +9,15 @@ gecko score    <layout> [-g geometry] [-p profile] [-c corpus]   # per-metric br
 gecko compare  [<layout>...] [--corpora a,b,c]                   # rank layouts (all references if none);
                                                                   #   --corpora: score/rank per corpus (L05)
 gecko analyze  <layout> [--top 10]                                # finger loads, worst SFB/SFS/LSB/scissors; JSON adds all bigrams/skipgrams with a `kind`
-gecko optimize [--algo sa|hc|ga|bls|explore] [--time 30s | --evals N] [--seed 1] [--threads N]
+gecko optimize [--algo sa|hc|ga|bls|explore|qd] [--time 30s | --evals N] [--seed 1] [--threads N]
                [--pin ",./;"] [--from <layout>] [--top 10] [--sa-steps N] [--ga-pop N]
 gecko bench    [--algos hc,sa,ga,bls] [--seeds 3] [--time 5s]         # algorithm leaderboard
 gecko explore  [--time 60s | --evals N] [--seed 1] [--threads N] [--pin ...] [--from <layout>]
                [--samples 2000] [--max-optima 100000]         # map local optima; writes an atlas run
+gecko qd       [--time 60s | --evals N] [--seed 1] [--threads N] [--pin ...] [--from <layout>]
+               [--axes roll_ratio,index_load] [--bins 16] [--seeds 64] [--descent 0]
+               [--show <run>]                                     # MAP-Elites grid over behaviour axes
+                                                                  #   (name or name:lo:hi); writes a qd run
 gecko landscape [--samples 4000] [--walks 64] [--walk-len 400] [--seed 1] [--from <layout>]
                                                                   # random-score distribution, correlation
                                                                   #   length, reference percentiles, symmetry

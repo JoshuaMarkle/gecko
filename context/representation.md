@@ -118,5 +118,16 @@ rewritten atomically on each snapshot):
   hash, counts, best, probe summary (random distribution, correlation length), FDC, funnels,
   coverage (Chao1), distinct bests.
 
+QD runs (`gecko qd`, `explore/qd.rs`) write a MAP-Elites grid, rewritten atomically on each
+snapshot:
+- `elites.bin`: same `GKATLAS1` format as `optima.bin`, one record per filled cell, sorted by
+  score; `hits` = times the cell's elite was replaced, `first_ms` = when this elite entered,
+  flags 0.
+- `qd.json`: schema, done, evals, symbols, metric ids, profile table hash, `axes` [{name, lo,
+  hi, bins, auto}], `cells`, `filled`, `coverage`, `offspring`, `added`, `improved`,
+  `random_mean`, `qd_score`, `best`, and `elites` [{row (into `elites.bin`), cell, bins (per
+  axis), desc (per axis), score, chars, updates}], best first. Cell index = Σ bin_k · bins^k
+  (axis 0 fastest).
+
 Raw metric vectors make the atlas re-rankable under any weights without re-searching (as
 long as the profile's tables — `Profile::table_hash` — match).
