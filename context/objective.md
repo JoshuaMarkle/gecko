@@ -2,8 +2,10 @@
 
 Full metric list with IDs: `research/metrics-catalog.md`. Implemented now (`gecko list metrics`):
 B01 SFB, S01 SFS, S02 far SFS (gaps 2–3, decayed), S03 SFS distance, B03 finger speed,
-B04 LSB, B05 scissors, B14 geometric stretch (Oxeylyzer 2), M01 effort, M02 finger-load error,
-M04 hand balance, M05 home row, M06 center columns, B08 alternation, T01–T08 trigram classes,
+B04 LSB, B05 scissors, B06 half scissors, B07 bigram rolls in, B09 pinky–ring pairs, B10 row jump,
+B14 geometric stretch (Oxeylyzer 2), S05 skip stretch, M01 effort, M02 finger-load error,
+M03 finger balance (RSS), M07 peak finger load, M04 hand balance, M05 home row, M06 center columns,
+B08 alternation, T01–T08 trigram classes, T09 contortions, T10 irregular trigrams,
 E04/E05 Engram key-pair discomfort (formula / measured; geometry `[comfort]` tables),
 B02 repeats (info), Y01 layer switches, Y02 code-symbol bigrams. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
 lateral multiplier and per-finger factors, and S02's `skip_decay`.
@@ -36,7 +38,7 @@ Adding a linear metric costs nothing at search time.
 ## Delta evaluation
 
 Swapping symbols a and b changes only terms that involve a or b:
-bigrams O(S), trigrams O(S²). Nonlinear terms update from per-finger accumulators.
+bigrams O(S), trigrams O(S²). Nonlinear terms (M02, M03, M04, M07) update from per-finger accumulators.
 Every optimizer uses `delta_swap(layout, a, b)`; full evaluation is for verification
 and reports. A property test enforces `full(after) − full(before) == delta`.
 

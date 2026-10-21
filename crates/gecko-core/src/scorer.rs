@@ -1,7 +1,7 @@
 //! Folded scorer: full evaluation and O(S)/O(S²) swap deltas. See `context/objective.md`.
 //!
 //! score = Σ f1[x]·C1[p(x)] + Σ f2[x,y]·C2[p(x),p(y)] + Σ fk[x,z]·Ck[p(x),p(z)]
-//!       + Σ fkf[x,z]·Ckf[p(x),p(z)] + Σ f3[x,y,z]·C3[p(x),p(y),p(z)] + load terms (M02, M04)
+//!       + Σ fkf[x,z]·Ckf[p(x),p(z)] + Σ f3[x,y,z]·C3[p(x),p(y),p(z)] + load terms (M02, M03, M04, M07)
 //!
 //! `fk` is gap-1 skipgrams; `fkf` mixes gap-2 and gap-3 skipgrams with `sfb.skip_decay`;
 //! `fy` is bigrams of two code symbols (Y02), with its own cost table `Cy`.
@@ -55,6 +55,10 @@ pub struct Scorer {
     finger: Vec<u8>,
     w_load: f64,
     w_hand: f64,
+    w_rss: f64,
+    w_peak: f64,
+    /// Any load (non-linear) metric is weighted.
+    has_load: bool,
     target: [f64; FINGERS],
     /// Unfolded per-metric tables aligned with `METRICS` (reports only).
     tables: Vec<Option<Vec<f32>>>,
@@ -144,7 +148,7 @@ impl Scorer {
         let mut cy = vec![0f32; n * n];
         let mut c3 = vec![0f32; n * n * n];
         let (mut has_pair, mut has_far, mut has_sym, mut has_tri) = (false, false, false, false);
-        let (mut w_load, mut w_hand) = (0.0, 0.0);
+        let (mut w_load, mut w_hand, mut w_rss, mut w_peak) = (0.0, 0.0, 0.0, 0.0);
         for (d, t) in METRICS.iter().zip(&tables) {
             let w = profile.effective_weight(d.id);
             let signed = match d.dir {
@@ -159,6 +163,8 @@ impl Scorer {
                 (Order::Load, _) => match d.id {
                     "M02" => w_load = w as f64,
                     "M04" => w_hand = w as f64,
+                    "M03" => w_rss = w as f64,
+                    "M07" => w_peak = w as f64,
                     _ => {}
                 },
                 (order, Some(t)) => {
@@ -244,6 +250,9 @@ impl Scorer {
             finger: geometry.key.iter().map(|k| k.finger.index() as u8).collect(),
             w_load,
             w_hand,
+            w_rss,
+            w_peak,
+            has_load: w_load != 0.0 || w_hand != 0.0 || w_rss != 0.0 || w_peak != 0.0,
             target,
             tables,
         })
@@ -316,6 +325,12 @@ impl Scorer {
         }
         if self.w_hand != 0.0 {
             c += self.w_hand * hand_cost(load);
+        }
+        if self.w_rss != 0.0 {
+            c += self.w_rss * balance_rss(load);
+        }
+        if self.w_peak != 0.0 {
+            c += self.w_peak * peak_load(load, &self.target);
         }
         c
     }
@@ -397,7 +412,7 @@ impl Scorer {
             d += acc;
         }
 
-        if self.w_load != 0.0 || self.w_hand != 0.0 {
+        if self.has_load {
             let (fa, fb) = (self.finger[pa] as usize, self.finger[pb] as usize);
             if fa != fb {
                 let mut l = st.load;
@@ -517,10 +532,34 @@ fn truncate_coverage(f: &mut [f32], coverage: f64) {
     }
 }
 
+const NON_THUMB: [usize; 8] = [0, 1, 2, 3, 6, 7, 8, 9];
+
+/// Non-thumb finger loads as % of non-thumb keystrokes (indexed like `load`; thumbs 0).
+fn non_thumb_shares(load: &[f64; FINGERS]) -> [f64; FINGERS] {
+    let total: f64 = NON_THUMB.iter().map(|&f| load[f]).sum();
+    let k = if total > 0.0 { 100.0 / total } else { 0.0 };
+    let mut s = [0.0; FINGERS];
+    for f in NON_THUMB {
+        s[f] = k * load[f];
+    }
+    s
+}
+
+/// M03 cost: root-sum-square of non-thumb finger shares (%). 35.4 when all eight are even.
+pub fn balance_rss(load: &[f64; FINGERS]) -> f64 {
+    non_thumb_shares(load).iter().map(|s| s * s).sum::<f64>().sqrt()
+}
+
+/// M07 cost: the highest non-thumb finger share as % of its target share (fingers with a
+/// target of 0 are skipped). 100 = no finger above its target.
+pub fn peak_load(load: &[f64; FINGERS], target: &[f64; FINGERS]) -> f64 {
+    let s = non_thumb_shares(load);
+    NON_THUMB.iter().filter(|&&f| target[f] > 0.0).map(|&f| 100.0 * s[f] / target[f]).fold(0.0, f64::max)
+}
+
 /// M02 cost: mean squared gap (%²) between finger loads and targets over non-thumb fingers.
 /// Loads are taken as shares of non-thumb keystrokes, so thumb keys (Space) don't skew them.
 pub fn load_error_cost(load: &[f64; FINGERS], target: &[f64; FINGERS]) -> f64 {
-    const NON_THUMB: [usize; 8] = [0, 1, 2, 3, 6, 7, 8, 9];
     if load[4] == 0.0 && load[5] == 0.0 {
         return NON_THUMB.iter().map(|&f| (load[f] - target[f]).powi(2)).sum::<f64>() / 8.0;
     }

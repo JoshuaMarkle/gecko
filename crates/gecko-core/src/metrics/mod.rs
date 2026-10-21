@@ -76,6 +76,25 @@ pub static METRICS: &[MetricDef] = &[
     m("B04", "LSB", "%", Order::Bi, Dir::Min, "Lateral stretch: index on a center-column key next to the middle finger."),
     m("B05", "Scissors", "%", Order::Bi, Dir::Min, "Adjacent fingers, same hand, two-row jump."),
     m(
+        "B06",
+        "Half scissors",
+        "%",
+        Order::Bi,
+        Dir::Min,
+        "Adjacent fingers, same hand, one-row jump with the shorter finger on the upper row.",
+    ),
+    m("B07", "Bigram rolls in", "%", Order::Bi, Dir::Max, "Same hand, different fingers, moving toward the index finger."),
+    m("B09", "Pinky–ring pairs", "%", Order::Bi, Dir::Min, "Consecutive keys on the pinky and ring finger of one hand."),
+    m("B10", "Row jump", "u", Order::Bi, Dir::Min, "Vertical distance between consecutive same-hand keys, per 100 bigrams."),
+    m(
+        "S05",
+        "Skip stretch",
+        "u",
+        Order::Skip,
+        Dir::Min,
+        "Geometric stretch (B14) between keys 1 and 3 of a trigram, per 100 skipgrams.",
+    ),
+    m(
         "B14",
         "Stretch",
         "u",
@@ -85,6 +104,15 @@ pub static METRICS: &[MetricDef] = &[
     ),
     m("M01", "Effort", "", Order::Mono, Dir::Min, "Average base key effort per keystroke."),
     m("M02", "Finger load error", "%", Order::Load, Dir::Min, "RMS gap between finger loads and the profile's target loads."),
+    m("M03", "Finger balance", "%", Order::Load, Dir::Min, "Root-sum-square of non-thumb finger shares; lowest when load is even."),
+    m(
+        "M07",
+        "Peak finger load",
+        "%",
+        Order::Load,
+        Dir::Min,
+        "Highest non-thumb finger load as % of that finger's target load (profile `finger_target`).",
+    ),
     m("M04", "Left hand", "%", Order::Load, Dir::Min, "Share of keystrokes on the left hand; scored as squared distance from 50%."),
     m("M05", "Home row", "%", Order::Mono, Dir::Max, "Share of keystrokes on the home row."),
     m("M06", "Center columns", "%", Order::Mono, Dir::Min, "Share of keystrokes on the index stretch columns."),
@@ -97,6 +125,22 @@ pub static METRICS: &[MetricDef] = &[
     m("T06", "Redirects", "%", Order::Tri, Dir::Min, "Three same-hand keys that change direction."),
     m("T07", "Bad redirects", "%", Order::Tri, Dir::Min, "Redirects that do not use the index finger."),
     m("T08", "SFT", "%", Order::Tri, Dir::Min, "Same-finger trigrams: all three keys on one finger."),
+    m(
+        "T09",
+        "Contortions",
+        "u",
+        Order::Tri,
+        Dir::Min,
+        "Chained stretches: both steps of a trigram have geometric stretch (B14); their sum per 100 trigrams.",
+    ),
+    m(
+        "T10",
+        "Irregular trigrams",
+        "%",
+        Order::Tri,
+        Dir::Min,
+        "Both bigrams of the trigram are bad: same finger, lateral stretch (B04) or a full/half scissor (B05/B06).",
+    ),
     m(
         "E04",
         "Engram formula",
@@ -183,6 +227,33 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
             pct(same_hand(i, j) && (lsb(i, j) || lsb(j, i)))
         }),
         "B05" => pair(&|i, j| pct(adjacent(i, j) && (k[i].row - k[j].row).abs() >= 2)),
+        "B06" => pair(&|i, j| pct(half_scissor(g, i, j))),
+        "B07" => pair(&|i, j| pct(rolls(g, i, j) && k[j].finger.ord() > k[i].finger.ord())),
+        "B09" => pair(&|i, j| pct(rolls(g, i, j) && k[i].finger.ord() + k[j].finger.ord() == 1)),
+        "B10" => pair(&|i, j| {
+            let sh = same_hand(i, j) && !g.same_key(i, j) && !k[i].finger.is_thumb() && !k[j].finger.is_thumb();
+            if sh {
+                100.0 * (k[i].pos[1] - k[j].pos[1]).abs()
+            } else {
+                0.0
+            }
+        }),
+        "S05" => pair(&|i, j| 100.0 * stretch(g, i, j)),
+        "T09" => {
+            let st: Vec<f32> = (0..n * n).map(|ij| stretch(g, ij / n, ij % n)).collect();
+            tri(g, &|i, j, l| {
+                let (s1, s2) = (st[i * n + j], st[j * n + l]);
+                if s1 > 0.0 && s2 > 0.0 {
+                    100.0 * (s1 + s2)
+                } else {
+                    0.0
+                }
+            })
+        }
+        "T10" => {
+            let bad: Vec<bool> = (0..n * n).map(|ij| bad_bigram(g, ij / n, ij % n)).collect();
+            tri(g, &|i, j, l| pct(bad[i * n + j] && bad[j * n + l]))
+        }
         "B08" => pair(&|i, j| pct(!same_hand(i, j))),
         "Y01" => pair(&|i, j| {
             let lj = k[j].layer as usize;
@@ -200,6 +271,55 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
         id if id.starts_with('T') => Some(trigram::table(g, trigram::class_for(id)?)),
         _ => None,
     }
+}
+
+/// `[N×N×N]` table from `f(i, j, k)`.
+fn tri(g: &Geometry, f: &dyn Fn(usize, usize, usize) -> f32) -> Option<Vec<f32>> {
+    let n = g.len();
+    let mut t = vec![0.0; n * n * n];
+    for i in 0..n {
+        for j in 0..n {
+            for l in 0..n {
+                t[(i * n + j) * n + l] = f(i, j, l);
+            }
+        }
+    }
+    Some(t)
+}
+
+/// Same hand, two different non-thumb fingers (a bigram roll in either direction).
+fn rolls(g: &Geometry, i: usize, j: usize) -> bool {
+    let (a, b) = (&g.key[i], &g.key[j]);
+    a.hand() == b.hand() && a.finger != b.finger && !a.finger.is_thumb() && !b.finger.is_thumb()
+}
+
+/// Finger length rank, shortest first: pinky, index, ring, middle.
+fn length_rank(ord: u8) -> u8 {
+    [0, 2, 3, 1, 4][ord as usize]
+}
+
+/// B06: adjacent non-thumb fingers on one hand, rows one apart, the shorter finger on the upper row.
+pub fn half_scissor(g: &Geometry, i: usize, j: usize) -> bool {
+    let (a, b) = (&g.key[i], &g.key[j]);
+    if !rolls(g, i, j) || a.finger.ord().abs_diff(b.finger.ord()) != 1 || (a.row - b.row).abs() != 1 {
+        return false;
+    }
+    let (short, long) = if length_rank(a.finger.ord()) < length_rank(b.finger.ord()) { (a, b) } else { (b, a) };
+    short.row < long.row
+}
+
+/// T10's "bad bigram": same finger on two keys, a lateral stretch (B04), or a full/half scissor.
+pub fn bad_bigram(g: &Geometry, i: usize, j: usize) -> bool {
+    let (a, b) = (&g.key[i], &g.key[j]);
+    if g.same_key(i, j) || a.hand() != b.hand() || a.finger.is_thumb() || b.finger.is_thumb() {
+        return false;
+    }
+    if a.finger == b.finger {
+        return true;
+    }
+    let lsb = |x: &crate::geometry::Key, y: &crate::geometry::Key| x.stretch && x.finger.ord() == 3 && y.finger.ord() == 2;
+    let adjacent = a.finger.ord().abs_diff(b.finger.ord()) == 1;
+    lsb(a, b) || lsb(b, a) || (adjacent && (a.row - b.row).abs() >= 2) || half_scissor(g, i, j)
 }
 
 /// Same-finger movement cost `g(d) · finger_factor` for slots `i`, `j` (B03, S03).
