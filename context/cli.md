@@ -20,7 +20,7 @@ gecko landscape [--samples 4000] [--walks 64] [--walk-len 400] [--seed 1] [--fro
 gecko atlas    <run> [--top 10] [--cut 8] [--pool 300] [-p profile]
                                                                   # summary, ranked, families, consensus,
                                                                   #   funnels, FDC; -p re-ranks under a profile
-gecko perf     [--layout qwerty]                                  # full evals/s and swap deltas/s (1 thread)
+gecko perf     [--layout qwerty] [--record]                       # full evals/s and swap deltas/s (1 thread); --record appends to bench/history.jsonl
 gecko corpus build <files or dirs...> [--out english] [--charset default|code|<symbols>] [--ext txt]
 gecko corpus mix <corpus>[:weight]... --out <name>                     # weighted mix, same charset
 gecko corpus import <cmini corpus dir> --out <name> [--charset ...]   # words.json or n-gram JSON
