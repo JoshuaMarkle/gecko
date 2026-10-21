@@ -21,7 +21,7 @@ Notation: `f(x)` corpus frequency; keys `i,j,k`; fingers LP LR LM LI LT | RT RI 
 | M06 | Center-column usage | − | P1 | Use of index stretch columns (QWERTY T G B Y H N). |
 | M07 | Max finger use | − | P1 | Soft cap on any single finger's share (pinky especially). Implemented: highest non-thumb share as % of its `finger_target` (100 = none over target). |
 | M08 | Off-home penalty | − | P1 | carpalx-style row/finger/hand penalty per press. |
-| M09 | Thumb load | ± | P2 | When thumbs carry letters/space/layer keys. |
+| M09 | Thumb load | ± | P2 | When thumbs carry letters/space/layer keys. Implemented as squared distance from profile `thumb_target` (%). |
 
 ## 2. Bigram (consecutive keys)
 
@@ -70,6 +70,8 @@ stats summing to 100% and makes reports easy to read.
 | T09 | Contortion | − | P2 | Chained bad bigrams on one hand (Kühlmak). Implemented: both steps have B14 stretch; cost = their sum. |
 | T10 | Irregularity | − | P2 | Both bigrams of the trigram are bad (KLO). Implemented: bad = SFB, LSB (B04), full or half scissor. |
 | T11 | carpalx triad effort | − | P2 | Full carpalx model, as a separate profile. |
+| T12 | Thumb roll | + | P2 | Trigram with a thumb key next to a same-hand key (other finger). |
+| T13 | Thumb alternate | + | P2 | Trigram with a thumb where every thumb step changes hands. |
 
 ## 5. Longer sequences and words
 

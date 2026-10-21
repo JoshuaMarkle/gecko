@@ -4,8 +4,8 @@ Full metric list with IDs: `research/metrics-catalog.md`. Implemented now (`geck
 B01 SFB, S01 SFS, S02 far SFS (gaps 2–3, decayed), S03 SFS distance, S04/S05 skip stretch (B14 on skipgrams), B03 finger speed,
 B04 LSB, B05 scissors, B06 half scissors, B07 bigram rolls in, B09 pinky–ring pairs, B10 row jump,
 B14 geometric stretch (Oxeylyzer 2), B11 finger-pair movement (KLO), M01 effort, M02 finger-load error,
-M03 finger balance (RSS), M07 peak finger load, M04 hand balance, M05 home row, M06 center columns,
-B08 alternation, T01–T08 trigram classes, T09 contortions, T10 irregular trigrams,
+M03 finger balance (RSS), M07 peak finger load, M04 hand balance, M09 thumb load, M05 home row, M06 center columns,
+B08 alternation, T01–T08 and T12–T13 (thumb) trigram classes, T09 contortions, T10 irregular trigrams,
 E04/E05 Engram key-pair discomfort (formula / measured; geometry `[comfort]` tables),
 B02 repeats (info), Y01 layer switches (and Shift), Y02 code-symbol bigrams, Y03 paired brackets, Y04 home-row-mod misfires. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
 lateral multiplier and per-finger factors, and S02's `skip_decay`. Profile `row_offset`
@@ -127,7 +127,7 @@ fronts (NSGA-II). Reports always show the per-metric breakdown.
   channels: mono `fsh`/`Csh` and pair `fsb`/`Csb` (the latter compiled into the pair delta only
   when weighted). Without `⇧` on the layout Shift costs nothing, so 30-key layouts score as
   before. A one-shot Shift costs the same for single capitals; caps runs are scored as held.
-- Not modeled yet: the layer/Shift key's own keystroke in finger load, thumb-trigram classes,
+- Not modeled yet: the layer/Shift key's own keystroke in finger load,
   layer state beyond one bigram (toggle assumes each bigram starts from `i`'s layer). Profile `code` weights Y01/Y02/Y03 (scales are rough estimates).
 
 ## Home-row mods (Y04)
@@ -142,3 +142,15 @@ fronts (NSGA-II). Reports always show the per-metric breakdown.
   0.25 leaves the default optimum unchanged (15.1 %). Weight 1 cuts Y04 to 5.6 % by moving
   letters off the home row (M05 58 → 31 %), so it costs a lot. Runs `20261021-104858-sa-3817de78`
   and `20261021-104833-sa-be473459` vs default `20261021-104823-sa-8909360f` (SA, seed 1, 10 s).
+
+## Thumbs (T12, T13, M09)
+
+- Trigrams with a thumb key get their own classes instead of "other" (which now means only a
+  same-finger step or a repeated key, thumbs included). Only steps that touch a thumb decide:
+  **T12 thumb roll** if any of them stays on the same hand (index → space on the left thumb),
+  **T13 thumb alternate** if all of them change hands. Both `max`, weight 0 in bundled
+  profiles. On corne-36 / English with Space on a thumb they are ≈ 33–36% and ≈ 15–20% of trigrams.
+- **M09 thumb load** (`Order::Load`): thumb share of keystrokes (%), scored like M04 as
+  `(share − thumb_target)² / 10`. Profile `thumb_target` defaults to 18 (Space alone on
+  English is 18.3%); raise it to ask for a letter on a thumb. Updated from the finger-load
+  accumulators, so it adds nothing to the delta beyond M02/M04's load path.

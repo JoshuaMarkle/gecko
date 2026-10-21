@@ -34,6 +34,8 @@ export interface Profile {
   description: string;
   weights: Record<string, number>;
   finger_target: number[];
+  /** Target thumb share % for M09 (default 18 when absent). */
+  thumb_target?: number;
   trigram_coverage: number;
   /** Metric id → reference spread; the scorer uses weight / scale (weights in spread units). */
   scale?: Record<string, number>;
