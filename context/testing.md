@@ -70,7 +70,9 @@ Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
 
 Integration coverage: corpus extension and adaptive-key rewriting retain Shift counts; tabu
-mixed deltas include Shift and bracket placement. Reference snapshots include S04, row
+mixed deltas include Shift and bracket placement. Trigram-cache updates and rollback swaps are
+covered by the delta/full properties and extended-neighbourhood regressions. Full evaluation
+recomputes trigram terms independently of the cache. Reference snapshots include S04, row
 effort offsets and Y03.
 
 ## CI

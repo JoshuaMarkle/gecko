@@ -74,7 +74,7 @@ pub struct Scorer {
     /// All bracket pairs on the layout, weighted or not (reports).
     bracket_all: Vec<PairEntry>,
     /// Non-zero trigrams grouped by symbol (CSR): every trigram containing symbol `s` is
-    /// stored in `tri_entries[tri_start[s]..tri_start[s + 1]]`. Exact, just sparse.
+    /// indexed in `tri_entries[tri_start[s]..tri_start[s + 1]]`. Exact, just sparse.
     tri_start: Vec<u32>,
     tri_entries: Vec<TriEntry>,
     /// All non-zero trigrams once (full evaluation).
@@ -102,6 +102,7 @@ pub struct Scorer {
 
 #[derive(Clone, Copy, Debug)]
 struct TriEntry {
+    id: u32,
     x: u8,
     y: u8,
     z: u8,
@@ -115,7 +116,7 @@ pub struct PairEntry {
     pub f: f32,
 }
 
-/// Mutable search state: symbol ↔ slot maps plus finger-load accumulators.
+/// Mutable search state: symbol ↔ slot maps, finger loads and current trigram costs.
 #[derive(Clone, Debug)]
 pub struct State {
     /// `pos[symbol] = slot`
@@ -125,6 +126,9 @@ pub struct State {
     /// Finger loads in % of keystrokes; a layer keystroke also loads its layer key's finger.
     pub load: [f64; FINGERS],
     pub score: f64,
+    /// Current folded cost of each sparse trigram (aligned with `Scorer::tri_all`).
+    /// Empty when no trigram metric is weighted. Refreshed only for touched trigrams.
+    tri_cost: Vec<f32>,
 }
 
 impl State {
@@ -296,7 +300,7 @@ impl Scorer {
                 for z in 0..n {
                     let f = f3[(x * n + y) * n + z];
                     if f > 0.0 {
-                        tri_all.push(TriEntry { x: x as u8, y: y as u8, z: z as u8, f });
+                        tri_all.push(TriEntry { id: tri_all.len() as u32, x: x as u8, y: y as u8, z: z as u8, f });
                     }
                 }
             }
@@ -329,7 +333,7 @@ impl Scorer {
         for k in 0..n * n {
             tri_pair_start[k + 1] += tri_pair_start[k];
         }
-        let mut tri_pair = vec![TriEntry { x: 0, y: 0, z: 0, f: 0.0 }; tri_pair_start[n * n] as usize];
+        let mut tri_pair = vec![TriEntry { id: 0, x: 0, y: 0, z: 0, f: 0.0 }; tri_pair_start[n * n] as usize];
         let mut fill = tri_pair_start.clone();
         for e in &tri_all {
             for k in pairs_of(e).into_iter().filter(|&k| k != usize::MAX) {
@@ -439,7 +443,12 @@ impl Scorer {
             pos[s as usize] = slot as u8;
         }
         let load = self.loads(&pos);
-        let mut st = State { pos, sym, load, score: 0.0 };
+        let tri_cost = if self.has_tri {
+            self.tri_all.iter().map(|e| self.trigram_cost(&pos, e)).collect()
+        } else {
+            Vec::new()
+        };
+        let mut st = State { pos, sym, load, score: 0.0, tri_cost };
         st.score = self.full(&st);
         st
     }
@@ -589,20 +598,17 @@ impl Scorer {
         }
 
         if self.has_tri {
-            let c3 = &self.c3;
-            let cost =
-                |m: &[u8], e: &TriEntry| c3[(m[e.x as usize] as usize * n + m[e.y as usize] as usize) * n + m[e.z as usize] as usize];
             let mut acc = 0.0f64;
             let ra = self.tri_start[a] as usize..self.tri_start[a + 1] as usize;
             for e in &self.tri_entries[ra] {
-                acc += (e.f * (cost(new, e) - cost(old, e))) as f64;
+                acc += (e.f * (self.trigram_cost(new, e) - st.tri_cost[e.id as usize])) as f64;
             }
             let (a8, rb) = (a as u8, self.tri_start[b] as usize..self.tri_start[b + 1] as usize);
             for e in &self.tri_entries[rb] {
                 if e.x == a8 || e.y == a8 || e.z == a8 {
                     continue; // already counted with `a`
                 }
-                acc += (e.f * (cost(new, e) - cost(old, e))) as f64;
+                acc += (e.f * (self.trigram_cost(new, e) - st.tri_cost[e.id as usize])) as f64;
             }
             d += acc;
         }
@@ -775,6 +781,23 @@ impl Scorer {
         st.pos.swap(a, b);
         st.sym.swap(pa, pb);
         st.score += delta;
+        if self.has_tri && a != b {
+            let ra = self.tri_start[a] as usize..self.tri_start[a + 1] as usize;
+            for e in &self.tri_entries[ra] {
+                st.tri_cost[e.id as usize] = self.trigram_cost(&st.pos, e);
+            }
+            let (a8, rb) = (a as u8, self.tri_start[b] as usize..self.tri_start[b + 1] as usize);
+            for e in &self.tri_entries[rb] {
+                if e.x != a8 && e.y != a8 && e.z != a8 {
+                    st.tri_cost[e.id as usize] = self.trigram_cost(&st.pos, e);
+                }
+            }
+        }
+    }
+
+    #[inline]
+    fn trigram_cost(&self, pos: &[u8], e: &TriEntry) -> f32 {
+        self.c3[(pos[e.x as usize] as usize * self.n + pos[e.y as usize] as usize) * self.n + pos[e.z as usize] as usize]
     }
 
     // ---- accessors for reports ----

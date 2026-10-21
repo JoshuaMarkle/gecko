@@ -30,7 +30,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 3. [x] [#12](https://github.com/JoshuaMarkle/gecko/issues/12) `A3` insta snapshots of reference layout scores · S
 4. [ ] [#16](https://github.com/JoshuaMarkle/gecko/issues/16) `A4` Automated WASM == CLI test · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
 5. [x] [#18](https://github.com/JoshuaMarkle/gecko/issues/18) `A5` criterion benches + bench/history.jsonl · S
-6. [ ] [#20](https://github.com/JoshuaMarkle/gecko/issues/20) `A6` Scorer speed: cache per-trigram cost in State · M · after [#18](https://github.com/JoshuaMarkle/gecko/issues/18)
+6. [x] [#20](https://github.com/JoshuaMarkle/gecko/issues/20) `A6` Scorer speed: cache per-trigram cost in State · M · after [#18](https://github.com/JoshuaMarkle/gecko/issues/18)
 7. [x] [#28](https://github.com/JoshuaMarkle/gecko/issues/28) `A7` Validate trigram classes and pair distances against external data · S
 8. [x] [#78](https://github.com/JoshuaMarkle/gecko/issues/78) `A8` `gecko verify run:<id>` · S
 9. [x] [#79](https://github.com/JoshuaMarkle/gecko/issues/79) `A9` Issue and PR templates for agent work · S
