@@ -113,6 +113,11 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   break n-grams. Word imports count each word as `␣word` plus the exact `x␣`, `yx␣` that
   follow it; only `x␣z` trigrams and cross-word skipgrams are estimated (independent words). Bigrams/trigrams count only charset runs; skip-g counts
   x and z with exactly g tokens between, whatever they are. Project Gutenberg headers are stripped.
+- `data/corpora/<name>.words.tsv`: word counts beside a word-import corpus (for
+  `analyze --words`), written by `corpus import` from `words.json`: a `#total\t<n>` line (all
+  occurrences), then `word\tcount`, most frequent first, folded like the tokenizer and merged
+  (`I` + `i`), capped at 20 000 words. Not part of the `.gkc` or its hash. Bundled for `shai`
+  and `mt-10k`.
 - `gecko corpus build <text>` counts raw text. `gecko corpus import <dir>` reads cmini-style
   JSON counts: from `words.json` every in-word n-gram is exact, and skipgrams across a space are
   estimated assuming consecutive words are independent (spans over 3+ words are dropped);

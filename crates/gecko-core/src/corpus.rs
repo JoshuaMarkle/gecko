@@ -133,6 +133,76 @@ const US_SHIFT: &[(char, char)] = &[
 const SPACE: u8 = 254;
 const OTHER: u8 = 255;
 
+/// The tokenizer's per-character folding: lowercase, curly quotes → `'`, dashes → `-`.
+pub fn fold_char(c: char) -> char {
+    match c {
+        '\u{2018}' | '\u{2019}' => '\'',
+        '\u{2013}' | '\u{2014}' => '-',
+        _ => c.to_ascii_lowercase(),
+    }
+}
+
+/// Words kept in a `.words.tsv` side file (most frequent first). The tail carries almost no
+/// frequency, so it never reaches a frequency × cost top list.
+pub const WORDS_KEEP: usize = 20_000;
+
+/// Word counts of a word-import corpus, stored beside it as `<name>.words.tsv` (`word\tcount`
+/// per line, most frequent first). Not part of the `.gkc`, so corpus hashes are unchanged.
+#[derive(Clone, Debug, Default)]
+pub struct WordList {
+    /// Folded words (see `fold_char`) with their counts, most frequent first.
+    pub words: Vec<(String, u64)>,
+    /// Occurrences of every imported word, including those cut by `WORDS_KEEP`.
+    pub total: u64,
+}
+
+impl WordList {
+    /// Fold and merge `(word, count)` pairs (`I` and `i` are one word), sort by count
+    /// (ties alphabetical) and keep the `keep` most frequent.
+    pub fn from_counts(counts: impl IntoIterator<Item = (String, u64)>, keep: usize) -> Self {
+        let mut merged: std::collections::BTreeMap<String, u64> = Default::default();
+        let mut total = 0;
+        for (w, n) in counts {
+            let w: String = w.trim().chars().map(fold_char).collect();
+            if w.is_empty() || w.chars().any(char::is_whitespace) {
+                continue;
+            }
+            total += n;
+            *merged.entry(w).or_default() += n;
+        }
+        let mut words: Vec<(String, u64)> = merged.into_iter().collect();
+        words.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+        words.truncate(keep);
+        WordList { words, total }
+    }
+
+    /// TSV with a `#total\t<n>` header line.
+    pub fn to_tsv(&self) -> String {
+        let mut s = format!("#total\t{}\n", self.total);
+        for (w, n) in &self.words {
+            s.push_str(&format!("{w}\t{n}\n"));
+        }
+        s
+    }
+
+    pub fn from_tsv(text: &str) -> Result<Self> {
+        let mut l = WordList::default();
+        for line in text.lines().filter(|l| !l.is_empty()) {
+            let (w, n) = line.rsplit_once('\t').ok_or_else(|| Error::parse("words", format!("expected word<TAB>count: '{line}'")))?;
+            let n: u64 = n.trim().parse().map_err(|e| Error::parse("words", format!("'{line}': {e}")))?;
+            if w == "#total" {
+                l.total = n;
+            } else {
+                l.words.push((w.to_string(), n));
+            }
+        }
+        if l.total == 0 {
+            l.total = l.words.iter().map(|w| w.1).sum();
+        }
+        Ok(l)
+    }
+}
+
 /// Strip Project Gutenberg header/footer when present.
 fn strip_gutenberg(text: &str) -> &str {
     let start = text.find("*** START OF").and_then(|i| text[i..].find('\n').map(|j| i + j + 1)).unwrap_or(0);
@@ -588,6 +658,17 @@ mod tests {
         c.add_text(&fold_diacritics("été"));
         assert_eq!(c.bi[0 * 2 + 1], 1); // et, not broken by é
         assert_eq!(c.mono, vec![2, 1]);
+    }
+
+    #[test]
+    fn word_list_folds_merges_and_round_trips() {
+        let l =
+            WordList::from_counts([("I".into(), 3), ("i".into(), 2), ("you\u{2019}re".into(), 4), ("a b".into(), 9), ("zz".into(), 1)], 2);
+        assert_eq!(l.words, vec![("i".to_string(), 5), ("you're".to_string(), 4)]);
+        assert_eq!(l.total, 10);
+        let back = WordList::from_tsv(&l.to_tsv()).unwrap();
+        assert_eq!(back.words, l.words);
+        assert_eq!(back.total, 10);
     }
 
     #[test]
