@@ -7,6 +7,7 @@ pub mod genetic;
 pub mod hill_climb;
 pub mod moves;
 pub mod tabu;
+pub mod map_elites;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
@@ -33,10 +34,12 @@ pub enum Algo {
     Explore,
     /// Robust tabu search (Taillard) with an incrementally updated Δ matrix.
     Tabu,
+    /// MAP-Elites quality-diversity search.
+    Qd,
 }
 
 impl Algo {
-    pub const ALL: [Algo; 6] = [Algo::Hc, Algo::Sa, Algo::Ga, Algo::Bls, Algo::Explore, Algo::Tabu];
+    pub const ALL: [Algo; 7] = [Algo::Hc, Algo::Sa, Algo::Ga, Algo::Bls, Algo::Explore, Algo::Tabu, Algo::Qd];
     pub fn name(self) -> &'static str {
         match self {
             Algo::Hc => "hc",
@@ -45,6 +48,7 @@ impl Algo {
             Algo::Bls => "bls",
             Algo::Explore => "explore",
             Algo::Tabu => "tabu",
+            Algo::Qd => "qd",
         }
     }
     pub fn parse(s: &str) -> Option<Algo> {
@@ -76,6 +80,8 @@ pub struct Params {
     /// Extra neighbourhoods for every steepest descent (all algorithms).
     #[serde(default)]
     pub moves: moves::MoveParams,
+    #[serde(default)]
+    pub qd: map_elites::QdParams,
 }
 
 impl Default for Params {
@@ -93,6 +99,7 @@ impl Default for Params {
             explore: Default::default(),
             tabu: Default::default(),
             moves: Default::default(),
+            qd: Default::default(),
         }
     }
 }
@@ -125,6 +132,10 @@ pub trait Observer: Sync {
     /// Distinct good layouts (`sym[slot]`) that exclusion restarts must stay away from.
     fn exclusions(&self) -> Arc<Vec<Vec<u8>>> {
         Arc::new(Vec::new())
+    }
+    /// A layout (`sym[slot]`) to mutate next, e.g. a random MAP-Elites elite.
+    fn parent(&self, _rng: &mut Rng) -> Option<Vec<u8>> {
+        None
     }
 }
 
@@ -269,10 +280,15 @@ pub fn steepest_descent(ctx: &Ctx, st: &mut State) -> u64 {
 
 /// Steepest descent over swaps only. Returns evaluations used.
 pub fn swap_descent(ctx: &Ctx, st: &mut State) -> u64 {
+    steepest_descent_capped(ctx, st, usize::MAX)
+}
+
+/// Swap descent with a cap on improving moves.
+pub fn steepest_descent_capped(ctx: &Ctx, st: &mut State, max_moves: usize) -> u64 {
     let sc = ctx.scorer;
     let m = &ctx.movable;
     let mut evals = 0;
-    loop {
+    for _ in 0..max_moves {
         let mut best = (0, 0, -1e-9);
         for i in 0..m.len() {
             for j in (i + 1)..m.len() {
@@ -288,6 +304,7 @@ pub fn swap_descent(ctx: &Ctx, st: &mut State) -> u64 {
         }
         sc.apply(st, best.0, best.1, best.2);
     }
+    evals
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -403,6 +420,7 @@ fn make(algo: Algo, p: &Params) -> Box<dyn Optimizer + Send> {
         Algo::Bls => Box::new(bls::Bls::new(p.bls.clone(), p.top, false)),
         Algo::Explore => Box::new(bls::Bls::new(p.bls.clone(), p.top, true)),
         Algo::Tabu => Box::new(tabu::Tabu::new(p.tabu.clone(), p.top)),
+        Algo::Qd => Box::new(map_elites::MapElites::new(p.qd.clone(), p.top)),
     }
 }
 

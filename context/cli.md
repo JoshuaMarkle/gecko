@@ -10,13 +10,17 @@ gecko compare  [<layout>...] [--corpora a,b,c]                   # rank layouts 
                                                                   #   --corpora: score/rank per corpus (L05)
 gecko analyze  <layout> [--top 10] [--words]                      # finger loads, worst SFB/SFS/LSB/scissors; JSON adds all bigrams/skipgrams with a `kind`;
                                                                   #   --words: worst real words per metric (needs -c shai or mt-10k)
-gecko optimize [--algo sa|hc|ga|bls|tabu|explore] [--time 30s | --evals N] [--seed 1] [--threads N]
+gecko optimize [--algo sa|hc|ga|bls|tabu|explore|qd] [--time 30s | --evals N] [--seed 1] [--threads N]
                [--pin ",./;"] [--from <layout>] [--top 10] [--sa-steps N] [--ga-pop N]
                [--moves swap|columns,cycle3,depth2|all] [--depth2-width 32]
 gecko bench    [--algos hc,sa,ga,bls,tabu] [--seeds 3] [--time 5s]         # algorithm leaderboard
                [--moves "swap/cycle3/depth2"] [--depth2-width N]      # one row per algo × variant
 gecko explore  [--time 60s | --evals N] [--seed 1] [--threads N] [--pin ...] [--from <layout>]
                [--samples 2000] [--max-optima 100000]         # map local optima; writes an atlas run
+gecko qd       [--time 60s | --evals N] [--seed 1] [--threads N] [--pin ...] [--from <layout>]
+               [--axes roll_ratio,index_load] [--bins 16] [--seeds 64] [--descent 0]
+               [--show <run>]                                     # MAP-Elites grid over behaviour axes
+                                                                  #   (name or name:lo:hi); writes a qd run
 gecko landscape [--samples 4000] [--walks 64] [--walk-len 400] [--seed 1] [--from <layout>]
                                                                   # random-score distribution, correlation
                                                                   #   length, reference percentiles, symmetry
@@ -28,18 +32,14 @@ gecko verify   run:<id>                                           # re-run an --
 gecko perf     [--layout qwerty] [--record]                       # full evals/s and swap deltas/s (1 thread); --record appends to bench/history.jsonl
 gecko corpus build <files or dirs...> [--out english] [--charset default|code|<symbols>] [--ext txt] [--fold]
 gecko corpus mix <corpus>[:weight]... --out <name>                     # weighted mix, same charset
-<<<<<<< HEAD
 gecko corpus import <cmini corpus dir> --out <name> [--charset ...] [--fold]   # words.json or n-gram JSON; --fold: é→e; also writes <name>.words.tsv
 gecko geometry import-kle <file.json> --out <name> [--force]       # KLE board → data/geometries/<name>.toml
                                                                   #   (fingers/rows/home/effort guessed; edit after)
 gecko layouts import <file> [--from oxeylyzer|genkey|cmini|auto] [--out <name>] [--force]
                [--name N] [-g geometry]          # → layout TOML (stdout, or data/layouts/<out>.toml)
 gecko layouts export <layout> --to oxeylyzer|genkey|cmini [-g geometry]   # 30 alpha keys → stdout
-=======
-gecko corpus import <cmini corpus dir> --out <name> [--charset ...]   # words.json or n-gram JSON
 gecko layouts import-cmini <cmini checkout>                           # → data/community/cmini.json
 gecko layouts likes [--top 10] [--dups] [-g -p -c]                     # GECKO rank vs cmini likes (Spearman)
->>>>>>> origin/fix/issue-26
 gecko profile normalize [-p profile] [--layouts a,b] [--out name]   # weights → spread units
 gecko profile fit [--target E05] [--layouts a,b] [--out name]       # fit weights to a judge metric
 gecko list     layouts|geometries|profiles|corpora|runs|metrics
