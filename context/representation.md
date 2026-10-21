@@ -78,7 +78,7 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 - Default charset: `a–z , . / ; ' - ␣` (33). Frequencies are normalized over the symbols on
   the layout, so 30-key layouts (no `␣`) score exactly as before; layouts with `␣` read as
   "% of all keystrokes incl. space" and are not directly comparable to 30-key numbers.
-- Bundled corpora (`gecko compare --corpora english,shai,mt-10k,mt-450k` for the L05 report):
+- Bundled corpora (`gecko compare --corpora english,shai,mt-10k,mt-450k,reddit,french` for the L05 report):
 
   | Name | Source | Size | QWERTY SFB |
   |---|---|---|---|
@@ -86,9 +86,15 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   | `shai` | cmini `corpora/shai/words.json` (iweb-based English; the community default) | 520M | 6.70 % |
   | `mt-10k` | cmini `corpora/english-10k` (Monkeytype 10k word list, each word once) | 82k | 8.40 % |
   | `mt-450k` | cmini `corpora/english-450k` (Monkeytype 450k list) | 4.8M | 8.30 % |
+  | `reddit` | cmini `corpora/reddit` (Reddit comments; chat style) | 56M | 6.28 % |
+  | `french` | cmini `corpora/french`, imported with `--fold` (diacritics → base letter) | 118M | 8.81 % |
 
   cmini data from https://github.com/Apsu/cmini (GPL-3.0; only aggregated counts are
   committed). Word lists weight every word once, as a Monkeytype test samples them.
+  `--fold` (build and import) maps Latin diacritics and ligatures to ASCII first (`é` → `e`,
+  `œ` → `oe`, `ß` → `ss`), so non-English text on an ASCII charset counts an accented letter
+  as its base key (dead key / compose) instead of breaking the n-gram; without it French
+  QWERTY SFB is 8.53 %. Accented keys of their own are future work.
 - Uppercase folded; Shift not modeled yet.
 - `code` corpus (`--charset code`: default + digits, all ASCII punctuation, `⏎`; 70 symbols):
   1:1:1 `gecko corpus mix` of Rust (serde, serde_json, regex-syntax, tokio, axum, clap_builder,

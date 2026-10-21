@@ -15,7 +15,7 @@ Extends `../data-sources.md` with what the analyzers actually ship.
 
 ## Notes
 
-- In GECKO: `shai`, `mt-10k`, `mt-450k` are imported from cmini with `gecko corpus import`
+- In GECKO: `shai`, `mt-10k`, `mt-450k`, `reddit`, `french` (`--fold`) are imported from cmini with `gecko corpus import`
   (see `context/representation.md`). cmini's `words.json` is exactly the source of its
   mono/bi/trigram tables (totals match), and its n-grams never span words.
 
