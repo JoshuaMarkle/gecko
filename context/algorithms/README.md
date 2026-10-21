@@ -23,6 +23,7 @@ so algorithms contain only search logic. All moves respect pins.
 | [nsga2.md](nsga2.md) | Multi-objective | Phase 3 | Pareto fronts |
 | [explore.md](explore.md) | Local search + archive | Done | BLS; explore = probe + BLS with exclusion restarts, writes an atlas of local optima |
 | [map-elites.md](map-elites.md) | Quality diversity | Done | Grid over behaviour axes (roll ratio, index load, …), best layout per cell; `gecko qd` |
+| [magic-rules.md](magic-rules.md) | Greedy (lazy) | Done | Rules of an adaptive (magic) key on a fixed layout |
 | [geometry-search.md](geometry-search.md) | Continuous | Phase 6+ | Key positions/rotations; bilevel with layout |
 
 Shared neighborhoods (`optimize/moves.rs`): every `steepest_descent` runs swaps to a local

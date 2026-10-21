@@ -240,6 +240,31 @@ enum Cmd {
         #[command(flatten)]
         inputs: Inputs,
     },
+    /// Search the rules of an adaptive (magic) key on a fixed layout: greedily add the
+    /// `previous → output` rule that lowers the score most, then drop rules that stopped paying.
+    Magic {
+        /// Layout with a `[[magic]]` key (or use --on).
+        layout: String,
+        /// Which adaptive key (1 = the first `[[magic]]`).
+        #[arg(long, default_value_t = 1)]
+        key: usize,
+        #[arg(long, default_value_t = 32)]
+        max_rules: usize,
+        /// Accept a rule only when it lowers the score by more than this.
+        #[arg(long, default_value_t = 0.01)]
+        min_gain: f64,
+        /// Extend the key's existing rules instead of starting from none.
+        #[arg(long)]
+        keep: bool,
+        /// Put a new magic key (`★`) on this symbol's key; the symbol is dropped.
+        #[arg(long)]
+        on: Option<String>,
+        /// Write the result to data/layouts/<out>.toml (or to a path ending in .toml).
+        #[arg(long)]
+        out: Option<String>,
+        #[command(flatten)]
+        inputs: Inputs,
+    },
     /// Corpus tools.
     Corpus {
         #[command(subcommand)]
@@ -596,12 +621,16 @@ fn print_breakdown(b: &Breakdown) {
 }
 
 fn layout_rows(layout: &Layout, g: &gecko_core::Geometry) -> String {
-    let rows = |rs: &[String]| rs.iter().map(|r| r.chars().map(|c| c.to_string()).collect::<Vec<_>>().join(" ")).collect::<Vec<_>>().join("\n  ");
+    let rows =
+        |rs: &[String]| rs.iter().map(|r| r.chars().map(|c| c.to_string()).collect::<Vec<_>>().join(" ")).collect::<Vec<_>>().join("\n  ");
     let mut out = rows(&layout.rows(g));
     let modes = layout.holders().unwrap_or_default();
     for (li, (ly, rs)) in layout.layers.iter().zip(layout.layer_rows(g)).enumerate() {
         let mode = modes.get(li).filter(|h| h.1 != gecko_core::LayerMode::Hold).map_or(String::new(), |h| format!(", {}", h.1.name()));
         out += &format!("\n  [{}{mode}]\n  {}", ly.name, rows(&rs));
+    }
+    for m in &layout.magic {
+        out += &format!("\n  {} {}{}", m.key, gecko_core::magic::format_rules(&m.rules), if m.repeat { " (else repeat)" } else { "" });
     }
     out
 }
@@ -690,7 +719,7 @@ fn real_main(cli: Cli) -> Result<()> {
             let (sc, st) = score_layout(&l, &layout)?;
             let b = breakdown(&sc, &st);
             if ctx.json {
-                ctx.print(json!({"schema": SCHEMA, "layout": layout.name, "rows": layout.all_rows(&l.geometry),
+                ctx.print(json!({"schema": SCHEMA, "layout": layout.name, "rows": layout.all_rows(&l.geometry), "magic": layout.magic,
                     "geometry": l.geometry.name, "profile": l.profile.name, "corpus": l.corpus.name, "breakdown": b}));
             } else {
                 println!(
@@ -986,6 +1015,51 @@ fn real_main(cli: Cli) -> Result<()> {
                 if let Some(p) = recorded {
                     println!("recorded in {}", p.display());
                 }
+            }
+        }
+        Cmd::Magic { layout, key, max_rules, min_gain, keep, on, out, inputs } => {
+            let l = ctx.load(&inputs)?;
+            let mut layout = ctx.layout(&layout, &l)?;
+            if let Some(sym) = on {
+                let sym = gecko_core::layout::parse_symbols(&sym)?;
+                let [c] = sym[..] else { bail!("--on takes one symbol") };
+                let slot = layout.chars.iter().position(|&x| x == c).with_context(|| format!("'{c}' is not on the base layer"))?;
+                layout.chars[slot] = gecko_core::magic::MAGIC;
+                let mut magic = layout.magic.clone();
+                magic.push(gecko_core::magic::Magic { key: gecko_core::magic::MAGIC, ..Default::default() });
+                layout = layout.with_magic(magic)?;
+                layout.name = format!("{} + magic", layout.name);
+            }
+            let opts = gecko_core::magic::SearchOpts { key: key.saturating_sub(1), max_rules, keep, min_gain };
+            let t0 = std::time::Instant::now();
+            let r = gecko_core::magic::search_rules(&l.geometry, &l.corpus, &l.profile, &layout, &opts)?;
+            let ms = t0.elapsed().as_millis() as u64;
+            let (sc, st) = score_layout(&l, &r.layout)?;
+            let b = breakdown(&sc, &st);
+            if let Some(name) = &out {
+                let path =
+                    if name.ends_with(".toml") { PathBuf::from(name) } else { ctx.store.data.join("layouts").join(format!("{name}.toml")) };
+                std::fs::write(&path, r.layout.to_toml(&l.geometry)).with_context(|| format!("writing {}", path.display()))?;
+                if !ctx.json {
+                    println!("wrote {}", path.display());
+                }
+            }
+            let m = &r.layout.magic[opts.key];
+            if ctx.json {
+                ctx.print(json!({"schema": SCHEMA, "layout": r.layout.name, "rows": r.layout.all_rows(&l.geometry), "key": m.key,
+                    "rules": gecko_core::magic::format_rules(&m.rules), "start_score": r.start_score, "score": r.score,
+                    "steps": r.steps, "evals": r.evals, "elapsed_ms": ms, "magic": r.layout.magic, "breakdown": b,
+                    "geometry": l.geometry.name, "profile": l.profile.name, "corpus": l.corpus.name}));
+            } else {
+                println!(
+                    "{}  ({} · {} · {})  {} evals in {} ms",
+                    r.layout.name, l.geometry.name, l.profile.name, l.corpus.name, r.evals, ms
+                );
+                for s in &r.steps {
+                    println!("  {:<8} {:>9.3}", s.rule, s.score);
+                }
+                println!("score {:.3} -> {:.3}\n  {}\n", r.start_score, r.score, layout_rows(&r.layout, &l.geometry));
+                print_breakdown(&b);
             }
         }
         Cmd::Corpus { cmd: CorpusCmd::Build { sources, out, charset, ext, fold } } => {

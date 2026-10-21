@@ -121,6 +121,17 @@ layouts for C7 as preference pairs between liked layouts, not as raw like counts
 Besides the weighted sum: rank-sum selection over many results (Kühlmak) and Pareto
 fronts (NSGA-II). Reports always show the per-metric breakdown.
 
+## Adaptive keys (magic / repeat)
+
+A layout with `[[magic]]` keys is scored on its corpus rewritten as typed with them
+(`representation.md`, Corpus): every metric then sees the key as one more symbol, so an SFB
+`c y` that becomes `c ★` disappears if ★ is on another finger, and the key's presses count in
+effort and finger load. Nothing changes in the hot loop or the delta (rules are fixed during a
+search; the key moves like a symbol). Total keystrokes are unchanged (one press replaces one),
+so scores stay comparable with plain layouts, except that a symbol dropped to make room for
+the key no longer counts. Not modeled: the learning cost of rules (only `gecko magic
+--min-gain` limits their number). Rule search: `context/algorithms/magic-rules.md`.
+
 ## Layers (Y01, Y02, Y03)
 
 - **Y01** (bigram table on the layered geometry, expanded per layer mode): typing `j` after

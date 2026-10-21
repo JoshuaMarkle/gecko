@@ -173,7 +173,9 @@ impl Store {
             let (id, rank) = r.split_once('#').map(|(a, b)| (a, b.parse::<usize>().unwrap_or(1))).unwrap_or((r, 1));
             let res = crate::run::load_result(&self.runs.join(id))?;
             let l = res.best.get(rank.saturating_sub(1)).ok_or_else(|| Error::invalid("layout", format!("run {id} has no rank {rank}")))?;
-            return Layout::from_chars(&format!("{id}#{rank}"), &res.geometry, &format!("run:{id}"), l.chars.chars().collect());
+            let magic = crate::run::load_config(&self.runs.join(id)).map(|c| c.magic).unwrap_or_default();
+            return Layout::from_chars(&format!("{id}#{rank}"), &res.geometry, &format!("run:{id}"), l.chars.chars().collect())?
+                .with_magic(magic);
         }
         let p = self.dir("layouts").join(format!("{spec}.toml"));
         let p = if p.is_file() { p } else { PathBuf::from(spec) };

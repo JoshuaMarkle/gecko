@@ -31,6 +31,9 @@ pub struct RunConfig {
     pub start: String,
     /// Pinned symbols (they keep their start slot).
     pub pins: String,
+    /// Adaptive keys of the start layout (they hold for every result).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub magic: Vec<crate::magic::Magic>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -114,7 +117,8 @@ pub fn prepare(runs: &Path, spec: &RunSpec) -> Result<Prepared> {
         spec.geometry.hash(),
         spec.corpus.hash(),
         spec.profile.hash(),
-        spec.start.chars.iter().collect::<String>(),
+        spec.start.chars.iter().collect::<String>()
+            + &crate::magic::format_rules(&spec.start.magic.iter().flat_map(|m| m.rules.clone()).collect::<Vec<_>>()),
         spec.pins,
         serde_json::to_string(&spec.params).unwrap_or_default()
     );
@@ -139,6 +143,7 @@ pub fn prepare(runs: &Path, spec: &RunSpec) -> Result<Prepared> {
         profile_hash: hash::hex(spec.profile.hash()),
         start: spec.start.chars.iter().collect(),
         pins: spec.pins.to_string(),
+        magic: spec.start.magic.clone(),
     };
     std::fs::write(dir.join("config.json"), serde_json::to_string_pretty(&config).unwrap())?;
     Ok(Prepared { config, dir })
@@ -178,7 +183,7 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
         .map(|(i, s)| {
             let st = scorer.state_from_sym(s.sym.clone());
             let chars: Vec<char> = st.chars(&scorer);
-            let l = Layout::from_flat("", spec.geometry, chars.clone())?;
+            let l = Layout::from_flat("", spec.geometry, chars.clone())?.with_magic(spec.start.magic.clone())?;
             Ok(Ranked {
                 rank: i + 1,
                 score: st.score,

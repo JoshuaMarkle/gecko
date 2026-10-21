@@ -35,6 +35,8 @@ pub struct Scorer {
     pub geometry: Geometry,
     pub profile: Profile,
     pub corpus_name: String,
+    /// The layout's adaptive keys; the corpus was rewritten for them (`magic::rewrite`).
+    pub magic: Vec<crate::magic::Magic>,
     f1: Vec<f32>,
     f2: Vec<f32>,
     fk: Vec<f32>,
@@ -133,8 +135,17 @@ impl State {
 
 impl Scorer {
     /// Build a scorer for the symbol set of `layout` (which must fit `geometry`; layers are
-    /// flattened onto the virtual geometry).
+    /// flattened onto the virtual geometry). With adaptive keys the corpus is first rewritten
+    /// as typed with them.
     pub fn new(geometry: &Geometry, corpus: &Corpus, profile: &Profile, layout: &Layout) -> Result<Self> {
+        let rewritten;
+        let corpus = if layout.magic.is_empty() {
+            corpus
+        } else {
+            layout.check_magic()?;
+            rewritten = crate::magic::rewrite(corpus, &layout.magic)?;
+            &rewritten
+        };
         let (vg, chars) = layout.flat(geometry)?;
         let geometry = &vg;
         let n = geometry.len();
@@ -337,6 +348,7 @@ impl Scorer {
             geometry: geometry.clone(),
             profile: profile.clone(),
             corpus_name: corpus.name.clone(),
+            magic: layout.magic.clone(),
             f1,
             f2,
             fk,
@@ -415,9 +427,9 @@ impl Scorer {
         g
     }
 
-    /// The layout of state `st` (layers split back out).
+    /// The layout of state `st` (layers split back out, adaptive keys attached).
     pub fn layout_of(&self, st: &State, name: &str) -> Result<Layout> {
-        Layout::from_flat(name, &self.base_geometry(), st.chars(self))
+        Layout::from_flat(name, &self.base_geometry(), st.chars(self))?.with_magic(self.magic.clone())
     }
 
     pub fn state_from_sym(&self, sym: Vec<u8>) -> State {

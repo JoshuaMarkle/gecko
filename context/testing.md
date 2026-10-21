@@ -53,16 +53,10 @@ delta == full (proptest), folding == breakdown, brute-force optimum on a 6-key b
 HC/SA/GA, determinism with an eval budget, pins respected, ranking sanity + QWERTY SFB,
 corpus counting (incl. skip-2/3, word imports) + binary round-trip + `GKCORP1` compatibility,
 imported corpora reproduce QWERTY SFB computed independently from their source tables,
-<<<<<<< HEAD
 layout TOML round-trip, word lists (fold/merge/TSV round-trip), worst words sum to B01 and Semimak shows `you're` on shai. Reference snapshots (`tests/snapshots.rs`): score + weighted
 metrics of the 10 `data/layouts/*.toml` × default/sfb/engram/code on `english`, 4 decimals. KLE (`tests/kle.rs` + unit tests in `kle.rs`): bundled boards round-trip
 export → import (physical keys exact, fingers/rows/columns re-guessed), geometry TOML
 round-trip, raw-data parsing, rotation origins, ANSI 60% traditional fingering. Explore (`tests/explore.rs` + unit tests in `explore/`): raw-vector
-=======
-layout TOML round-trip, cmini import (core extraction, skip reasons, duplicates/mirrors,
-bundle round-trip), Spearman with ties, and `cmini_likes_ranking` (ρ > 0.05 over liked cmini
-layouts; Graphite and Gallium in their top 10 %). Explore (`tests/explore.rs` + unit tests in `explore/`): raw-vector
->>>>>>> origin/fix/issue-26
 re-scoring == full score (proptest); on a mirror-symmetric 6-key board the archive equals the
 brute-forced set of canonical local optima; ansi atlas consistency (pins, constrained
 records, every unconstrained record locally optimal); distances, PCA, funnels, Chao1.
@@ -76,6 +70,10 @@ Run reproducibility (`tests/verify.rs`): an `--evals` run passes `run::verify`; 
 `best.json`, a changed input hash or a time-budget run fails. 2D drawing (`tests/flat2d.rs`):
 flat boards unchanged, a rigidly tilted board recovered, a curved tented split board with no
 overlaps and row/column order kept, layer keys copy their physical key.
+Adaptive keys (`magic.rs` unit tests + `scorer.rs`): the count rewrite equals the rewritten
+text exactly for mono/bigrams and beats no rewrite for trigrams/skipgrams; delta == full with
+a magic key (proptest); `[[magic]]` TOML round-trip; Magic Sturdy's rules halve its SFBs on
+`english` and the rule search matches or beats them.
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
 

@@ -27,6 +27,8 @@ gecko landscape [--samples 4000] [--walks 64] [--walk-len 400] [--seed 1] [--fro
 gecko atlas    <run> [--top 10] [--cut 8] [--pool 300] [-p profile]
                                                                   # summary, ranked, families, consensus,
                                                                   #   funnels, FDC; -p re-ranks under a profile
+gecko magic    <layout> [--key 1] [--on <symbol>] [--keep] [--max-rules 32] [--min-gain 0.01] [--out name|path.toml]
+                                                                  # greedy rule search for an adaptive key
 gecko verify   run:<id>                                           # re-run an --evals run from config.json;
                                                                   #   check input hashes, evals and best.json
 gecko perf     [--layout qwerty] [--record]                       # full evals/s and swap deltas/s (1 thread); --record appends to bench/history.jsonl
@@ -58,6 +60,12 @@ fills. Tokens can be written `{space}`, `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `
 Layered layouts: `--from layered/corne-code`; their rows print per layer (`[sym]`, `[num]`;
 non-hold layers add their mode, `[num, toggle]`),
 and JSON `rows` lists the base rows then each layer's. Runs store the flat layered string.
+Adaptive keys (`[[magic]]`, e.g. `magic/magic-sturdy`): `score`/`compare` rewrite the corpus for
+their rules; human output prints `★ ao cy …` under the rows, `score --json` adds `magic`.
+`optimize --from` a magic layout moves the key like any symbol with the rules fixed; the run's
+`config.json` keeps `magic`, so `run:<id>` layouts carry their rules. `gecko magic` searches
+rules on a fixed layout; `--on z` first turns that symbol's key into a new `★` (the symbol is
+dropped). Alternate `magic --out` and `optimize --from` to co-optimize.
 
 `layouts import` reads an Oxeylyzer `.dof` (JSON) or Oxeylyzer 1 grid (`.kb`), a genkey file
 (name, 3 key rows, 3 finger rows) or a cmini JSON; `auto` guesses from the content. E.g.

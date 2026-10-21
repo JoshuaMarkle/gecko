@@ -707,7 +707,6 @@ fn engram_comfort_table() {
     assert_eq!(c(at(1, 1), at(1, 1)), 1.0, "repeats are left to B02");
 }
 
-<<<<<<< HEAD
 /// Column exchanges, 3-cycles and depth-2 swaps keep the delta-tracked score equal to a full
 /// evaluation, never move pinned symbols, and end in an optimum of every enabled neighbourhood.
 #[test]
@@ -897,7 +896,8 @@ fn hrm_slots_and_misfire_table() {
     let lg = sb.layered(&[sb.len() - 1]).unwrap();
     assert!((sb.len()..lg.len()).all(|i| !lg.hrm(i)));
     assert_eq!((0..sb.len()).filter(|&i| lg.hrm(i)).count(), 8);
-=======
+}
+
 /// The default profile agrees (weakly) with cmini community likes: among liked layouts the
 /// Spearman ρ is positive, and the best-liked modern layouts rank near the top. See
 /// `context/objective.md` (Calibration) for the full numbers.
@@ -915,5 +915,74 @@ fn cmini_likes_ranking() {
         let s = r.layouts.iter().find(|s| s.name == name).unwrap();
         assert!(s.rank * 10 <= n, "{name} ranks {} of {n} liked cmini layouts", s.rank);
     }
->>>>>>> origin/fix/issue-26
+=======
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(32))]
+    /// Adaptive keys: the scorer runs on the rewritten corpus, so the magic key moves like any
+    /// symbol and deltas stay exact.
+    #[test]
+    fn delta_matches_full_with_magic(seed in 0u64..10_000, swaps in proptest::collection::vec((0usize..30, 0usize..30), 1..40)) {
+        let g = ansi();
+        let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 3);
+        let sc = Scorer::new(&g, &c, &all_weights(), &layout("magic/magic-sturdy")).unwrap();
+        let ctx = Ctx::new(&sc, (0..30).collect(), sc.identity());
+        let mut st = ctx.random_state(&mut Rng::new(seed));
+        for (a, b) in swaps {
+            let before = sc.full(&st);
+            let d = sc.delta(&st, a, b);
+            sc.apply(&mut st, a, b, d);
+            let after = sc.full(&st);
+            prop_assert!((after - before - d).abs() < 1e-5 * before.abs().max(1.0), "delta {d} vs full diff {}", after - before);
+        }
+    }
+}
+
+#[test]
+fn magic_layouts_round_trip_and_score() {
+    let g = ansi();
+    let l = layout("magic/magic-sturdy");
+    assert_eq!(l.magic.len(), 1);
+    assert_eq!(l.magic[0].rules.len(), 14);
+    let back = Layout::from_toml(&l.to_toml(&g)).unwrap();
+    assert_eq!(back, l);
+    let mut plain = l.clone();
+    plain.magic.clear();
+    assert_ne!(plain.hash(), l.hash());
+    // The key must be on the layout.
+    assert!(Layout::from_str_flat("x", "ansi-30", "abc").unwrap().with_magic(l.magic.clone()).is_err());
+
+    let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 5);
+    let sc = Scorer::new(&g, &c, &all_weights(), &l).unwrap();
+    let st = sc.identity();
+    assert_eq!(sc.layout_of(&st, "x").unwrap().magic, l.magic);
+    // The key carries the moved presses; without rules it is never pressed.
+    let star = sc.chars.iter().position(|&ch| ch == gecko_core::magic::MAGIC).unwrap();
+    assert!(sc.f1()[star] > 0.0);
+    let sc0 = Scorer::new(&g, &c, &all_weights(), &plain).unwrap();
+    assert_eq!(sc0.f1()[star], 0.0);
+}
+
+/// On English, Magic Sturdy's rules remove most of its SFBs, and the rule search finds a set at
+/// least as good as the published one from scratch.
+#[test]
+fn magic_rules_cut_sfbs_on_english() {
+    let Some(c) = real_corpus() else { return };
+    let g = ansi();
+    let p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
+    let l = layout("magic/magic-sturdy");
+    let sfb = |l: &Layout| {
+        let sc = Scorer::new(&g, &c, &p, l).unwrap();
+        let b = breakdown(&sc, &sc.identity());
+        (b.score, b.metrics.iter().find(|m| m.id == "B01").unwrap().value)
+    };
+    let mut none = l.clone();
+    none.magic[0].rules.clear();
+    let (s_magic, sfb_magic) = sfb(&l);
+    let (s_none, sfb_none) = sfb(&none);
+    assert!(sfb_magic < 0.5 * sfb_none, "SFB {sfb_magic} vs {sfb_none} without rules");
+    assert!(s_magic < s_none);
+    let r = gecko_core::magic::search_rules(&g, &c, &p, &l, &Default::default()).unwrap();
+    assert!(r.score <= s_magic, "search {} vs published {s_magic}", r.score);
+    assert!((sfb(&r.layout).0 - r.score).abs() < 1e-6);
+>>>>>>> origin/fix/issue-89
 }
