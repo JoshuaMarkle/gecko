@@ -74,7 +74,8 @@ Measured 2026-10-21 on the i9-13900H, ansi-30 / english / default, alternating f
 `taskset -c 2 gecko perf --json` samples per binary: baseline median 318,249 deltas/s,
 cached median 370,267 deltas/s (**+16.3%**). Individual runs vary under concurrent builds;
 these are single-thread results, below the ≥10M/s aggregate target. `bench/history.jsonl`
-records the ordinary unpinned before/after measurements as well. The far-skipgram channel
+records the before/after measurements as well (including deliberately retained contended
+runs as low as 104k/s; compare timings under equivalent load). The far-skipgram channel
 is compiled out of the delta when no metric uses it.
 
 An initial CSR of indices into the shared trigram list regressed (~303–310k/s), so it was
