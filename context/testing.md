@@ -82,7 +82,9 @@ matches pinned QMK-derived KLE inputs; counts, stagger, alpha fingers, fills, re
 TOML round-trips, and all-symbol score deltas (including ErgoDox above 64 slots) are checked.
 
 Integration coverage: corpus extension and adaptive-key rewriting retain Shift counts; tabu
-mixed deltas include Shift and bracket placement. Reference snapshots include S04, row
+mixed deltas include Shift and bracket placement. Trigram-cache updates and rollback swaps are
+covered by the delta/full properties and extended-neighbourhood regressions. Full evaluation
+recomputes trigram terms independently of the cache. Reference snapshots include S04, row
 effort offsets and Y03.
 
 ## CI
