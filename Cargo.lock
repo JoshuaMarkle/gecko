@@ -466,11 +466,14 @@ dependencies = [
  "clap",
  "futures-util",
  "gecko-core",
+ "mime_guess",
+ "percent-encoding",
  "serde",
  "serde_json",
  "tokio",
  "tokio-stream",
  "toml",
+ "tower",
  "tower-http",
 ]
 

@@ -49,7 +49,7 @@ gecko profile normalize [-p profile] [--layouts a,b] [--out name]   # weights â†
 gecko profile fit [--target E05] [--layouts a,b] [--out name]       # fit weights to a judge metric
 gecko profile fit --target likes [--seed 1] [--out learned] --json  # pairwise fit, 20% layout holdout
 gecko list     layouts|geometries|profiles|corpora|runs|metrics
-gecko serve    [--port 7777] [--web web/dist]
+gecko serve    [--port 7777] [--web web/dist]                          # serves embedded web UI (with embed-web) or filesystem dist
 ```
 
 Global flags: `--json`, `--root <dir with gecko.toml>`.

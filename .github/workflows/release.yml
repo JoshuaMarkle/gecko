@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary: gecko
+            archive: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary: gecko
+            archive: tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary: gecko.exe
+            archive: zip
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown,${{ matrix.target }}
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - run: npm run wasm
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+      - name: Build gecko binary
+        run: cargo build --release --target ${{ matrix.target }} --features embed-web
+      - name: Package release asset (Unix)
+        if: matrix.archive == 'tar.gz'
+        run: |
+          tar -czf "gecko-${{ github.ref_name }}-${{ matrix.target }}.tar.gz" -C "target/${{ matrix.target }}/release" "${{ matrix.binary }}"
+      - name: Package release asset (Windows)
+        if: matrix.archive == 'zip'
+        shell: bash
+        run: |
+          7z a "gecko-${{ github.ref_name }}-${{ matrix.target }}.zip" "./target/${{ matrix.target }}/release/${{ matrix.binary }}"
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            gecko-${{ github.ref_name }}-${{ matrix.target }}.*

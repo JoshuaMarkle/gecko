@@ -7,6 +7,10 @@ edition.workspace = true
 name = "gecko"
 path = "src/main.rs"
 
+[features]
+default = []
+embed-web = []
+
 [dependencies]
 gecko-core = { path = "../gecko-core" }
 serde.workspace = true
@@ -19,3 +23,9 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "sync",
 tokio-stream = { version = "0.1", features = ["sync"] }
 futures-util = "0.3"
 tower-http = { version = "0.6", features = ["fs"] }
+
+mime_guess = "2"
+percent-encoding = "2"
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
