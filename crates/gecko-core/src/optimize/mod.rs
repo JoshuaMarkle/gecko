@@ -5,9 +5,10 @@ pub mod anneal;
 pub mod bls;
 pub mod genetic;
 pub mod hill_climb;
+pub mod map_elites;
+pub mod memetic;
 pub mod moves;
 pub mod tabu;
-pub mod map_elites;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
@@ -27,6 +28,8 @@ pub enum Algo {
     Sa,
     /// Genetic algorithm (order crossover, swap mutation, tournament selection).
     Ga,
+    /// Island genetic algorithm with local refinement of every child.
+    Memetic,
     /// Breakout local search: descend, kick with adaptive strength, descend again.
     Bls,
     /// Search-space exploration: landscape probe + BLS with exclusion restarts, writing an
@@ -39,12 +42,13 @@ pub enum Algo {
 }
 
 impl Algo {
-    pub const ALL: [Algo; 7] = [Algo::Hc, Algo::Sa, Algo::Ga, Algo::Bls, Algo::Explore, Algo::Tabu, Algo::Qd];
+    pub const ALL: [Algo; 8] = [Algo::Hc, Algo::Sa, Algo::Ga, Algo::Memetic, Algo::Bls, Algo::Explore, Algo::Tabu, Algo::Qd];
     pub fn name(self) -> &'static str {
         match self {
             Algo::Hc => "hc",
             Algo::Sa => "sa",
             Algo::Ga => "ga",
+            Algo::Memetic => "memetic",
             Algo::Bls => "bls",
             Algo::Explore => "explore",
             Algo::Tabu => "tabu",
@@ -63,7 +67,8 @@ pub struct Params {
     pub threads: usize,
     /// Wall-clock budget in milliseconds (all workers run in parallel).
     pub time_ms: Option<u64>,
-    /// Total evaluation budget, split evenly across workers. Deterministic, unlike time.
+    /// Total evaluation budget, split evenly across independent workers, or counted over
+    /// synchronized island generations for memetic. Deterministic, unlike time.
     pub evals: Option<u64>,
     /// Number of distinct best layouts to keep.
     pub top: usize,
@@ -71,6 +76,8 @@ pub struct Params {
     pub sa: anneal::SaParams,
     #[serde(default)]
     pub ga: genetic::GaParams,
+    #[serde(default)]
+    pub memetic: memetic::MemeticParams,
     #[serde(default)]
     pub bls: bls::BlsParams,
     #[serde(default)]
@@ -95,6 +102,7 @@ impl Default for Params {
             top: 10,
             sa: Default::default(),
             ga: Default::default(),
+            memetic: Default::default(),
             bls: Default::default(),
             explore: Default::default(),
             tabu: Default::default(),
@@ -260,7 +268,8 @@ pub fn steepest_descent(ctx: &Ctx, st: &mut State) -> u64 {
         if ctx.movable.len() < 3 || !mv.any() {
             return evals;
         }
-        let tries: [(bool, moves::MoveFn); 3] = [(mv.columns, moves::column_move), (mv.cycle3, moves::cycle3_move), (mv.depth2, moves::depth2_move)];
+        let tries: [(bool, moves::MoveFn); 3] =
+            [(mv.columns, moves::column_move), (mv.cycle3, moves::cycle3_move), (mv.depth2, moves::depth2_move)];
         let mut improved = false;
         for (on, f) in tries {
             if on {
@@ -417,6 +426,7 @@ fn make(algo: Algo, p: &Params) -> Box<dyn Optimizer + Send> {
         Algo::Hc => Box::new(hill_climb::HillClimb::new(p.top)),
         Algo::Sa => Box::new(anneal::Anneal::new(p.sa.clone(), p.top)),
         Algo::Ga => Box::new(genetic::Genetic::new(p.ga.clone(), p.top)),
+        Algo::Memetic => unreachable!("memetic uses the synchronized island runner"),
         Algo::Bls => Box::new(bls::Bls::new(p.bls.clone(), p.top, false)),
         Algo::Explore => Box::new(bls::Bls::new(p.bls.clone(), p.top, true)),
         Algo::Tabu => Box::new(tabu::Tabu::new(p.tabu.clone(), p.top)),
@@ -424,9 +434,13 @@ fn make(algo: Algo, p: &Params) -> Box<dyn Optimizer + Send> {
     }
 }
 
-/// Run `params.threads` independent workers until the budget ends. `on_progress` is called
+/// Run `params.threads` workers until the budget ends (independent restarts, or synchronized
+/// island generations for memetic). `on_progress` is called
 /// from the calling thread about every `interval`. `control` cancels or pauses the run.
 pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mut on_progress: impl FnMut(&Progress)) -> Outcome {
+    if params.algo == Algo::Memetic {
+        return memetic::run(ctx, params, interval, control, on_progress);
+    }
     let threads = params.threads.max(1);
     let params = &resolve_auto(ctx, params);
     let ctx = &ctx.clone().with_moves(params.moves.clone());

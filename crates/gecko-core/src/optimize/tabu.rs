@@ -71,6 +71,24 @@ impl Tabu {
         }
     }
 
+    /// A short tabu refinement from a supplied child; keep its best visited state, including
+    /// the child itself. Reuses the same delta matrix, tenure and aspiration as full tabu.
+    pub(super) fn refine(ctx: &Ctx, st: State, rng: &mut Rng, iterations: usize) -> (State, u64) {
+        if ctx.movable.len() < 2 || iterations == 0 {
+            return (st, 0);
+        }
+        let mut local = ctx.clone();
+        local.start = st;
+        let mut opt = Self::new(TabuParams::default(), 1);
+        opt.restart(&local, rng);
+        let m = ctx.movable.len();
+        let mut evals = (m * (m - 1) / 2) as u64; // Initial delta-matrix construction.
+        for _ in 0..iterations {
+            evals += opt.iterate(&local, rng);
+        }
+        (opt.best.unwrap(), evals)
+    }
+
     fn restart(&mut self, ctx: &Ctx, rng: &mut Rng) {
         let st = if self.restarts == 0 { ctx.start.clone() } else { ctx.random_state(rng) };
         self.restarts += 1;

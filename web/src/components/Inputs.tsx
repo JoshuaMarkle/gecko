@@ -9,7 +9,7 @@ import type { SearchSettings } from "../inputs";
 
 export type InputTab = "board" | "hand" | "corpus" | "profile" | "search";
 
-const ALGOS: [string, string][] = [["sa", "Simulated annealing"], ["bls", "Breakout local search"], ["hc", "Hill climbing"], ["ga", "Genetic algorithm"]];
+const ALGOS: [string, string][] = [["sa", "Simulated annealing"], ["bls", "Breakout local search"], ["hc", "Hill climbing"], ["ga", "Genetic algorithm"], ["memetic", "Memetic islands"]];
 
 export interface InputProps {
   meta: Meta;
@@ -207,6 +207,19 @@ function SearchGroup(p: Props) {
         {s.algo === "ga" && (
           <Num label="Population" help="Layouts per generation." value={s.gaPop} step={16} min={4} onChange={(v) => set({ gaPop: Math.max(4, Math.round(v)) })} />
         )}
+        {s.algo === "memetic" && <>
+          <Num label="Population / island" help="Distinct layouts per island; every child receives local refinement." value={s.memeticPop ?? 24} step={4} min={4} onChange={(v) => set({ memeticPop: Math.max(4, Math.round(v)) })} />
+          <div className="row">
+            <label>Refinement</label>
+            <select value={s.localSearch ?? "hc"} onChange={(e) => set({ localSearch: e.target.value as "hc" | "tabu" })}>
+              <option value="hc">Hill climbing</option><option value="tabu">Tabu search</option>
+            </select><span />
+          </div>
+          <Num label="Local steps" help="Maximum improving hill-climbing moves or tabu iterations per child." value={s.localSteps ?? 12} min={0} onChange={(v) => set({ localSteps: Math.max(0, Math.round(v)) })} />
+          <Num label="Islands" help="0 uses one island per thread. Islands exchange their best layouts around a ring." value={s.islands ?? 0} min={0} max={p.meta.threads} unit={(s.islands ?? 0) === 0 ? "auto" : ""} onChange={(v) => set({ islands: Math.min(p.meta.threads, Math.max(0, Math.round(v))) })} />
+          <Num label="Migration interval" help="Generations between exchanges. 0 disables migration." value={s.migrationInterval ?? 5} min={0} onChange={(v) => set({ migrationInterval: Math.max(0, Math.round(v)) })} />
+          <Num label="Migrants" help="Best distinct layouts sent to the next island each exchange." value={s.migrants ?? 2} min={0} onChange={(v) => set({ migrants: Math.max(0, Math.round(v)) })} />
+        </>}
         {s.algo === "hc" && <div className="hint">Steepest descent with random restarts. No extra settings.</div>}
       </Sec>
       <Sec id="search" title="Budget" note="time and threads">

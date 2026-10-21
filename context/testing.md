@@ -49,7 +49,7 @@ Metric unit tests (`tests/metrics.rs`): every implemented metric on a 6-key boar
 with explicit n-gram counts; each expected value is commented with its arithmetic and checked
 through both `breakdown` and the folded `Scorer::full`.
 delta == full (proptest), folding == breakdown, brute-force optimum on a 6-key board for
-HC/SA/GA, determinism with an eval budget, pins respected, ranking sanity + QWERTY SFB,
+HC/SA/GA/memetic, determinism with an eval budget, pins respected, ranking sanity + QWERTY SFB,
 corpus counting (incl. skip-2/3, word imports) + binary round-trip + `GKCORP1` compatibility,
 imported corpora reproduce QWERTY SFB computed independently from their source tables,
 layout TOML round-trip, word lists (fold/merge/TSV round-trip), worst words sum to B01 and Semimak shows `you're` on shai. Reference snapshots (`tests/snapshots.rs`): score + weighted
@@ -59,7 +59,10 @@ round-trip, raw-data parsing, rotation origins, ANSI 60% traditional fingering. 
 re-scoring == full score (proptest); on a mirror-symmetric 6-key board the archive equals the
 brute-forced set of canonical local optima; ansi atlas consistency (pins, constrained
 records, every unconstrained record locally optimal); distances, PCA, funnels, Chao1.
-BLS, explore and tabu are in the brute-force and determinism tests. Tabu's incremental Δ
+BLS, explore, tabu and memetic are in the brute-force and determinism tests. Memetic also
+checks ring snapshot transfer, duplicate rejection, collapse restarts, both HC/tabu refinement,
+fixed/pinned layouts, cancellation and identical results across worker counts with fixed
+islands; `tests/verify.rs` replays a migrating memetic run. Tabu's incremental Δ
 matrix: `delta_shift` == recomputed `delta_linear` for every disjoint pair after a swap
 (proptest, including Shift and brackets), and delta == linear + load.
 External validation (`tests/validation.rs`): every non-thumb finger triple in cmini's
