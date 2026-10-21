@@ -1,0 +1,16 @@
+name = "Colemak-DH + code layers (one-shot)"
+geometry = "corne-36"
+source = "corne-code with both layers one-shot: tap the layer key, then one symbol"
+# Same symbols as corne-code; `mode` turns {layer1}/{layer2} into one-shot keys ({os1}/{os2}).
+# One-shot layers lose only the layer key itself (·), not the whole thumb.
+rows = ['qwfpbjluy;', 'arstgmneio', 'zxcdvkh,./', '{esc}{space}{layer1}{enter}{bspc}{layer2}']
+
+[[layer]]
+name = "sym"
+mode = "oneshot"
+rows = ['!@#$%^&*~`', '{}()=+_?:"', '[]<>|\····', '······']
+
+[[layer]]
+name = "num"
+mode = "oneshot"
+rows = ['··········', '1234567890', '··········', '······']

@@ -161,6 +161,36 @@ pub struct Geometry {
     /// `layer_keys[l - 1]`. See [`Geometry::layered`].
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub layer_keys: Vec<usize>,
+    /// Layered geometries only: how layer `l` is reached, `layer_modes[l - 1]`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub layer_modes: Vec<LayerMode>,
+}
+
+/// How a layer key reaches its layer. See `context/objective.md` (Y01) for the costs.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum LayerMode {
+    /// Held while typing the layer's keys; the holding finger's other keys are unusable.
+    #[default]
+    Hold,
+    /// Tapped once before each layer symbol.
+    #[serde(alias = "one-shot", alias = "osl")]
+    Oneshot,
+    /// Tapped to enter the layer and tapped again to leave it.
+    #[serde(alias = "tg")]
+    Toggle,
+}
+
+impl LayerMode {
+    pub const ALL: [LayerMode; 3] = [LayerMode::Hold, LayerMode::Oneshot, LayerMode::Toggle];
+
+    pub fn name(self) -> &'static str {
+        match self {
+            LayerMode::Hold => "hold",
+            LayerMode::Oneshot => "oneshot",
+            LayerMode::Toggle => "toggle",
+        }
+    }
 }
 
 impl Geometry {
@@ -255,19 +285,23 @@ impl Geometry {
     }
 
     /// The virtual geometry of a layered layout: the base keys, then for each layer `l` a copy
-    /// of every key not on the finger that holds the layer key `holders[l - 1]` (that finger is
-    /// busy holding), with `layer = l` and `phys` set. Every metric then sees a layered symbol
-    /// at its physical key; layer-key presses are scored by Y01/Y02. Comfort tables expand
-    /// by physical key.
-    pub fn layered(&self, holders: &[usize]) -> Result<Geometry> {
+    /// of every usable key, with `layer = l` and `phys` set. `holders[l - 1]` is the physical
+    /// key reaching layer `l` and how. A hold layer drops every key on the holding finger (it
+    /// is busy holding); one-shot and toggle layers drop only the layer key itself (on a toggle
+    /// layer it is the key that leaves). Every metric then sees a layered symbol at its
+    /// physical key; layer-key presses are scored by Y01/Y02. Comfort tables expand by
+    /// physical key.
+    pub fn layered(&self, holders: &[(usize, LayerMode)]) -> Result<Geometry> {
         if !self.layer_keys.is_empty() || self.key.iter().any(|k| k.layer != 0) {
             return Err(Error::invalid("geometry", "already layered"));
         }
         let mut g = self.clone();
-        g.layer_keys = holders.to_vec();
-        for (li, &h) in holders.iter().enumerate() {
+        g.layer_keys = holders.iter().map(|h| h.0).collect();
+        g.layer_modes = holders.iter().map(|h| h.1).collect();
+        for (li, &(h, mode)) in holders.iter().enumerate() {
             let f = self.key.get(h).ok_or_else(|| Error::invalid("geometry", "layer key out of range"))?.finger;
-            for (k, key) in self.key.iter().enumerate().filter(|(_, key)| key.finger != f) {
+            let usable = |k: usize, key: &Key| if mode == LayerMode::Hold { key.finger != f } else { k != h };
+            for (k, key) in self.key.iter().enumerate().filter(|(k, key)| usable(*k, key)) {
                 g.key.push(Key { layer: li as u8 + 1, phys: Some(k as u16), fill: None, ..key.clone() });
             }
         }
