@@ -164,6 +164,8 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
     let interval = Duration::from_millis(250);
     let out = if spec.params.algo == optimize::Algo::Explore {
         crate::explore::run(&ctx, &spec.params, interval, control, &prep.dir, &prep.config.id, &mut emit)?.0
+    } else if spec.params.algo == optimize::Algo::Qd {
+        crate::explore::qd::run(&ctx, &spec.params, interval, control, &prep.dir, &prep.config.id, &mut emit)?.0
     } else {
         optimize::run(&ctx, &spec.params, interval, control, &mut emit)
     };

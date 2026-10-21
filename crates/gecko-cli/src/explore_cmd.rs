@@ -1,9 +1,11 @@
-//! `gecko explore`, `gecko landscape`, `gecko atlas`: map the space of good layouts, probe the
-//! landscape, and read an atlas back (optionally re-ranked under another profile).
+//! `gecko explore`, `gecko landscape`, `gecko atlas`, `gecko qd`: map the space of good layouts,
+//! probe the landscape, read an atlas back (optionally re-ranked under another profile), and
+//! build a MAP-Elites map over behaviour axes.
 //! See `context/cli.md` and `context/algorithms/explore.md`.
 
 use anyhow::{bail, Result};
 use gecko_core::explore::atlas::{self, Summary};
+use gecko_core::explore::qd::{self, QdSummary};
 use gecko_core::explore::{distance, probe, stats};
 use gecko_core::optimize::{Algo, Control, Ctx as SearchCtx, Params};
 use gecko_core::run::{self, RunSpec};
@@ -243,4 +245,123 @@ pub fn atlas_cmd(ctx: &Ctx, id: &str, inputs: &Inputs, top: usize, cut: usize, f
         println!("  {}    {}", x.chars().map(|c| format!("{c} ")).collect::<String>(), y.chars().map(|c| format!("{c} ")).collect::<String>());
     }
     Ok(())
+}
+
+pub struct QdArgs {
+    pub time: Option<String>,
+    pub evals: Option<u64>,
+    pub seed: u64,
+    pub threads: Option<usize>,
+    pub pin: String,
+    pub from: Option<String>,
+    pub axes: Vec<String>,
+    pub bins: usize,
+    pub seeds: Option<usize>,
+    pub descent: Option<usize>,
+    pub show: Option<String>,
+    pub inputs: Inputs,
+}
+
+pub fn qd(ctx: &Ctx, a: QdArgs) -> Result<()> {
+    if let Some(id) = &a.show {
+        let dir = ctx.store.runs.join(id);
+        let config = run::load_config(&dir)?;
+        let summary = qd::load(&dir)?;
+        let g = ctx.store.geometry(&config.geometry.name)?;
+        if ctx.json {
+            ctx.print(json!({"schema": SCHEMA, "run": id, "qd": summary}));
+        } else {
+            print_qd(&summary, &g);
+        }
+        return Ok(());
+    }
+    for ax in &a.axes {
+        qd::parse_axis(ax)?;
+    }
+    if a.axes.is_empty() || a.axes.len() > 3 {
+        bail!("--axes takes 1 to 3 axes");
+    }
+    let l = ctx.load(&a.inputs)?;
+    let start = ctx.layout(a.from.as_deref().unwrap_or(&ctx.store.defaults.reference), &l)?;
+    let mut params = Params {
+        algo: Algo::Qd,
+        seed: a.seed,
+        threads: a.threads.unwrap_or_else(cores),
+        time_ms: if a.evals.is_some() { None } else { Some(parse_duration(a.time.as_deref().unwrap_or("60s"))?) },
+        evals: a.evals,
+        top: 10,
+        ..Default::default()
+    };
+    params.qd.axes = a.axes;
+    params.qd.bins = a.bins.max(1);
+    if let Some(s) = a.seeds {
+        params.qd.seeds = s;
+    }
+    if let Some(d) = a.descent {
+        params.qd.descent = d;
+    }
+    let spec = RunSpec { geometry: &l.geometry, corpus: &l.corpus, profile: &l.profile, start: &start, pins: &a.pin, params };
+    let prep = run::prepare(&ctx.store.runs, &spec)?;
+    eprintln!("qd {}  ({} threads · {} · {})", prep.config.id, spec.params.threads, l.profile.name, spec.params.qd.axes.join(" × "));
+    let quiet = ctx.json;
+    run::execute(&prep, &spec, &Control::default(), |p| {
+        if !quiet {
+            let e = p.explore.clone().unwrap_or_default();
+            eprint!("\r  {:>6.1}s  {:<6} {:>5} cells  {:>9} offspring  best {:.4}   ", p.elapsed_ms as f64 / 1000.0, e.phase, e.optima, e.hits, p.best);
+        }
+    })?;
+    if !quiet {
+        eprintln!();
+    }
+    let summary = qd::load(&prep.dir)?;
+    if ctx.json {
+        ctx.print(json!({"schema": SCHEMA, "run": prep.config.id, "qd": summary}));
+    } else {
+        print_qd(&summary, &l.geometry);
+    }
+    Ok(())
+}
+
+/// Grid as text: axis 0 left → right, axis 1 bottom → top (axis 2 collapsed to its best).
+/// Digit = score decile among the elites (0 = best tenth), `·` = empty.
+fn print_qd(s: &QdSummary, g: &gecko_core::Geometry) {
+    println!("qd {}  {} evals in {:.1}s", s.id, s.evals, s.elapsed_ms as f64 / 1000.0);
+    println!(
+        "  {} / {} cells ({:.0}%)  offspring {}  new {}  improved {}  QD-score {:.1}",
+        s.filled,
+        s.cells,
+        100.0 * s.coverage,
+        s.offspring,
+        s.added,
+        s.improved,
+        s.qd_score
+    );
+    for (k, ax) in s.axes.iter().enumerate() {
+        println!("  axis {k}: {:<12} {:>7.2} – {:<7.2} {} bins{}", ax.name, ax.lo, ax.hi, ax.bins, if ax.auto { " (auto)" } else { "" });
+    }
+    let Some(best) = &s.best else { return };
+    let worst = s.elites.iter().map(|e| e.score).fold(best.score, f64::max);
+    let decile = |v: f64| ((10.0 * (v - best.score) / (worst - best.score).max(1e-12)).floor() as u32).min(9);
+    let (nx, ny) = (s.axes[0].bins, s.axes.get(1).map_or(1, |a| a.bins));
+    let mut grid = vec![f64::INFINITY; nx * ny];
+    for e in &s.elites {
+        let i = e.bins[0] + nx * e.bins.get(1).copied().unwrap_or(0);
+        grid[i] = grid[i].min(e.score);
+    }
+    println!("\n  score deciles (0 = best tenth, · = empty)");
+    for y in (0..ny).rev() {
+        let row: String = (0..nx).map(|x| grid[x + nx * y]).map(|v| if v.is_finite() { char::from(b'0' + decile(v) as u8) } else { '·' }).collect();
+        let label = s.axes.get(1).map_or(String::new(), |a| format!("{:>7.2}", a.lo + (a.hi - a.lo) * (y as f64 + 0.5) / ny as f64));
+        println!("  {label} {}", row.chars().map(|c| format!("{c} ")).collect::<String>());
+    }
+    let a0 = &s.axes[0];
+    println!("  {:>7} {:<w$}{:.2}", "", format!("{:.2}", a0.lo), a0.hi, w = 2 * nx - 4);
+    println!("\nbest per {} bin", a0.name);
+    let names: Vec<&str> = s.axes.iter().map(|a| a.name.as_str()).collect();
+    println!("{:>4} {:>8}  {:<24} layout", "bin", "score", names.join(" / "));
+    for x in 0..nx {
+        let Some(e) = s.elites.iter().find(|e| e.bins[0] == x) else { continue };
+        let d: Vec<String> = e.desc.iter().map(|v| format!("{v:.1}")).collect();
+        println!("{x:>4} {:>8.3}  {:<24} {}", e.score, d.join(" / "), rows(&e.chars, g));
+    }
 }

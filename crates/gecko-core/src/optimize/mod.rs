@@ -5,6 +5,7 @@ pub mod anneal;
 pub mod bls;
 pub mod genetic;
 pub mod hill_climb;
+pub mod map_elites;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
@@ -29,10 +30,13 @@ pub enum Algo {
     /// Search-space exploration: landscape probe + BLS with exclusion restarts, writing an
     /// atlas of every local optimum (`crate::explore`).
     Explore,
+    /// MAP-Elites: a grid over behaviour descriptors, best layout per cell (`map_elites`, grid in
+    /// `crate::explore::qd`).
+    Qd,
 }
 
 impl Algo {
-    pub const ALL: [Algo; 5] = [Algo::Hc, Algo::Sa, Algo::Ga, Algo::Bls, Algo::Explore];
+    pub const ALL: [Algo; 6] = [Algo::Hc, Algo::Sa, Algo::Ga, Algo::Bls, Algo::Explore, Algo::Qd];
     pub fn name(self) -> &'static str {
         match self {
             Algo::Hc => "hc",
@@ -40,6 +44,7 @@ impl Algo {
             Algo::Ga => "ga",
             Algo::Bls => "bls",
             Algo::Explore => "explore",
+            Algo::Qd => "qd",
         }
     }
     pub fn parse(s: &str) -> Option<Algo> {
@@ -66,6 +71,8 @@ pub struct Params {
     pub bls: bls::BlsParams,
     #[serde(default)]
     pub explore: crate::explore::ExploreParams,
+    #[serde(default)]
+    pub qd: map_elites::QdParams,
 }
 
 impl Default for Params {
@@ -81,6 +88,7 @@ impl Default for Params {
             ga: Default::default(),
             bls: Default::default(),
             explore: Default::default(),
+            qd: Default::default(),
         }
     }
 }
@@ -113,6 +121,10 @@ pub trait Observer: Sync {
     /// Distinct good layouts (`sym[slot]`) that exclusion restarts must stay away from.
     fn exclusions(&self) -> Arc<Vec<Vec<u8>>> {
         Arc::new(Vec::new())
+    }
+    /// A layout (`sym[slot]`) to mutate next, e.g. a random MAP-Elites elite.
+    fn parent(&self, _rng: &mut Rng) -> Option<Vec<u8>> {
+        None
     }
 }
 
@@ -212,10 +224,15 @@ impl TopK {
 
 /// Steepest descent until no improving swap exists. Returns evaluations used.
 pub fn steepest_descent(ctx: &Ctx, st: &mut State) -> u64 {
+    steepest_descent_capped(ctx, st, usize::MAX)
+}
+
+/// Steepest descent that stops after `max_moves` improving swaps (or at a local optimum).
+pub fn steepest_descent_capped(ctx: &Ctx, st: &mut State, max_moves: usize) -> u64 {
     let sc = ctx.scorer;
     let m = &ctx.movable;
     let mut evals = 0;
-    loop {
+    for _ in 0..max_moves {
         let mut best = (0, 0, -1e-9);
         for i in 0..m.len() {
             for j in (i + 1)..m.len() {
@@ -231,6 +248,7 @@ pub fn steepest_descent(ctx: &Ctx, st: &mut State) -> u64 {
         }
         sc.apply(st, best.0, best.1, best.2);
     }
+    evals
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -345,6 +363,7 @@ fn make(algo: Algo, p: &Params) -> Box<dyn Optimizer + Send> {
         Algo::Ga => Box::new(genetic::Genetic::new(p.ga.clone(), p.top)),
         Algo::Bls => Box::new(bls::Bls::new(p.bls.clone(), p.top, false)),
         Algo::Explore => Box::new(bls::Bls::new(p.bls.clone(), p.top, true)),
+        Algo::Qd => Box::new(map_elites::MapElites::new(p.qd.clone(), p.top)),
     }
 }
 
