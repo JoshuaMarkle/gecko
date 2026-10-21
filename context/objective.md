@@ -2,11 +2,31 @@
 
 Full metric list with IDs: `research/metrics-catalog.md`. Implemented now (`gecko list metrics`):
 B01 SFB, S01 SFS, S02 far SFS (gaps 2–3, decayed), S03 SFS distance, B03 finger speed,
-B04 LSB, B05 scissors, B14 geometric stretch (Oxeylyzer 2), M01 effort, M02 finger-load error,
+B04 LSB, B05 scissors, B14 geometric stretch (Oxeylyzer 2), B11 finger-pair movement (KLO), M01 effort, M02 finger-load error,
 M04 hand balance, M05 home row, M06 center columns, B08 alternation, T01–T08 trigram classes,
 E04/E05 Engram key-pair discomfort (formula / measured; geometry `[comfort]` tables),
 B02 repeats (info), Y01 layer switches, Y02 code-symbol bigrams. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
 lateral multiplier and per-finger factors, and S02's `skip_decay`.
+
+## B11 finger-pair movement
+
+Same-hand, different non-thumb fingers (`metrics::movement`):
+`pair[from][to] · direction · (0.1 + rows² + lateral)`, reported per 100 bigrams.
+
+- `pair`: KLO's `finger_switch_factor` (P→R 4, P→M 2, R→P 6, R→M 2, R→I 0.1, M→P 3, M→R 5,
+  M→I 0.6, I→P 0.1, I→R 0.3, I→M 0.9; P→I 0). Ring pairs are scaled by Häger-Ross coupling
+  `(2 − I_a − I_b)` over its mean across the six pairs: ×1.30 with pinky, ×1.35 with middle,
+  ×0.96 with index.
+- `direction`: 1 + 2·|Δlength| (lengths P1 R2 M3 I2) when a shorter finger moves down to a
+  longer one or a longer finger up to a shorter one — the scissor where the short finger is high.
+- `rows` = logical row change; `lateral` = column span beyond the fingers' own spacing (LSB;
+  KLO ships this at 0).
+
+Findings (english, ansi-30): B11 spread over the references = 18.3. It agrees with B14 on the
+optimum (20 s SA, seed 7: B11 at 0, 0.5, 1 gives near-identical layouts, B14 1.87–1.88, E05
+5.22–5.27) but re-sorts references with ring-up scissors: Semimak (`bl`) 93.7 and Halmak (`ed`)
+97.1 are above QWERTY (85.9); Sturdy 41.5 and Graphite 46.1 are the lowest. Weight 1 swaps
+Halmak and Colemak; 0.5 keeps the reference order. Default 0.5.
 
 ## Metric contract
 

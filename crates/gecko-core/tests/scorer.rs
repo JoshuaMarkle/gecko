@@ -397,6 +397,24 @@ fn stretch_on_known_pairs() {
 }
 
 #[test]
+fn movement_on_known_pairs() {
+    use gecko_core::metrics::movement;
+    let g = ansi();
+    assert_eq!(movement(&g, at(1, 3), at(1, 6)), 0.0, "different hands");
+    assert_eq!(movement(&g, at(0, 3), at(2, 4)), 0.0, "same finger");
+    assert!(movement(&g, at(1, 1), at(1, 2)) < 1.0, "same-row roll is nearly free");
+    assert!(movement(&g, at(1, 2), at(1, 4)) > 4.0 * movement(&g, at(1, 2), at(1, 3)), "LSB");
+    // Two-row scissor costs 4× a one-row jump, before the direction factor.
+    assert!(movement(&g, at(0, 2), at(2, 1)) > 3.0 * movement(&g, at(0, 2), at(1, 1)));
+    // Finger-length rule: ring (short) up with middle (long) down is the bad scissor.
+    assert!(movement(&g, at(0, 1), at(2, 2)) > movement(&g, at(2, 1), at(0, 2)));
+    // Ring coupling: middle→ring costs more than KLO's seed (5) on a one-row jump.
+    assert!(movement(&g, at(1, 2), at(0, 1)) > 5.0 * 1.1);
+    // Mirror symmetry: the table is per finger, not per hand.
+    assert_eq!(movement(&g, at(0, 1), at(2, 2)), movement(&g, at(0, 8), at(2, 7)));
+}
+
+#[test]
 fn engram_comfort_table() {
     let g = ansi();
     let t = &g.comfort_tables["E04"];
