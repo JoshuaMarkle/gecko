@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::hand::HandSpec;
 use crate::{geometry::FINGERS, hash, Error, Result};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -48,6 +49,10 @@ pub struct Profile {
     /// costs nothing.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub familiar_to: Option<String>,
+    /// Hand model (and arms) for G01/G03/G05 and B14's relaxed spread (`context/hand-model.md`).
+    /// Unset: G01/G03/G05 use the average hand and arms and B14 its fixed spread.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hand: Option<HandSpec>,
 }
 
 /// Costs in LP LR LM LI LT RT RI RM RR RP order. Higher means harder.
@@ -153,6 +158,9 @@ impl Profile {
         if let Some(e) = &p.finger_effort {
             e.validate()?;
         }
+        if let Some(h) = &p.hand {
+            h.validate()?;
+        }
         let s = &p.sfb;
         let ok = s.lateral.is_finite() && s.lateral > 0.0 && s.finger_factor.iter().all(|f| f.is_finite() && *f >= 0.0);
         if !ok || !(0.0..=1.0).contains(&s.skip_decay) {
@@ -192,6 +200,9 @@ impl Profile {
         }
         if let Some(r) = &self.familiar_to {
             v["familiar_to"] = serde_json::json!(r);
+        }
+        if let Some(h) = &self.hand {
+            v["hand"] = serde_json::json!(h);
         }
         hash::fnv1a(v.to_string().as_bytes())
     }

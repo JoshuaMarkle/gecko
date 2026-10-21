@@ -47,6 +47,16 @@ impl Engine {
     }
 }
 
+/// Hand-model costs per key for a geometry and a profile `hand` spec (`{size, dims?}`), as JSON
+/// `{reach, align, miss, placed}`: the G01 / G05 tables before layer holders are added.
+#[wasm_bindgen]
+pub fn hand_costs(geometry_json: &str, hand_json: &str) -> Result<String, JsError> {
+    let geometry: Geometry = serde_json::from_str(geometry_json).map_err(js)?;
+    let spec: gecko_core::hand::HandSpec = serde_json::from_str(hand_json).map_err(js)?;
+    spec.validate().map_err(js)?;
+    serde_json::to_string(&gecko_core::hand::costs_with(&geometry, &spec.dims(), &spec.body())).map_err(js)
+}
+
 /// 2D drawing of a geometry (`Geometry::flat2d`) as JSON `[{pos: [x, y], rot}]` per key.
 #[wasm_bindgen]
 pub fn flat2d(geometry_json: &str) -> Result<String, JsError> {

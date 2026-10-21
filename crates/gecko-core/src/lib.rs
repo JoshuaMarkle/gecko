@@ -12,6 +12,7 @@ pub mod error;
 pub mod explore;
 pub mod flat2d;
 pub mod geometry;
+pub mod hand;
 pub mod hash;
 pub mod import;
 pub mod kle;

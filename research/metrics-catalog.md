@@ -115,11 +115,11 @@ stats summing to 100% and makes reports easy to read.
 
 | ID | Metric | Dir | Pri | Definition |
 |---|---|---|---|---|
-| G01 | Reach cost | − | P2 | Hand-model cost to place fingertip on key (joint deviation from neutral). |
+| G01 | Reach cost | − | P2 | Hand-model cost to place fingertip on key (joint deviation from neutral). Implemented: joint deviation from the natural curl + splay + fingertip shortfall, hand placed on the home keys (`context/hand-model.md`). |
 | G02 | 2D/3D travel | − | P2 | Euclidean fingertip travel between key tops (replaces grid distance). |
-| G03 | Wrist posture | − | P3 | Pronation, ulnar deviation, extension from tent/splay/tilt. |
+| G03 | Wrist posture | − | P3 | Pronation, ulnar deviation, extension from tent/splay/tilt. Implemented: resting hand vs forearm (elbows from profile `hand.body`; split halves assumed aligned with the forearm), squared over comfortable ranges, plus the deviation of sideways out-of-reach keys (`context/hand-model.md`). |
 | G04 | Collision | hard | P2 | Keycaps/switches may not intersect (OBB in 2D, convex hull in 3D). |
-| G05 | Press direction alignment | − | P3 | Angle between key normal and fingertip flexion direction. |
+| G05 | Press direction alignment | − | P3 | Angle between key normal and fingertip flexion direction. Implemented: distal phalanx vs keycap normal within the finger plane, (angle / 45°)²; thumbs: the push along the CMC → tip line (`context/hand-model.md`). |
 | G06 | Thumb arc fit | − | P3 | Thumb keys along the thumb's natural arc. |
 | G07 | Manufacturability | hard/− | P3 | Min spacing, max angles, column counts, plate limits. |
 

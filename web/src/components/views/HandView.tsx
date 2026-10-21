@@ -1,7 +1,8 @@
 // Hand tab (frontend.md "Hand"): hand settings | 3D hands placed over the board's home keys
 // (mirrored skeletons, finger IK), with a typing simulation whose fingers move in parallel |
-// measurements, typing timeline and stats, size distribution, similarity.
-// Preview only: the scorer has no hand model yet (#92).
+// reach (the scorer's per-key hand costs), measurements, typing timeline and stats, size
+// distribution, similarity. "Use hand in optimization" sends this hand to the scorer (G01, G03, G05,
+// B14 spread); the wrist and typing simulation stay view-only.
 
 import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
@@ -12,13 +13,15 @@ import { ACCENT, ERROR, fingerColor, HAIR, INK, MUTED } from "../../colors";
 import {
   AVERAGE, dimsVector, FINGER_NAMES, fingerAt, fingerKey, keysDown, fingerLength, FOUR, handDims, handLayout, handLength, handShift,
   LENGTH_MEAN, LENGTH_SD, naturalTip, normalCdf, normalPdf, placeHand, planTyping, adjustPlacement, wristOf, WRIST0, population, poseHand, PRESET_SCALE,
-  scaleDims, similarity, sizeBand, sub3, toWorld, typicality,
-  type FingerName, type FingerState, type HandDims, type HandPose, type HandSettings, type Placement, type Plan, type Preset,
+  bodyOf, handSpec, scaleDims, similarity, sizeBand, sub3, toWorld, typicality,
+  type Body, type FingerName, type FingerState, type HandDims, type HandPose, type HandSettings, type Placement, type Plan, type Preset,
   type Side, type Stroke, type V3, type Wrist,
 } from "../../hand";
 import { boardBounds, Keyboard3D, keyTop as capTop, type Focus, type ViewMode } from "../../three/Keyboard3D";
 import { useSize } from "../Charts";
 import { Frame, Num, PanelTabs, Sec, Seg, Slider, Toggle } from "../Form";
+import { useHandCosts } from "../../handCosts";
+import type { HandCosts } from "../../wasm";
 
 interface Props {
   geometry: Geometry;
@@ -242,6 +245,77 @@ function handFocus(g: Geometry, rigs: Rig[], d: HandDims, mode: ViewMode): Focus
 // ---------- bottom panels ----------
 
 /** One right hand, palm down, turned so the fingers point right (thumb on top), with dimension lines. */
+const FINGER_ORDER: Finger[] = ["LP", "LR", "LM", "LI", "LT", "RT", "RI", "RM", "RR", "RP"];
+
+/**
+ * The scorer's per-key hand costs by finger: home key, mean and worst key (G01 reach), mean
+ * press angle (G05), and keys the fingertip cannot reach with the hand resting on the home keys;
+ * then each wrist's resting posture and G03.
+ */
+function Reach({ geometry, chars, costs, body }: { geometry: Geometry; chars: string; costs: HandCosts | null; body: Body }) {
+  const bodyText = `${body.elbowWidth.toFixed(0)} mm`;
+  if (!costs) return <div className="empty">Solving the hand…</div>;
+  const sym = [...chars];
+  const name = (i: number) => (sym[i] && sym[i] !== " " ? sym[i].toUpperCase() : `r${geometry.key[i].row}c${geometry.key[i].col}`);
+  const base = geometry.key.map((k, i) => ({ k, i }));
+  const rows = FINGER_ORDER.map((f) => {
+    const ks = base.filter((x) => x.k.finger === f).map((x) => x.i);
+    if (!ks.length) return null;
+    const home = ks.find((i) => geometry.key[i].home && !geometry.key[i].stretch) ?? ks.find((i) => geometry.key[i].home);
+    const worst = ks.reduce((a, b) => (costs.reach[b] > costs.reach[a] ? b : a));
+    const mean = (v: number[]) => ks.reduce((t, i) => t + v[i], 0) / ks.length;
+    const short = ks.filter((i) => costs.miss[i] > 0);
+    return { f, n: ks.length, home, worst, reach: mean(costs.reach), align: mean(costs.align), short };
+  }).filter((r) => r !== null);
+  const all = base.map((x) => x.i);
+  const avg = all.reduce((t, i) => t + costs.reach[i], 0) / Math.max(all.length, 1);
+  const sideMean = (side: string, v: number[]) => {
+    const ks = all.filter((i) => geometry.key[i].finger.startsWith(side));
+    return ks.reduce((t, i) => t + v[i], 0) / Math.max(ks.length, 1);
+  };
+  const deg = (v: number) => `${v.toFixed(0)}°`;
+  return (
+    <div className="reachtab">
+      <table className="tbl">
+        <thead><tr><th>Finger</th><th>Keys</th><th title="G01 on the finger's home key">Home</th><th title="Mean G01 over the finger's keys">Mean reach</th><th>Hardest key</th><th title="Mean G05 press angle cost">Press angle</th><th title="Keys the fingertip cannot reach with the hand on the home keys (shortfall, mm)">Out of reach</th></tr></thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.f}>
+              <td><i className="dot" style={{ background: fingerColor(r.f) }} />{r.f}</td>
+              <td className="num">{r.n}</td>
+              <td className="num">{r.home === undefined ? "–" : costs.reach[r.home].toFixed(2)}</td>
+              <td className="num">{r.reach.toFixed(2)}</td>
+              <td>{name(r.worst)} <span className="muted num">{costs.reach[r.worst].toFixed(1)}</span></td>
+              <td className="num">{r.align.toFixed(2)}</td>
+              <td className={r.short.length ? "err" : "muted"}>{r.short.length ? r.short.map((i) => `${name(i)} ${costs.miss[i].toFixed(0)}`).join(", ") : "none"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <table className="tbl posture">
+        <thead><tr><th>Wrist</th><th title="Ulnar (+, toward the pinky) or radial (−) deviation of the hand from the forearm">Deviation</th><th title="Extension (+, back of the hand up) or flexion (−)">Extension</th><th title="Forearm rotation: 90° = palm flat down, 0° = thumb up">Pronation</th><th title="Mean G03 over the hand's keys: the resting posture plus sideways reaches">Posture cost</th></tr></thead>
+        <tbody>
+          {(["L", "R"] as const).map((side, h) => costs.placed[h] && (
+            <tr key={side}>
+              <td>{side === "L" ? "Left" : "Right"}</td>
+              <td className="num">{deg(costs.posture[h].deviation)} {costs.posture[h].deviation >= 0 ? "ulnar" : "radial"}</td>
+              <td className="num">{deg(costs.posture[h].extension)}</td>
+              <td className="num">{deg(costs.posture[h].pronation)}</td>
+              <td className="num">{sideMean(side, costs.wrist).toFixed(2)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="hint">
+        Mean reach over all {all.length} keys {avg.toFixed(2)}{costs.placed.includes(false) ? " · a hand without four home keys is not placed (its keys cost 0)" : ""}.
+        Reach = joint deviation from the natural curl + sideways splay + fingertip shortfall (hand fixed on the home keys); 0 at rest, about 1 for a comfortable off-home key.
+        Posture: forearms from elbows {bodyText} apart; split halves are assumed turned to line up with the forearm (no resting deviation), a tent lowers pronation. Neutral is 0° deviation and extension, 30° pronation.
+        The layout's G01 / G03 / G05 (per keystroke) are in the Profile tab's Hand model section and in Analysis.
+      </div>
+    </div>
+  );
+}
+
 function Measurements({ d }: { d: HandDims }) {
   const [box, { w, h }] = useSize<HTMLDivElement>();
   const lay = handLayout(d);
@@ -518,7 +592,9 @@ export function HandView(p: Props) {
   const h = p.hand;
   const d = handDims(h);
   const off = !h.use;
-  const [tab, setTab] = useState<"measure" | "typing" | "size" | "similar">("measure");
+  const [tab, setTab] = useState<"reach" | "measure" | "typing" | "size" | "similar">("reach");
+  const [reachHeat, setReachHeat] = useState(true);
+  const costs = useHandCosts(p.geometry, handSpec(h));
   const [sideTab, setSideTab] = useState<"hand" | "simulation">("hand");
   const [sample, setSample] = useState("pangram");
   const [wpm, setWpm] = useState(120);
@@ -537,6 +613,7 @@ export function HandView(p: Props) {
   // `d` is rebuilt every render; key the memos on its values.
   const dimsKey = dimsVector(d).join(",");
   const w = wristOf(h);
+  const arms = bodyOf(h);
   const wristKey = Object.values(w).join(",");
   const setWrist = (patch: Partial<Wrist>) => p.setHand({ ...h, wrist: { ...w, ...patch } });
   const { rigs, keyTop, keyNormal } = useMemo(() => buildRigs(p.geometry, d, w), [p.geometry, dimsKey, wristKey]);
@@ -560,8 +637,9 @@ export function HandView(p: Props) {
       side={
         sideTab === "hand" ? <>
           <div className="pad">
-            <Toggle label="Use hand in optimization" help="Score layouts with this hand's reach (needs the hand model in the scorer, #92). Off: preview only." value={h.use} onChange={(use) => p.setHand({ ...h, use })} />
-            {off && <div className="hint">Off: the scorer ignores the hand. The views on the right still preview it.</div>}
+            <Toggle label="Use hand in optimization" help="Score and optimize with this hand: its reach (G01), press angle (G05) and wrist posture (G03) per key, and B14's stretch allowance scaled by its span. Adds G01 / G03 / G05 to the profile at the hand profile's weights unless the profile sets them." value={h.use} onChange={(use) => p.setHand({ ...h, use })} />
+            {off ? <div className="hint">Off: the scorer uses the average hand for G01 / G03 / G05, at the profile's weights (0 in the default). The views on the right still preview this hand.</div>
+              : <div className="hint">On: runs and scores use this hand. Reach, Press angle and Wrist posture are in the Profile tab's Hand model section.</div>}
           </div>
           <fieldset className="plain" disabled={off}>
             <div className="pad">
@@ -589,7 +667,15 @@ export function HandView(p: Props) {
                 <Num label="Span" help="Thumb tip to pinky tip, spread flat." value={+d.span.toFixed(1)} step={1} unit="mm" disabled={off} onChange={(x) => setDims({ ...d, span: Math.max(80, x) })} />
                 <Num label="Reach" help="Comfortable fingertip travel from the home key." value={+d.reach.toFixed(1)} step={1} unit="mm" disabled={off} onChange={(x) => setDims({ ...d, reach: Math.max(5, x) })} />
               </div>
-              <div className="btns"><button className="btn soft small" disabled={off || h.preset !== "custom"} onClick={() => p.setHand({ ...h, preset: "average", custom: null })}>Reset to Average</button></div>
+              <div className="subgroup">
+                <div className="subhead">Arms (wrist posture, G03)</div>
+                <Num label="Elbow width" help="Elbow to elbow while typing. Wider elbows angle the forearms inward and bend the wrists more toward the pinky on a one-piece board." value={+arms.elbowWidth.toFixed(0)} step={5} unit="mm" disabled={off} onChange={(x) => p.setHand({ ...h, body: { ...arms, elbowWidth: Math.min(1500, Math.max(100, x)) } })} />
+                <Num label="Forearm" help="Elbow to wrist crease." value={+arms.forearm.toFixed(0)} step={5} unit="mm" disabled={off} onChange={(x) => p.setHand({ ...h, body: { ...arms, forearm: Math.min(600, Math.max(100, x)) } })} />
+              </div>
+              <div className="btns">
+                <button className="btn soft small" disabled={off || h.preset !== "custom"} onClick={() => p.setHand({ ...h, preset: "average", custom: null })}>Reset to Average</button>
+                <button className="btn soft small" disabled={off || !h.body} onClick={() => p.setHand({ ...h, body: undefined })}>Arms from hand size</button>
+              </div>
             </Sec>
           </fieldset>
         </> : (
@@ -608,7 +694,7 @@ export function HandView(p: Props) {
       }
       main={
         <div className="viewport hand-viewport">
-          <Keyboard3D geometry={p.geometry} chars={p.chars} heat={[]} arcs={[]} overlay="none" mode={mode} selected={null} onKey={() => {}} focus={focus} pressed={keys}>
+          <Keyboard3D geometry={p.geometry} chars={p.chars} heat={reachHeat && costs ? costs.reach.map((r) => Math.min(r, 4)) : []} arcs={[]} overlay={reachHeat && costs ? "heat" : "none"} mode={mode} selected={null} onKey={() => {}} focus={focus} pressed={keys}>
             <Hands rigs={rigs} dims={d} plan={plan} clock={clock} keys={keys} playing={playing} loop={loop} onEnd={() => setPlaying(false)} labels={labels} />
           </Keyboard3D>
           <div className="viewlabel">
@@ -617,6 +703,7 @@ export function HandView(p: Props) {
             <span className="muted">{playing && plan ? `typing · ${plan.stats.wpm.toFixed(0)} of ${wpm} wpm reached · ${(100 * plan.stats.early).toFixed(0)}% of keys started early` : "fingertips on the home keys (IK)"}</span>
           </div>
           <div className="viewctl">
+            <div className="seg inline"><button className={reachHeat ? "on" : ""} onClick={() => setReachHeat(!reachHeat)} title="Color keys by this hand's reach cost (G01): darker = harder to reach from the home keys">Reach</button></div>
             <div className="seg inline"><button className={labels ? "on" : ""} onClick={() => setLabels(!labels)} title="Segment lengths (mm) on the resting hands">Lengths</button></div>
             <div className="seg inline"><button className={mode === "3d" ? "on" : ""} onClick={() => setMode(mode === "3d" ? "top" : "3d")} title="3D view (off: flat top-down)">3D</button></div>
           </div>
@@ -637,9 +724,10 @@ export function HandView(p: Props) {
       }
       bottom={
         <div className="bottomtabs">
-          <PanelTabs value={tab} onChange={setTab} options={[["measure", "Measurements"], ["typing", "Typing"], ["size", "Size distribution"], ["similar", "Similarity"]]}
+          <PanelTabs value={tab} onChange={setTab} options={[["reach", "Reach"], ["measure", "Measurements"], ["typing", "Typing"], ["size", "Size distribution"], ["similar", "Similarity"]]}
             right={<span className="hint">{h.preset === "custom" ? "Custom" : cap(h.preset)} hand</span>} />
           <div className="bottombody">
+            {tab === "reach" && <Reach geometry={p.geometry} chars={p.chars} costs={costs} body={arms} />}
             {tab === "measure" && <Measurements d={d} />}
             {tab === "typing" && <Typing plan={plan} clock={clock} playing={playing} />}
             {tab === "size" && <SizeDistribution d={d} />}

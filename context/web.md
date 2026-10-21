@@ -27,7 +27,7 @@ web/src/
 
 ## Screen
 
-Navbar (see design.md "App shell"): Inputs tabs (Board, Hand, Language, Profile, Search) |
+Navbar (see design.md "App shell"): Inputs tabs (Board, Hand, Language, Profile, Search, Summary) |
 Results tabs (Home, Explore, Analysis, Saved) · play / pause / stop centred with run % beside
 (on Results tabs only) ·
 working model right. The tab is remembered in `localStorage`; old names map (Corpus →
@@ -59,8 +59,11 @@ key opens a popup (x, y, z, rx, ry, rz, finger); the first edit forks the board 
 
 ### Hand
 Sidebar tabs: **Hand** (default) and **Simulation**. Hand contains **Use hand in optimization** (default off; off greys out the settings, the views
-still preview), presets Average / Large / Small (Custom appears after an edit), Advanced:
-every segment length, palm width / length, span, reach. Main: skeletal hands in 3D on the
+still preview; on, every score and run gets this hand as the profile's `hand` plus G01 1.0 / G03 1.0 /
+G05 0.5 when the profile has no weight for them, `hand.ts` `withHand` applied in `inputs.ts`), presets Average / Large / Small (Custom appears after an edit), Advanced:
+every segment length, palm width / length, span, reach, and Arms (elbow width, forearm; sent as
+`hand.body` once edited, "Arms from hand size" clears them). The 3D thumb is the scorer's 4-DoF
+thumb (`hand.ts` `Thumb`, solved in hand-local mm via `toLocal`). Main: skeletal hands in 3D on the
 current board (`hand.ts`: one right-hand skeleton mirrored for the left, each hand placed by
 fitting natural finger reach to the home keys, thumb on the nearest thumb key, finger IK
 within joint limits; fingertips target each keycap's top centre and press along its normal,
@@ -81,7 +84,10 @@ plus derived lengths), Typing (per-finger timeline of moves, waits and presses w
 playhead, late keys marked; speed reached vs target, late keys (same finger or late start),
 keys started early, overlap, alternation, travel, per-finger load), Size distribution (normal curve of hand length,
 Small / Average / Large bands, this hand marked), Similarity (typicality of this hand among
-a synthetic population).
+a synthetic population). A **Reach** bottom tab (first) lists the scorer's per-key hand costs
+(WASM `hand_costs`, `handCosts.ts`) per finger: home, mean, hardest key, press angle and keys out
+of reach (mm short), then each wrist's resting deviation, extension, pronation and mean G03; the
+**Reach** view toggle (default on) colours the 3D keys by G01.
 
 ### Language
 Sidebar "Languages · N": collapsible rows with a status (Summarized / Unsummarized /
@@ -95,7 +101,8 @@ bigrams, trigrams, skipgrams (`corpus_stats`). Local languages cannot be used fo
 
 ### Profile
 Sidebar: profile picker + reset, then every parameter in sections (Finger load with
-relative effort inputs, Rows and reach, Same-finger with SFB distance settings, Stretches and scissors,
+relative effort inputs, Rows and reach, Hand model (G01/G05/G03 weights; visual: G01 per key for the
+profile's hand, ringed keys out of reach), Same-finger with SFB distance settings, Stretches and scissors,
 Rolls and alternation, Redirects, Measured comfort, Layers, Shortcuts and familiarity,
 Precision); each field has a tooltip. Scroll-spy marks the focused section (click a title to
 jump). Main: a visual of the focused section on the current layout (finger heat + finger
@@ -114,6 +121,21 @@ undo). Bottom: search-space size (arrangements, after pins), estimates from past
 same inputs (rediscovery rate, chance optimal, time-to-optimum guess, `estimate.ts`), and an
 **Estimate** button (bottom-right) that loads the Gilmore–Lawler bound of the best matching
 run.
+
+### Summary
+Above Board & language, an inline flowchart shows language frequencies and physical
+keyboard costs feeding the scoring model, then the selected search algorithm and output
+layout. The graphic is unframed with padded margins, page-style titles and subtitles, and
+bulleted details, with no overall heading. It shares the right column with that table,
+opposite Search & stopping, and scrolls on narrow screens. Box titles use the standard
+12px section typography and details use 11px text; the SVG does not enlarge on wide screens.
+
+Final input tab: a full-width, scrollable reference sheet with paired parameter tables,
+a complete metric table (weight, scale, effective weight, direction and description),
+finger costs / generated targets, and per-key geometry. Reads the live shared inputs;
+all sections stay expanded. Gray rows identify zero-weight metrics, missing comfort tables
+or familiarity references, other algorithms' settings, and saved-only hand / board /
+stop-confidence controls. This describes the next Search run, not a saved run or Explore.
 
 ### Home (read-only)
 Sidebar: summary blocks for Board, Hand, Language, Profile, Search with on/off flags; each

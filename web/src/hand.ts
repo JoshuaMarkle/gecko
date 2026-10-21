@@ -1,8 +1,11 @@
 // Hand model for the Hand tab: measurements, presets, hand placement and finger IK, a typing
 // planner with overlapping finger motion, and a synthetic population for the size and
-// similarity charts. Lengths in mm. Pure (unit-tested in hand.test.ts). Not used by the scorer
-// yet (#92): the "Use hand in optimization" toggle only previews. The population is synthetic
-// until reference hand data lands (frontend.md).
+// similarity charts. Lengths in mm. Pure (unit-tested in hand.test.ts). The scorer runs the
+// same skeleton, placement and IK in Rust (`gecko_core::hand`, context/hand-model.md); "Use hand
+// in optimization" sends this hand as the profile's `hand` (`withHand`). The population is
+// synthetic until reference hand data lands.
+
+import type { Profile } from "./api";
 
 export type FingerName = "thumb" | "index" | "middle" | "ring" | "pinky";
 export const FINGER_NAMES: FingerName[] = ["thumb", "index", "middle", "ring", "pinky"];
@@ -27,7 +30,18 @@ export interface HandDims {
 }
 
 export type Preset = "small" | "average" | "large" | "custom";
-export interface HandSettings { use: boolean; preset: Preset; custom: HandDims | null; wrist?: Wrist }
+export interface HandSettings { use: boolean; preset: Preset; custom: HandDims | null; wrist?: Wrist; body?: Body }
+
+/** Arms for G03 (mm): elbow-to-elbow distance while typing and forearm length. Unset: average arms scaled with the hand. */
+export interface Body { elbowWidth: number; forearm: number }
+/** Average arms (`gecko_core::hand::BODY`). */
+export const BODY: Body = { elbowWidth: 465, forearm: 255 };
+/** The arms G03 uses for a hand: `body`, else `BODY` scaled with hand length. */
+export const bodyOf = (h: HandSettings): Body => {
+  if (h.body) return h.body;
+  const s = handLength(handDims(h)) / handLength(AVERAGE);
+  return { elbowWidth: BODY.elbowWidth * s, forearm: BODY.forearm * s };
+};
 
 /**
  * View adjustments on top of the solved hand placement, mirrored for the left hand: wrist
@@ -66,6 +80,45 @@ export function scaleDims(d: HandDims, s: number): HandDims {
 
 export function handDims(h: HandSettings): HandDims {
   return h.preset === "custom" && h.custom ? h.custom : scaleDims(AVERAGE, PRESET_SCALE[h.preset === "custom" ? "average" : h.preset]);
+}
+
+/** The profile `hand` block the scorer reads (`gecko_core::hand::HandSpec`, snake_case mm). */
+export interface HandSpec {
+  size: "small" | "average" | "large";
+  dims?: { thumb: number[]; index: number[]; middle: number[]; ring: number[]; pinky: number[]; palm_width: number; palm_length: number; span: number; reach: number };
+  body?: { elbow_width: number; forearm: number };
+}
+
+export function handSpec(h: HandSettings): HandSpec {
+  const body = h.body ? { body: { elbow_width: h.body.elbowWidth, forearm: h.body.forearm } } : {};
+  if (h.preset !== "custom" || !h.custom) return { size: h.preset === "custom" ? "average" : h.preset, ...body };
+  const d = h.custom;
+  return {
+    size: "average",
+    dims: { thumb: d.thumb, index: d.index, middle: d.middle, ring: d.ring, pinky: d.pinky, palm_width: d.palmWidth, palm_length: d.palmLength, span: d.span, reach: d.reach },
+    ...body,
+  };
+}
+
+/**
+ * G01 / G03 / G05 weights and reference spreads (english / ansi-30) added when a profile has none
+ * (`data/profiles/hand.toml`); G03 is a board metric, weighted in natural units (scale 1).
+ */
+export const HAND_WEIGHTS: Record<string, [number, number]> = { G01: [1, 0.1983], G03: [1, 1], G05: [0.5, 0.05973] };
+
+/**
+ * The profile the scorer gets: with "Use hand in optimization" on, `hand` is this hand and G01 /
+ * G03 / G05 get the hand profile's weights unless the profile already sets them (0 included);
+ * off, no `hand` (they then use the average hand, at whatever weight the profile gives them).
+ */
+export function withHand(p: Profile, h: HandSettings): Profile {
+  const { hand: _old, ...rest } = p;
+  if (!h.use) return rest;
+  const weights = { ...p.weights }, scale = { ...p.scale };
+  for (const [id, [w, s]] of Object.entries(HAND_WEIGHTS)) {
+    if (!(id in weights)) { weights[id] = w; scale[id] ??= s; }
+  }
+  return { ...rest, hand: handSpec(h), weights, scale };
 }
 
 /** Wrist crease to middle fingertip. */
@@ -179,7 +232,7 @@ export function handLayout(d: HandDims): HandLayout {
   const pl = d.palmLength;
   const knuckles: V3[] = FOUR.map((_, i) => [kw * (i / 3 - 0.5), ARCH_Y[i] * pl, -pl * (1 - ARCH_Z[i])]);
   const thumb: V3 = [-0.42 * d.palmWidth, -0.12 * pl, -0.24 * pl];
-  const thumbRest: V3 = [knuckles[0][0] - 0.05 * d.palmWidth, -0.2 * pl, -(0.72 * pl + 0.4 * fingerLength(d, "thumb"))];
+  const thumbRest: V3 = [knuckles[0][0] - 0.1 * d.palmWidth, -0.35 * pl, -(0.72 * pl + 0.4 * fingerLength(d, "thumb"))];
   const edge = (d.palmWidth - kw) / 2;
   const outline: V3[] = [
     [-0.36 * d.palmWidth, -0.06 * pl, 0],
@@ -293,6 +346,16 @@ export function toWorld(side: Side, pl: Placement, u: number, p: V3): V3 {
   return [pl.wrist[0] + x * c + z * s, pl.wrist[1] + ly * u, pl.wrist[2] - x * s + z * c];
 }
 
+/** Inverse of `toWorld`: world → hand-local mm (right-hand frame). */
+export function toLocal(side: Side, pl: Placement, u: number, w: V3): V3 {
+  const dx = (w[0] - pl.wrist[0]) / u, dy = (w[1] - pl.wrist[1]) / u, dz = (w[2] - pl.wrist[2]) / u;
+  const c = Math.cos(pl.yaw), s = Math.sin(pl.yaw);
+  const x = dx * c - dz * s, z = dx * s + dz * c;
+  const lx = side === "L" ? -x : x;
+  const r = pl.roll ?? 0, cr = Math.cos(r), sr = Math.sin(r);
+  return [lx * cr - dy * sr, lx * sr + dy * cr, z];
+}
+
 /** Apply the view's wrist adjustments to a solved placement (mirrored per side). */
 export function adjustPlacement(side: Side, pl: Placement, w: Wrist, u: number): Placement {
   const m = side === "L" ? -1 : 1, deg = Math.PI / 180;
@@ -361,9 +424,133 @@ export function poseHand(side: Side, pl: Placement, targets: Record<FingerName, 
   const W = (p: V3) => add(toWorld(side, pl, u, p), offset);
   const L = (x: [number, number, number]) => x.map((v) => v * u) as [number, number, number];
   const knuckles = lay.knuckles.map(W);
-  const fingers: V3[][] = [fingerChain(W(lay.thumb), targets.thumb, L(d.thumb), 0.5, 0.1)];
+  const thumb = new Thumb(d);
+  const local = sub3(targets.thumb, offset);
+  const fingers: V3[][] = [thumb.joints(thumb.solve(toLocal(side, pl, u, local)).q).map(W)];
   FOUR.forEach((f, i) => fingers.push(fingerChain(knuckles[i], targets[f], L(d[f]))));
   return { fingers, palm: lay.outline.map(W) };
+}
+
+// ---------- thumb ----------
+
+const dot3 = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cross3 = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const norm3 = (a: V3): V3 => scale(a, 1 / (Math.hypot(a[0], a[1], a[2]) || 1));
+const perp3 = (v: V3, d: V3): V3 => norm3(sub3(v, scale(d, dot3(v, d))));
+/** `v` rotated by `a` radians about unit `axis` (Rodrigues). */
+function rotate3(axis: V3, a: number, v: V3): V3 {
+  const s = Math.sin(a), c = Math.cos(a), k = cross3(axis, v), d = dot3(axis, v) * (1 - c);
+  return [v[0] * c + k[0] * s + axis[0] * d, v[1] * c + k[1] * s + axis[1] * d, v[2] * c + k[2] * s + axis[2] * d];
+}
+
+/** Rest flexion of the thumb's MCP and IP (≈ 17°). */
+const THUMB_CURL = 0.3;
+/** CMC flexion and abduction about rest, MCP and IP absolute (radians). */
+const THUMB_LIMIT = [[-0.6, 0.6], [-0.5, 0.7], [-0.2, 1.05], [-0.3, 1.4]];
+/** Deviation from rest that costs 1 per joint (radians). */
+export const THUMB_SCALE = [0.45, 0.45, 0.6, 0.8];
+
+/**
+ * The 4-DoF thumb in the right-hand frame (`gecko_core::hand::Thumb`): CMC flexion (tip sweeps
+ * toward the fingers) and palmar abduction (tip moves away from the palm) about fixed axes at the
+ * CMC, then MCP and IP flexion. Angles `[cmc flexion, cmc abduction, mcp, ip]`, CMC relative to rest.
+ */
+export class Thumb {
+  base: V3; d0: V3; pad0: V3; flex: V3; abd: V3; l: [number, number, number];
+  neutral: number[] = [0, 0, THUMB_CURL, THUMB_CURL];
+
+  constructor(d: HandDims) {
+    const lay = handLayout(d);
+    this.base = lay.thumb;
+    this.d0 = norm3(sub3(lay.thumbRest, lay.thumb));
+    const across: V3 = [1, 0, 0], down: V3 = [0, -1, 0];
+    this.pad0 = perp3([0.8, -0.6, 0], this.d0);
+    this.flex = norm3(cross3(this.d0, across));
+    this.abd = norm3(cross3(this.d0, down));
+    this.l = d.thumb;
+    for (let i = 0; i < 4; i++) this.neutral = this.solveWith(lay.thumbRest, this.neutral, [true, true, true, true]).q;
+  }
+
+  /** CMC, MCP, IP, tip (hand-local mm). */
+  joints(q: number[]): V3[] {
+    const r = (v: V3) => rotate3(this.abd, q[1], rotate3(this.flex, q[0], v));
+    const m = r(this.d0), pad = r(this.pad0), axis = norm3(cross3(m, pad));
+    const p = rotate3(axis, q[2], m), dist = rotate3(axis, q[2] + q[3], m);
+    const j1 = add(this.base, scale(m, this.l[0])), j2 = add(j1, scale(p, this.l[1]));
+    return [this.base, j1, j2, add(j2, scale(dist, this.l[2]))];
+  }
+
+  /** IK toward `target` (hand-local mm): angles and fingertip shortfall (mm). */
+  solve(target: V3): { q: number[]; miss: number } {
+    return this.solveWith(target, this.neutral, [true, true, true, true]);
+  }
+
+  private limit(j: number): [number, number] {
+    const off = j < 2 ? this.neutral[j] : 0;
+    return [THUMB_LIMIT[j][0] + off, THUMB_LIMIT[j][1] + off];
+  }
+
+  /** Levenberg–Marquardt on the tip error (weighted to dominate) plus each joint's deviation from rest. */
+  private solveWith(target: V3, start: number[], free: boolean[]): { q: number[]; miss: number } {
+    const w = 100 / (this.l[0] + this.l[1] + this.l[2]);
+    const resid = (q: number[]) => {
+      const e = sub3(this.joints(q)[3], target);
+      return [w * e[0], w * e[1], w * e[2], ...q.map((v, j) => (free[j] ? (v - this.neutral[j]) / THUMB_SCALE[j] : 0))];
+    };
+    const energy = (r: number[]) => r.reduce((a, x) => a + x * x, 0);
+    let q = [...start], r = resid(q), lambda = 1e-2;
+    for (let it = 0; it < 60; it++) {
+      const jac = r.map(() => [0, 0, 0, 0]);
+      for (let j = 0; j < 4; j++) {
+        if (!free[j]) continue;
+        const qh = [...q];
+        qh[j] += 1e-6;
+        const rh = resid(qh);
+        for (let i = 0; i < r.length; i++) jac[i][j] = (rh[i] - r[i]) / 1e-6;
+      }
+      const a = [0, 1, 2, 3].map((j) => [0, 1, 2, 3].map((k) => jac.reduce((acc, row) => acc + row[j] * row[k], 0)));
+      const b = [0, 1, 2, 3].map((j) => -jac.reduce((acc, row, i) => acc + row[j] * r[i], 0));
+      for (let j = 0; j < 4; j++) a[j][j] += lambda * (1 + a[j][j]);
+      const delta = solve4(a, b);
+      const next = q.map((v, j) => (free[j] ? Math.min(Math.max(v + delta[j], this.limit(j)[0]), this.limit(j)[1]) : v));
+      const rn = resid(next);
+      if (energy(rn) < energy(r)) {
+        const gain = energy(r) - energy(rn);
+        q = next; r = rn; lambda = Math.max(lambda * 0.3, 1e-7);
+        if (gain < 1e-12) break;
+      } else {
+        lambda *= 10;
+        if (lambda > 1e8) break;
+      }
+    }
+    const e = sub3(this.joints(q)[3], target);
+    return { q, miss: Math.hypot(e[0], e[1], e[2]) };
+  }
+}
+
+/** Solve the 4 × 4 system `a x = b` (Gaussian elimination, partial pivoting); zeros if singular. */
+function solve4(a: number[][], b: number[]): number[] {
+  a = a.map((r) => [...r]); b = [...b];
+  for (let c = 0; c < 4; c++) {
+    let p = c;
+    for (let i = c + 1; i < 4; i++) if (Math.abs(a[i][c]) > Math.abs(a[p][c])) p = i;
+    if (Math.abs(a[p][c]) < 1e-14) continue;
+    [a[c], a[p]] = [a[p], a[c]];
+    [b[c], b[p]] = [b[p], b[c]];
+    for (let r = c + 1; r < 4; r++) {
+      const f = a[r][c] / a[c][c];
+      for (let k = c; k < 4; k++) a[r][k] -= f * a[c][k];
+      b[r] -= f * b[c];
+    }
+  }
+  const x = [0, 0, 0, 0];
+  for (let c = 3; c >= 0; c--) {
+    if (Math.abs(a[c][c]) < 1e-14) continue;
+    let v = b[c];
+    for (let k = c + 1; k < 4; k++) v -= a[c][k] * x[k];
+    x[c] = v / a[c][c];
+  }
+  return x;
 }
 
 // ---------- typing ----------

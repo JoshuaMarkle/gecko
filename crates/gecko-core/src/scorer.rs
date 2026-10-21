@@ -361,6 +361,9 @@ impl Scorer {
         for (t, &v) in target.iter_mut().zip(&profile.finger_target) {
             *t = v as f64;
         }
+        if let Some(h) = &profile.hand {
+            h.validate()?;
+        }
         if let Some(e) = &profile.finger_effort {
             e.validate()?;
             let mut present = [false; FINGERS];

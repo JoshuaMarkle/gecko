@@ -12,6 +12,7 @@ export interface Key {
   col: number;
   home: boolean;
   stretch: boolean;
+  hrm?: boolean;
   effort: number;
   /** Symbol (token name or one char) this key gets when a layout lists only the other keys. */
   fill?: string;
@@ -41,7 +42,11 @@ export interface Profile {
   /** Metric id → reference spread; the scorer uses weight / scale (weights in spread units). */
   scale?: Record<string, number>;
   scale_basis?: string;
+  row_offset?: [number, number][];
+  familiar_to?: string;
   sfb?: { distance: "linear" | "squared" | "fitts"; lateral: number; finger_factor: number[]; skip_decay: number };
+  /** Hand model for G01 / G05 and B14's spread (`hand.ts` `withHand`). */
+  hand?: import("./hand").HandSpec;
 }
 
 export type Dir = "min" | "max" | "info";
