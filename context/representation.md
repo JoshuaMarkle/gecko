@@ -7,7 +7,8 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 
 - TOML in `data/geometries/`. One `[[key]]` per slot, listed row by row, with
   `pos[3], rot[3], size[2], finger, row, col, home, stretch, effort` (hand comes from finger;
-  `role` comes with symbol layers). Boards: `ansi-30`, `ortho-30`, `corne-36` (3x5+3),
+  `role` comes with symbol layers). Optional `hrm` (bool) marks home-row mod keys for Y04;
+  unset = `home` keys on a finger outside the stretch columns (`Geometry::hrm`). Boards: `ansi-30`, `ortho-30`, `corne-36` (3x5+3),
   `sweep-34` (3x5+2); the split boards' stagger and thumb poses are approximate.
 - Thumb keys use fingers `LT`/`RT` on their own row (row 3). Optional `fill` per key (token
   name or one char): what the key gets when a layout lists only the keys without a fill, so
