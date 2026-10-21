@@ -38,6 +38,8 @@ re-scoring == full score (proptest); on a mirror-symmetric 6-key board the archi
 brute-forced set of canonical local optima; ansi atlas consistency (pins, constrained
 records, every unconstrained record locally optimal); distances, PCA, funnels, Chao1.
 BLS and explore are in the brute-force and determinism tests.
+Run reproducibility (`tests/verify.rs`): an `--evals` run passes `run::verify`; a tampered
+`best.json`, a changed input hash or a time-budget run fails.
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
 

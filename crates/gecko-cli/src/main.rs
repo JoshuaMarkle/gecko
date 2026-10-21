@@ -171,6 +171,11 @@ enum Cmd {
         #[command(flatten)]
         inputs: Inputs,
     },
+    /// Re-run a saved --evals run from its config and check it reproduces best.json.
+    Verify {
+        /// run:<id> (or just <id>).
+        run: String,
+    },
     /// Single-thread scorer speed: full evaluations/s and swap deltas/s.
     Perf {
         #[arg(long, default_value = "qwerty")]
@@ -693,6 +698,28 @@ fn real_main(cli: Cli) -> Result<()> {
                         r["evals_per_sec"].as_f64().unwrap() / 1e6
                     );
                 }
+            }
+        }
+        Cmd::Verify { run } => {
+            let id = run.strip_prefix("run:").unwrap_or(&run);
+            let dir = ctx.store.runs.join(id);
+            eprintln!("verify {id}  (re-running)");
+            let v = run::verify(&ctx.store, &dir)?;
+            if ctx.json {
+                ctx.print(json!(v));
+            } else {
+                for c in &v.checks {
+                    let mark = if c.ok { "ok  " } else { "FAIL" };
+                    if c.ok {
+                        println!("{mark} {:<9} {}", c.name, c.actual);
+                    } else {
+                        println!("{mark} {:<9} expected {}\n               got {}", c.name, c.expected, c.actual);
+                    }
+                }
+                println!("{}", if v.ok { "reproduced" } else { "NOT reproduced" });
+            }
+            if !v.ok {
+                bail!("run {id} did not reproduce");
             }
         }
         Cmd::Perf { layout, inputs } => {
