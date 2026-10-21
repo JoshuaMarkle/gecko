@@ -27,14 +27,15 @@ Parameterize per finger (index, middle, ring, pinky) and thumb:
 - **Base:** metacarpophalangeal (MCP) joint position relative to the wrist.
 - **Segments:** proximal, middle, distal phalanx lengths. Thumb: metacarpal, proximal, distal.
 - **Joints and range of motion:** MCP flex/extend + abduct/adduct (2 DoF); PIP flex
-  (1 DoF); DIP flex (1 DoF, roughly coupled to PIP, often modeled as ~2/3 of PIP);
-  thumb CMC 2 DoF + MCP + IP.
+  (1 DoF); DIP flex (1 DoF, softly coupled to PIP; measured slopes 0.44–0.87 per finger,
+  the common "⅔" rule is unsourced); thumb CMC 2 DoF + MCP + IP. Verified ROM table in
+  `sources/hand-models.md`.
 - **Neutral posture:** relaxed joint angles; cost grows with deviation.
 - **Wrist:** position, extension, ulnar/radial deviation, pronation. A fixed wrist is
   the default; allowing wrist movement adds a large cost.
 - **Scaling:** derive all segment lengths from two measurements (hand length, hand
-  breadth) using published anthropometric ratios **(verify ratios, e.g. Buchholz et al.
-  1992)**, or from a hand scan (Cosmos uses scans; MediaPipe-style landmarks are an option).
+  breadth) using Buchholz et al. 1992 ratios (checked, with status per value, in
+  `sources/hand-models.md`), or from a hand scan (Cosmos uses scans; MediaPipe-style landmarks are an option).
 
 ### Reach cost for a key
 
