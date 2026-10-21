@@ -44,6 +44,14 @@ WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 
 Still to add: metric unit tests with hand-computed answers per metric, `insta` snapshots,
 criterion benches + `bench/history.jsonl`.
 
+## CI
+
+`.github/workflows/ci.yml` runs the `make test` checks on every push and PR, in two jobs:
+`rust` (`cargo test --release`, `cargo clippy --all-targets -- -D warnings`) and `web`
+(`npm ci`, `npm run wasm`, `npm run typecheck`, `npm test`). Cargo and npm caches are kept
+between runs. The WASM package is built before the type check because `web/src/wasm/pkg`
+is generated and not committed.
+
 ## Rule
 
 `cargo test` and `cargo clippy -- -D warnings` pass before any change is considered done.
