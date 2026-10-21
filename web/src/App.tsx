@@ -1,42 +1,34 @@
-// App shell (context/design.md): toolbar (views | transport | progress) over one of three views.
-// Home: inputs | 3D view over charts | result. Results: saved runs. Analysis: current layout.
+// App shell (context/design.md): toolbar (tabs | transport | progress) over one tab.
+// Tabs follow the design process: inputs (Board, Hand, Corpus, Profile, Search), then
+// Optimize (layout | 3D view over charts | result), Explore, Stats (current layout), Runs.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from "react";
 import { api, type Analysis, type PairKind, type CorpusInfo, type Geometry, type LayoutInfo, type Meta, type Profile, type Progress, type RunDetail, type RunSummary } from "./api";
 import { Convergence, FingerLoad, Heatmap, MetricBars, WorstNgrams } from "./components/Charts";
 import { AnalysisView } from "./components/AnalysisView";
 import { ExploreView } from "./components/explore/ExploreView";
-import { IconAnalysis, IconExplore, IconHome, IconPause, IconPlay, IconResults, IconSkip } from "./components/Icons";
-import { InputsPanel, type Group, type SearchSettings } from "./components/InputsPanel";
+import { IconBoard, IconCorpus, IconExplore, IconHand, IconOptimize, IconPause, IconPlay, IconProfile, IconRuns, IconSearch, IconSkip, IconStats } from "./components/Icons";
+import { InputPage, LayoutPanel, type InputProps, type InputTab } from "./components/Inputs";
 import { ResultPanel } from "./components/ResultPanel";
 import { ResultsView } from "./components/ResultsView";
 import { fingerLegend, PAIR_KINDS } from "./colors";
 import { EMPTY, fitChars, fmt, fmtCount, fmtTime, LAYER_KEYS, layerSlots, rowsOf, swapChars, undirected } from "./format";
 import { Keyboard3D, type Arc, type Overlay, type ViewMode } from "./three/Keyboard3D";
+import { useInputs, usePref } from "./inputs";
 import { Scorer } from "./wasm";
 
 type Tab = "convergence" | "metrics" | "fingers" | "heatmap" | "ngrams";
 const TABS: [Tab, string][] = [["convergence", "Convergence"], ["metrics", "Metrics"], ["fingers", "Finger load"], ["heatmap", "Heatmap"], ["ngrams", "Worst n-grams"]];
-type View = "home" | "results" | "analysis" | "explore";
-const VIEWS: [View, string, () => ReactElement][] = [
-  ["home", "Home", IconHome], ["results", "Results", IconResults], ["analysis", "Layout analysis", IconAnalysis], ["explore", "Explore the search space", IconExplore],
+type View = InputTab | "optimize" | "explore" | "stats" | "runs";
+// Two tracks: the inputs, then what you do with them.
+const INPUT_VIEWS: [View, string, () => ReactElement][] = [
+  ["board", "Board", IconBoard], ["hand", "Hand", IconHand], ["corpus", "Corpus", IconCorpus], ["profile", "Profile", IconProfile], ["search", "Search", IconSearch],
 ];
-
-function usePref<T>(key: string, init: T): [T, (v: T) => void] {
-  const [v, setV] = useState<T>(() => {
-    try {
-      const s = localStorage.getItem(`gecko.${key}`);
-      return s ? (JSON.parse(s) as T) : init;
-    } catch {
-      return init;
-    }
-  });
-  const set = useCallback((x: T) => {
-    setV(x);
-    try { localStorage.setItem(`gecko.${key}`, JSON.stringify(x)); } catch { /* storage unavailable */ }
-  }, [key]);
-  return [v, set];
-}
+const WORK_VIEWS: [View, string, () => ReactElement][] = [
+  ["optimize", "Optimize", IconOptimize], ["explore", "Explore the search space", IconExplore], ["stats", "Stats", IconStats], ["runs", "Runs", IconRuns],
+];
+const OLD_VIEWS: Record<string, View> = { home: "optimize", results: "runs", analysis: "stats" };
+const asView = (v: string): View => OLD_VIEWS[v] ?? ([...INPUT_VIEWS, ...WORK_VIEWS].some(([x]) => x === v) ? (v as View) : "optimize");
 
 function Gutter({ dir, onDrag, onReset }: { dir: "v" | "h"; onDrag: (delta: number) => void; onReset: () => void }) {
   const [drag, setDrag] = useState(false);
@@ -76,24 +68,19 @@ export function App() {
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
-  const [geomId, setGeomId] = usePref("geometry", "");
-  const [corpusId, setCorpusId] = usePref("corpus", "");
-  const [profileId, setProfileIdRaw] = usePref("profile", "");
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [refId, setRefId] = usePref("reference", "");
-  const [chars, setCharsRaw] = usePref("chars", "");
-  const [label, setLabel] = usePref("label", "");
-  const [startChars, setStartChars] = useState("");
-  const [pins, setPins] = usePref("pins", "");
-  const [group, setGroup] = usePref<Group>("group", "layout");
-  const [view, setView] = usePref<View>("view", "home");
+  const inputs = useInputs();
+  const {
+    geomId, setGeomId, corpusId, setCorpusId, profileId, setProfileId: setProfileIdRaw, profile, setProfile, refId, setRefId,
+    chars, setChars: setCharsRaw, label, setLabel, startChars, setStartChars, pins, setPins, search, setSearch,
+  } = inputs;
+  const [viewPref, setView] = usePref<string>("view", "optimize");
+  const view = asView(viewPref);
   const [tab, setTab] = usePref<Tab>("tab", "convergence");
   const [overlayPref, setOverlay] = usePref<Overlay | "sfb">("overlay", "none");
   const overlay: Overlay = overlayPref === "sfb" ? "ngrams" : overlayPref; // "sfb" was the old n-gram overlay
   const [pairOrder, setPairOrder] = usePref<"bigrams" | "skipgrams">("pairOrder", "bigrams");
   const [hiddenKinds, setHiddenKinds] = usePref<PairKind[]>("pairsHidden", ["same_hand", "alternate"]);
   const [mode, setMode] = usePref<ViewMode>("mode", "3d");
-  const [search, setSearch] = usePref<SearchSettings>("search", { algo: "sa", timeS: 10, threads: 8, seed: 1, saSteps: 0, gaPop: 128 });
   const [sizes, setSizes] = usePref("sizes", { side: 0, res: 0, plot: 0 });
 
   const [scorer, setScorer] = useState<Scorer | null>(null);
@@ -322,13 +309,22 @@ export function App() {
   };
   const isBest = rank === 0 && label.includes("run #1");
   const rankLabel = rank !== null && runDetail ? `${runDetail.config.params.algo} run #${rank + 1}` : label;
+  const inputTab = INPUT_VIEWS.some(([v]) => v === view) ? (view as InputTab) : null;
+  const inputProps: InputProps = {
+    meta, layouts, geometries, corpora, profiles, geometry, corpus, chars, setChars, startChars, pins, setPins, refId, setRefId,
+    setGeomId, setCorpusId, profileId, setProfileId, profile, setProfile, search, setSearch, running: !!live?.running,
+  };
 
   return (
     <div className="shell" style={shellStyle}>
       <header id="top">
-        <nav className="toolgroup" aria-label="Views">
-          {VIEWS.map(([v, name, Icon]) => (
-            <button key={v} className={`tool ${view === v ? "on" : ""}`} onClick={() => setView(v)} title={name} aria-label={name} aria-pressed={view === v}><Icon /></button>
+        <nav className="views" aria-label="Tabs">
+          {[INPUT_VIEWS, WORK_VIEWS].map((track, i) => (
+            <div key={i} className="toolgroup" aria-label={i === 0 ? "Inputs" : "Work"}>
+              {track.map(([v, name, Icon]) => (
+                <button key={v} className={`tool ${view === v ? "on" : ""}`} onClick={() => setView(v)} title={name} aria-label={name} aria-pressed={view === v}><Icon /></button>
+              ))}
+            </div>
           ))}
         </nav>
         <div className="transport" aria-label="Optimization">
@@ -345,12 +341,15 @@ export function App() {
         </div>
       </header>
 
-      {view === "home" && <>
+      {inputTab && (
+        <div className="page">
+          <InputPage tab={inputTab} {...inputProps} />
+        </div>
+      )}
+
+      {view === "optimize" && <>
       <aside id="left" className="side">
-        <InputsPanel group={group} setGroup={setGroup} meta={meta} layouts={layouts} geometries={geometries} corpora={corpora} profiles={profiles}
-          geometry={geometry} corpus={corpus} chars={chars} setChars={setChars} startChars={startChars} pins={pins} setPins={setPins}
-          refId={refId} setRefId={setRefId} setGeomId={setGeomId} setCorpusId={setCorpusId} profileId={profileId} setProfileId={setProfileId}
-          profile={profile} setProfile={setProfile} search={search} setSearch={setSearch} running={!!live?.running} />
+        <LayoutPanel {...inputProps} onGo={setView} />
         <Gutter dir="v" onDrag={(d) => setSizes({ ...sizes, side: Math.max(260, Math.min(640, px("--side") + d)) })} onReset={() => setSizes({ ...sizes, side: 0 })} />
       </aside>
 
@@ -424,10 +423,10 @@ export function App() {
       </aside>
       </>}
 
-      {view === "results" && (
+      {view === "runs" && (
         <div className="page">
           <ResultsView runs={runs} run={runDetail} progress={progress} rank={rank} refScore={refAnalysis?.breakdown.score} refName={reference?.name ?? "reference"}
-            onOpenRun={(id) => openRun(id)} onPickRank={pickRank} onShowHome={() => setView("home")} />
+            onOpenRun={(id) => openRun(id)} onPickRank={pickRank} onShowOptimize={() => setView("optimize")} />
         </div>
       )}
 
@@ -436,11 +435,11 @@ export function App() {
           <ExploreView meta={meta} runs={runs} geometries={geometries} corpora={corpora} layouts={layouts} profile={profile} setProfile={setProfile}
             scorer={scorer} scorerKey={scorerKey} search={search} setSearch={setSearch} onStart={() => startRun(true)}
             live={live && live.algo === "explore" ? { id: live.id, version: liveP?.explore?.version ?? 0, running: live.running } : null}
-            onOpen={(c, l) => { setChars(c, l); setView("home"); }} />
+            onOpen={(c, l) => { setChars(c, l); setView("optimize"); }} />
         </div>
       )}
 
-      {view === "analysis" && (
+      {view === "stats" && (
         <div className="page">
           <AnalysisView geometry={geometry} chars={viewChars} label={live?.running ? "Live best" : rankLabel} a={analysis} refA={refAnalysis}
             refName={reference?.name ?? "reference"} selected={selected} onKey={(i) => onKey(i, true)} />

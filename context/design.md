@@ -96,12 +96,13 @@ The only lift is the active segment of a segmented control (white segment, 1px h
 
 ## App shell (`web/`)
 
-CSS grid: a toolbar over one of three views. The toolbar follows the Unity editor: view tabs
-left, transport controls dead centre, run progress right.
+CSS grid: a toolbar over one tab. The toolbar follows the Unity editor: tabs left, transport
+controls dead centre, run progress right.
 
 - **Toolbar**: three equal-weight columns so the transport stays centred.
-  - Left: icon tabs in one segmented track: Home, Results, Layout analysis. Active tab is a
-    white segment. No wordmark; the Home icon is the way back.
+  - Left: icon tabs in two segmented tracks, in design-process order. Inputs: Board, Hand,
+    Corpus, Profile, Search. Work: Optimize, Explore, Stats, Runs. Active tab is a white
+    segment. No wordmark. The transport and progress stay on every tab.
   - Centre: one joined transport cluster (rounded only at its outer ends, square seams):
     a black `--ink` "Start optimization" button with a play icon (reads "Resume" while
     paused, "Optimizing…" while running), then Pause (toggle) and End (stop now, results
@@ -110,10 +111,13 @@ left, transport controls dead centre, run progress right.
   - Right: run status line over the 4px progress bar. Paused time does not advance it.
 - Icons: 16px, 1.4px stroke or solid glyphs, `currentColor`, in 30×22 hit targets (toolbar is 36px tall; tracks and the transport cluster are 26px)
   (`components/Icons.tsx`). Every icon button has a `title` and `aria-label`.
-- **Home**: inputs (left) | 3D view over charts (centre) | result (right).
-  - Left, Inputs: a segmented control picks one group at a time (Layout, Board, Corpus,
-    Profile, Search). Search starts with the Algorithm picker and shows only that
-    algorithm's settings. The chosen group and collapsed sections are remembered per browser.
+- **Input tabs** (Board, Hand, Corpus, Profile, Search): one centred column (max 560px,
+  hairlines either side, `--soft` margins) of collapsible sections. Search starts with the
+  Algorithm picker and shows only that algorithm's settings. Collapsed sections are
+  remembered per browser.
+- **Optimize**: layout (left) | 3D view over charts (centre) | result (right).
+  - Left, Layout: start layout and compare-with, the Edit box, pins, then an Inputs summary
+    (board, corpus, profile, search) whose rows open the matching tab.
   - Centre: the 3D keyboard (on `--soft`) with view controls top-right on one row: a 3D
     toggle (default on; off = flat top-down), then the overlay picker (Default = uncolored
     keys, Heat, Fingers, N-grams). Below it, chart tabs as one segmented track:
@@ -123,9 +127,9 @@ left, transport controls dead centre, run progress right.
     and exports (JSON, layout TOML).
   - Side panels and the chart pane resize by dragging their hairline edge (double-click
     resets). Below 1360px wide the side panels start narrower.
-- **Results**: runs table (left) | selected run (right): convergence, best layouts with
+- **Runs**: runs table (left) | selected run (right): convergence, best layouts with
   delta vs reference (click loads one into the editor), and the run's reproducibility facts.
-- **Layout analysis**: the current layout's score and delta, then cards (1px `--hair`,
+- **Stats**: the current layout's score and delta, then cards (1px `--hair`,
   `--r-md`) in a two-column grid: heatmap, metrics table, score contributions, finger load,
   and worst n-grams full width. One column below 1100px.
 
