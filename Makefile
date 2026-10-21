@@ -1,5 +1,5 @@
 # Build and run GECKO locally. See AGENTS.md for the individual commands.
-.PHONY: all rust wasm web test serve clean overnight overnight-dry
+.PHONY: all rust wasm web test serve clean
 
 all: rust wasm web
 

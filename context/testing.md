@@ -131,3 +131,8 @@ unreviewed changes just fail.
 Profile ranking (`tests/ranking.rs`, `calibrate/rank.rs`): preference orientation, stable
 logistic loss and nonnegative weights; duplicate/mirror representatives stay in one group;
 changing held-out labels leaves fitted weights, scales and training loss exactly unchanged.
+
+Relative finger effort: scorer regression covers inverse-cost normalization, absent thumbs,
+active thumbs, independent hands, scale invariance, directional reach costs, invalid zero
+costs, and all pair swaps against full evaluation. Web tests cover generated targets,
+mirrored edits, unlocking/relinking hands, and positive typing-cost limits.

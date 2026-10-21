@@ -103,7 +103,7 @@ centre, working model right.
   - Left: icon tabs in two segmented tracks with small muted group labels and a hairline
     divider: Inputs (Board, Hand, Language, Profile, Search), Results (Home, Explore,
     Analysis, Saved). Active tab is a white segment.
-  - Centre: one joined cluster of three icon buttons: Play (`--ink` fill; resumes while
+  - Centre (Results tabs only; empty on Inputs): one joined cluster of three icon buttons: Play (`--ink` fill; resumes while
     paused), Pause (toggle; `--accent` while paused, the navbar's single blue mark), Stop.
     The run percent sits just right of the cluster, outside the centred group.
   - Right: view actions (Summarize on Language, outline button), then the working model:
@@ -112,7 +112,7 @@ centre, working model right.
 - Errors show in a bar under the navbar (error notice + Dismiss).
 - Icons: 16px, 1.4px stroke or solid glyphs, `currentColor`, in 30×22 hit targets
   (`components/Icons.tsx`). Every icon button has a `title` and `aria-label`.
-- **Three-panel frame** (`Form.tsx` `Frame`; every input tab and Home): sidebar (`--side`,
+- **Three-panel frame** (`Form.tsx` `Frame`; every input tab and Home): sidebar (`--side`: 380px, 340px at viewport widths ≤1360px;
   full height, title row with an optional right-aligned control, scrolling body, optional
   footer) | main visual (`--soft`, top right) over the bottom panel (`--bottom` = 38%,
   hairline above). Overlays on the main visual: label top-left (white chip), view controls
@@ -129,7 +129,7 @@ centre, working model right.
 - **Analysis**: the current layout's score and delta, then cards in a two-column grid:
   heatmap, metrics table, score contributions, finger load, worst n-grams. One column below
   1100px.
-- **Explore**: atlas controls (left) | linked cards in a two-column grid (centre) | picked
+- **Explore**: atlas controls (left, shared `--side` width) | linked cards in a two-column grid (centre) | picked
   layout (right). Point clouds are canvas scatters, grey by score (darker = better), best in
   ink and picked in `--accent` with a 2px surface ring; drag to brush, double-click clears,
   click picks. Off-chart reference layouts are listed in the plot corner, not clamped to the

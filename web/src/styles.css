@@ -8,9 +8,9 @@
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px;
   --ctl-h: 26px; --label-w: 132px; --unit-w: 28px;
-  --side: 340px; --bottom: 38%; --top: 40px;
+  --side: 380px; --bottom: 38%; --top: 40px;
 }
-@media (max-width: 1360px) { :root { --side: 300px; --label-w: 112px; } }
+@media (max-width: 1360px) { :root { --side: 340px; --label-w: 112px; } }
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
 body { font: 450 12px/1.4 var(--font); color: var(--ink); background: var(--canvas); -webkit-font-smoothing: antialiased; overflow: hidden; }
@@ -147,7 +147,7 @@ progress::-moz-progress-bar { background: var(--ink); border-radius: 999px; }
 .empty { height: 100%; display: grid; place-items: center; color: var(--muted); }
 
 /* ---------- Explore view: atlas controls | linked panels | picked layout ---------- */
-.explore { height: 100%; display: grid; grid-template-columns: 300px minmax(0, 1fr) 340px; min-height: 0; }
+.explore { height: 100%; display: grid; grid-template-columns: var(--side) minmax(0, 1fr) 340px; min-height: 0; }
 .explore > .pane { min-height: 0; }
 .xleft { border-right: 1px solid var(--hair); }
 .xright { border-left: 1px solid var(--hair); }
@@ -180,7 +180,7 @@ progress::-moz-progress-bar { background: var(--ink); border-radius: 999px; }
 .famhead .muted, .famfoot .muted { margin-left: auto; }
 .keygrid text { font: 600 11px var(--font); }
 .inbar { display: inline-block; height: 6px; border-radius: 2px; background: var(--ink); vertical-align: middle; }
-@media (max-width: 1360px) { .explore { grid-template-columns: 260px minmax(0, 1fr) 300px; } }
+@media (max-width: 1360px) { .explore { grid-template-columns: var(--side) minmax(0, 1fr) 300px; } }
 @media (max-width: 1100px) { .explore { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr auto; overflow-y: auto; } }
 
 /* ---------- app shell: navbar over one view ---------- */
@@ -273,9 +273,20 @@ fieldset.plain:disabled { opacity: .45; }
 /* Hand */
 .subgroup { display: grid; gap: 2px; margin-bottom: var(--s2); }
 .subhead { font-weight: 600; color: var(--ink-soft); margin-top: var(--s1); }
+.hand-viewport .viewlabel { right: calc(var(--s4) * 8); flex-wrap: wrap; width: fit-content; }
+.hand-viewport .typingbar { width: fit-content; max-width: calc(100% - 2 * var(--s3)); flex-wrap: wrap; }
 .typingbar { position: absolute; left: var(--s3); bottom: var(--s3); display: flex; align-items: center; gap: var(--s2); background: var(--canvas); border-radius: var(--r-sm); padding: 4px 8px; }
 .typingbar select { width: 220px; height: 22px; font-size: 11px; }
 .typingbar input[type=range] { width: 110px; }
+.wrist { --unit-w: 48px; }
+.wrist .unit { white-space: nowrap; }
+.viewlabel .err { color: var(--error); }
+.typingbar .sep { width: 1px; height: 16px; background: var(--hair); }
+.typingbar .num { font-variant-numeric: tabular-nums; min-width: 3.2em; }
+.measure, .typingpanel { display: flex; height: 100%; gap: var(--s4); min-height: 0; }
+.measure > .chartfill, .typingpanel > .chartfill { flex: 1; min-width: 0; }
+.measurelist { width: 230px; flex: none; overflow: auto; padding-top: var(--s1); --label-w: 112px; }
+.measurelist .kv.head > * { color: var(--muted); font-size: 11px; }
 .handlabel { font-size: 9px; color: var(--muted); background: rgba(255, 255, 255, 0.7); padding: 0 2px; border-radius: 2px; pointer-events: none; white-space: nowrap; }
 
 /* Language */
@@ -313,6 +324,10 @@ fieldset.plain:disabled { opacity: .45; }
 .psec-head { display: block; width: 100%; border: 0; background: none; font: inherit; font-weight: 600; color: var(--ink-soft); text-align: left; padding: var(--s2) var(--s4); cursor: pointer; }
 .psec.focus .psec-head { color: var(--ink); box-shadow: inset 2px 0 0 var(--accent); }
 .psec-body { display: grid; gap: var(--s1); padding: 0 var(--s4); }
+.psec-body .row { grid-template-columns: var(--label-w) minmax(0, 1fr); }
+.psec-body .row > span:last-child { display: none; }
+.finger-effort { display: grid; gap: var(--s1); padding-top: var(--s2); }
+.finger-effort + .finger-effort { margin-top: var(--s2); border-top: 1px solid var(--hair-soft); }
 .visual { height: 100%; display: flex; flex-direction: column; padding-top: 40px; }
 .visual > .fitboard { flex: 1; min-height: 0; }
 .visual.split > .fitboard { flex: 3; }

@@ -217,3 +217,19 @@ the key no longer counts. Not modeled: the learning cost of rules (only `gecko m
   `(share − thumb_target)² / 10`. Profile `thumb_target` defaults to 18 (Space alone on
   English is 18.3%); raise it to ask for a letter on a thumb. Updated from the finger-load
   accumulators, so it adds nothing to the delta beyond M02/M04's load path.
+
+## Relative finger effort
+
+Optional profile `finger_effort` contains `typing`, `lateral`, `vertical` arrays in
+LP LR LM LI LT RT RI RM RR RP order and `symmetric` (default true, left values mirrored).
+Typing costs must be positive; movement costs nonnegative; all finite. Scorer construction
+normalizes inverse typing effort to 100% over fingers present in the geometry, including
+thumbs, replacing M02/M07 targets and deriving M09's combined thumb target.
+Movement adds `lateral × |column − home column| + vertical × |row − home row|` to M01,
+using the cheapest home key of that finger, including layer holders. No home key means
+zero added movement. Logical rows/columns keep split rotation/tenting out of these axes.
+These are reach costs, not velocity or hand mechanics; existing SFB settings still apply.
+Web defaults (pinky/ring/middle/index/thumb): typing 2/1.5/1.1/1/1, lateral
+2.5/1.8/1.4/0.7/0.6, vertical 1.5/1.1/0.9/0.8/0.8. They are editable heuristics.
+Legacy profiles without this block retain their scores. Costs fold at scorer construction;
+no allocation or extra work is added to the optimization hot loop.

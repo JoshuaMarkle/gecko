@@ -26,6 +26,9 @@ pub struct Profile {
     /// Target finger load in % (LP LR LM LI LT RT RI RM RR RP) for M02.
     #[serde(default = "default_finger_target")]
     pub finger_target: [f32; FINGERS],
+    /// Optional relative typing and movement costs; replaces legacy percentage targets.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub finger_effort: Option<FingerEffort>,
     /// Target thumb share in % of keystrokes for M09 (both thumbs together).
     #[serde(default = "default_thumb_target")]
     pub thumb_target: f32,
@@ -45,6 +48,38 @@ pub struct Profile {
     /// costs nothing.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub familiar_to: Option<String>,
+}
+
+/// Costs in LP LR LM LI LT RT RI RM RR RP order. Higher means harder.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct FingerEffort {
+    pub typing: [f32; FINGERS],
+    pub lateral: [f32; FINGERS],
+    pub vertical: [f32; FINGERS],
+    #[serde(default = "symmetric_default")]
+    pub symmetric: bool,
+}
+
+fn symmetric_default() -> bool {
+    true
+}
+
+impl FingerEffort {
+    pub fn index(&self, i: usize) -> usize {
+        if self.symmetric && i >= 5 {
+            9 - i
+        } else {
+            i
+        }
+    }
+    pub fn validate(&self) -> Result<()> {
+        if !self.typing.iter().all(|v| v.is_finite() && *v > 0.0)
+            || !self.lateral.iter().chain(&self.vertical).all(|v| v.is_finite() && *v >= 0.0)
+        {
+            return Err(Error::invalid("profile", "finger effort: typing must be finite and > 0; movement finite and ≥ 0"));
+        }
+        Ok(())
+    }
 }
 
 fn is_zero_rows(r: &[[f32; 2]; 4]) -> bool {
@@ -115,6 +150,9 @@ impl Profile {
         if !(0.0..=100.0).contains(&p.thumb_target) {
             return Err(Error::invalid("profile", "thumb_target must be in [0, 100]"));
         }
+        if let Some(e) = &p.finger_effort {
+            e.validate()?;
+        }
         let s = &p.sfb;
         let ok = s.lateral.is_finite() && s.lateral > 0.0 && s.finger_factor.iter().all(|f| f.is_finite() && *f >= 0.0);
         if !ok || !(0.0..=1.0).contains(&s.skip_decay) {
@@ -148,6 +186,9 @@ impl Profile {
         // Added only when set, so table hashes of profiles without row offsets stay unchanged.
         if !is_zero_rows(&self.row_offset) {
             v["row_offset"] = serde_json::json!(self.row_offset);
+        }
+        if let Some(e) = &self.finger_effort {
+            v["finger_effort"] = serde_json::json!(e);
         }
         if let Some(r) = &self.familiar_to {
             v["familiar_to"] = serde_json::json!(r);
