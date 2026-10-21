@@ -5,7 +5,7 @@ B01 SFB, S01 SFS, S02 far SFS (gaps 2–3, decayed), S03 SFS distance, B03 finge
 B04 LSB, B05 scissors, B14 geometric stretch (Oxeylyzer 2), M01 effort, M02 finger-load error,
 M04 hand balance, M05 home row, M06 center columns, B08 alternation, T01–T08 trigram classes,
 E04/E05 Engram key-pair discomfort (formula / measured; geometry `[comfort]` tables),
-B02 repeats (info), Y01 layer switches, Y02 code-symbol bigrams. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
+B02 repeats (info), Y01 layer switches (and Shift), Y02 code-symbol bigrams. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
 lateral multiplier and per-finger factors, and S02's `skip_decay`.
 
 ## Metric contract
@@ -87,5 +87,13 @@ fronts (NSGA-II). Reports always show the per-metric breakdown.
   punctuation symbols, normalized on their own; cost 100 when they are on one finger (two keys)
   or on different layers. Reads "% of symbol bigrams that are awkward". Adds one term to the
   pair delta only when weighted.
-- Not modeled yet: the layer key's own keystroke in effort/finger load, one-shot layers,
-  thumb-trigram classes. Profile `code` weights both (scales are rough estimates).
+- **Shift** (layout has `⇧` keys and the corpus has case counts, `GKCORP3`): a layer-like hold
+  on its own fixed key. Each press (one per run of shifted symbols) is typed with the best `⇧`
+  for the shifted key y: not on y's finger, then the other hand, then lowest effort. Costs, per
+  keystroke: M01 adds that key's effort; Y01 adds 100, +100 when Shift's finger is y's
+  (held while pressing y), +100 when the key before is a different key on Shift's finger. Own
+  channels: mono `fsh`/`Csh` and pair `fsb`/`Csb` (the latter compiled into the pair delta only
+  when weighted). Without `⇧` on the layout Shift costs nothing, so 30-key layouts score as
+  before. A one-shot Shift costs the same for single capitals; caps runs are scored as held.
+- Not modeled yet: the layer/Shift key's own keystroke in finger load, one-shot layers,
+  thumb-trigram classes. Profile `code` weights Y01/Y02 (scales are rough estimates).

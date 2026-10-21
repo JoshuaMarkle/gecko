@@ -107,7 +107,7 @@ pub fn breakdown(sc: &Scorer, st: &State) -> Breakdown {
                 _ => 0.0,
             },
             _ => 0.0,
-        };
+        } + sc.shift_value(d.id, st);
         let weight = sc.profile.weight(d.id);
         let w = sc.profile.effective_weight(d.id) as f64;
         let weighted = match (d.dir, d.id) {

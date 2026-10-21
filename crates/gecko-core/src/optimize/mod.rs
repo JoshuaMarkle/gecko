@@ -126,9 +126,9 @@ pub struct Ctx<'a> {
 }
 
 impl<'a> Ctx<'a> {
-    /// Layer keys never move: they define the layered slot structure.
+    /// Layer keys never move (they define the layered slot structure), nor does Shift.
     pub fn new(scorer: &'a Scorer, mut movable: Vec<usize>, start: State) -> Self {
-        movable.retain(|&s| !crate::layout::is_layer_key(scorer.chars[s]));
+        movable.retain(|&s| !crate::layout::is_fixed_key(scorer.chars[s]));
         Ctx { scorer, movable, start, observer: None }
     }
 
