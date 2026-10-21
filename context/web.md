@@ -9,23 +9,31 @@ Charts are hand-rolled SVG. Scoring in the browser through `gecko-wasm` (same co
 
 ```
 web/src/
-  App.tsx              shell, state, run lifecycle (SSE)
+  App.tsx              shell, tabs, run lifecycle (SSE)
+  inputs.ts            the one input store (board, corpus, profile, layout, pins, search)
   api.ts               API client + types mirroring the Rust serde shapes
   wasm.ts              gecko-wasm loader (Scorer.create / analyze)
   format.ts(.test.ts)  pure helpers (rows, swaps, verdicts, validation)
   colors.ts            data colors (finger palette, heat ramp)
-  components/          InputsPanel, ResultPanel, Charts, ResultsView, AnalysisView, Icons
+  components/          Inputs (tab pages + Layout panel), ResultPanel, Charts, ResultsView, AnalysisView, Icons
   three/Keyboard3D.tsx 3D keyboard
 ```
 
 ## Screen
 
-Toolbar (see design.md "App shell"): view tabs | Start optimization · Pause · End | run progress.
-Views: **Home** (Inputs | 3D keyboard over chart tabs | Result), **Results** (all runs, the
-selected run's convergence and best layouts), **Layout analysis** (all charts for the current
-layout), **Explore** (atlas of an explore run, below). The view is remembered in `localStorage`.
+Toolbar (see design.md "App shell"): tabs | Start optimization · Pause · End | run progress.
+Tabs follow the design process: **Board**, **Hand**, **Corpus**, **Profile**, **Search** (the
+inputs, one form page each), then **Optimize** (Layout | 3D keyboard over chart tabs | Result),
+**Explore** (atlas of an explore run, below), **Stats** (all charts for the current layout),
+**Runs** (all runs, the selected run's convergence and best layouts). The tab is remembered in
+`localStorage` (old `home`/`results`/`analysis` values map to Optimize/Runs/Stats).
 
-- Play starts a run with Inputs › Search (algorithm, budget) or resumes a paused one. Pause
+- Inputs live in one store (`inputs.ts`, `useInputs`); every tab edits and reads the same
+  state, so Play uses the same inputs whichever tab it is pressed on. Hand has no inputs yet
+  (#92). Optimize's left panel keeps the start layout, editor, pins and reference, plus a
+  summary of the other inputs that links to their tabs.
+- Play starts a run with the Search tab's settings (algorithm, budget) — an exploration on the
+  Explore tab — or resumes a paused one. The transport and progress show on every tab. Pause
   freezes the workers and the budget clock. End cancels; results so far are saved.
 - Click two keys (3D or heatmap) to swap them; the score updates live via WASM.
 - Layered layouts (flat string, see `representation.md`): a Base / ① Layer 1 / … toggle in the
@@ -37,11 +45,11 @@ layout), **Explore** (atlas of an explore run, below). The view is remembered in
 - Profile weights and targets are editable; edits re-score live and are sent with each run
   (`profile_override`), so the run's `config.json` records exactly what was optimized.
 - While a run is going, the 3D view shows the live best layout.
-- UI preferences (view, group, tab, overlay, sizes, current layout) persist in `localStorage`.
+- UI preferences (tab, chart tab, overlay, sizes, current layout) persist in `localStorage`.
 
 ## Explore view (`components/explore/`)
 
-Left: atlas picker, new exploration (budget, threads, seed; other inputs from Home), ranking
+Left: atlas picker, new exploration (budget, threads, seed; other inputs from the input tabs), ranking
 (atlas profile, or the current profile with editable weights; every panel re-ranks), focus
 (best N, family radius, brush) and landscape stats. Centre, linked cards: Map (PCA of slot,
 finger or metric encodings), Fitness vs distance (+ reference layouts), Consensus keyboard,
