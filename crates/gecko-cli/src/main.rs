@@ -191,6 +191,11 @@ enum Cmd {
         #[command(subcommand)]
         cmd: CorpusCmd,
     },
+    /// Geometry tools.
+    Geometry {
+        #[command(subcommand)]
+        cmd: GeometryCmd,
+    },
     /// Profile calibration tools.
     Profile {
         #[command(subcommand)]
@@ -239,6 +244,20 @@ enum CorpusCmd {
         out: String,
         #[arg(long, default_value = "default")]
         charset: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum GeometryCmd {
+    /// Import a keyboard-layout-editor.com JSON file (or its raw data) as
+    /// data/geometries/<out>.toml. Fingers, rows, home keys and efforts are guesses to review.
+    ImportKle {
+        file: PathBuf,
+        #[arg(long)]
+        out: String,
+        /// Overwrite an existing geometry.
+        #[arg(long)]
+        force: bool,
     },
 }
 
@@ -857,6 +876,24 @@ fn real_main(cli: Cli) -> Result<()> {
                 names.len()
             };
             write_corpus(&ctx, &c, files)?;
+        }
+        Cmd::Geometry { cmd: GeometryCmd::ImportKle { file, out, force } } => {
+            let text = std::fs::read_to_string(&file).with_context(|| format!("reading {}", file.display()))?;
+            let g = gecko_core::kle::import(&out, &text)?;
+            let path = ctx.store.data.join("geometries").join(format!("{out}.toml"));
+            if path.exists() && !force {
+                bail!("{} exists (use --force to overwrite)", path.display());
+            }
+            std::fs::create_dir_all(path.parent().unwrap())?;
+            std::fs::write(&path, g.to_toml()).with_context(|| format!("writing {}", path.display()))?;
+            let fingers: Vec<&str> = g.key.iter().map(|k| k.finger.name()).collect();
+            if ctx.json {
+                ctx.print(json!({"schema": SCHEMA, "geometry": g.name, "path": path, "keys": g.len(), "rows": g.row_lengths(),
+                    "fingers": fingers, "hash": gecko_core::hash::hex(g.hash())}));
+            } else {
+                println!("wrote {} ({} keys, rows {:?})", path.display(), g.len(), g.row_lengths());
+                println!("fingers, rows, home keys and efforts are guesses: review the file");
+            }
         }
         Cmd::Profile { cmd: ProfileCmd::Normalize { layouts, out, inputs } } => {
             let l = ctx.load(&inputs)?;

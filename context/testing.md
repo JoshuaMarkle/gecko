@@ -54,7 +54,9 @@ HC/SA/GA, determinism with an eval budget, pins respected, ranking sanity + QWER
 corpus counting (incl. skip-2/3, word imports) + binary round-trip + `GKCORP1` compatibility,
 imported corpora reproduce QWERTY SFB computed independently from their source tables,
 layout TOML round-trip. Reference snapshots (`tests/snapshots.rs`): score + weighted
-metrics of the 10 `data/layouts/*.toml` × default/sfb/engram/code on `english`, 4 decimals. Explore (`tests/explore.rs` + unit tests in `explore/`): raw-vector
+metrics of the 10 `data/layouts/*.toml` × default/sfb/engram/code on `english`, 4 decimals. KLE (`tests/kle.rs` + unit tests in `kle.rs`): bundled boards round-trip
+export → import (physical keys exact, fingers/rows/columns re-guessed), geometry TOML
+round-trip, raw-data parsing, rotation origins, ANSI 60% traditional fingering. Explore (`tests/explore.rs` + unit tests in `explore/`): raw-vector
 re-scoring == full score (proptest); on a mirror-symmetric 6-key board the archive equals the
 brute-forced set of canonical local optima; ansi atlas consistency (pins, constrained
 records, every unconstrained record locally optimal); distances, PCA, funnels, Chao1.
