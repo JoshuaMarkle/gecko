@@ -36,7 +36,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 9. [x] [#79](https://github.com/JoshuaMarkle/gecko/issues/79) `A9` Issue and PR templates for agent work · S
 10. [ ] [#80](https://github.com/JoshuaMarkle/gecko/issues/80) `A10` Claude Code GitHub Action · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
 11. [ ] [#81](https://github.com/JoshuaMarkle/gecko/issues/81) `A11` Release builds with the web UI embedded · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
-12. [ ] [#2](https://github.com/JoshuaMarkle/gecko/issues/2) `B1` Tabu search (robust tabu, RoTS) optimizer · M
+12. [x] [#2](https://github.com/JoshuaMarkle/gecko/issues/2) `B1` Tabu search (robust tabu, RoTS) optimizer · M
 13. [ ] [#3](https://github.com/JoshuaMarkle/gecko/issues/3) `C1` B11 finger-pair movement table · M
 14. [ ] [#4](https://github.com/JoshuaMarkle/gecko/issues/4) `D1` Model Shift · M
 15. [ ] [#5](https://github.com/JoshuaMarkle/gecko/issues/5) `E1` KLE JSON importer · M

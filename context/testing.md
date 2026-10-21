@@ -58,7 +58,9 @@ metrics of the 10 `data/layouts/*.toml` × default/sfb/engram/code on `english`,
 re-scoring == full score (proptest); on a mirror-symmetric 6-key board the archive equals the
 brute-forced set of canonical local optima; ansi atlas consistency (pins, constrained
 records, every unconstrained record locally optimal); distances, PCA, funnels, Chao1.
-BLS and explore are in the brute-force and determinism tests.
+BLS, explore and tabu are in the brute-force and determinism tests. Tabu's incremental Δ
+matrix: `delta_shift` == recomputed `delta_linear` for every disjoint pair after a swap
+(proptest), and delta == linear + load.
 External validation (`tests/validation.rs`): every non-thumb finger triple in cmini's
 `table.json` (pinned in `tests/fixtures/cmini-table.json`) gets the matching trigram class;
 ansi-30 distances `rg` 1.6 u, `my` 2.66 u, `vt` 2.02 u match the Layouts Doc.

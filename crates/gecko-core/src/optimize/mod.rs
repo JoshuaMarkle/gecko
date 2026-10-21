@@ -5,6 +5,7 @@ pub mod anneal;
 pub mod bls;
 pub mod genetic;
 pub mod hill_climb;
+pub mod tabu;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
@@ -29,10 +30,12 @@ pub enum Algo {
     /// Search-space exploration: landscape probe + BLS with exclusion restarts, writing an
     /// atlas of every local optimum (`crate::explore`).
     Explore,
+    /// Robust tabu search (Taillard) with an incrementally updated Δ matrix.
+    Tabu,
 }
 
 impl Algo {
-    pub const ALL: [Algo; 5] = [Algo::Hc, Algo::Sa, Algo::Ga, Algo::Bls, Algo::Explore];
+    pub const ALL: [Algo; 6] = [Algo::Hc, Algo::Sa, Algo::Ga, Algo::Bls, Algo::Explore, Algo::Tabu];
     pub fn name(self) -> &'static str {
         match self {
             Algo::Hc => "hc",
@@ -40,6 +43,7 @@ impl Algo {
             Algo::Ga => "ga",
             Algo::Bls => "bls",
             Algo::Explore => "explore",
+            Algo::Tabu => "tabu",
         }
     }
     pub fn parse(s: &str) -> Option<Algo> {
@@ -66,6 +70,8 @@ pub struct Params {
     pub bls: bls::BlsParams,
     #[serde(default)]
     pub explore: crate::explore::ExploreParams,
+    #[serde(default)]
+    pub tabu: tabu::TabuParams,
 }
 
 impl Default for Params {
@@ -81,6 +87,7 @@ impl Default for Params {
             ga: Default::default(),
             bls: Default::default(),
             explore: Default::default(),
+            tabu: Default::default(),
         }
     }
 }
@@ -345,6 +352,7 @@ fn make(algo: Algo, p: &Params) -> Box<dyn Optimizer + Send> {
         Algo::Ga => Box::new(genetic::Genetic::new(p.ga.clone(), p.top)),
         Algo::Bls => Box::new(bls::Bls::new(p.bls.clone(), p.top, false)),
         Algo::Explore => Box::new(bls::Bls::new(p.bls.clone(), p.top, true)),
+        Algo::Tabu => Box::new(tabu::Tabu::new(p.tabu.clone(), p.top)),
     }
 }
 

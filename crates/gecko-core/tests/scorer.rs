@@ -82,6 +82,36 @@ proptest! {
         }
     }
 
+    /// Tabu search's incremental Δ matrix: after swapping r/s, every disjoint pair's linear
+    /// delta changes by exactly `delta_shift`, and delta = linear + load.
+    #[test]
+    fn delta_shift_matches_recompute(seed in 0u64..10_000, moves in proptest::collection::vec((0usize..30, 0usize..30), 1..8)) {
+        let g = ansi();
+        let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 3);
+        let sc = Scorer::new(&g, &c, &all_weights(), &layout("qwerty")).unwrap();
+        let ctx = Ctx::new(&sc, (0..30).collect(), sc.identity());
+        let mut st = ctx.random_state(&mut Rng::new(seed));
+        for (r, s) in moves {
+            if r == s {
+                continue;
+            }
+            let before: Vec<f64> = (0..30 * 30).map(|k| sc.delta_linear(&st, k / 30, k % 30)).collect();
+            let d = sc.delta(&st, r, s);
+            prop_assert!((d - sc.delta_linear(&st, r, s) - sc.delta_load(&st, r, s)).abs() < 1e-9);
+            sc.apply(&mut st, r, s, d);
+            for u in 0..30 {
+                for v in 0..30 {
+                    if u == v || [r, s].contains(&u) || [r, s].contains(&v) {
+                        continue;
+                    }
+                    let want = sc.delta_linear(&st, u, v);
+                    let got = before[u * 30 + v] + sc.delta_shift(&st, r, s, u, v);
+                    prop_assert!((want - got).abs() < 1e-5 * want.abs().max(1.0), "({u},{v}) after ({r},{s}): {got} vs {want}");
+                }
+            }
+        }
+    }
+
     /// Thumb boards: tokens (Space on a thumb carries most load there) and empty slots move
     /// like any symbol.
     #[test]
@@ -375,3 +405,4 @@ fn engram_comfort_table() {
     assert!(c(at(0, 3), at(1, 3)) < 0.5, "same-finger reach");
     assert_eq!(c(at(1, 1), at(1, 1)), 1.0, "repeats are left to B02");
 }
+
