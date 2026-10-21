@@ -14,7 +14,7 @@ interface Props {
   refName: string;
   onOpenRun: (id: string) => void;
   onPickRank: (i: number) => void;
-  onShowHome: () => void;
+  onShowOptimize: () => void;
 }
 
 export function ResultsView(p: Props) {
@@ -51,7 +51,7 @@ export function ResultsView(p: Props) {
             <div className="panehead">
               <b>{cfg.params.algo} run</b>
               <span className="hint mono">{cfg.id}</span>
-              {res && <button className="btn soft small" style={{ marginLeft: "auto" }} onClick={p.onShowHome}>Open in Home</button>}
+              {res && <button className="btn soft small" style={{ marginLeft: "auto" }} onClick={p.onShowOptimize}>Open in Optimize</button>}
             </div>
             <div className="scroll">
               <div className="pad">
