@@ -15,11 +15,11 @@ Notation: `f(x)` corpus frequency; keys `i,j,k`; fingers LP LR LM LI LT | RT RI 
 |---|---|---|---|---|
 | M01 | Key effort (heatmap) | − | P0 | Σ f(c)·effort(slot). Effort table per geometry (carpalx base effort, Oxeylyzer heatmap) plus profile `row_offset` per finger (KLO asymmetry). |
 | M02 | Finger load | ± | P0 | Share per finger vs a target distribution (e.g. index > middle > ring > pinky). |
-| M03 | Finger balance (RSS) | − | P1 | √Σ(finger cost²): penalizes uneven load without a separate target (Kühlmak). |
+| M03 | Finger balance (RSS) | − | P1 | √Σ(finger cost²): penalizes uneven load without a separate target (Kühlmak). Implemented: √Σ share² over non-thumb fingers (35.4 = perfectly even). |
 | M04 | Hand balance | ± | P0 | L:R share; flag beyond 60:40. |
 | M05 | Row usage | ± | P0 | Home / top / bottom / number row shares. Home row high is good. |
 | M06 | Center-column usage | − | P1 | Use of index stretch columns (QWERTY T G B Y H N). |
-| M07 | Max finger use | − | P1 | Soft cap on any single finger's share (pinky especially). |
+| M07 | Max finger use | − | P1 | Soft cap on any single finger's share (pinky especially). Implemented: highest non-thumb share as % of its `finger_target` (100 = none over target). |
 | M08 | Off-home penalty | − | P1 | carpalx-style row/finger/hand penalty per press. |
 | M09 | Thumb load | ± | P2 | When thumbs carry letters/space/layer keys. |
 
@@ -32,11 +32,11 @@ Notation: `f(x)` corpus frequency; keys `i,j,k`; fingers LP LR LM LI LT | RT RI 
 | B03 | SFB distance (finger speed) | − | P0 | Σ f·dist(i,j)^p / strength(finger). Fspeed in Oxeylyzer/genkey. Lateral distance can get its own multiplier. |
 | B04 | LSB (lateral stretch) | − | P0 | Adjacent fingers on same hand with horizontal spread ≥ threshold (usually index center column + middle). Kühlmak weights by inverse finger distance (WLSB). |
 | B05 | Full scissor | − | P1 | Adjacent fingers, 2-row jump (QWERTY `ex`, `cr`). |
-| B06 | Half scissor | − | P1 | Adjacent fingers, 1-row jump where the shorter finger reaches up (e.g. pinky top, ring bottom). |
-| B07 | Bigram roll in / out | + | P1 | SH bigram, direction pinky→index (in) or index→pinky (out). In usually preferred. |
+| B06 | Half scissor | − | P1 | Adjacent fingers, 1-row jump where the shorter finger reaches up (e.g. pinky top, ring bottom). Implemented (length order pinky < index < ring < middle). |
+| B07 | Bigram roll in / out | + | P1 | SH bigram, direction pinky→index (in) or index→pinky (out). In usually preferred. Implemented as inward rolls only; outward = same-hand − SFB − in. |
 | B08 | Hand alternation | + | P1 | Consecutive keys on different hands. |
-| B09 | Weak-finger pair | − | P1 | Pinky–ring adjacency and other awkward finger pairs. |
-| B10 | Row jump (same hand) | − | P1 | Vertical distance between SH keys. |
+| B09 | Weak-finger pair | − | P1 | Pinky–ring adjacency and other awkward finger pairs. Implemented: pinky–ring bigrams on one hand. |
+| B10 | Row jump (same hand) | − | P1 | Vertical distance between SH keys. Implemented: 100·\|Δy\| (key units) per bigram, thumbs excluded. |
 | B11 | Movement pattern cost | − | P2 | KLO-style cost per same-hand finger pair: `pair · direction · (0.1 + rows² + lateral)`. Pair = KLO `finger_switch_factor`, ring pairs × Häger-Ross coupling; direction ×(1+2·Δlength) for short-up/long-down scissors; lateral = columns beyond finger spacing (LSB). Implemented; default weight 0.5 on top of B14. Generalizes B04–B10. |
 | B12 | Predicted bigram time | − | P2 | Empirical inter-key interval (IKI) model per key/finger pair, fit from timing data. |
 | B14 | Geometric stretch | − | P0 | Oxeylyzer 2 formula on key positions + finger length offsets; covers LSB, scissors, crossings on any geometry. Implemented; replaces B04/B05 in the default profile. |
@@ -50,7 +50,7 @@ Notation: `f(x)` corpus frequency; keys `i,j,k`; fingers LP LR LM LI LT | RT RI 
 | S02 | Decayed skipgrams | − | P1 | Same finger at gaps 2 and 3 with decaying weights (Oxeylyzer fspeed). |
 | S03 | SFS distance | − | P1 | Distance-weighted S01, like B03. |
 | S04 | Skip stretch (skip LSB / scissor) | − | P2 | B14 stretch on keys 1 and 3 of a trigram (Kühlmak's disjoint bigrams). Implemented; default weight 0.19 spread units (B14's per-unit weight × the S01/B01 ratio 0.12). |
-| S05 | Secondary bigram comfort | − | P2 | Movement cost of 1st→3rd key in a trigram (KLO). |
+| S05 | Secondary bigram comfort | − | P2 | Movement cost of 1st→3rd key in a trigram (KLO). Implemented with B14 stretch as the movement cost (any geometry); also covers most of S04. |
 
 ## 4. Trigram
 
@@ -67,8 +67,8 @@ stats summing to 100% and makes reports easy to read.
 | T06 | Redirect | − | P1 | Three SH keys changing direction (QWERTY `ads`). |
 | T07 | Bad redirect | − | P1 | Redirect with no index finger. |
 | T08 | Same-finger trigram | − | P1 | Contains an SFB on both steps. |
-| T09 | Contortion | − | P2 | Chained bad bigrams on one hand (Kühlmak). |
-| T10 | Irregularity | − | P2 | Both bigrams of the trigram are bad (KLO). |
+| T09 | Contortion | − | P2 | Chained bad bigrams on one hand (Kühlmak). Implemented: both steps have B14 stretch; cost = their sum. |
+| T10 | Irregularity | − | P2 | Both bigrams of the trigram are bad (KLO). Implemented: bad = SFB, LSB (B04), full or half scissor. |
 | T11 | carpalx triad effort | − | P2 | Full carpalx model, as a separate profile. |
 
 ## 5. Longer sequences and words
