@@ -16,7 +16,7 @@ import {
   type FingerName, type FingerState, type HandDims, type HandPose, type HandSettings, type Placement, type Plan, type Preset,
   type Side, type Stroke, type V3, type Wrist,
 } from "../../hand";
-import { boardBounds, CAP_H, Keyboard3D, place, type Focus, type ViewMode } from "../../three/Keyboard3D";
+import { boardBounds, Keyboard3D, keyTop as capTop, type Focus, type ViewMode } from "../../three/Keyboard3D";
 import { useSize } from "../Charts";
 import { Frame, Num, PanelTabs, Sec, Seg, Slider, Toggle } from "../Form";
 
@@ -59,9 +59,10 @@ interface Rig { side: Side; base: Placement; place: Placement; follow: number; h
  * mirrored keys on a symmetric board. The wrist adjustments move the shown hand only; the
  * fingertips keep their homes.
  */
-function buildRigs(g: Geometry, d: HandDims, w: Wrist): { rigs: Rig[]; keyTop: (slot: number) => V3 } {
+function buildRigs(g: Geometry, d: HandDims, w: Wrist): { rigs: Rig[]; keyTop: (slot: number) => V3; keyNormal: (slot: number) => V3 } {
   const b = boardBounds(g.key);
-  const keyTop = (i: number): V3 => { const p = place(g.key[i], b.cx, b.cy).p; return [p[0], p[1] + CAP_H, p[2]]; };
+  const keyTop = (i: number): V3 => capTop(g.key[i], b.cx, b.cy).p;
+  const keyNormal = (i: number): V3 => capTop(g.key[i], b.cx, b.cy).n;
   const rigs: Rig[] = [];
   for (const side of ["L", "R"] as const) {
     const home = {} as Record<FingerName, V3>;
@@ -78,11 +79,11 @@ function buildRigs(g: Geometry, d: HandDims, w: Wrist): { rigs: Rig[]; keyTop: (
     home.thumb = thumbs.length ? thumbs.reduce((a, p) => (near(p) < near(a) ? p : a)) : [rest[0], Math.min(...FOUR.map((f) => home[f][1])), rest[2]];
     rigs.push({ side, base: pl, place: adjustPlacement(side, pl, w, MM), follow: w.follow, home });
   }
-  return { rigs, keyTop };
+  return { rigs, keyTop, keyNormal };
 }
 
 /** Keystrokes for a text on the loaded layout. Unmapped spaces go to a thumb, alternating away from the last hand. */
-function strokesFor(text: string, g: Geometry, chars: string, rigs: Rig[], keyTop: (i: number) => V3): Stroke[] {
+function strokesFor(text: string, g: Geometry, chars: string, rigs: Rig[], keyTop: (i: number) => V3, keyNormal: (i: number) => V3): Stroke[] {
   const slotOf = new Map<string, number>();
   [...chars].forEach((c, i) => { if (i < g.key.length && !slotOf.has(c)) slotOf.set(c, i); });
   const sides = new Set(rigs.map((r) => r.side));
@@ -93,7 +94,7 @@ function strokesFor(text: string, g: Geometry, chars: string, rigs: Rig[], keyTo
     if (slot !== undefined) {
       const f = g.key[slot].finger;
       const side = f[0] as Side;
-      if (sides.has(side)) out.push({ side, finger: FINGER_OF[f[1]], pos: keyTop(slot), ch, key: slot });
+      if (sides.has(side)) out.push({ side, finger: FINGER_OF[f[1]], pos: keyTop(slot), ch, key: slot, n: keyNormal(slot) });
     } else if (ch === " " && sides.size) {
       const prev = out[out.length - 1]?.side;
       let side: Side = prev === "R" ? "L" : "R";
@@ -538,7 +539,7 @@ export function HandView(p: Props) {
   const w = wristOf(h);
   const wristKey = Object.values(w).join(",");
   const setWrist = (patch: Partial<Wrist>) => p.setHand({ ...h, wrist: { ...w, ...patch } });
-  const { rigs, keyTop } = useMemo(() => buildRigs(p.geometry, d, w), [p.geometry, dimsKey, wristKey]);
+  const { rigs, keyTop, keyNormal } = useMemo(() => buildRigs(p.geometry, d, w), [p.geometry, dimsKey, wristKey]);
   const focus = useMemo(() => handFocus(p.geometry, rigs, d, mode), [p.geometry, rigs, mode]);
   // Fingers that cannot reach their home key in the resting pose (wrist adjusted too far), with the gap in mm.
   const unreachable = useMemo(() => framesAt(rigs, null, d, -1).flatMap(({ pose }, hi) => FINGER_NAMES.map((f, fi) => {
@@ -548,10 +549,10 @@ export function HandView(p: Props) {
   const text = SAMPLES.find(([k]) => k === sample)?.[1] ?? "";
   const plan = useMemo(() => {
     if (!rigs.length) return null;
-    const strokes = strokesFor(text, p.geometry, p.chars, rigs, keyTop);
+    const strokes = strokesFor(text, p.geometry, p.chars, rigs, keyTop, keyNormal);
     const homeOf = (s: Side, f: FingerName) => rigs.find((r) => r.side === s)!.home[f];
     return planTyping(strokes, homeOf, wpm, parallel, MM);
-  }, [rigs, keyTop, text, p.geometry, p.chars, wpm, parallel]);
+  }, [rigs, keyTop, keyNormal, text, p.geometry, p.chars, wpm, parallel]);
 
   return (
     <Frame

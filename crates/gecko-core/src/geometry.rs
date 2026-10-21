@@ -383,7 +383,7 @@ impl Geometry {
         Ok(g)
     }
 
-    /// Planar distance between key centers in units.
+    /// Distance between two keys' `pos` in units (3D; equal to centre distance for equal sizes).
     pub fn dist(&self, i: usize, j: usize) -> f32 {
         let a = self.key[i].pos;
         let b = self.key[j].pos;

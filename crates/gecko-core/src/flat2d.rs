@@ -20,18 +20,18 @@ const SPLIT_DEG: f64 = 5.0;
 const EPS: f64 = 1e-3;
 const MAX_PASSES: usize = 500;
 
-type V3 = [f64; 3];
+pub(crate) type V3 = [f64; 3];
 
-fn sub(a: V3, b: V3) -> V3 {
+pub(crate) fn sub(a: V3, b: V3) -> V3 {
     [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }
-fn dot(a: V3, b: V3) -> f64 {
+pub(crate) fn dot(a: V3, b: V3) -> f64 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
-fn cross(a: V3, b: V3) -> V3 {
+pub(crate) fn cross(a: V3, b: V3) -> V3 {
     [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
 }
-fn norm(a: V3) -> V3 {
+pub(crate) fn norm(a: V3) -> V3 {
     let l = dot(a, a).sqrt();
     if l < 1e-12 {
         a
@@ -94,7 +94,7 @@ fn eig_min(mut m: [[f64; 3]; 3]) -> ([f64; 3], V3) {
 
 /// Best-fit plane normal of `pts` (pointing up, +z). Fewer than 3 points or collinear points
 /// give the board plane.
-fn plane_normal(pts: &[V3]) -> V3 {
+pub(crate) fn plane_normal(pts: &[V3]) -> V3 {
     let n = pts.len() as f64;
     if pts.len() < 3 {
         return [0.0, 0.0, 1.0];

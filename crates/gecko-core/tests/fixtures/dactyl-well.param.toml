@@ -1,0 +1,49 @@
+# The Dactyl-Manuform 5x6 finger keywell (rows -1..2) in parametric form: must match the
+# poses of data/geometries/dactyl-manuform-5x6.toml (written by sources/dactyl_manuform.py)
+# up to where each half sits. Units: row pitch 18.4 mm and column spread 19.9 mm at the
+# keycap tops; offsets are Dactyl's column offsets (12 mm / 2.82 mm in y, 5.64 / -4.5 mm in z).
+name = "dactyl-well"
+
+[split]
+axis = 8.5
+tent = 15.0
+
+[[zone]]
+name = "fingers"
+mirror = true
+rows = [-1, 0, 1, 2]
+row_pitch = 0.965879265
+row_curve = 15.0
+col_curve = 5.0
+center_col = 1.0
+
+[[zone.column]]
+finger = "LP"
+stagger = 0.629921260
+lift = 0.296062992
+effort = [4.0, 3.0, 1.6, 3.2]
+[[zone.column]]
+finger = "LP"
+spread = 1.044619423
+stagger = 0.629921260
+lift = 0.296062992
+effort = [4.0, 3.0, 1.6, 3.2]
+[[zone.column]]
+finger = "LR"
+spread = 1.044619423
+effort = [3.4, 2.4, 1.3, 2.6]
+[[zone.column]]
+finger = "LM"
+spread = 1.044619423
+stagger = -0.148031496
+lift = -0.236220472
+effort = [3.0, 2.0, 1.1, 2.3]
+[[zone.column]]
+finger = "LI"
+spread = 1.044619423
+effort = [3.2, 2.2, 1.0, 1.9]
+[[zone.column]]
+finger = "LI"
+spread = 1.044619423
+stretch = true
+effort = [4.0, 3.0, 2.0, 3.2]

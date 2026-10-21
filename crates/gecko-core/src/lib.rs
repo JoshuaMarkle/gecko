@@ -20,6 +20,7 @@ pub mod magic;
 pub mod metrics;
 pub mod optimize;
 pub mod parametric;
+pub mod pose;
 pub mod profile;
 pub mod report;
 pub mod rng;

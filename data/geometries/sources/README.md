@@ -16,11 +16,18 @@ finger, logical row, home, stretch, effort and fill annotations were then review
 | `ergodox` | `ergodox_ez/info.json` | `LAYOUT_ergodox` | 76 |
 | `dactyl-manuform-5x6` | `handwired/dactyl_manuform/5x6/keyboard.json` | `LAYOUT_5x6` | 64 |
 
-These are **flat configurator projections**, with QMK's illustrative split spacing;
+**Dactyl-Manuform 5x6 is 3D**: its slots, fingers and fills follow the QMK input, but
+its poses are written by `dactyl_manuform.py`, a port of the key placement in
+tshort/dactyl-keyboard (default 5x6 parameters: α 15°, β 5°, pinky column level, 15°
+tent, per-column offsets, six-key thumb fan). Keycap tops are 18.4 mm apart within a
+column. The halves are placed with the inner home keys 6u apart (illustrative, as QMK).
+`tests/boards.rs` checks its slots against the KLE input but not its poses.
+
+The other boards are **flat configurator projections**, with QMK's illustrative split spacing;
 they do not specify a user's half placement or measured PCB/keycap poses. QMK supplies
 no splay for these definitions, so the previously invented Corne/Sweep thumb rotations
-are removed. In particular Dactyl's projection has no bowl curvature or tenting and
-must not be used to infer its physical 3D movement distances. Corne and Sweep now use
+are removed. The Dactyl's KLE projection has no bowl curvature or tenting, which is why its
+poses come from the generator instead. Corne and Sweep now use
 the source staggers (left alpha columns `0.30/0.10/0/0.10/0.20` and
 `0.93/0.31/0/0.28/0.42` u respectively).
 

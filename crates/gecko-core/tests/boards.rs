@@ -27,7 +27,9 @@ fn bundled_splits_match_pinned_kle_sources() {
         assert_eq!(physical.len(), count, "{name}");
         assert_eq!(g.len(), count, "{name}");
         // Match by center because reviewed row/finger annotations intentionally change import order.
-        for k in physical {
+        // 3D boards (Dactyl) keep the source's slots but take their poses from their generator
+        // (`tests/three_d.rs`), so only flat boards are compared pose by pose.
+        for k in physical.into_iter().filter(|_| g.is_flat()) {
             let center = k.center();
             let matches: Vec<_> =
                 g.key.iter().filter(|p| close(&[p.pos[0] + p.size[0] / 2.0, p.pos[1] + p.size[1] / 2.0], &center)).collect();

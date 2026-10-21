@@ -1,13 +1,15 @@
 name = "dactyl-manuform-5x6"
-description = "Dactyl-Manuform 5x6: 64-key split; flat QMK configurator projection (no bowl curvature or tenting)."
-# Source: https://github.com/qmk/qmk_firmware/blob/180f394b489c238cb231c2bf8b080262155e03c0/keyboards/handwired/dactyl_manuform/5x6/keyboard.json
-# LAYOUT_5x6; KLE input: sources/dactyl-manuform-5x6.kle.json
-# QMK 2D display coordinates in u, including its illustrative split spacing.
-# Imported with gecko geometry import-kle, then reviewed fingers/rows/efforts/fills.
+description = "Dactyl-Manuform 5x6: 64-key split; 3D concave keywell, 15° tent, six-key thumb fan."
+# Poses: sources/dactyl_manuform.py, a port of the Dactyl-Manuform generator's key placement
+# (tshort/dactyl-keyboard, default 5x6 parameters). Slots, fingers, rows, columns, efforts and
+# fills follow QMK's LAYOUT_5x6 (sources/dactyl-manuform-5x6.kle.json):
+# https://github.com/qmk/qmk_firmware/blob/180f394b489c238cb231c2bf8b080262155e03c0/keyboards/handwired/dactyl_manuform/5x6/keyboard.json
+# The halves' separation (inner home keys 6u apart) is illustrative, as in QMK.
 # Exactly 30 alpha slots have no fill; all remaining slots accept reference layouts.
 
 [[key]]
-pos = [0.0, 0.0, 0.0]
+pos = [0.08, 0.778, 0.5159]
+rot = [29.6217, 8.6822, -4.9809]
 finger = "LP"
 row = -1
 col = 0
@@ -15,7 +17,8 @@ effort = 4
 fill = "none"
 
 [[key]]
-pos = [1.0, 0.0, 0.0]
+pos = [1.0732, 0.778, 0.736]
+rot = [29.1474, 13.0643, -7.4355]
 finger = "LP"
 row = -1
 col = 1
@@ -23,7 +26,8 @@ effort = 4
 fill = "none"
 
 [[key]]
-pos = [2.0, 0.0, 0.0]
+pos = [2.1199, 0.148, 0.756]
+rot = [28.4812, 17.4952, -9.8466]
 finger = "LR"
 row = -1
 col = 2
@@ -31,7 +35,8 @@ effort = 3.4
 fill = "none"
 
 [[key]]
-pos = [3.0, 0.0, 0.0]
+pos = [3.1209, 0.0, 0.9171]
+rot = [27.6211, 21.9905, -12.1991]
 finger = "LM"
 row = -1
 col = 3
@@ -39,7 +44,8 @@ effort = 3
 fill = "none"
 
 [[key]]
-pos = [4.0, 0.0, 0.0]
+pos = [3.9621, 0.148, 1.615]
+rot = [26.5651, 26.5651, -14.4775]
 finger = "LI"
 row = -1
 col = 4
@@ -47,7 +53,8 @@ effort = 3.2
 fill = "none"
 
 [[key]]
-pos = [5.0, 0.0, 0.0]
+pos = [4.82, 0.148, 2.1615]
+rot = [25.3112, 31.2325, -16.6658]
 finger = "LI"
 row = -1
 col = 5
@@ -56,7 +63,8 @@ effort = 4
 fill = "none"
 
 [[key]]
-pos = [11.0, 0.0, 0.0]
+pos = [11.18, 0.148, 2.1615]
+rot = [25.3112, -31.2325, 16.6658]
 finger = "RI"
 row = -1
 col = 6
@@ -65,7 +73,8 @@ effort = 4
 fill = "none"
 
 [[key]]
-pos = [12.0, 0.0, 0.0]
+pos = [12.0379, 0.148, 1.615]
+rot = [26.5651, -26.5651, 14.4775]
 finger = "RI"
 row = -1
 col = 7
@@ -73,7 +82,8 @@ effort = 3.2
 fill = "none"
 
 [[key]]
-pos = [13.0, 0.0, 0.0]
+pos = [12.8791, 0.0, 0.9171]
+rot = [27.6211, -21.9905, 12.1991]
 finger = "RM"
 row = -1
 col = 8
@@ -81,7 +91,8 @@ effort = 3
 fill = "none"
 
 [[key]]
-pos = [14.0, 0.0, 0.0]
+pos = [13.8801, 0.148, 0.756]
+rot = [28.4812, -17.4952, 9.8466]
 finger = "RR"
 row = -1
 col = 9
@@ -89,7 +100,8 @@ effort = 3.4
 fill = "none"
 
 [[key]]
-pos = [15.0, 0.0, 0.0]
+pos = [14.9268, 0.778, 0.736]
+rot = [29.1474, -13.0643, 7.4355]
 finger = "RP"
 row = -1
 col = 10
@@ -97,7 +109,8 @@ effort = 4
 fill = "none"
 
 [[key]]
-pos = [16.0, 0.0, 0.0]
+pos = [15.92, 0.778, 0.5159]
+rot = [29.6217, -8.6822, 4.9809]
 finger = "RP"
 row = -1
 col = 11
@@ -105,7 +118,8 @@ effort = 4
 fill = "none"
 
 [[key]]
-pos = [0.0, 1.0, 0.0]
+pos = [0.1479, 1.721, 0.1312]
+rot = [14.7822, 9.6658, -2.5759]
 finger = "LP"
 row = 0
 col = 0
@@ -113,35 +127,40 @@ effort = 3
 fill = "none"
 
 [[key]]
-pos = [1.0, 1.0, 0.0]
+pos = [1.1743, 1.721, 0.3588]
+rot = [14.5108, 14.5108, -3.841]
 finger = "LP"
 row = 0
 col = 1
 effort = 3
 
 [[key]]
-pos = [2.0, 1.0, 0.0]
+pos = [2.2535, 1.091, 0.3889]
+rot = [14.1327, 19.3701, -5.0785]
 finger = "LR"
 row = 0
 col = 2
 effort = 2.4
 
 [[key]]
-pos = [3.0, 1.0, 0.0]
+pos = [3.286, 0.943, 0.5631]
+rot = [13.6497, 24.2477, -6.2797]
 finger = "LM"
 row = 0
 col = 3
 effort = 2
 
 [[key]]
-pos = [4.0, 1.0, 0.0]
+pos = [4.1574, 1.091, 1.2767]
+rot = [13.0643, 29.1474, -7.4355]
 finger = "LI"
 row = 0
 col = 4
 effort = 2.2
 
 [[key]]
-pos = [5.0, 1.0, 0.0]
+pos = [5.044, 1.091, 1.8416]
+rot = [12.3796, 34.0724, -8.5373]
 finger = "LI"
 row = 0
 col = 5
@@ -149,7 +168,8 @@ stretch = true
 effort = 3
 
 [[key]]
-pos = [11.0, 1.0, 0.0]
+pos = [10.956, 1.091, 1.8416]
+rot = [12.3796, -34.0724, 8.5373]
 finger = "RI"
 row = 0
 col = 6
@@ -157,35 +177,40 @@ stretch = true
 effort = 3
 
 [[key]]
-pos = [12.0, 1.0, 0.0]
+pos = [11.8426, 1.091, 1.2767]
+rot = [13.0643, -29.1474, 7.4355]
 finger = "RI"
 row = 0
 col = 7
 effort = 2.2
 
 [[key]]
-pos = [13.0, 1.0, 0.0]
+pos = [12.714, 0.943, 0.5631]
+rot = [13.6497, -24.2477, 6.2797]
 finger = "RM"
 row = 0
 col = 8
 effort = 2
 
 [[key]]
-pos = [14.0, 1.0, 0.0]
+pos = [13.7465, 1.091, 0.3889]
+rot = [14.1327, -19.3701, 5.0785]
 finger = "RR"
 row = 0
 col = 9
 effort = 2.4
 
 [[key]]
-pos = [15.0, 1.0, 0.0]
+pos = [14.8257, 1.721, 0.3588]
+rot = [14.5108, -14.5108, 3.841]
 finger = "RP"
 row = 0
 col = 10
 effort = 3
 
 [[key]]
-pos = [16.0, 1.0, 0.0]
+pos = [15.8521, 1.721, 0.1312]
+rot = [14.7822, -9.6658, 2.5759]
 finger = "RP"
 row = 0
 col = 11
@@ -193,7 +218,8 @@ effort = 3
 fill = "none"
 
 [[key]]
-pos = [0.0, 2.0, 0.0]
+pos = [0.171, 2.7329, 0.0]
+rot = [0.0, 10, 0.0]
 finger = "LP"
 row = 1
 col = 0
@@ -201,7 +227,8 @@ effort = 1.6
 fill = "none"
 
 [[key]]
-pos = [1.0, 2.0, 0.0]
+pos = [1.2087, 2.7329, 0.2301]
+rot = [0.0, 15, 0.0]
 finger = "LP"
 row = 1
 col = 1
@@ -209,7 +236,8 @@ home = true
 effort = 1.6
 
 [[key]]
-pos = [2.0, 2.0, 0.0]
+pos = [2.2991, 2.103, 0.2637]
+rot = [0.0, 20, 0.0]
 finger = "LR"
 row = 1
 col = 2
@@ -217,7 +245,8 @@ home = true
 effort = 1.3
 
 [[key]]
-pos = [3.0, 2.0, 0.0]
+pos = [3.3423, 1.955, 0.4423]
+rot = [0.0, 25, 0.0]
 finger = "LM"
 row = 1
 col = 3
@@ -225,7 +254,8 @@ home = true
 effort = 1.1
 
 [[key]]
-pos = [4.0, 2.0, 0.0]
+pos = [4.224, 2.103, 1.1613]
+rot = [0.0, 30, 0.0]
 finger = "LI"
 row = 1
 col = 4
@@ -233,7 +263,8 @@ home = true
 effort = 1
 
 [[key]]
-pos = [5.0, 2.0, 0.0]
+pos = [5.1205, 2.103, 1.7324]
+rot = [0.0, 35, 0.0]
 finger = "LI"
 row = 1
 col = 5
@@ -242,7 +273,8 @@ stretch = true
 effort = 2
 
 [[key]]
-pos = [11.0, 2.0, 0.0]
+pos = [10.8795, 2.103, 1.7324]
+rot = [0.0, -35, 0.0]
 finger = "RI"
 row = 1
 col = 6
@@ -251,7 +283,8 @@ stretch = true
 effort = 2
 
 [[key]]
-pos = [12.0, 2.0, 0.0]
+pos = [11.776, 2.103, 1.1613]
+rot = [0.0, -30, 0.0]
 finger = "RI"
 row = 1
 col = 7
@@ -259,7 +292,8 @@ home = true
 effort = 1
 
 [[key]]
-pos = [13.0, 2.0, 0.0]
+pos = [12.6577, 1.955, 0.4423]
+rot = [0.0, -25, 0.0]
 finger = "RM"
 row = 1
 col = 8
@@ -267,7 +301,8 @@ home = true
 effort = 1.1
 
 [[key]]
-pos = [14.0, 2.0, 0.0]
+pos = [13.7009, 2.103, 0.2637]
+rot = [0.0, -20, 0.0]
 finger = "RR"
 row = 1
 col = 9
@@ -275,7 +310,8 @@ home = true
 effort = 1.3
 
 [[key]]
-pos = [15.0, 2.0, 0.0]
+pos = [14.7913, 2.7329, 0.2301]
+rot = [0.0, -15, 0.0]
 finger = "RP"
 row = 1
 col = 10
@@ -283,7 +319,8 @@ home = true
 effort = 1.6
 
 [[key]]
-pos = [16.0, 2.0, 0.0]
+pos = [15.829, 2.7329, 0.0]
+rot = [0.0, -10, 0.0]
 finger = "RP"
 row = 1
 col = 11
@@ -291,7 +328,8 @@ effort = 1.6
 fill = "none"
 
 [[key]]
-pos = [0.0, 3.0, 0.0]
+pos = [0.1479, 3.7449, 0.1312]
+rot = [-14.7822, 9.6658, 2.5759]
 finger = "LP"
 row = 2
 col = 0
@@ -299,35 +337,40 @@ effort = 3.2
 fill = "none"
 
 [[key]]
-pos = [1.0, 3.0, 0.0]
+pos = [1.1743, 3.7449, 0.3588]
+rot = [-14.5108, 14.5108, 3.841]
 finger = "LP"
 row = 2
 col = 1
 effort = 3.2
 
 [[key]]
-pos = [2.0, 3.0, 0.0]
+pos = [2.2535, 3.115, 0.3889]
+rot = [-14.1327, 19.3701, 5.0785]
 finger = "LR"
 row = 2
 col = 2
 effort = 2.6
 
 [[key]]
-pos = [3.0, 3.0, 0.0]
+pos = [3.286, 2.9669, 0.5631]
+rot = [-13.6497, 24.2477, 6.2797]
 finger = "LM"
 row = 2
 col = 3
 effort = 2.3
 
 [[key]]
-pos = [4.0, 3.0, 0.0]
+pos = [4.1574, 3.115, 1.2767]
+rot = [-13.0643, 29.1474, 7.4355]
 finger = "LI"
 row = 2
 col = 4
 effort = 1.9
 
 [[key]]
-pos = [5.0, 3.0, 0.0]
+pos = [5.044, 3.115, 1.8416]
+rot = [-12.3796, 34.0724, 8.5373]
 finger = "LI"
 row = 2
 col = 5
@@ -335,7 +378,8 @@ stretch = true
 effort = 3.2
 
 [[key]]
-pos = [11.0, 3.0, 0.0]
+pos = [10.956, 3.115, 1.8416]
+rot = [-12.3796, -34.0724, -8.5373]
 finger = "RI"
 row = 2
 col = 6
@@ -343,35 +387,40 @@ stretch = true
 effort = 3.2
 
 [[key]]
-pos = [12.0, 3.0, 0.0]
+pos = [11.8426, 3.115, 1.2767]
+rot = [-13.0643, -29.1474, -7.4355]
 finger = "RI"
 row = 2
 col = 7
 effort = 1.9
 
 [[key]]
-pos = [13.0, 3.0, 0.0]
+pos = [12.714, 2.9669, 0.5631]
+rot = [-13.6497, -24.2477, -6.2797]
 finger = "RM"
 row = 2
 col = 8
 effort = 2.3
 
 [[key]]
-pos = [14.0, 3.0, 0.0]
+pos = [13.7465, 3.115, 0.3889]
+rot = [-14.1327, -19.3701, -5.0785]
 finger = "RR"
 row = 2
 col = 9
 effort = 2.6
 
 [[key]]
-pos = [15.0, 3.0, 0.0]
+pos = [14.8257, 3.7449, 0.3588]
+rot = [-14.5108, -14.5108, -3.841]
 finger = "RP"
 row = 2
 col = 10
 effort = 3.2
 
 [[key]]
-pos = [16.0, 3.0, 0.0]
+pos = [15.8521, 3.7449, 0.1312]
+rot = [-14.7822, -9.6658, -2.5759]
 finger = "RP"
 row = 2
 col = 11
@@ -379,7 +428,8 @@ effort = 3.2
 fill = "none"
 
 [[key]]
-pos = [2.0, 4.0, 0.0]
+pos = [2.1199, 4.058, 0.756]
+rot = [-28.4812, 17.4952, 9.8466]
 finger = "LR"
 row = 3
 col = 0
@@ -387,7 +437,8 @@ effort = 3.6
 fill = "none"
 
 [[key]]
-pos = [3.0, 4.0, 0.0]
+pos = [3.1209, 3.9099, 0.9171]
+rot = [-27.6211, 21.9905, 12.1991]
 finger = "LM"
 row = 3
 col = 1
@@ -395,7 +446,8 @@ effort = 3.3
 fill = "none"
 
 [[key]]
-pos = [4.0, 5.0, 0.0]
+pos = [4.5722, 4.8846, 1.7223]
+rot = [9.472, -21.0449, 13.7584]
 finger = "LT"
 row = 3
 col = 2
@@ -403,7 +455,8 @@ effort = 1.5
 fill = "esc"
 
 [[key]]
-pos = [5.0, 5.0, 0.0]
+pos = [5.6221, 4.8321, 1.4598]
+rot = [9.472, -21.0449, 13.7584]
 finger = "LT"
 row = 3
 col = 3
@@ -411,7 +464,8 @@ effort = 1.0
 fill = "space"
 
 [[key]]
-pos = [6.0, 6.0, 0.0]
+pos = [5.5319, 6.2147, 0.8277]
+rot = [-6.9694, -39.0367, 44.424]
 finger = "LT"
 row = 3
 col = 4
@@ -419,7 +473,8 @@ effort = 1.5
 fill = "tab"
 
 [[key]]
-pos = [6.0, 7.0, 0.0]
+pos = [6.0478, 6.9634, 0.1698]
+rot = [-18.611, -47.1128, 43.5856]
 finger = "LT"
 row = 3
 col = 5
@@ -427,7 +482,8 @@ effort = 1.5
 fill = "none"
 
 [[key]]
-pos = [7.0, 6.0, 0.0]
+pos = [6.6261, 5.4901, 0.8802]
+rot = [6.8229, -29.4672, 43.1604]
 finger = "LT"
 row = 3
 col = 6
@@ -435,7 +491,8 @@ effort = 1.5
 fill = "none"
 
 [[key]]
-pos = [7.0, 7.0, 0.0]
+pos = [6.9366, 6.431, 0.2716]
+rot = [-5.0573, -38.9208, 49.5929]
 finger = "LT"
 row = 3
 col = 7
@@ -443,7 +500,8 @@ effort = 1.5
 fill = "none"
 
 [[key]]
-pos = [9.0, 6.0, 0.0]
+pos = [9.3739, 5.4901, 0.8802]
+rot = [6.8229, 29.4672, -43.1604]
 finger = "RT"
 row = 3
 col = 8
@@ -451,7 +509,8 @@ effort = 1.5
 fill = "none"
 
 [[key]]
-pos = [9.0, 7.0, 0.0]
+pos = [9.0634, 6.431, 0.2716]
+rot = [-5.0573, 38.9208, -49.5929]
 finger = "RT"
 row = 3
 col = 9
@@ -459,7 +518,8 @@ effort = 1.5
 fill = "none"
 
 [[key]]
-pos = [10.0, 6.0, 0.0]
+pos = [10.4681, 6.2147, 0.8277]
+rot = [-6.9694, 39.0367, -44.424]
 finger = "RT"
 row = 3
 col = 10
@@ -467,7 +527,8 @@ effort = 1.5
 fill = "none"
 
 [[key]]
-pos = [10.0, 7.0, 0.0]
+pos = [9.9522, 6.9634, 0.1698]
+rot = [-18.611, 47.1128, -43.5856]
 finger = "RT"
 row = 3
 col = 11
@@ -475,7 +536,8 @@ effort = 1.5
 fill = "none"
 
 [[key]]
-pos = [11.0, 5.0, 0.0]
+pos = [10.3779, 4.8321, 1.4598]
+rot = [9.472, 21.0449, -13.7584]
 finger = "RT"
 row = 3
 col = 12
@@ -483,7 +545,8 @@ effort = 1.5
 fill = "enter"
 
 [[key]]
-pos = [12.0, 5.0, 0.0]
+pos = [11.4278, 4.8846, 1.7223]
+rot = [9.472, 21.0449, -13.7584]
 finger = "RT"
 row = 3
 col = 13
@@ -491,7 +554,8 @@ effort = 1.0
 fill = "bspc"
 
 [[key]]
-pos = [13.0, 4.0, 0.0]
+pos = [12.8791, 3.9099, 0.9171]
+rot = [-27.6211, -21.9905, -12.1991]
 finger = "RM"
 row = 3
 col = 14
@@ -499,7 +563,8 @@ effort = 3.3
 fill = "none"
 
 [[key]]
-pos = [14.0, 4.0, 0.0]
+pos = [13.8801, 4.058, 0.756]
+rot = [-28.4812, -17.4952, -9.8466]
 finger = "RR"
 row = 3
 col = 15

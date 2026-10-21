@@ -63,7 +63,8 @@ still preview), presets Average / Large / Small (Custom appears after an edit), 
 every segment length, palm width / length, span, reach. Main: skeletal hands in 3D on the
 current board (`hand.ts`: one right-hand skeleton mirrored for the left, each hand placed by
 fitting natural finger reach to the home keys, thumb on the nearest thumb key, finger IK
-within joint limits), a Lengths toggle for segment labels; the Simulation tab in the left
+within joint limits; fingertips target each keycap's top centre and press along its normal,
+so tilted keys on 3D boards such as the Dactyl work), a Lengths toggle for segment labels; the Simulation tab in the left
 sidebar contains the Wrist controls (view only, outside the "use hand"
 lock). These offset the solved placement, mirrored per hand: height, distance, spread,
 angle, tilt (roll, + thumb side up) and wrist movement (how much the hand follows a reaching

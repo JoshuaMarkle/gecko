@@ -141,6 +141,18 @@ describe("typing plan", () => {
     keysDown(plan, -1, out);
     expect([...out]).toEqual([0, 0, 0]);
   });
+  it("presses along a tilted key's normal (3D boards)", () => {
+    const n: [number, number, number] = [-Math.sin(0.5), Math.cos(0.5), 0];
+    const strokes: Stroke[] = alt.map((s, i) => (i === 4 ? { ...s, n } : s));
+    const plan = planTyping(strokes, home, 60, 0.8, U);
+    const pr = plan.presses[4];
+    const tip = fingerAt(plan.byFinger[fingerKey(pr.side, pr.finger)], home(pr.side, pr.finger), (pr.arrive + pr.up) / 2, U).pos;
+    const d = [tip[0] - pr.pos[0], tip[1] - pr.pos[1], tip[2] - pr.pos[2]];
+    const depth = Math.hypot(d[0], d[1], d[2]);
+    expect(depth).toBeGreaterThan(0);
+    // The dip is exactly opposite the normal.
+    for (let k = 0; k < 3; k++) expect(d[k] / depth).toBeCloseTo(-n[k], 6);
+  });
   it("ends once every finger is back home", () => {
     const plan = planTyping(alt, home, 80, 0.8, U);
     expect(Number.isFinite(plan.end)).toBe(true);
