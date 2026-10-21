@@ -3,7 +3,8 @@
 Full metric list with IDs: `research/metrics-catalog.md`. Implemented now (`gecko list metrics`):
 B01 SFB, S01 SFS, S02 far SFS (gaps 2–3, decayed), S03 SFS distance, B03 finger speed,
 B04 LSB, B05 scissors, B14 geometric stretch (Oxeylyzer 2), M01 effort, M02 finger-load error,
-M04 hand balance, M05 home row, M06 center columns, B08 alternation, T01–T08 trigram classes,
+M04 hand balance, M09 thumb load, M05 home row, M06 center columns, B08 alternation, T01–T08 and
+T12–T13 (thumb) trigram classes,
 E04/E05 Engram key-pair discomfort (formula / measured; geometry `[comfort]` tables),
 B02 repeats (info), Y01 layer switches, Y02 code-symbol bigrams. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
 lateral multiplier and per-finger factors, and S02's `skip_decay`.
@@ -87,5 +88,17 @@ fronts (NSGA-II). Reports always show the per-metric breakdown.
   punctuation symbols, normalized on their own; cost 100 when they are on one finger (two keys)
   or on different layers. Reads "% of symbol bigrams that are awkward". Adds one term to the
   pair delta only when weighted.
-- Not modeled yet: the layer key's own keystroke in effort/finger load, one-shot layers,
-  thumb-trigram classes. Profile `code` weights both (scales are rough estimates).
+- Not modeled yet: the layer key's own keystroke in effort/finger load, one-shot layers.
+  Profile `code` weights both (scales are rough estimates).
+
+## Thumbs (T12, T13, M09)
+
+- Trigrams with a thumb key get their own classes instead of "other" (which now means only a
+  same-finger step or a repeated key, thumbs included). Only steps that touch a thumb decide:
+  **T12 thumb roll** if any of them stays on the same hand (index → space on the left thumb),
+  **T13 thumb alternate** if all of them change hands. Both `max`, weight 0 in bundled
+  profiles. On corne-36 / English with Space on a thumb they are ≈ 33–36% and ≈ 15–20% of trigrams.
+- **M09 thumb load** (`Order::Load`): thumb share of keystrokes (%), scored like M04 as
+  `(share − thumb_target)² / 10`. Profile `thumb_target` defaults to 18 (Space alone on
+  English is 18.3%); raise it to ask for a letter on a thumb. Updated from the finger-load
+  accumulators, so it adds nothing to the delta beyond M02/M04's load path.

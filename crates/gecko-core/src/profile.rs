@@ -26,6 +26,9 @@ pub struct Profile {
     /// Target finger load in % (LP LR LM LI LT RT RI RM RR RP) for M02.
     #[serde(default = "default_finger_target")]
     pub finger_target: [f32; FINGERS],
+    /// Target thumb share in % of keystrokes for M09 (both thumbs together).
+    #[serde(default = "default_thumb_target")]
+    pub thumb_target: f32,
     /// Keep the most frequent trigrams covering this share of trigram volume (renormalized).
     /// 1.0 = exact. Trades a little fidelity for search speed; see `context/objective.md`.
     #[serde(default = "default_trigram_coverage")]
@@ -72,6 +75,10 @@ pub fn default_trigram_coverage() -> f32 {
     0.99
 }
 
+pub fn default_thumb_target() -> f32 {
+    18.0
+}
+
 pub fn default_finger_target() -> [f32; FINGERS] {
     [8.0, 11.0, 15.0, 16.0, 0.0, 0.0, 16.0, 15.0, 11.0, 8.0]
 }
@@ -91,6 +98,9 @@ impl Profile {
             if crate::metrics::def(k).is_none() || !v.is_finite() || *v <= 0.0 {
                 return Err(Error::invalid("profile", format!("scale for '{k}' must be a known metric and > 0")));
             }
+        }
+        if !(0.0..=100.0).contains(&p.thumb_target) {
+            return Err(Error::invalid("profile", "thumb_target must be in [0, 100]"));
         }
         let s = &p.sfb;
         let ok = s.lateral.is_finite() && s.lateral > 0.0 && s.finger_factor.iter().all(|f| f.is_finite() && *f >= 0.0);
