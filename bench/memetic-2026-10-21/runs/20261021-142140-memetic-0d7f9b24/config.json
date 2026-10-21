@@ -1,0 +1,179 @@
+{
+  "schema": 1,
+  "id": "20261021-142140-memetic-0d7f9b24",
+  "created": "2026-10-21T14:21:40Z",
+  "gecko_version": "0.1.0",
+  "params": {
+    "algo": "memetic",
+    "seed": 3,
+    "threads": 4,
+    "time_ms": null,
+    "evals": 8000000,
+    "top": 5,
+    "sa": {
+      "steps": 0,
+      "accept0": 0.5,
+      "t_end_ratio": 0.002
+    },
+    "ga": {
+      "pop_size": 128,
+      "tournament": 3,
+      "elitism": 4,
+      "crossover_rate": 0.9,
+      "mutation_rate": 1.0
+    },
+    "memetic": {
+      "ga": {
+        "pop_size": 24,
+        "tournament": 3,
+        "elitism": 2,
+        "crossover_rate": 0.9,
+        "mutation_rate": 1.0
+      },
+      "local_search": "hc",
+      "local_steps": 12,
+      "islands": 4,
+      "migration_interval": 5,
+      "migrants": 2,
+      "collapse_generations": 3
+    },
+    "bls": {
+      "kick_min": 2,
+      "kick_max": 0,
+      "accept_worse": 0.1,
+      "stagnation": 150,
+      "column_kick": 0.2,
+      "exclusion": 0.5,
+      "exclusion_dist": 8
+    },
+    "explore": {
+      "samples": 2000,
+      "walks": 64,
+      "walk_len": 400,
+      "max_optima": 100000,
+      "snapshot_ms": 2000,
+      "within": 0.01
+    },
+    "tabu": {
+      "tenure_min": 0.9,
+      "tenure_max": 1.1,
+      "diversify": 5.0,
+      "stagnation": 100.0,
+      "refresh": 1000
+    },
+    "moves": {
+      "columns": false,
+      "cycle3": false,
+      "depth2": false,
+      "depth2_width": 32
+    },
+    "qd": {
+      "axes": [
+        "roll_ratio",
+        "index_load"
+      ],
+      "bins": 16,
+      "seeds": 64,
+      "kick_min": 2,
+      "kick_max": 6,
+      "descent": 0,
+      "snapshot_ms": 2000
+    }
+  },
+  "geometry": {
+    "name": "ansi-30",
+    "hash": "0a5d29866415a60a"
+  },
+  "corpus": {
+    "name": "english",
+    "hash": "1539a821f307a698"
+  },
+  "profile": {
+    "name": "default",
+    "description": "Balanced modern profile: low SFB/SFS, low stretch, good rolls, even finger load.",
+    "weights": {
+      "B01": 8.28,
+      "B03": 0.053,
+      "B11": 0.5,
+      "B14": 2.0,
+      "E05": 1.0,
+      "M01": 0.279,
+      "M02": 0.119,
+      "M04": 0.087,
+      "S01": 1.06,
+      "S02": 0.31,
+      "S04": 0.19,
+      "T01": 0.176,
+      "T03": 0.105,
+      "T04": 0.126,
+      "T06": 0.461,
+      "T07": 0.26
+    },
+    "scale": {
+      "B01": 1.655,
+      "B03": 2.626,
+      "B11": 18.3,
+      "B14": 2.476,
+      "E05": 1.94,
+      "M01": 0.1395,
+      "M02": 3.955,
+      "M04": 1.748,
+      "S01": 1.765,
+      "S02": 0.5204,
+      "S04": 1.964,
+      "T01": 5.88,
+      "T03": 2.09,
+      "T04": 4.2,
+      "T06": 3.074,
+      "T07": 0.6511
+    },
+    "scale_basis": "stdev over the 10 reference layouts on english / ansi-30 (gecko profile normalize)",
+    "finger_target": [
+      8.0,
+      11.0,
+      15.0,
+      16.0,
+      0.0,
+      0.0,
+      16.0,
+      15.0,
+      11.0,
+      8.0
+    ],
+    "thumb_target": 18.0,
+    "trigram_coverage": 0.99,
+    "sfb": {
+      "distance": "linear",
+      "lateral": 1.0,
+      "finger_factor": [
+        2.0,
+        1.538,
+        1.111,
+        1.0,
+        1.0
+      ],
+      "skip_decay": 0.5
+    },
+    "row_offset": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        -0.1,
+        0.1
+      ],
+      [
+        -0.2,
+        0.2
+      ],
+      [
+        0.2,
+        -0.2
+      ]
+    ]
+  },
+  "profile_hash": "5b3c7d986dce3397",
+  "start": "qwertyuiopasdfghjkl;zxcvbnm,./",
+  "pins": ""
+}

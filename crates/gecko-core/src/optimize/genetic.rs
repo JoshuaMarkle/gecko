@@ -35,38 +35,38 @@ impl Genetic {
     pub fn new(p: GaParams, top: usize) -> Self {
         Genetic { p, top: TopK::new(top), pop: Vec::new(), slots: Vec::new() }
     }
+}
 
-    fn pick<'a>(&'a self, rng: &mut Rng) -> &'a State {
-        let mut best = &self.pop[rng.below(self.pop.len())];
-        for _ in 1..self.p.tournament.max(1) {
-            let c = &self.pop[rng.below(self.pop.len())];
-            if c.score < best.score {
-                best = c;
-            }
+pub(super) fn pick<'a>(pop: &'a [State], p: &GaParams, rng: &mut Rng) -> &'a State {
+    let mut best = &pop[rng.below(pop.len())];
+    for _ in 1..p.tournament.max(1) {
+        let c = &pop[rng.below(pop.len())];
+        if c.score < best.score {
+            best = c;
         }
-        best
     }
+    best
+}
 
-    /// Order crossover restricted to the movable slots; pinned slots copy from parent 1.
-    fn crossover(&self, a: &State, b: &State, rng: &mut Rng) -> Vec<u8> {
-        let m = self.slots.len();
-        let mut child = a.sym.clone();
-        let (mut i, mut j) = (rng.below(m), rng.below(m));
-        if i > j {
-            std::mem::swap(&mut i, &mut j);
-        }
-        let mut used = [false; crate::scorer::MAX_KEYS];
-        for &s in &self.slots[i..=j] {
-            used[a.sym[s] as usize] = true;
-        }
-        let mut fill = self.slots.iter().map(|&s| b.sym[s]).filter(|&x| !used[x as usize]);
-        for (k, &s) in self.slots.iter().enumerate() {
-            if k < i || k > j {
-                child[s] = fill.next().expect("OX fill");
-            }
-        }
-        child
+/// Order crossover restricted to the movable slots; pinned slots copy from parent 1.
+pub(super) fn crossover(slots: &[usize], a: &State, b: &State, rng: &mut Rng) -> Vec<u8> {
+    let m = slots.len();
+    let mut child = a.sym.clone();
+    let (mut i, mut j) = (rng.below(m), rng.below(m));
+    if i > j {
+        std::mem::swap(&mut i, &mut j);
     }
+    let mut used = [false; crate::scorer::MAX_KEYS];
+    for &s in &slots[i..=j] {
+        used[a.sym[s] as usize] = true;
+    }
+    let mut fill = slots.iter().map(|&s| b.sym[s]).filter(|&x| !used[x as usize]);
+    for (k, &s) in slots.iter().enumerate() {
+        if k < i || k > j {
+            child[s] = fill.next().expect("OX fill");
+        }
+    }
+    child
 }
 
 impl Optimizer for Genetic {
@@ -97,25 +97,7 @@ impl Optimizer for Genetic {
         let mut tries = 0;
         while next.len() < n && tries < n * 20 {
             tries += 1;
-            let a = self.pick(rng);
-            let mut sym = if rng.f64() < self.p.crossover_rate {
-                let b = self.pick(rng);
-                self.crossover(a, b, rng)
-            } else {
-                a.sym.clone()
-            };
-            // Poisson-ish number of swaps with mean `mutation_rate` (at least one when copying).
-            let mut swaps = 0;
-            while rng.f64() < self.p.mutation_rate / (1.0 + self.p.mutation_rate) {
-                swaps += 1;
-            }
-            if swaps == 0 && sym == a.sym {
-                swaps = 1;
-            }
-            for _ in 0..swaps {
-                let (i, j) = (self.slots[rng.below(self.slots.len())], self.slots[rng.below(self.slots.len())]);
-                sym.swap(i, j);
-            }
+            let sym = offspring(&self.pop, &self.slots, &self.p, rng);
             if next.iter().any(|s| s.sym == sym) {
                 continue;
             }
@@ -141,4 +123,22 @@ impl Optimizer for Genetic {
     fn top(&self) -> &TopK {
         &self.top
     }
+}
+
+/// Shared permutation operators for GA and memetic search. Called between local searches.
+pub(super) fn offspring(pop: &[State], slots: &[usize], p: &GaParams, rng: &mut Rng) -> Vec<u8> {
+    let a = pick(pop, p, rng);
+    let mut sym = if rng.f64() < p.crossover_rate { crossover(slots, a, pick(pop, p, rng), rng) } else { a.sym.clone() };
+    let mut swaps = 0;
+    while rng.f64() < p.mutation_rate / (1.0 + p.mutation_rate) {
+        swaps += 1;
+    }
+    if swaps == 0 && sym == a.sym {
+        swaps = 1;
+    }
+    for _ in 0..swaps {
+        let (i, j) = (slots[rng.below(slots.len())], slots[rng.below(slots.len())]);
+        sym.swap(i, j);
+    }
+    sym
 }

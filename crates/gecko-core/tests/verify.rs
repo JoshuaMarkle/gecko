@@ -63,3 +63,16 @@ fn time_run_and_changed_inputs_do_not_verify() {
     assert!(v.checks.iter().any(|c| c.name == "corpus" && !c.ok));
     let _ = std::fs::remove_dir_all(&s.runs);
 }
+
+#[test]
+fn memetic_evals_run_replays_migration_and_pins() {
+    let s = store("memetic");
+    let mut params = Params { algo: Algo::Memetic, seed: 7, threads: 2, time_ms: None, evals: Some(100_000), top: 3, ..Default::default() };
+    params.memetic.ga.pop_size = 4;
+    params.memetic.local_steps = 2;
+    params.memetic.migration_interval = 1;
+    let dir = make_run(&s, params);
+    let v = run::verify(&s, &dir).unwrap();
+    assert!(v.ok, "{:#?}", v.checks);
+    let _ = std::fs::remove_dir_all(&s.runs);
+}
