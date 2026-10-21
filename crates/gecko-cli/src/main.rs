@@ -136,6 +136,42 @@ enum Cmd {
         #[command(flatten)]
         inputs: Inputs,
     },
+    /// MAP-Elites quality-diversity map: a grid over behaviour axes (roll/alternation ratio,
+    /// index load, hand balance, or any metric id), best layout per cell. Writes a qd run.
+    Qd {
+        /// Time budget, e.g. 2m (default 60s).
+        #[arg(long)]
+        time: Option<String>,
+        /// Evaluation budget (deterministic with --threads 1).
+        #[arg(long)]
+        evals: Option<u64>,
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
+        #[arg(long)]
+        threads: Option<usize>,
+        #[arg(long, default_value = "")]
+        pin: String,
+        #[arg(long)]
+        from: Option<String>,
+        /// 1–3 axes, each name or name:lo:hi (roll_ratio, index_load, pinky_load, hand_balance,
+        /// or a metric id). Without a range, the seed descents set it.
+        #[arg(long, value_delimiter = ',', default_value = "roll_ratio,index_load")]
+        axes: Vec<String>,
+        /// Bins per axis.
+        #[arg(long, default_value_t = 16)]
+        bins: usize,
+        /// Random descents that seed the grid.
+        #[arg(long)]
+        seeds: Option<usize>,
+        /// Improving moves after each mutation (0 = descend to a local optimum).
+        #[arg(long)]
+        descent: Option<usize>,
+        /// Print an existing qd run instead of searching.
+        #[arg(long)]
+        show: Option<String>,
+        #[command(flatten)]
+        inputs: Inputs,
+    },
     /// Landscape probe without searching: random-layout score distribution, correlation
     /// length, and where each reference layout sits among random layouts.
     Landscape {
@@ -801,6 +837,10 @@ fn real_main(cli: Cli) -> Result<()> {
         Cmd::Explore { time, evals, seed, threads, pin, from, samples, max_optima, inputs } => explore_cmd::explore(
             &ctx,
             explore_cmd::ExploreArgs { time, evals, seed, threads, pin, from, samples, max_optima, inputs },
+        )?,
+        Cmd::Qd { time, evals, seed, threads, pin, from, axes, bins, seeds, descent, show, inputs } => explore_cmd::qd(
+            &ctx,
+            explore_cmd::QdArgs { time, evals, seed, threads, pin, from, axes, bins, seeds, descent, show, inputs },
         )?,
         Cmd::Landscape { samples, walks, walk_len, seed, from, inputs } => {
             explore_cmd::landscape(&ctx, &inputs, from.as_deref(), samples, walks, walk_len, seed)?

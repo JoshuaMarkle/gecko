@@ -8,6 +8,7 @@ pub mod archive;
 pub mod atlas;
 pub mod distance;
 pub mod probe;
+pub mod qd;
 pub mod stats;
 
 use std::path::Path;
