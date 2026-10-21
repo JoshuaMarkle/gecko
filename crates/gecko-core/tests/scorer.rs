@@ -375,3 +375,22 @@ fn engram_comfort_table() {
     assert!(c(at(0, 3), at(1, 3)) < 0.5, "same-finger reach");
     assert_eq!(c(at(1, 1), at(1, 1)), 1.0, "repeats are left to B02");
 }
+
+/// The default profile agrees (weakly) with cmini community likes: among liked layouts the
+/// Spearman ρ is positive, and the best-liked modern layouts rank near the top. See
+/// `context/objective.md` (Calibration) for the full numbers.
+#[test]
+fn cmini_likes_ranking() {
+    let Some(c) = real_corpus() else { return };
+    let b = gecko_core::community::Bundle::from_json(&read("data/community/cmini.json")).unwrap();
+    assert!(b.unique().count() > 1500, "{} unique cmini layouts", b.unique().count());
+    let g = ansi();
+    let p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
+    let r = gecko_core::community::likes_report(&g, &c, &p, b.unique().filter(|l| l.likes > 0)).unwrap();
+    assert!(r.all.rho > 0.05, "ρ over liked layouts {}", r.all.rho);
+    let n = r.layouts.len();
+    for name in ["graphite", "gallium"] {
+        let s = r.layouts.iter().find(|s| s.name == name).unwrap();
+        assert!(s.rank * 10 <= n, "{name} ranks {} of {n} liked cmini layouts", s.rank);
+    }
+}

@@ -33,7 +33,9 @@ delta == full (proptest), folding == breakdown, brute-force optimum on a 6-key b
 HC/SA/GA, determinism with an eval budget, pins respected, ranking sanity + QWERTY SFB,
 corpus counting (incl. skip-2/3, word imports) + binary round-trip + `GKCORP1` compatibility,
 imported corpora reproduce QWERTY SFB computed independently from their source tables,
-layout TOML round-trip. Explore (`tests/explore.rs` + unit tests in `explore/`): raw-vector
+layout TOML round-trip, cmini import (core extraction, skip reasons, duplicates/mirrors,
+bundle round-trip), Spearman with ties, and `cmini_likes_ranking` (ρ > 0.05 over liked cmini
+layouts; Graphite and Gallium in their top 10 %). Explore (`tests/explore.rs` + unit tests in `explore/`): raw-vector
 re-scoring == full score (proptest); on a mirror-symmetric 6-key board the archive equals the
 brute-forced set of canonical local optima; ansi atlas consistency (pins, constrained
 records, every unconstrained record locally optimal); distances, PCA, funnels, Chao1.

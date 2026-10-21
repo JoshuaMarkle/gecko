@@ -24,8 +24,9 @@ The community's shared reference for "what are this layout's stats".
 
 ## How to use in GECKO
 
-- Write an importer `cmini JSON → data/layouts/*.toml` (needs a finger-map check against our
-  geometry; skip layouts with thumb letters until thumbs exist).
+- Importer done: `gecko layouts import-cmini` → `data/community/cmini.json` (30-key core,
+  finger-map check, thumb-letter layouts skipped); `gecko layouts likes` correlates GECKO rank
+  with likes (results in `context/objective.md` Calibration).
 - Use the 450k vs 10k word-list corpora as a **robustness test** (L05): Gallium does well on 10k
   and worse on 450k (more `hy py ph pf`), see `community-design-notes.md`.
 - Validate GECKO's trigram classes against `table.json` on a few layouts.
