@@ -27,7 +27,8 @@ optimization on top. Rust core + CLI + server + WASM; TypeScript web UI with a 3
 | Tests, benchmarks | `context/testing.md` |
 | Code style, crates, tooling | `context/conventions.md` |
 | Past decisions | `context/decisions.md` |
-| What to build next, and why (research synthesis + backlog) | `research/SYNTHESIS.md` |
+| What to work on next (timeline, GitHub issues #1–103) | `context/roadmap.md` |
+| Why those items (research synthesis) | `research/SYNTHESIS.md` |
 | Background (other tools, parameters, hand model, data, per-source summaries) | `research/README.md`, `research/sources/` |
 
 ## Commands

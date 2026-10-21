@@ -47,3 +47,7 @@ criterion benches + `bench/history.jsonl`.
 ## Rule
 
 `cargo test` and `cargo clippy -- -D warnings` pass before any change is considered done.
+
+## Overnight harness
+
+`scripts/overnight.sh` (`make overnight`, `make overnight-dry`) works through open issues in `context/roadmap.md` order, skipping any with open GitHub blockers, an open PR, or an existing `fix/issue-<n>` branch. Each issue gets a headless `claude -p` run in the worktree `../gecko-overnight` (your checkout is never touched). The run resumes its session after usage limits. Then comes the gate: release build, `cargo test`, clippy, wasm, web typecheck and tests, with one repair round. If the gate passes, the harness commits, pushes `fix/issue-<n>` and opens a PR. Failed work is saved as a patch. Logs and `summary.tsv` go in `~/.local/state/gecko-overnight/<stamp>/`; `touch ~/.local/state/gecko-overnight/STOP` stops it after the current issue. Agents see only what is on `origin/main`.
