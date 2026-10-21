@@ -6,7 +6,8 @@ B04 LSB, B05 scissors, B14 geometric stretch (Oxeylyzer 2), B11 finger-pair move
 M04 hand balance, M05 home row, M06 center columns, B08 alternation, T01–T08 trigram classes,
 E04/E05 Engram key-pair discomfort (formula / measured; geometry `[comfort]` tables),
 B02 repeats (info), Y01 layer switches (and Shift), Y02 code-symbol bigrams. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
-lateral multiplier and per-finger factors, and S02's `skip_decay`.
+lateral multiplier and per-finger factors, and S02's `skip_decay`. Profile `row_offset`
+(pinky ring middle index × [above, below] home) adds per-finger row costs to M01's geometry effort.
 
 ## B11 finger-pair movement
 

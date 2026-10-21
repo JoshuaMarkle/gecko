@@ -33,6 +33,15 @@ pub struct Profile {
     /// How same-finger distance metrics (B03, S03) and decayed skipgrams (S02) are costed.
     #[serde(default)]
     pub sfb: SfbParams,
+    /// Effort (M01) added per finger off the home row, pinky ring middle index, as
+    /// `[above home, below home]`. Encodes KLO's asymmetric key costs (top row easy for
+    /// middle/ring, bottom row easy for index) on any geometry. Thumbs get none. Default 0.
+    #[serde(default, skip_serializing_if = "is_zero_rows")]
+    pub row_offset: [[f32; 2]; 4],
+}
+
+fn is_zero_rows(r: &[[f32; 2]; 4]) -> bool {
+    r.iter().flatten().all(|v| *v == 0.0)
 }
 
 /// Distance transform for same-finger travel.
@@ -97,6 +106,9 @@ impl Profile {
         if !ok || !(0.0..=1.0).contains(&s.skip_decay) {
             return Err(Error::invalid("profile", "sfb: lateral must be > 0, finger_factor ≥ 0, skip_decay in [0, 1]"));
         }
+        if !p.row_offset.iter().flatten().all(|v| v.is_finite()) {
+            return Err(Error::invalid("profile", "row_offset must be finite"));
+        }
         Ok(p)
     }
 
@@ -113,7 +125,11 @@ impl Profile {
     /// weights and scales). Raw vectors measured under one table hash can be re-scored exactly
     /// with any profile that has the same table hash.
     pub fn table_hash(&self) -> u64 {
-        let v = serde_json::json!({"finger_target": self.finger_target, "trigram_coverage": self.trigram_coverage, "sfb": self.sfb});
+        let mut v = serde_json::json!({"finger_target": self.finger_target, "trigram_coverage": self.trigram_coverage, "sfb": self.sfb});
+        // Added only when set, so table hashes of profiles without row offsets stay unchanged.
+        if !is_zero_rows(&self.row_offset) {
+            v["row_offset"] = serde_json::json!(self.row_offset);
+        }
         hash::fnv1a(v.to_string().as_bytes())
     }
 
