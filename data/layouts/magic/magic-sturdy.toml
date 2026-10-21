@@ -1,0 +1,8 @@
+name = "Magic Sturdy"
+geometry = "ansi-30"
+source = "Ikcelaks, github.com/Ikcelaks/keyboard_layouts (magic_sturdy.md); bigram rules only (no briefs, no repeat key). 30-key fit: q in place of '?', no ';' or '/'"
+rows = ['vmlcpb{magic}uo,', 'strdyfneai', "xkjgwzh'q."]
+
+[[magic]]
+key = "{magic}"
+rules = "ao cy dy eu gy lk oa py rl sk ue yp ks tm"

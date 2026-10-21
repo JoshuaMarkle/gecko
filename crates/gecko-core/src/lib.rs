@@ -15,6 +15,7 @@ pub mod hash;
 pub mod import;
 pub mod kle;
 pub mod layout;
+pub mod magic;
 pub mod metrics;
 pub mod optimize;
 pub mod profile;
