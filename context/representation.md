@@ -64,7 +64,7 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   in strings/JSON/UI: `␣` space, `⏎` enter, `⌫` bspc, `⇥` tab, `⎋` esc, and `·` = empty slot
   (zero frequency, may repeat, unpinned unless `--pin '{none}'`), `⇧` Shift (base layer only,
   may repeat, never moves). Text input (layout rows, `raw:`, `--pin`) also takes `{space}`,
-  `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `{none}`, `{shift}`.
+  `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `{none}`, `{shift}`, `{left}`, `{down}`, `{up}`, `{right}` (arrows `←↓↑→`).
   The scorer gives repeated `·` distinct symbol ids.
 - Text format: rows of symbols matching the geometry's rows (`data/layouts/*.toml`), e.g.
   ```
@@ -77,7 +77,6 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   source fingering (angle mod) is not imported. `export` writes the 30 alpha keys back.
 - Stable hash = hash(geometry hash, sym array). Used to de-duplicate results.
 - Layers: `chars` is the base and `layers[l-1].chars` layer l, one symbol per key
-<<<<<<< HEAD
   (`sym[layer][key]`). Layer l is reached by the base key carrying its layer-key token, whose
   glyph is the layer mode: hold `①②③` (`{layer1}`…), one-shot `⓵⓶⓷` (`{os1}`…), toggle `❶❷❸`
   (`{tg1}`…). TOML: base `rows`, then one `[[layer]]` table per layer (`name`, `rows`, optional
@@ -87,12 +86,6 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   like-for-like layouts. A hold layer cannot use the keys of the finger holding it; one-shot and
   toggle layers only lose the layer key itself (on a toggle layer that is the key that leaves).
   Unusable keys are written `·`. The flat string carries the modes through its tokens.
-=======
-  (`sym[layer][key]`). Layer l is held by the base key carrying `①②③` (`{layer1}`…), hold
-  model only (no one-shot/toggle yet). TOML: base `rows`, then one `[[layer]]` table per layer
-  (`name`, `rows`); layered layouts live in `data/layouts/layered/` (example `corne-code`), so
-  `compare` keeps ranking like-for-like layouts. Keys on the finger that holds a layer are
-  unusable on it (written `·`).
 - Community layouts: `gecko layouts import-cmini <cmini checkout>` writes one bundle,
   `data/community/cmini.json` (schema 1; one layout per line: `name, author, board, likes,
   rows`, plus `dup_of`/`mirror` and a `skipped` list with `<kind>: <detail>` reasons). Kept
@@ -102,7 +95,6 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   is missing, or its fingering is non-standard (angle boards may use the angle-mod bottom row).
   Empty core keys become `·`. Duplicates: same 30 keys or their left–right mirror; the
   group's representative has the most likes. Likes = number of users in `likes.json`.
->>>>>>> origin/fix/issue-26
 - Scoring flattens a layered layout onto `Geometry::layered`: the base keys, then each layer's
   usable keys as virtual keys (`layer`, `phys` set; `layer_keys` = holders, `layer_modes`). Metrics see each
   symbol at its physical key (layer copies of one key are the same key: repeats, not SFBs);
@@ -171,6 +163,12 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   committed. Rebuild: `gecko corpus build --charset code --ext rs --out code-rs <crate>/src…`
   (likewise `code-py` from `/usr/lib/python3.14/*.py`, `code-ts` from the `.ts` files, not
   `.d.ts`), then `gecko corpus mix code-rs code-py code-ts --out code`.
+- `code-nav` corpus (`--charset nav` = code + `←↓↑→`; 74 symbols): `code` plus 3 % arrow
+  keystrokes from a seeded cursor-movement model (`Corpus::with_nav`; text has no arrows):
+  runs of mean length 3 that keep direction 85 % of the time, ← 25 / ↓ 30 / ↑ 20 / → 25 %,
+  inserted at random points of a stream typed from `code`'s bigram chain, mixed in at the
+  weight that gives the share. Rebuild: `gecko corpus nav code --share 0.03 --out code-nav`.
+  Text with arrow glyphs also counts directly under `--charset nav`.
 
 ## Results
 
