@@ -67,7 +67,7 @@ When an item closes, tick it here. When scope changes, edit the issue first.
 40. [ ] [#29](https://github.com/JoshuaMarkle/gecko/issues/29) `B5` MAP-Elites quality-diversity archive · M
 41. [ ] [#30](https://github.com/JoshuaMarkle/gecko/issues/30) `D7` Number and navigation layer optimization · S
 42. [ ] [#31](https://github.com/JoshuaMarkle/gecko/issues/31) `K1` E01 IKI timing model from the 136M keystrokes data · L · after [#20](https://github.com/JoshuaMarkle/gecko/issues/20)
-43. [ ] [#89](https://github.com/JoshuaMarkle/gecko/issues/89) `D8` Magic / repeat (adaptive) keys · M
+43. [x] [#89](https://github.com/JoshuaMarkle/gecko/issues/89) `D8` Magic / repeat (adaptive) keys · M
 44. [ ] [#32](https://github.com/JoshuaMarkle/gecko/issues/32) `G2` Fast cost-table rebuild when keys move · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
 45. [ ] [#33](https://github.com/JoshuaMarkle/gecko/issues/33) `H2` Hand module: skeleton from measurements · M · after [#6](https://github.com/JoshuaMarkle/gecko/issues/6), [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
 46. [ ] [#34](https://github.com/JoshuaMarkle/gecko/issues/34) `J1` Export key poses (JSON/CSV) and KLE · S · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)

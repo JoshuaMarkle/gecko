@@ -22,6 +22,7 @@ so algorithms contain only search logic. All moves respect pins.
 | [memetic.md](memetic.md) | Hybrid | Phase 2–3 | GA + local search, island model |
 | [nsga2.md](nsga2.md) | Multi-objective | Phase 3 | Pareto fronts |
 | [explore.md](explore.md) | Local search + archive | Done | BLS; explore = probe + BLS with exclusion restarts, writes an atlas of local optima |
+| [magic-rules.md](magic-rules.md) | Greedy (lazy) | Done | Rules of an adaptive (magic) key on a fixed layout |
 | [geometry-search.md](geometry-search.md) | Continuous | Phase 6+ | Key positions/rotations; bilevel with layout |
 
 Shared neighborhoods: swap (default), 3-cycle, swap two columns on the same finger, swap

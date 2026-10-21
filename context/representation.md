@@ -55,6 +55,21 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   Y01/Y02 add the layer costs. The flat char string (base, then layer 1's usable keys, …) is
   what runs, `raw:`, `/api/score` and WASM use; `Layout::from_flat` / `fit` split it back
   using the `①②③` positions. Layer keys never move (`Ctx::new`). ≤ 128 slots in all.
+- Adaptive keys (`magic.rs`): a key whose output depends on the previous symbol. TOML:
+  ```
+  rows = ['vmlcpb{magic}uo,', …]
+  [[magic]]
+  key = "{magic}"          # ★; `{repeat}` = ↻; any glyph not in the corpus charset
+  rules = "ao cy dy eu"    # previous → output pairs (tokens allowed: `{space}t`)
+  repeat = false           # true: output the previous symbol when it has no rule
+  ```
+  At most one rule per previous symbol per key; the key's glyph must be on the layout. Rules
+  read the previous *output* symbol and the typist always uses the key where a rule applies;
+  with several keys the first that produces the symbol wins. Not modeled: multi-symbol
+  outputs (briefs such as `␣ → the`) and "magic after magic" overrides. `Layout.magic` holds
+  them; the flat char string does not, so runs store them in `config.json` (`magic`) and
+  `run:<id>` reattaches them; `raw:` and the web UI/WASM do not carry rules yet. Magic layouts
+  live in `data/layouts/magic/` (kept out of the default `compare`, like layered ones).
 
 ## Corpus
 
@@ -90,6 +105,14 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   cmini data from https://github.com/Apsu/cmini (GPL-3.0; only aggregated counts are
   committed). Word lists weight every word once, as a Monkeytype test samples them.
 - Uppercase folded; Shift not modeled yet.
+- Adaptive-key rewrite (`magic::rewrite`, run by `Scorer::new` when the layout has keys): each
+  key joins the charset and every n-gram moves to its typed form, counts ×1000. A symbol's
+  form depends on the one before it, so the tables need one more symbol of context: mono and
+  bigrams are exact (from bigrams/trigrams); a trigram's first symbol uses its leading
+  bigram's share after a trigger (Markov); skipgram ends use `x ? z` trigrams (gap 1) or a
+  Markov chain `skip(g-1)[x,y]·bi[y,z]/mono[y]` (gaps 2–3); skipgram starts use the symbol's
+  overall share. Against the truly rewritten text (research notes, Magic Sturdy rules) the
+  score is off by 0.01 (0.06 with an extra repeat key) for a 3.1 effect.
 - `code` corpus (`--charset code`: default + digits, all ASCII punctuation, `⏎`; 70 symbols):
   1:1:1 `gecko corpus mix` of Rust (serde, serde_json, regex-syntax, tokio, axum, clap_builder,
   hyper, rand, proptest from the cargo registry; 7.8M chars), Python 3.14 stdlib top-level

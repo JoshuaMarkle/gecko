@@ -38,6 +38,10 @@ re-scoring == full score (proptest); on a mirror-symmetric 6-key board the archi
 brute-forced set of canonical local optima; ansi atlas consistency (pins, constrained
 records, every unconstrained record locally optimal); distances, PCA, funnels, Chao1.
 BLS and explore are in the brute-force and determinism tests.
+Adaptive keys (`magic.rs` unit tests + `scorer.rs`): the count rewrite equals the rewritten
+text exactly for mono/bigrams and beats no rewrite for trigrams/skipgrams; delta == full with
+a magic key (proptest); `[[magic]]` TOML round-trip; Magic Sturdy's rules halve its SFBs on
+`english` and the rule search matches or beats them.
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
 
