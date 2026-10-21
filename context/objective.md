@@ -7,7 +7,7 @@ B14 geometric stretch (Oxeylyzer 2), B11 finger-pair movement (KLO), M01 effort,
 M03 finger balance (RSS), M07 peak finger load, M04 hand balance, M05 home row, M06 center columns,
 B08 alternation, T01–T08 trigram classes, T09 contortions, T10 irregular trigrams,
 E04/E05 Engram key-pair discomfort (formula / measured; geometry `[comfort]` tables),
-B02 repeats (info), Y01 layer switches (and Shift), Y02 code-symbol bigrams. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
+B02 repeats (info), Y01 layer switches (and Shift), Y02 code-symbol bigrams, Y03 paired brackets. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
 lateral multiplier and per-finger factors, and S02's `skip_decay`. Profile `row_offset`
 (pinky ring middle index × [above, below] home) adds per-finger row costs to M01's geometry effort.
 
@@ -100,7 +100,7 @@ comfort) and `gecko compare --corpora english,shai,mt-10k,mt-450k,reddit,french`
 Besides the weighted sum: rank-sum selection over many results (Kühlmak) and Pareto
 fronts (NSGA-II). Reports always show the per-metric breakdown.
 
-## Layers (Y01, Y02)
+## Layers (Y01, Y02, Y03)
 
 - **Y01** (bigram table on the layered geometry, expanded per layer mode): typing `j` after
   `i` costs 100 per layer-key press in between, plus 100 for each press next to a different key
@@ -113,6 +113,12 @@ fronts (NSGA-II). Reports always show the per-metric breakdown.
   punctuation symbols, normalized on their own; cost 100 when they are on one finger (two keys),
   on different layers, or the first is on a one-shot layer (a tap between them). Reads "% of symbol bigrams that are awkward". Adds one term to the
   pair delta only when weighted.
+- **Y03** (sparse list `Order::Brackets`, cost table `Cb`): each of `() [] {} <>` on the
+  layout, weighted by the corpus frequency of its two symbols (weights sum to 1). Cost 0 when
+  opener and closer are on one layer and adjacent (same hand and row, neighbouring columns,
+  opener left) or mirrored (same row, finger and stretch flag on opposite hands, opener on the
+  left hand); 50 for those shapes reversed; 100 otherwise. Reads "% of bracket use that is
+  badly paired". The delta loops over ≤ 4 entries, and only when weighted.
 - **Shift** (layout has `⇧` keys and the corpus has case counts, `GKCORP3`): a layer-like hold
   on its own fixed key. Each press (one per run of shifted symbols) is typed with the best `⇧`
   for the shifted key y: not on y's finger, then the other hand, then lowest effort. Costs, per
@@ -122,4 +128,4 @@ fronts (NSGA-II). Reports always show the per-metric breakdown.
   when weighted). Without `⇧` on the layout Shift costs nothing, so 30-key layouts score as
   before. A one-shot Shift costs the same for single capitals; caps runs are scored as held.
 - Not modeled yet: the layer/Shift key's own keystroke in finger load, thumb-trigram classes,
-  layer state beyond one bigram (toggle assumes each bigram starts from `i`'s layer). Profile `code` weights Y01/Y02 (scales are rough estimates).
+  layer state beyond one bigram (toggle assumes each bigram starts from `i`'s layer). Profile `code` weights Y01/Y02/Y03 (scales are rough estimates).

@@ -70,3 +70,7 @@ is pinned). SA does use the thumb keys one-shot frees (`"`, `<`, `3`, `:` land t
 that cannot make up for the extra taps. A toggled number layer costs a little: numbers in code are short runs,
 so the exit tap outweighs saved holds. One-shot should pay off only for layers typed one
 symbol at a time, which this corpus/profile doesn't reward.
+
+With Y03 (paired brackets, `code` weight 0.5) on 2026-10-21, same command: 34.160 → 15.902
+(run `20261021-070903-sa-80e6b876`, Y03 0 %): `( )`, `[ ]` and `< >` end up mirrored across the
+hands of layer ②, `{ }` adjacent.
