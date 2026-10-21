@@ -21,8 +21,9 @@ gecko atlas    <run> [--top 10] [--cut 8] [--pool 300] [-p profile]
                                                                   # summary, ranked, families, consensus,
                                                                   #   funnels, FDC; -p re-ranks under a profile
 gecko perf     [--layout qwerty]                                  # full evals/s and swap deltas/s (1 thread)
-gecko corpus build <files or dirs...> [--out english] [--charset default|code|<symbols>] [--ext txt]
+gecko corpus build <files or dirs...> [--out english] [--charset default|code|nav|<symbols>] [--ext txt]
 gecko corpus mix <corpus>[:weight]... --out <name>                     # weighted mix, same charset
+gecko corpus nav <corpus> [--share 0.03] [--seed 1] --out <name>        # add modelled arrow keys
 gecko corpus import <cmini corpus dir> --out <name> [--charset ...]   # words.json or n-gram JSON
 gecko profile normalize [-p profile] [--layouts a,b] [--out name]   # weights → spread units
 gecko profile fit [--target E05] [--layouts a,b] [--out name]       # fit weights to a judge metric
@@ -35,7 +36,8 @@ Global flags: `--json`, `--root <dir with gecko.toml>`.
 `<layout>` is a reference name (`data/layouts/<name>.toml`), a `.toml` path,
 `run:<id>[#rank]`, or `raw:<slot-ordered symbols>` (e.g. `raw:qwertyuiopasdfghjkl;zxcvbnm,./`).
 A 30-key layout on a board with thumb keys (`--geometry corne-36`) gets the geometry's thumb
-fills. Tokens can be written `{space}`, `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `{none}` in
+fills. Tokens can be written `{space}`, `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `{left}`, `{down}`,
+`{up}`, `{right}`, `{none}` in
 `raw:` and `--pin`, e.g. `--pin '{space}{enter}{bspc}{tab}{esc}'` keeps the thumbs fixed.
 Layered layouts: `--from layered/corne-code`; their rows print per layer (`[sym]`, `[num]`),
 and JSON `rows` lists the base rows then each layer's. Runs store the flat layered string.

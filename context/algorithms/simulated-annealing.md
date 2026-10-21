@@ -53,3 +53,26 @@ score 34.16 (Y01 11.0 %, Y02 25.0 %) → 27.972 (run `20261020-224013-sa-0d1258c
 which layer holds digits and which holds symbols: most digits end up on ① (left inner thumb), the
 code symbols on ② (right outer thumb). It converges in ~4 s; the top 5 differ in where a few
 rare symbols and digits sit.
+
+Digits and arrows 2026-10-21 (D7; `--geometry corne-36 --corpus code-nav --profile code`, base,
+thumbs and the symbol layer pinned, `--time 20s` / `10s`, seed 1; arrows are modelled, see
+`code-nav` in representation.md):
+
+| layout | score | B01 SFB | Y01 | run |
+|---|---|---|---|---|
+| `layered/corne-num` (numpad left, 0 on thumb, arrows on right home row) | 38.980 | 3.22 % | 11.65 % | — |
+| `layered/corne-numrow` (digits across home row, arrows right top row) | 38.409 | 3.13 % | 11.57 % | — |
+| numpad digits pinned, arrows free | 37.713 | | | `20261021-114116-sa-cb12a738` |
+| number-row digits pinned, arrows free | 36.696 | | | `20261021-114127-sa-cb12a738` |
+| digits and arrows free (both starts reach it) | 35.964 | 2.74 % | 11.99 % | `20261021-114041-sa-b8fef3b2` |
+
+The number row beats the numpad by ~0.6–1.0 points under this profile: numpad columns put
+1/4/7, 2/5/8, 3/6/9 on one finger each, so `25`, `28`, `14`/`41`, `36`/`63` and letter–digit
+pairs like `s2` are SFBs (digit/arrow SFBs 0.53 % vs 0.44 % of bigrams; the Vim arrows' `←↓`
+share the right index in both). Free, SA scatters digits over the low-traffic slots of both layers (`0` on the
+right inner thumb of the symbol layer, `9` on its bottom row, `1325··8` on the num home row)
+and splits the arrows (`←↑` right home, `↓` left thumb, `→` left top pinky): nothing in the
+objective rewards a learnable shape (ordered row, arrow cluster), and modelled arrows follow
+letters at random, so they drift to keys no frequent letter shares a finger with. Practical
+reading: prefer a number row on the layer; arrow placement needs a cluster constraint or real
+cursor-movement data before the optimizer's choice means much.

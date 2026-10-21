@@ -33,9 +33,10 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 - `pos: [u8; S]` symbol → slot and `sym: [u8; N]` slot → symbol. Swap is O(1).
 - `locked: u64` bitmask (u128 or bitset once N > 64).
 - Symbols are chars. Special keys are tokens with reserved glyphs so each slot stays one char
-  in strings/JSON/UI: `␣` space, `⏎` enter, `⌫` bspc, `⇥` tab, `⎋` esc, and `·` = empty slot
+  in strings/JSON/UI: `␣` space, `⏎` enter, `⌫` bspc, `⇥` tab, `⎋` esc, arrows `← ↓ ↑ →`, and `·` = empty slot
   (zero frequency, may repeat, unpinned unless `--pin '{none}'`). Text input (layout rows,
-  `raw:`, `--pin`) also takes `{space}`, `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `{none}`.
+  `raw:`, `--pin`) also takes `{space}`, `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `{left}`, `{down}`,
+  `{up}`, `{right}`, `{none}`.
   The scorer gives repeated `·` distinct symbol ids.
 - Text format: rows of symbols matching the geometry's rows (`data/layouts/*.toml`), e.g.
   ```
@@ -46,7 +47,8 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 - Layers: `chars` is the base and `layers[l-1].chars` layer l, one symbol per key
   (`sym[layer][key]`). Layer l is held by the base key carrying `①②③` (`{layer1}`…), hold
   model only (no one-shot/toggle yet). TOML: base `rows`, then one `[[layer]]` table per layer
-  (`name`, `rows`); layered layouts live in `data/layouts/layered/` (example `corne-code`), so
+  (`name`, `rows`); layered layouts live in `data/layouts/layered/` (`corne-code`; `corne-num` /
+  `corne-numrow` = numpad vs number row, both with arrows, for `code-nav`), so
   `compare` keeps ranking like-for-like layouts. Keys on the finger that holds a layer are
   unusable on it (written `·`).
 - Scoring flattens a layered layout onto `Geometry::layered`: the base keys, then each layer's
@@ -97,6 +99,12 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   committed. Rebuild: `gecko corpus build --charset code --ext rs --out code-rs <crate>/src…`
   (likewise `code-py` from `/usr/lib/python3.14/*.py`, `code-ts` from the `.ts` files, not
   `.d.ts`), then `gecko corpus mix code-rs code-py code-ts --out code`.
+- `code-nav` corpus (`--charset nav` = code + `←↓↑→`; 74 symbols): `code` plus 3 % arrow
+  keystrokes from a seeded cursor-movement model (`Corpus::with_nav`; text has no arrows):
+  runs of mean length 3 that keep direction 85 % of the time, ← 25 / ↓ 30 / ↑ 20 / → 25 %,
+  inserted at random points of a stream typed from `code`'s bigram chain, mixed in at the
+  weight that gives the share. Rebuild: `gecko corpus nav code --share 0.03 --out code-nav`.
+  Text with arrow glyphs also counts directly under `--charset nav`.
 
 ## Results
 
