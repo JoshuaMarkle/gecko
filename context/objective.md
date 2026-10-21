@@ -5,7 +5,7 @@ B01 SFB, S01 SFS, S02 far SFS (gaps 2–3, decayed), S03 SFS distance, B03 finge
 B04 LSB, B05 scissors, B14 geometric stretch (Oxeylyzer 2), M01 effort, M02 finger-load error,
 M04 hand balance, M05 home row, M06 center columns, B08 alternation, T01–T08 trigram classes,
 E04/E05 Engram key-pair discomfort (formula / measured; geometry `[comfort]` tables),
-B02 repeats (info), Y01 layer switches, Y02 code-symbol bigrams. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
+B02 repeats (info), Y01 layer switches, Y02 code-symbol bigrams, Y03 paired brackets. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
 lateral multiplier and per-finger factors, and S02's `skip_decay`.
 
 ## Metric contract
@@ -77,7 +77,7 @@ comfort) and `gecko compare --corpora english,shai,mt-10k,mt-450k` (robustness, 
 Besides the weighted sum: rank-sum selection over many results (Kühlmak) and Pareto
 fronts (NSGA-II). Reports always show the per-metric breakdown.
 
-## Layers (Y01, Y02)
+## Layers (Y01, Y02, Y03)
 
 - **Y01** (bigram table on the layered geometry): 100 when the second symbol is on a
   non-base layer the first isn't on (one layer-key press, hold model), 200 when the first key
@@ -87,5 +87,11 @@ fronts (NSGA-II). Reports always show the per-metric breakdown.
   punctuation symbols, normalized on their own; cost 100 when they are on one finger (two keys)
   or on different layers. Reads "% of symbol bigrams that are awkward". Adds one term to the
   pair delta only when weighted.
+- **Y03** (sparse list `Order::Brackets`, cost table `Cb`): each of `() [] {} <>` on the
+  layout, weighted by the corpus frequency of its two symbols (weights sum to 1). Cost 0 when
+  opener and closer are on one layer and adjacent (same hand and row, neighbouring columns,
+  opener left) or mirrored (same row, finger and stretch flag on opposite hands, opener on the
+  left hand); 50 for those shapes reversed; 100 otherwise. Reads "% of bracket use that is
+  badly paired". The delta loops over ≤ 4 entries, and only when weighted.
 - Not modeled yet: the layer key's own keystroke in effort/finger load, one-shot layers,
   thumb-trigram classes. Profile `code` weights both (scales are rough estimates).

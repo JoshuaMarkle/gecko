@@ -87,6 +87,9 @@ pub fn breakdown(sc: &Scorer, st: &State) -> Breakdown {
                 }
                 v
             }
+            (Order::Brackets, Some(t)) => {
+                sc.bracket_pairs().iter().map(|e| e.f as f64 * t[pos[e.x as usize] as usize * n + pos[e.y as usize] as usize] as f64).sum()
+            }
             (Order::Tri, Some(t)) => {
                 let f = sc.f3();
                 let mut v = 0.0;
