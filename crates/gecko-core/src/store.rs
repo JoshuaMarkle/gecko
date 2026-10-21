@@ -92,17 +92,30 @@ impl Store {
                 if p.extension()? != ext {
                     return None;
                 }
-                Some(p.file_stem()?.to_string_lossy().into_owned())
+                let stem = p.file_stem()?.to_string_lossy().into_owned();
+                Some(if kind == "geometries" { stem.strip_suffix(".param").unwrap_or(&stem).to_string() } else { stem })
             })
             .collect();
         v.sort();
+        v.dedup();
         v
     }
 
     pub fn geometry(&self, name: &str) -> Result<Geometry> {
         let p = self.dir("geometries").join(format!("{name}.toml"));
-        let p = if p.is_file() { p } else { PathBuf::from(name) };
-        let mut g = Geometry::from_toml(&read(&p)?)?;
+        let param = self.dir("geometries").join(format!("{name}.param.toml"));
+        let p = if p.is_file() {
+            p
+        } else if param.is_file() {
+            param
+        } else {
+            PathBuf::from(name)
+        };
+        let mut g = if p.file_name().is_some_and(|n| n.to_string_lossy().ends_with(".param.toml")) {
+            crate::ParametricGeometry::from_toml(&read(&p)?)?.generate()?
+        } else {
+            Geometry::from_toml(&read(&p)?)?
+        };
         for (metric, table) in g.comfort.clone() {
             g.load_comfort(&metric, &read(&self.dir("comfort").join(format!("{table}.csv")))?)?;
         }

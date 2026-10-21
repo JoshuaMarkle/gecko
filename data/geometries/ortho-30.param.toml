@@ -1,0 +1,29 @@
+name = "ortho-30"
+description = "30 keys on an ortholinear 3x10 grid (no stagger), traditional fingering."
+# Same resolved geometry as ortho-30.toml; dimensions in u, angles in degrees.
+[split]
+axis = 5.0
+pivot = [4.5, 1.5]
+
+[[zone]]
+name = "fingers"
+anchor = [0.5, 0.5]
+mirror = true
+rows = [0, 1, 2]
+
+[[zone.column]]
+finger = "LP"
+effort = [3.0, 1.6, 3.2]
+[[zone.column]]
+finger = "LR"
+effort = [2.4, 1.3, 2.6]
+[[zone.column]]
+finger = "LM"
+effort = [2.0, 1.1, 2.3]
+[[zone.column]]
+finger = "LI"
+effort = [2.2, 1.0, 1.9]
+[[zone.column]]
+finger = "LI"
+stretch = true
+effort = [3.0, 2.0, 3.2]

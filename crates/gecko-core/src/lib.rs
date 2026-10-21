@@ -18,6 +18,7 @@ pub mod layout;
 pub mod magic;
 pub mod metrics;
 pub mod optimize;
+pub mod parametric;
 pub mod profile;
 pub mod report;
 pub mod rng;
@@ -30,6 +31,7 @@ pub use flat2d::Flat;
 pub use error::{Error, Result};
 pub use geometry::{Finger, Geometry, Hand, Key, LayerMode};
 pub use layout::Layout;
+pub use parametric::ParametricGeometry;
 pub use profile::Profile;
 pub use scorer::{Scorer, State};
 

@@ -5,6 +5,10 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 
 ## Geometry
 
+- Parametric flat boards: `*.param.toml` zones/rows/columns generate the same `Geometry`
+  shape, with stagger, splay, split spread/angle and thumb arcs. See [geometry.md](geometry.md).
+  `Store` prefers explicit `name.toml`, then `name.param.toml`; direct parameter paths or
+  `name.param` select the generated version. Listing de-duplicates the base name.
 - TOML in `data/geometries/`. One `[[key]]` per slot, listed row by row, with
   `pos[3], rot[3], size[2], finger, row, col, home, stretch, effort` (hand comes from finger;
   `role` comes with symbol layers). Optional `hrm` (bool) marks home-row mod keys for Y04;

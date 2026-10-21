@@ -1,0 +1,60 @@
+name = "corne-36"
+description = "Corne (crkbd) 3x5+3: 36-key column-staggered split; flat QMK projection."
+# Reproduces the corrected QMK flat projection in corne-36.toml.
+# This display projection does not claim measured physical thumb curvature.
+[split]
+axis = 5.0
+spread = 3.0
+pivot = [4.5, 1.7]
+
+[[zone]]
+name = "fingers"
+anchor = [0.5, 0.5]
+mirror = true
+rows = [0, 1, 2]
+home_stretch = true
+
+[[zone.column]]
+finger = "LP"
+stagger = 0.3
+effort = [3.0, 1.6, 3.2]
+[[zone.column]]
+finger = "LR"
+stagger = 0.1
+effort = [2.4, 1.3, 2.6]
+[[zone.column]]
+finger = "LM"
+effort = [2.0, 1.1, 2.3]
+[[zone.column]]
+finger = "LI"
+stagger = 0.1
+effort = [2.2, 1.0, 1.9]
+[[zone.column]]
+finger = "LI"
+stagger = 0.2
+stretch = true
+effort = [3.0, 2.0, 3.2]
+
+[[zone]]
+name = "thumbs"
+anchor = [3.5, 4.2]
+mirror = true
+rows = [3]
+
+[[zone.column]]
+finger = "LT"
+effort = [1.8]
+fill = "esc"
+mirror_fill = "none"
+[[zone.column]]
+finger = "LT"
+effort = [1.0]
+fill = "space"
+mirror_fill = "bspc"
+[[zone.column]]
+finger = "LT"
+stagger = -0.25
+size = [1.0, 1.5]
+effort = [1.3]
+fill = "tab"
+mirror_fill = "enter"
