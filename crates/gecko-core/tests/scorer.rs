@@ -56,6 +56,42 @@ fn synthetic(charset: &str, seed: u64) -> Corpus {
     c
 }
 
+/// Like `synthetic`, with every third word capitalized and every seventh in capitals, so the
+/// corpus has Shift counts.
+fn synthetic_cased(charset: &str, seed: u64) -> Corpus {
+    let cs: Vec<char> = charset.chars().collect();
+    let mut rng = Rng::new(seed);
+    let mut text = String::new();
+    for w in 0..20_000 {
+        let len = 1 + rng.below(7);
+        for k in 0..len {
+            let c = cs[(rng.below(cs.len()) * rng.below(cs.len())) / cs.len()];
+            text.push(if w % 7 == 0 || (w % 3 == 0 && k == 0) { c.to_ascii_uppercase() } else { c });
+        }
+        text.push(' ');
+    }
+    let mut c = Corpus::new("synthetic-cased", charset);
+    c.add_text(&text);
+    assert!(c.has_shift());
+    c
+}
+
+/// Shift boards: corne-36 QWERTY with `⇧` on both outer thumbs, and the layered code layout
+/// with `⇧` instead of Esc. Every metric weighted, so both Shift channels are exercised.
+fn shift_scorer(layered: bool) -> Scorer {
+    use gecko_core::layout::{EMPTY, ESC, SHIFT};
+    let g = thumb_board("corne-36");
+    let (mut l, cs) = if layered {
+        (Layout::from_toml(&read("data/layouts/layered/corne-code.toml")).unwrap().fit(&g).unwrap(), gecko_core::corpus::CODE_CHARSET)
+    } else {
+        (layout("qwerty").fit(&g).unwrap(), gecko_core::corpus::DEFAULT_CHARSET)
+    };
+    for c in l.chars.iter_mut().filter(|c| **c == ESC || **c == EMPTY) {
+        *c = SHIFT;
+    }
+    Scorer::new(&g, &synthetic_cased(cs, 11), &all_weights(), &l).unwrap()
+}
+
 fn real_corpus() -> Option<Corpus> {
     std::fs::read(format!("{ROOT}/data/corpora/english.gkc")).ok().map(|b| Corpus::from_bytes(&b).unwrap())
 }
@@ -157,6 +193,50 @@ proptest! {
             prop_assert!((after - before - d).abs() < 1e-5 * before.abs().max(1.0), "delta {d} vs full diff {}", after - before);
         }
     }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(32))]
+    #[test]
+    fn delta_matches_full_with_shift(seed in 0u64..10_000, layered: bool, swaps in proptest::collection::vec((0usize..128, 0usize..128), 1..40)) {
+        let sc = shift_scorer(layered);
+        let ctx = Ctx::new(&sc, (0..sc.n).collect(), sc.identity());
+        let mut st = ctx.random_state(&mut Rng::new(seed));
+        for (a, b) in swaps {
+            let (a, b) = (ctx.movable[a % ctx.movable.len()], ctx.movable[b % ctx.movable.len()]);
+            let before = sc.full(&st);
+            let d = sc.delta(&st, a, b);
+            sc.apply(&mut st, a, b, d);
+            let after = sc.full(&st);
+            prop_assert!((after - before - d).abs() < 1e-5 * before.abs().max(1.0), "delta {d} vs full diff {}", after - before);
+        }
+    }
+}
+
+#[test]
+fn shift_costs_effort_and_y01() {
+    use gecko_core::layout::SHIFT;
+    let value = |sc: &Scorer, st: &gecko_core::State, id: &str| breakdown(sc, st).metrics.iter().find(|m| m.id == id).unwrap().value;
+    let sc = shift_scorer(false);
+    let st = sc.identity();
+    let b = breakdown(&sc, &st);
+    assert!((b.score - st.score).abs() < 1e-6 * st.score.abs().max(1.0));
+    // Shift is the only layer-like press on this layout: Y01 = presses per 100 keystrokes
+    // (×2 when Shift's finger is involved), M01 includes the Shift key's effort.
+    let y01 = value(&sc, &st, "Y01");
+    assert!(y01 > 5.0 && y01 < 60.0, "Y01 {y01}");
+    let m01 = sc.shift_value("M01", &st);
+    assert!(m01 > 0.0 && m01 < value(&sc, &st, "M01"), "Shift effort {m01}");
+    // Shift keys never move.
+    let ctx = Ctx::new(&sc, (0..sc.n).collect(), sc.identity());
+    assert!(ctx.movable.iter().all(|&s| sc.chars[s] != SHIFT));
+    assert_eq!(sc.chars.iter().filter(|&&c| c == SHIFT).count(), 2);
+    // No ⇧ on the layout: Shift costs nothing.
+    let g = thumb_board("corne-36");
+    let plain = Scorer::new(&g, &synthetic_cased(gecko_core::corpus::DEFAULT_CHARSET, 11), &all_weights(), &layout("qwerty").fit(&g).unwrap()).unwrap();
+    let pst = plain.identity();
+    assert_eq!(value(&plain, &pst, "Y01"), 0.0);
+    assert_eq!(plain.shift_value("M01", &pst), 0.0);
 }
 
 #[test]

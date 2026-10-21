@@ -91,7 +91,7 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Same-hand finger-pair movement cost per 100 bigrams (KLO table, finger-length scissor rule, ring coupling).",
     ),
-    m("M01", "Effort", "", Order::Mono, Dir::Min, "Average base key effort per keystroke."),
+    m("M01", "Effort", "", Order::Mono, Dir::Min, "Average base key effort per keystroke, plus the Shift key's effort per Shift press."),
     m("M02", "Finger load error", "%", Order::Load, Dir::Min, "RMS gap between finger loads and the profile's target loads."),
     m("M04", "Left hand", "%", Order::Load, Dir::Min, "Share of keystrokes on the left hand; scored as squared distance from 50%."),
     m("M05", "Home row", "%", Order::Mono, Dir::Max, "Share of keystrokes on the home row."),
@@ -128,7 +128,7 @@ pub static METRICS: &[MetricDef] = &[
         "%",
         Order::Bi,
         Dir::Min,
-        "Layer-key presses per 100 bigrams (hold model: a press when the next symbol is on another non-base layer); a press right after a key on the layer key's finger counts double.",
+        "Layer-key presses per 100 bigrams (hold model: a press when the next symbol is on another non-base layer); a press right after a key on the layer key's finger counts double. Plus Shift presses per 100 keystrokes (with a ⇧ key), double when Shift's finger also types the shifted key or the key before.",
     ),
     m(
         "Y02",
