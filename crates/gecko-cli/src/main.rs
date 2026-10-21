@@ -175,6 +175,9 @@ enum Cmd {
     Perf {
         #[arg(long, default_value = "qwerty")]
         layout: String,
+        /// Append {date, commit, full/s, delta/s} to bench/history.jsonl.
+        #[arg(long)]
+        record: bool,
         #[command(flatten)]
         inputs: Inputs,
     },
@@ -384,6 +387,25 @@ impl Ctx {
 
     fn print(&self, v: serde_json::Value) {
         println!("{}", serde_json::to_string_pretty(&v).unwrap());
+    }
+}
+
+/// Short commit hash of `root`, with `-dirty` if the work tree has changes; "unknown" without git.
+fn git_commit(root: &std::path::Path) -> String {
+    let git = |args: &[&str]| {
+        std::process::Command::new("git")
+            .arg("-C")
+            .arg(root)
+            .args(args)
+            .output()
+            .ok()
+            .filter(|o| o.status.success())
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+    };
+    match git(&["rev-parse", "--short", "HEAD"]) {
+        Some(c) if git(&["status", "--porcelain"]).is_some_and(|s| !s.is_empty()) => format!("{c}-dirty"),
+        Some(c) => c,
+        None => "unknown".into(),
     }
 }
 
@@ -695,9 +717,9 @@ fn real_main(cli: Cli) -> Result<()> {
                 }
             }
         }
-        Cmd::Perf { layout, inputs } => {
+        Cmd::Perf { layout: spec, record, inputs } => {
             let l = ctx.load(&inputs)?;
-            let layout = ctx.layout(&layout, &l)?;
+            let layout = ctx.layout(&spec, &l)?;
             let (sc, mut st) = score_layout(&l, &layout)?;
             let mut rng = gecko_core::rng::Rng::new(1);
             let t = std::time::Instant::now();
@@ -723,11 +745,35 @@ fn real_main(cli: Cli) -> Result<()> {
             }
             let delta = k as f64 / t.elapsed().as_secs_f64();
             std::hint::black_box(sink);
+            let recorded = if record {
+                let entry = json!({
+                    "date": run::now_stamp().1,
+                    "commit": git_commit(&ctx.store.root),
+                    "layout": spec,
+                    "geometry": l.geometry.name,
+                    "corpus": l.corpus.name,
+                    "profile": l.profile.name,
+                    "full_per_sec": full.round() as u64,
+                    "delta_per_sec": delta.round() as u64,
+                });
+                let path = ctx.store.root.join("bench/history.jsonl");
+                std::fs::create_dir_all(path.parent().unwrap())?;
+                let mut f = std::fs::OpenOptions::new().create(true).append(true).open(&path)?;
+                use std::io::Write;
+                writeln!(f, "{}", serde_json::to_string(&entry)?)?;
+                Some(path)
+            } else {
+                None
+            };
             if ctx.json {
-                ctx.print(json!({"schema": SCHEMA, "full_per_sec": full, "delta_per_sec": delta}));
+                ctx.print(json!({"schema": SCHEMA, "full_per_sec": full, "delta_per_sec": delta,
+                    "recorded": recorded.as_ref().map(|p| p.display().to_string())}));
             } else {
                 println!("full evaluation  {:>12.0} /s  ({:.2} µs)", full, 1e6 / full);
                 println!("swap delta       {:>12.0} /s  ({:.3} µs)", delta, 1e6 / delta);
+                if let Some(p) = recorded {
+                    println!("recorded in {}", p.display());
+                }
             }
         }
         Cmd::Corpus { cmd: CorpusCmd::Build { sources, out, charset, ext } } => {

@@ -29,7 +29,7 @@ When an item closes, tick it here. When scope changes, edit the issue first.
 2. [ ] [#7](https://github.com/JoshuaMarkle/gecko/issues/7) `A2` Metric unit tests with hand-computed answers · M
 3. [ ] [#12](https://github.com/JoshuaMarkle/gecko/issues/12) `A3` insta snapshots of reference layout scores · S
 4. [ ] [#16](https://github.com/JoshuaMarkle/gecko/issues/16) `A4` Automated WASM == CLI test · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
-5. [ ] [#18](https://github.com/JoshuaMarkle/gecko/issues/18) `A5` criterion benches + bench/history.jsonl · S
+5. [x] [#18](https://github.com/JoshuaMarkle/gecko/issues/18) `A5` criterion benches + bench/history.jsonl · S
 6. [ ] [#20](https://github.com/JoshuaMarkle/gecko/issues/20) `A6` Scorer speed: cache per-trigram cost in State · M · after [#18](https://github.com/JoshuaMarkle/gecko/issues/18)
 7. [ ] [#28](https://github.com/JoshuaMarkle/gecko/issues/28) `A7` Validate trigram classes and pair distances against external data · S
 8. [ ] [#78](https://github.com/JoshuaMarkle/gecko/issues/78) `A8` `gecko verify run:<id>` · S
