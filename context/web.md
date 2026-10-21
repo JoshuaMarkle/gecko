@@ -100,9 +100,10 @@ locked; both presets fit the board to the viewport. A floor grid (1u cells, 5u s
 `npm run wasm` (after Rust changes to the scorer), `npm run dev` (proxies `/api` to :7777),
 `npm run build` → `web/dist`, `npm run typecheck`, `npm test`.
 
-
 Search includes memetic islands: population per island, HC/tabu refinement and its step
 cap, island count (0 = threads), migration interval (0 disables), and migrant count.
 `POST /api/runs` accepts optional `memetic` using the core `MemeticParams` shape; omitted
 fields use defaults. The server limits islands to core count and caps population/refinement
 work. Older saved Search preferences acquire defaults for the new fields.
+`npm run test:parity` builds WASM and the native CLI and checks every reference score and
+metric against fresh CLI output across all bundled profiles (1e-6 relative).

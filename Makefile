@@ -15,6 +15,7 @@ web:
 test:
 	cargo test --release
 	cargo clippy --all-targets -- -D warnings
+	cd web && npm run test:parity
 	cd web && npm run typecheck && npm test
 
 serve: all

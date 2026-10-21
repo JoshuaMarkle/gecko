@@ -646,8 +646,13 @@ fn pause_stops_the_clock() {
         });
         optimize::run(&ctx, &p, Duration::from_secs(60), &control, |_| {})
     });
-    assert!(t.elapsed() >= Duration::from_millis(480), "paused time used the budget");
-    assert!(out.elapsed_ms < 400, "elapsed_ms {} includes the pause", out.elapsed_ms);
+    let wall = t.elapsed();
+    let active = wall.saturating_sub(control.paused_for());
+    assert!(active >= Duration::from_millis(180), "paused time used the budget");
+    assert!(out.elapsed_ms >= 180, "active budget was not recorded");
+    // An optimizer step may overrun its budget on a busy machine. Check pause exclusion
+    // against measured active time, without imposing a throughput-dependent upper bound.
+    assert!(out.elapsed_ms as u128 <= active.as_millis() + 1, "elapsed_ms {} includes the pause", out.elapsed_ms);
 }
 
 /// ansi-30 slot for (row, col).
