@@ -1,7 +1,7 @@
 # Objective
 
 Full metric list with IDs: `research/metrics-catalog.md`. Implemented now (`gecko list metrics`):
-B01 SFB, S01 SFS, S02 far SFS (gaps 2–3, decayed), S03 SFS distance, B03 finger speed,
+B01 SFB, S01 SFS, S02 far SFS (gaps 2–3, decayed), S03 SFS distance, S04 skip stretch (B14 on skipgrams), B03 finger speed,
 B04 LSB, B05 scissors, B14 geometric stretch (Oxeylyzer 2), B11 finger-pair movement (KLO), M01 effort, M02 finger-load error,
 M04 hand balance, M05 home row, M06 center columns, B08 alternation, T01–T08 trigram classes,
 E04/E05 Engram key-pair discomfort (formula / measured; geometry `[comfort]` tables),

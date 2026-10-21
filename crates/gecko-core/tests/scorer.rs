@@ -495,6 +495,22 @@ fn movement_on_known_pairs() {
 }
 
 #[test]
+fn skip_stretch_is_b14_on_skipgrams() {
+    use gecko_core::metrics::index_of;
+    let g = ansi();
+    let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 3);
+    let sc = Scorer::new(&g, &c, &all_weights(), &layout("qwerty")).unwrap();
+    let (b14, s04) = (sc.table(index_of("B14").unwrap()).unwrap(), sc.table(index_of("S04").unwrap()).unwrap());
+    assert_eq!(b14, s04);
+    let st = sc.identity();
+    let n = sc.n;
+    let want: f64 = (0..n * n).map(|xy| sc.fk()[xy] as f64 * b14[st.pos[xy / n] as usize * n + st.pos[xy % n] as usize] as f64).sum();
+    let got = breakdown(&sc, &st).metrics.iter().find(|m| m.id == "S04").unwrap().value;
+    assert!((got - want).abs() < 1e-4, "S04 {got} vs skipgram-weighted B14 {want}");
+}
+}
+
+#[test]
 fn engram_comfort_table() {
     let g = ansi();
     let t = &g.comfort_tables["E04"];
