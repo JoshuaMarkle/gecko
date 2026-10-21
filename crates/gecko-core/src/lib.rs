@@ -11,6 +11,7 @@ pub mod explore;
 pub mod flat2d;
 pub mod geometry;
 pub mod hash;
+pub mod import;
 pub mod kle;
 pub mod layout;
 pub mod metrics;
