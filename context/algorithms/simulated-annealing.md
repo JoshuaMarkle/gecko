@@ -53,3 +53,7 @@ score 34.16 (Y01 11.0 %, Y02 25.0 %) → 27.972 (run `20261020-224013-sa-0d1258c
 which layer holds digits and which holds symbols: most digits end up on ① (left inner thumb), the
 code symbols on ② (right outer thumb). It converges in ~4 s; the top 5 differ in where a few
 rare symbols and digits sit.
+
+With Y03 (paired brackets, `code` weight 0.5) on 2026-10-21, same command: 34.160 → 15.902
+(run `20261021-070903-sa-80e6b876`, Y03 0 %): `( )`, `[ ]` and `< >` end up mirrored across the
+hands of layer ②, `{ }` adjacent.

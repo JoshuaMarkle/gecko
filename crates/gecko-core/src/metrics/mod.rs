@@ -9,7 +9,7 @@ pub mod trigram;
 use serde::Serialize;
 
 use crate::profile::{DistanceFn, SfbParams};
-use crate::{Geometry, Profile};
+use crate::{Geometry, Hand, Profile};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -23,6 +23,9 @@ pub enum Order {
     Tri,
     /// Bigrams of two code symbols (ASCII punctuation, e.g. `()`, `->`), normalized on their own.
     SymBi,
+    /// Open/close bracket pairs (`()`, `[]`, `{}`, `<>`) on the layout, weighted by their
+    /// symbol frequency; a sparse list, not a corpus n-gram.
+    Brackets,
     /// Non-linear: computed from per-finger load accumulators.
     Load,
 }
@@ -130,7 +133,18 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Code-symbol bigrams (`()`, `->`, `!=`, …) typed with one finger on two keys or across a layer change, as % of symbol bigrams.",
     ),
+    m(
+        "Y03",
+        "Paired symbols",
+        "%",
+        Order::Brackets,
+        Dir::Min,
+        "Bracket pairs (`()`, `[]`, `{}`, `<>`) not adjacent or mirrored on one layer, weighted by use; reversed order counts half.",
+    ),
 ];
+
+/// Open/close symbol pairs scored by Y03.
+pub const BRACKET_PAIRS: [(char, char); 4] = [('(', ')'), ('[', ']'), ('{', '}'), ('<', '>')];
 
 pub fn def(id: &str) -> Option<&'static MetricDef> {
     METRICS.iter().find(|d| d.id == id)
@@ -197,8 +211,31 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
             }
         }),
         "Y02" => pair(&|i, j| pct(same_finger(i, j) || k[i].layer != k[j].layer)),
+        "Y03" => pair(&|i, j| bracket_cost(g, i, j)),
         id if id.starts_with('T') => Some(trigram::table(g, trigram::class_for(id)?)),
         _ => None,
+    }
+}
+
+/// Y03 cost of the opener on slot `i` and the closer on slot `j`: 0 when both are on one
+/// layer and either adjacent (same hand and row, neighbouring columns, opener on the left) or
+/// mirrored (same row, finger and column kind on opposite hands, opener on the left hand);
+/// 50 for the same shapes in reversed order; 100 otherwise.
+pub fn bracket_cost(g: &Geometry, i: usize, j: usize) -> f32 {
+    let (a, b) = (&g.key[i], &g.key[j]);
+    if a.layer != b.layer || g.same_key(i, j) || a.row != b.row {
+        return 100.0;
+    }
+    let adjacent = a.hand() == b.hand() && (a.col - b.col).abs() == 1;
+    let mirrored = a.hand() != b.hand() && a.finger.ord() == b.finger.ord() && a.stretch == b.stretch;
+    if !adjacent && !mirrored {
+        return 100.0;
+    }
+    let in_order = if adjacent { a.pos[0] < b.pos[0] } else { a.hand() == Hand::L };
+    if in_order {
+        0.0
+    } else {
+        50.0
     }
 }
 

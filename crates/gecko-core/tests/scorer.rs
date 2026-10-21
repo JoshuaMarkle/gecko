@@ -157,6 +157,28 @@ fn layered_layouts_round_trip_and_score() {
     assert!(bad.flat(&g).is_err());
 }
 
+/// Y03: corne-code's brackets are adjacent and in order (0); reversing or splitting them costs.
+#[test]
+fn paired_symbols_adjacent_or_mirrored() {
+    let g = thumb_board("corne-36");
+    let c = synthetic(gecko_core::corpus::CODE_CHARSET, 7);
+    let y03 = |sym_row: &str| {
+        let mut l = Layout::from_toml(&read("data/layouts/layered/corne-code.toml")).unwrap().fit(&g).unwrap();
+        l.layers[0].chars.splice(10..20, sym_row.chars());
+        let sc = Scorer::new(&g, &c, &all_weights(), &l).unwrap();
+        let st = sc.identity();
+        let b = breakdown(&sc, &st);
+        assert!((b.score - st.score).abs() < 1e-6 * st.score.abs().max(1.0));
+        b.metrics.iter().find(|m| m.id == "Y03").unwrap().value
+    };
+    assert!(y03("{}()=+_?:\"").abs() < 1e-9);
+    // `(` and `)` mirrored on the middle fingers, opener on the left hand: still 0.
+    assert!(y03("{}(=+_?):\"").abs() < 1e-9);
+    let reversed = y03("{})(=+_?:\"");
+    let split = y03("{}(=)+_?:\"");
+    assert!(reversed > 0.0 && (split - 2.0 * reversed).abs() < 1e-3, "reversed {reversed}, split {split}");
+}
+
 fn thumb_board(name: &str) -> Geometry {
     Geometry::from_toml(&read(&format!("data/geometries/{name}.toml"))).unwrap()
 }

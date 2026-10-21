@@ -53,7 +53,7 @@ When an item closes, tick it here. When scope changes, edit the issue first.
 26. [ ] [#84](https://github.com/JoshuaMarkle/gecko/issues/84) `L2` Board tab: board catalog, current board, start layout · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82), [#11](https://github.com/JoshuaMarkle/gecko/issues/11)
 27. [ ] [#17](https://github.com/JoshuaMarkle/gecko/issues/17) `C4` Remaining P1/P2 metrics · M
 28. [ ] [#85](https://github.com/JoshuaMarkle/gecko/issues/85) `E4` Import layouts from Oxeylyzer, genkey and cmini formats · S
-29. [ ] [#19](https://github.com/JoshuaMarkle/gecko/issues/19) `D3` Y03 paired symbol placement · S
+29. [x] [#19](https://github.com/JoshuaMarkle/gecko/issues/19) `D3` Y03 paired symbol placement · S
 30. [ ] [#86](https://github.com/JoshuaMarkle/gecko/issues/86) `E5` Export layout image (SVG/PNG) · S · after [#83](https://github.com/JoshuaMarkle/gecko/issues/83)
 31. [ ] [#87](https://github.com/JoshuaMarkle/gecko/issues/87) `L10` Mini keyboards everywhere · M · after [#83](https://github.com/JoshuaMarkle/gecko/issues/83)
 32. [ ] [#21](https://github.com/JoshuaMarkle/gecko/issues/21) `B4` NSGA-II Pareto fronts · M

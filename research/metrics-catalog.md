@@ -106,7 +106,7 @@ stats summing to 100% and makes reports easy to read.
 |---|---|---|---|---|
 | Y01 | Layer switch cost | − | P2 | Modifier press cost (hold vs one-shot) expanded into the n-grams. |
 | Y02 | Symbol n-grams | − | P2 | Code corpora bigrams such as `()`, `->`, `=>`, `!=`. |
-| Y03 | Paired symbol layout | − | P2 | Open/close pairs adjacent or mirrored. |
+| Y03 | Paired symbol layout | − | P2 | Open/close pairs adjacent or mirrored. Implemented: `() [] {} <>` by symbol frequency; reversed = half cost (`context/objective.md`). |
 | Y04 | Home-row-mod misfire risk | − | P3 | Fast same-hand rolls through mod keys. |
 
 ## 9. Physical geometry (phases: 2D geometry, 3D)

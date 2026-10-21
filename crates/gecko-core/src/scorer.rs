@@ -4,7 +4,8 @@
 //!       + Σ fkf[x,z]·Ckf[p(x),p(z)] + Σ f3[x,y,z]·C3[p(x),p(y),p(z)] + load terms (M02, M04)
 //!
 //! `fk` is gap-1 skipgrams; `fkf` mixes gap-2 and gap-3 skipgrams with `sfb.skip_decay`;
-//! `fy` is bigrams of two code symbols (Y02), with its own cost table `Cy`.
+//! `fy` is bigrams of two code symbols (Y02), with its own cost table `Cy`. Y03 adds
+//! Σ w[o,c]·Cb[p(o),p(c)] over the few bracket pairs (o, c) on the layout (a sparse list).
 //!
 //! A layered layout is scored on its virtual geometry (`Geometry::layered`): one slot per
 //! (layer, key), so layers cost nothing extra in the hot loop beyond the larger N.
@@ -46,6 +47,11 @@ pub struct Scorer {
     /// The code-symbol bigram channel (Y02) is in use.
     has_sym: bool,
     has_tri: bool,
+    /// Bracket pairs on the layout with their weights (Y03); empty when Y03 is unweighted.
+    brackets: Vec<PairEntry>,
+    cb: Vec<f32>,
+    /// All bracket pairs on the layout, weighted or not (reports).
+    bracket_all: Vec<PairEntry>,
     /// Non-zero trigrams grouped by symbol (CSR): every trigram containing symbol `s` is
     /// stored in `tri_entries[tri_start[s]..tri_start[s + 1]]`. Exact, just sparse.
     tri_start: Vec<u32>,
@@ -66,6 +72,13 @@ struct TriEntry {
     y: u8,
     z: u8,
     f: f32,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct PairEntry {
+    pub x: u8,
+    pub y: u8,
+    pub f: f32,
 }
 
 /// Mutable search state: symbol ↔ slot maps plus finger-load accumulators.
@@ -136,6 +149,21 @@ impl Scorer {
         truncate_coverage(&mut f3, profile.trigram_coverage as f64);
         norm(&mut f3);
 
+        // Y03 weights: each bracket pair on the layout by the corpus frequency of its two symbols.
+        let mut bracket_all = Vec::new();
+        for (o, c) in metrics::BRACKET_PAIRS {
+            let (Some(x), Some(y)) = (chars.iter().position(|&ch| ch == o), chars.iter().position(|&ch| ch == c)) else {
+                continue;
+            };
+            let f = cidx[x].map_or(0, |i| corpus.mono[i]) as f64 + cidx[y].map_or(0, |i| corpus.mono[i]) as f64;
+            if f > 0.0 {
+                bracket_all.push((x as u8, y as u8, f));
+            }
+        }
+        let bracket_total: f64 = bracket_all.iter().map(|e| e.2).sum();
+        let bracket_all: Vec<PairEntry> =
+            bracket_all.into_iter().map(|(x, y, f)| PairEntry { x, y, f: (f / bracket_total) as f32 }).collect();
+
         let tables: Vec<Option<Vec<f32>>> = METRICS.iter().map(|d| metrics::table(geometry, profile, d)).collect();
         let mut c1 = vec![0f32; n];
         let mut c2 = vec![0f32; n * n];
@@ -143,6 +171,7 @@ impl Scorer {
         let mut ckf = vec![0f32; n * n];
         let mut cy = vec![0f32; n * n];
         let mut c3 = vec![0f32; n * n * n];
+        let mut cb = vec![0f32; n * n];
         let (mut has_pair, mut has_far, mut has_sym, mut has_tri) = (false, false, false, false);
         let (mut w_load, mut w_hand) = (0.0, 0.0);
         for (d, t) in METRICS.iter().zip(&tables) {
@@ -186,6 +215,7 @@ impl Scorer {
                             has_tri = true;
                             &mut c3
                         }
+                        Order::Brackets => &mut cb,
                         Order::Load => unreachable!(),
                     };
                     dst.iter_mut().zip(t).for_each(|(c, v)| *c += signed * v);
@@ -212,6 +242,7 @@ impl Scorer {
             tri_entries.extend(tri_all.iter().filter(|e| e.x == s8 || e.y == s8 || e.z == s8));
         }
         tri_start[n] = tri_entries.len() as u32;
+        let brackets = if cb.iter().any(|&c| c != 0.0) { bracket_all.clone() } else { Vec::new() };
         let mut target = [0.0; FINGERS];
         for (t, &v) in target.iter_mut().zip(&profile.finger_target) {
             *t = v as f64;
@@ -238,6 +269,9 @@ impl Scorer {
             has_far,
             has_sym,
             has_tri,
+            brackets,
+            bracket_all,
+            cb,
             tri_start,
             tri_entries,
             tri_all,
@@ -346,6 +380,9 @@ impl Scorer {
                 sum += e.f as f64 * self.c3[i] as f64;
             }
         }
+        for e in &self.brackets {
+            sum += e.f as f64 * self.cb[pos[e.x as usize] as usize * n + pos[e.y as usize] as usize] as f64;
+        }
         sum + self.load_cost(&self.loads(pos))
     }
 
@@ -395,6 +432,13 @@ impl Scorer {
                 acc += (e.f * (cost(new, e) - cost(old, e))) as f64;
             }
             d += acc;
+        }
+
+        for e in &self.brackets {
+            let (x, y) = (e.x as usize, e.y as usize);
+            if x == a || x == b || y == a || y == b {
+                d += (e.f * (self.cb[new[x] as usize * n + new[y] as usize] - self.cb[old[x] as usize * n + old[y] as usize])) as f64;
+            }
         }
 
         if self.w_load != 0.0 || self.w_hand != 0.0 {
@@ -483,6 +527,10 @@ impl Scorer {
     }
     pub fn fy(&self) -> &[f32] {
         &self.fy
+    }
+    /// Bracket pairs on the layout and their Y03 weights (sum 1).
+    pub fn bracket_pairs(&self) -> &[PairEntry] {
+        &self.bracket_all
     }
     pub fn f3(&self) -> &[f32] {
         &self.f3
