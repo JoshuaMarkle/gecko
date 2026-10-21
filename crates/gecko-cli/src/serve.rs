@@ -260,6 +260,9 @@ struct RunReq {
     sa_steps: Option<u64>,
     #[serde(default)]
     ga_pop: Option<usize>,
+    /// Extra descent neighbourhoods, e.g. "cycle3,depth2".
+    #[serde(default)]
+    moves: Option<String>,
 }
 
 async fn start_run(State(app): State<AppState>, Json(req): Json<RunReq>) -> ApiResult {
@@ -281,6 +284,10 @@ async fn start_run(State(app): State<AppState>, Json(req): Json<RunReq>) -> ApiR
     }
     if let Some(p) = req.ga_pop {
         params.ga.pop_size = p.clamp(4, 10_000);
+    }
+    if let Some(m) = &req.moves {
+        params.moves = gecko_core::optimize::moves::MoveParams::parse(m)
+            .ok_or_else(|| ApiError(StatusCode::BAD_REQUEST, format!("unknown moves '{m}'")))?;
     }
     let spec = RunSpec {
         geometry: &r.geometry,

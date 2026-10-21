@@ -80,7 +80,7 @@ locked; both presets fit the board to the viewport. A floor grid (1u cells, 5u s
 | `GET /api/layouts` · `/api/geometries` · `/api/profiles` · `/api/corpora` | data dir contents |
 | `GET /api/corpora/{name}` | `.gkc` bytes (for WASM) |
 | `POST /api/score` | `{geometry, corpus, profile \| profile_override, chars \| layout, top}` → analysis |
-| `GET /api/runs` · `POST /api/runs` | list / start (`algo, time_ms \| evals, threads, seed, pins, sa_steps, ga_pop` + score inputs) |
+| `GET /api/runs` · `POST /api/runs` | list / start (`algo, time_ms \| evals, threads, seed, pins, sa_steps, ga_pop, moves` + score inputs) |
 | `GET /api/runs/{id}` | config, result, progress, running, paused |
 | `GET /api/runs/{id}/events` | SSE: `progress`, then `done` (RunResult) or `failed` |
 | `POST /api/runs/{id}/cancel` | stop early (results are still saved) |

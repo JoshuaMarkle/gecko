@@ -96,6 +96,12 @@ enum Cmd {
         /// GA: population size.
         #[arg(long)]
         ga_pop: Option<usize>,
+        /// Extra descent neighbourhoods: comma list of columns, cycle3, depth2, all (or swap).
+        #[arg(long)]
+        moves: Option<String>,
+        /// Depth-2 moves: first swaps tried per optimum (0 = all).
+        #[arg(long)]
+        depth2_width: Option<usize>,
         #[command(flatten)]
         inputs: Inputs,
     },
@@ -168,6 +174,13 @@ enum Cmd {
         time: String,
         #[arg(long)]
         threads: Option<usize>,
+        /// Neighbourhood variants, separated by '/', each benched with every algo, e.g.
+        /// `swap/cycle3/columns,depth2`.
+        #[arg(long, default_value = "swap")]
+        moves: String,
+        /// Depth-2 moves: first swaps tried per optimum (0 = all).
+        #[arg(long)]
+        depth2_width: Option<usize>,
         #[command(flatten)]
         inputs: Inputs,
     },
@@ -637,7 +650,7 @@ fn real_main(cli: Cli) -> Result<()> {
                 }
             }
         }
-        Cmd::Optimize { algo, time, evals, seed, threads, pin, from, top, sa_steps, ga_pop, inputs } => {
+        Cmd::Optimize { algo, time, evals, seed, threads, pin, from, top, sa_steps, ga_pop, moves, depth2_width, inputs } => {
             let l = ctx.load(&inputs)?;
             let algo = Algo::parse(&algo).with_context(|| format!("unknown algo '{algo}' (hc, sa, ga, bls, explore, tabu)"))?;
             let start = ctx.layout(from.as_deref().unwrap_or(&ctx.store.defaults.reference), &l)?;
@@ -655,6 +668,12 @@ fn real_main(cli: Cli) -> Result<()> {
             }
             if let Some(p) = ga_pop {
                 params.ga.pop_size = p;
+            }
+            if let Some(m) = moves {
+                params.moves = parse_moves(&m)?;
+            }
+            if let Some(w) = depth2_width {
+                params.moves.depth2_width = w;
             }
             let spec = RunSpec { geometry: &l.geometry, corpus: &l.corpus, profile: &l.profile, start: &start, pins: &pin, params };
             let prep = run::prepare(&ctx.store.runs, &spec)?;
@@ -698,41 +717,57 @@ fn real_main(cli: Cli) -> Result<()> {
             explore_cmd::landscape(&ctx, &inputs, from.as_deref(), samples, walks, walk_len, seed)?
         }
         Cmd::Atlas { run, top, cut, pool, inputs } => explore_cmd::atlas_cmd(&ctx, &run, &inputs, top, cut, pool)?,
-        Cmd::Bench { algos, seeds, time, threads, inputs } => {
+        Cmd::Bench { algos, seeds, time, threads, moves, depth2_width, inputs } => {
             let l = ctx.load(&inputs)?;
             let start = ctx.layout(&ctx.store.defaults.reference, &l)?;
             let time_ms = parse_duration(&time)?;
             let threads = threads.unwrap_or_else(|| std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1));
             let sc = Scorer::new(&l.geometry, &l.corpus, &l.profile, &start)?;
+            let mut variants = moves.split('/').map(parse_moves).collect::<Result<Vec<_>>>()?;
+            if let Some(w) = depth2_width {
+                variants.iter_mut().for_each(|m| m.depth2_width = w);
+            }
             let mut out = Vec::new();
             for a in algos.split(',') {
                 let algo = Algo::parse(a.trim()).with_context(|| format!("unknown algo '{a}'"))?;
-                let mut scores = Vec::new();
-                let mut eps = Vec::new();
-                for seed in 1..=seeds {
-                    let params = Params { algo, seed, threads, time_ms: Some(time_ms), evals: None, top: 1, ..Default::default() };
-                    let c = gecko_core::optimize::Ctx::new(&sc, (0..sc.n).collect(), sc.identity());
-                    let o = gecko_core::optimize::run(&c, &params, std::time::Duration::from_secs(3600), &Control::default(), |_| {});
-                    scores.push(o.top.first().map(|s| s.score).unwrap_or(f64::NAN));
-                    eps.push(o.evals_per_sec);
-                    if !ctx.json {
-                        eprintln!("  {} seed {seed}: {:.4}", algo.name(), scores.last().unwrap());
+                for mv in &variants {
+                    let mut scores = Vec::new();
+                    let mut eps = Vec::new();
+                    for seed in 1..=seeds {
+                        let params = Params {
+                            algo,
+                            seed,
+                            threads,
+                            time_ms: Some(time_ms),
+                            evals: None,
+                            top: 1,
+                            moves: mv.clone(),
+                            ..Default::default()
+                        };
+                        let c = gecko_core::optimize::Ctx::new(&sc, (0..sc.n).collect(), sc.identity());
+                        let o = gecko_core::optimize::run(&c, &params, std::time::Duration::from_secs(3600), &Control::default(), |_| {});
+                        scores.push(o.top.first().map(|s| s.score).unwrap_or(f64::NAN));
+                        eps.push(o.evals_per_sec);
+                        if !ctx.json {
+                            eprintln!("  {} [{}] seed {seed}: {:.4}", algo.name(), mv.name(), scores.last().unwrap());
+                        }
                     }
+                    let n = scores.len() as f64;
+                    let mean = scores.iter().sum::<f64>() / n;
+                    let best = scores.iter().cloned().fold(f64::INFINITY, f64::min);
+                    let sd = (scores.iter().map(|s| (s - mean).powi(2)).sum::<f64>() / n).sqrt();
+                    out.push(json!({"algo": algo.name(), "moves": mv.name(), "mean": mean, "best": best, "stdev": sd, "evals_per_sec": eps.iter().sum::<f64>() / n, "scores": scores}));
                 }
-                let n = scores.len() as f64;
-                let mean = scores.iter().sum::<f64>() / n;
-                let best = scores.iter().cloned().fold(f64::INFINITY, f64::min);
-                let sd = (scores.iter().map(|s| (s - mean).powi(2)).sum::<f64>() / n).sqrt();
-                out.push(json!({"algo": algo.name(), "mean": mean, "best": best, "stdev": sd, "evals_per_sec": eps.iter().sum::<f64>() / n, "scores": scores}));
             }
             if ctx.json {
                 ctx.print(json!({"schema": SCHEMA, "time_ms": time_ms, "threads": threads, "profile": l.profile.name, "results": out}));
             } else {
-                println!("{:<5} {:>9} {:>9} {:>8} {:>10}", "algo", "mean", "best", "stdev", "Mevals/s");
+                println!("{:<5} {:<22} {:>9} {:>9} {:>8} {:>10}", "algo", "moves", "mean", "best", "stdev", "Mevals/s");
                 for r in &out {
                     println!(
-                        "{:<5} {:>9.4} {:>9.4} {:>8.4} {:>10.2}",
+                        "{:<5} {:<22} {:>9.4} {:>9.4} {:>8.4} {:>10.2}",
                         r["algo"].as_str().unwrap(),
+                        r["moves"].as_str().unwrap(),
                         r["mean"].as_f64().unwrap(),
                         r["best"].as_f64().unwrap(),
                         r["stdev"].as_f64().unwrap(),
@@ -976,4 +1011,9 @@ fn round4(v: f32) -> f32 {
     }
     let m = 10f32.powi(3 - v.abs().log10().floor() as i32);
     (v * m).round() / m
+}
+
+fn parse_moves(s: &str) -> Result<gecko_core::optimize::moves::MoveParams> {
+    gecko_core::optimize::moves::MoveParams::parse(s)
+        .with_context(|| format!("unknown moves '{s}' (comma list of swap, columns, cycle3, depth2, all)"))
 }
