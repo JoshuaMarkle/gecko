@@ -77,6 +77,10 @@ Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI: `web/scripts/wasm-parity.mjs` tests all 10 references × all 4 profiles
 using the same web-target package loaded by the browser.
 
+Bundled splits (`tests/boards.rs`): every Corne/Sweep/Lily58/Kyria/ErgoDox/Dactyl key
+matches pinned QMK-derived KLE inputs; counts, stagger, alpha fingers, fills, reference fits,
+TOML round-trips, and all-symbol score deltas (including ErgoDox above 64 slots) are checked.
+
 Integration coverage: corpus extension and adaptive-key rewriting retain Shift counts; tabu
 mixed deltas include Shift and bracket placement. Reference snapshots include S04, row
 effort offsets and Y03.

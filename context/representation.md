@@ -9,11 +9,16 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   `pos[3], rot[3], size[2], finger, row, col, home, stretch, effort` (hand comes from finger;
   `role` comes with symbol layers). Optional `hrm` (bool) marks home-row mod keys for Y04;
   unset = `home` keys on a finger outside the stretch columns (`Geometry::hrm`). Boards: `ansi-30`, `ortho-30`, `corne-36` (3x5+3),
-  `sweep-34` (3x5+2); the split boards' stagger and thumb poses are approximate.
-- Thumb keys use fingers `LT`/`RT` on their own row (row 3). Optional `fill` per key (token
+  `sweep-34` (3x5+2), `lily58` (58), `kyria` (50), `ergodox` (76), and
+  `dactyl-manuform-5x6` (64). Split boards use pinned QMK flat configurator projections;
+  source KLE, provenance and limitations: `data/geometries/sources/README.md`. Corne/Sweep
+  stagger now matches those inputs. Dactyl is a flat projection, without bowl curvature or tenting.
+- Thumb keys use fingers `LT`/`RT` on row 3 (larger boards also have filled auxiliary keys
+  on that row; number rows are -1). Optional `fill` per key (token
   name or one char): what the key gets when a layout lists only the keys without a fill, so
-  every 30-key reference layout fits `corne-36`/`sweep-34` (`Layout::fit`; the CLI and server
-  apply it). Thumb fills follow Miryoku: `⎋ ␣ ⇥ | ⏎ ⌫ ·` (36), `␣ ⇥ | ⏎ ⌫` (34).
+  every 30-key reference layout fits all bundled split boards (`Layout::fit`; the CLI and server
+  apply it). Thumb fills follow Miryoku: `⎋ ␣ ⇥ | ⏎ ⌫ ·` (36), `␣ ⇥ | ⏎ ⌫` (34). Larger boards use the same five nonempty thumb fills as Corne,
+  with all other non-core keys filled `·`; these are comparison defaults, not factory maps.
 - Thumbs: trigrams with a thumb class as "other"; B05 scissors ignore thumbs; M02 compares
   non-thumb finger loads as shares of non-thumb keystrokes (unchanged when thumbs are idle).
 - Optional `[comfort]` maps comfort metrics to key-pair tables: `E04 = "engram-2key"` loads
@@ -37,8 +42,9 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   editor's raw data. Position, size and z-rotation (`r` about `rx, ry`; GECKO `pos` is the
   top-left of the unrotated key, rotated about its center) are exact; decals are skipped, ISO
   Enter's second rectangle ignored. The rest is a guess to edit by hand:
-  - Rows: unrotated keys sharing an x center form columns, numbered top-down and shifted to
-    match the left neighbour (column stagger); other keys join the row within 0.5u in y.
+  - Rows: unrotated keys sharing an x center form columns, numbered top-down; adjacent
+    columns with the same 3+ key count keep that numbering even above 0.5u stagger. Other
+    columns shift to match the left neighbour (column stagger); other keys join the row within 0.5u in y.
   - ≥ 4 rows: the last is the thumb row (`LT`/`RT`, row 3) and home is two above it; 3 rows:
     home is the middle one. Row numbers count from the top alpha row (0); a number row is -1.
   - Home row keys under 1.5u split into hands at a gap ≥ 1.5u, else by count (left gets the
@@ -48,8 +54,9 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   - Efforts: ortho-30's table by row and finger, +1 per row beyond top/bottom, +0.8 per unit
     outside the pinky column; thumbs 1.0 + 0.5 per unit from the hand's rest thumb (nearest to
     half a key inside the index home). No `fill`s: add them for 30-key layouts to fit.
-  - `kle::export` writes one KLE row per key (2D only); every bundled board round-trips
-    export → import with the same fingers, rows and columns.
+  - `kle::export` writes one KLE row per key (2D only). The original four boards round-trip
+    export → import with the same fingers, rows and columns; larger boards retain physical
+    keys but need their reviewed annotations restored after import.
 - At scorer build, precompute dense tables indexed by slot:
   - pair `[N×N]`: same finger, same hand, distance, dx, dy, finger order/direction,
     LSB flag, scissor flag, row jump.
