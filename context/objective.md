@@ -134,6 +134,9 @@ fronts (NSGA-II). Reports always show the per-metric breakdown.
   punctuation symbols, normalized on their own; cost 100 when they are on one finger (two keys),
   on different layers, or the first is on a one-shot layer (a tap between them). Reads "% of symbol bigrams that are awkward". Adds one term to the
   pair delta only when weighted.
+- The layer key's own keystroke: every layer symbol is typed with its layer key held, so M01
+  adds the holder key's effort to each layer slot and finger loads (M02, M04) count the
+  keystroke on the holder's finger too (loads then sum to more than 100%).
 - **Y03** (sparse list `Order::Brackets`, cost table `Cb`): each of `() [] {} <>` on the
   layout, weighted by the corpus frequency of its two symbols (weights sum to 1). Cost 0 when
   opener and closer are on one layer and adjacent (same hand and row, neighbouring columns,
@@ -148,7 +151,7 @@ fronts (NSGA-II). Reports always show the per-metric breakdown.
   channels: mono `fsh`/`Csh` and pair `fsb`/`Csb` (the latter compiled into the pair delta only
   when weighted). Without `⇧` on the layout Shift costs nothing, so 30-key layouts score as
   before. A one-shot Shift costs the same for single capitals; caps runs are scored as held.
-- Not modeled yet: the layer/Shift key's own keystroke in finger load,
+- Not modeled yet: the Shift key's own keystroke in finger load,
   layer state beyond one bigram (toggle assumes each bigram starts from `i`'s layer). Profile `code` weights Y01/Y02/Y03 (scales are rough estimates).
 
 ## Home-row mods (Y04)
