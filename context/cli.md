@@ -11,7 +11,9 @@ gecko compare  [<layout>...] [--corpora a,b,c]                   # rank layouts 
 gecko analyze  <layout> [--top 10]                                # finger loads, worst SFB/SFS/LSB/scissors; JSON adds all bigrams/skipgrams with a `kind`
 gecko optimize [--algo sa|hc|ga|bls|explore] [--time 30s | --evals N] [--seed 1] [--threads N]
                [--pin ",./;"] [--from <layout>] [--top 10] [--sa-steps N] [--ga-pop N]
+               [--moves swap|columns,cycle3,depth2|all] [--depth2-width 32]
 gecko bench    [--algos hc,sa,ga,bls] [--seeds 3] [--time 5s]         # algorithm leaderboard
+               [--moves "swap/cycle3/depth2"] [--depth2-width N]      # one row per algo × variant
 gecko explore  [--time 60s | --evals N] [--seed 1] [--threads N] [--pin ...] [--from <layout>]
                [--samples 2000] [--max-optima 100000]         # map local optima; writes an atlas run
 gecko landscape [--samples 4000] [--walks 64] [--walk-len 400] [--seed 1] [--from <layout>]

@@ -15,6 +15,8 @@ restarts. Useful as the local-search step inside memetic and as a final polish a
 ## Results
 
 Implemented: `optimize/hill_climb.rs` (steepest descent; restart 0 starts from the start layout).
+`--moves cycle3,depth2` improves the 5 s bench mean 16.02 → 15.90 (within ~1σ); see
+[README.md](README.md#neighbourhoods-vs-plain-swap-2026-10-21-issue-8).
 
 Leaderboard 2026-10-20 (`gecko bench --time 5s --seeds 3`, 20 threads, i9-13900H, default
 profile, english corpus, ansi-30; lower is better; Semimak 11.85, Graphite 12.26, QWERTY 53.31):

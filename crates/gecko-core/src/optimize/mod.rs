@@ -5,6 +5,7 @@ pub mod anneal;
 pub mod bls;
 pub mod genetic;
 pub mod hill_climb;
+pub mod moves;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
@@ -66,6 +67,9 @@ pub struct Params {
     pub bls: bls::BlsParams,
     #[serde(default)]
     pub explore: crate::explore::ExploreParams,
+    /// Extra neighbourhoods for every steepest descent (all algorithms).
+    #[serde(default)]
+    pub moves: moves::MoveParams,
 }
 
 impl Default for Params {
@@ -81,6 +85,7 @@ impl Default for Params {
             ga: Default::default(),
             bls: Default::default(),
             explore: Default::default(),
+            moves: Default::default(),
         }
     }
 }
@@ -117,19 +122,35 @@ pub trait Observer: Sync {
 }
 
 /// Search context shared by all workers (read-only).
+#[derive(Clone)]
 pub struct Ctx<'a> {
     pub scorer: &'a Scorer,
     /// Symbols allowed to move (not on a pinned slot).
     pub movable: Vec<usize>,
     pub start: State,
     pub observer: Option<&'a dyn Observer>,
+    /// Neighbourhoods used by [`steepest_descent`] (set from [`Params::moves`] by [`run`]).
+    pub moves: moves::MoveParams,
+    /// Same-finger column pairs for the column move ([`moves::column_pairs`]).
+    pub col_pairs: Vec<(Vec<usize>, Vec<usize>)>,
 }
 
 impl<'a> Ctx<'a> {
     /// Layer keys never move: they define the layered slot structure.
     pub fn new(scorer: &'a Scorer, mut movable: Vec<usize>, start: State) -> Self {
         movable.retain(|&s| !crate::layout::is_layer_key(scorer.chars[s]));
-        Ctx { scorer, movable, start, observer: None }
+        let col_pairs = moves::column_pairs(scorer, &movable, &start);
+        Ctx { scorer, movable, start, observer: None, moves: Default::default(), col_pairs }
+    }
+
+    pub fn with_observer(mut self, observer: &'a dyn Observer) -> Self {
+        self.observer = Some(observer);
+        self
+    }
+
+    pub fn with_moves(mut self, moves: moves::MoveParams) -> Self {
+        self.moves = moves;
+        self
     }
 
     /// A random layout: movable symbols shuffled among their slots; pinned symbols stay.
@@ -210,8 +231,37 @@ impl TopK {
     }
 }
 
-/// Steepest descent until no improving swap exists. Returns evaluations used.
+/// Steepest descent until no improving swap exists, then (per `ctx.moves`) until no improving
+/// column exchange, 3-cycle or swap pair exists either; each improvement found by a larger
+/// move resumes the swap descent. Returns evaluations used.
 pub fn steepest_descent(ctx: &Ctx, st: &mut State) -> u64 {
+    let mut evals = 0;
+    loop {
+        evals += swap_descent(ctx, st);
+        let mv = &ctx.moves;
+        if ctx.movable.len() < 3 || !mv.any() {
+            return evals;
+        }
+        let tries: [(bool, moves::MoveFn); 3] = [(mv.columns, moves::column_move), (mv.cycle3, moves::cycle3_move), (mv.depth2, moves::depth2_move)];
+        let mut improved = false;
+        for (on, f) in tries {
+            if on {
+                let (e, ok) = f(ctx, st);
+                evals += e;
+                if ok {
+                    improved = true;
+                    break;
+                }
+            }
+        }
+        if !improved {
+            return evals;
+        }
+    }
+}
+
+/// Steepest descent over swaps only. Returns evaluations used.
+pub fn swap_descent(ctx: &Ctx, st: &mut State) -> u64 {
     let sc = ctx.scorer;
     let m = &ctx.movable;
     let mut evals = 0;
@@ -353,6 +403,7 @@ fn make(algo: Algo, p: &Params) -> Box<dyn Optimizer + Send> {
 pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mut on_progress: impl FnMut(&Progress)) -> Outcome {
     let threads = params.threads.max(1);
     let params = &resolve_auto(ctx, params);
+    let ctx = &ctx.clone().with_moves(params.moves.clone());
     let t0 = Instant::now();
     let budget = params.time_ms.map(Duration::from_millis);
     let per_worker_evals = params.evals.map(|e| (e / threads as u64).max(1));
