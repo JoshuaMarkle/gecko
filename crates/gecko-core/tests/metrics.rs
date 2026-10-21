@@ -453,3 +453,42 @@ fn m02_m04_with_thumbs() {
     close("M04", v, 80.0);
     close("M04", score, 90.0);
 }
+
+// ---- L01, L02 (symbol-on-slot costs) ----
+
+fn ansi30() -> Geometry {
+    Geometry::from_toml(include_str!("../../../data/geometries/ansi-30.toml")).unwrap()
+}
+
+#[test]
+fn l01_shortcut_placement_by_hand() {
+    // Tiny board: slots 0–3 are left-hand keys, 4–5 right. z a c x on the left cost 0 (no
+    // QWERTY spots on a 6-key board); v on the right costs 100. Weights: z c x v 1, a ½ → 4.5.
+    // L01 = 1 · 100 / 4.5 = 22.222…
+    let l = Layout::from_str_flat("t", "tiny", "zacxvb").unwrap();
+    let c = corpus("zacxvb", &[("z", 10), ("a", 10)]);
+    check(&tiny(), &c, &profile(""), &l, "L01", 100.0 / 4.5);
+}
+
+#[test]
+fn l01_distance_from_qwerty_spot() {
+    // QWERTY with z and x swapped: both stay on the left hand, 1u from their QWERTY spot, so
+    // each costs 50 · (1 / 2) = 25. All eight shortcut letters are present (weight 6):
+    // L01 = (25 + 25) / 6 = 8.333…
+    let g = ansi30();
+    let l = Layout::from_str_flat("t", "ansi-30", "qwertyuiopasdfghjkl;xzcvbnm,./").unwrap();
+    let c = corpus("qwertyuiopasdfghjkl;zxcvbnm,./", &[("q", 10)]);
+    check(&g, &c, &profile(""), &l, "L01", 50.0 / 6.0);
+}
+
+#[test]
+fn l02_familiarity_by_hand() {
+    // w↔e swap: ring ↔ middle finger of one hand, 75 each; f↔g swap: both left index, 50 each.
+    // Mono shares w 30, e 20, f 25, g 25: L02 = 0.3 · 75 + 0.2 · 75 + 0.25 · 50 + 0.25 · 50 = 62.5
+    let g = ansi30();
+    let l = Layout::from_str_flat("t", "ansi-30", "qewrtyuiopasdgfhjkl;zxcvbnm,./").unwrap();
+    let c = corpus("qwertyuiopasdfghjkl;zxcvbnm,./", &[("w", 30), ("e", 20), ("f", 25), ("g", 25)]);
+    check(&g, &c, &profile("familiar_to = \"qwerty\""), &l, "L02", 62.5);
+    // Without a reference nothing is measured.
+    check(&g, &c, &profile(""), &l, "L02", 0.0);
+}

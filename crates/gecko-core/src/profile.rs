@@ -41,6 +41,10 @@ pub struct Profile {
     /// middle/ring, bottom row easy for index) on any geometry. Thumbs get none. Default 0.
     #[serde(default, skip_serializing_if = "is_zero_rows")]
     pub row_offset: [[f32; 2]; 4],
+    /// Reference layout for L02 (familiarity): `"qwerty"` is the only one built in. Unset = L02
+    /// costs nothing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub familiar_to: Option<String>,
 }
 
 fn is_zero_rows(r: &[[f32; 2]; 4]) -> bool {
@@ -119,6 +123,11 @@ impl Profile {
         if !p.row_offset.iter().flatten().all(|v| v.is_finite()) {
             return Err(Error::invalid("profile", "row_offset must be finite"));
         }
+        if let Some(r) = &p.familiar_to {
+            if r != "qwerty" {
+                return Err(Error::invalid("profile", format!("familiar_to '{r}' is unknown (only \"qwerty\")")));
+            }
+        }
         Ok(p)
     }
 
@@ -139,6 +148,9 @@ impl Profile {
         // Added only when set, so table hashes of profiles without row offsets stay unchanged.
         if !is_zero_rows(&self.row_offset) {
             v["row_offset"] = serde_json::json!(self.row_offset);
+        }
+        if let Some(r) = &self.familiar_to {
+            v["familiar_to"] = serde_json::json!(r);
         }
         hash::fnv1a(v.to_string().as_bytes())
     }

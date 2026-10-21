@@ -72,6 +72,9 @@ pub struct Scorer {
     /// Bracket pairs on the layout with their weights (Y03); empty when Y03 is unweighted.
     brackets: Vec<PairEntry>,
     cb: Vec<f32>,
+    /// Symbol-on-slot costs (L01, L02), `cp[x * n + slot]`; `has_place` when any is non-zero.
+    cp: Vec<f32>,
+    has_place: bool,
     /// All bracket pairs on the layout, weighted or not (reports).
     bracket_all: Vec<PairEntry>,
     /// Non-zero trigrams grouped by symbol (CSR): every trigram containing symbol `s` is
@@ -143,6 +146,7 @@ impl Scorer {
     /// flattened onto the virtual geometry). With adaptive keys the corpus is first rewritten
     /// as typed with them.
     pub fn new(geometry: &Geometry, corpus: &Corpus, profile: &Profile, layout: &Layout) -> Result<Self> {
+        let board = geometry;
         let rewritten;
         let corpus = if layout.magic.is_empty() {
             corpus
@@ -226,7 +230,14 @@ impl Scorer {
         let bracket_all: Vec<PairEntry> =
             bracket_all.into_iter().map(|(x, y, f)| PairEntry { x, y, f: (f / bracket_total) as f32 }).collect();
 
-        let tables: Vec<Option<Vec<f32>>> = METRICS.iter().map(|d| metrics::table(geometry, profile, d)).collect();
+        let qwerty = metrics::qwerty_slots(board, &chars);
+        let tables: Vec<Option<Vec<f32>>> = METRICS
+            .iter()
+            .map(|d| match d.order {
+                Order::Place => Some(metrics::place_table(d.id, geometry, profile, &chars, &qwerty, &f1)),
+                _ => metrics::table(geometry, profile, d),
+            })
+            .collect();
         let mut c1 = vec![0f32; n];
         let mut c2 = vec![0f32; n * n];
         let mut ck = vec![0f32; n * n];
@@ -234,6 +245,7 @@ impl Scorer {
         let mut cy = vec![0f32; n * n];
         let mut c3 = vec![0f32; n * n * n];
         let mut cb = vec![0f32; n * n];
+        let mut cp = vec![0f32; n * n];
         let (mut has_pair, mut has_far, mut has_sym, mut has_tri) = (false, false, false, false);
         let has_shift = fsh.iter().any(|&f| f > 0.0);
         let w_of = |id: &str| if has_shift { profile.effective_weight(id) } else { 0.0 };
@@ -288,6 +300,7 @@ impl Scorer {
                             &mut c3
                         }
                         Order::Brackets => &mut cb,
+                        Order::Place => &mut cp,
                         Order::Load => unreachable!(),
                     };
                     dst.iter_mut().zip(t).for_each(|(c, v)| *c += signed * v);
@@ -342,6 +355,7 @@ impl Scorer {
                 fill[k] += 1;
             }
         }
+        let has_place = cp.iter().any(|&c| c != 0.0);
         let brackets = if cb.iter().any(|&c| c != 0.0) { bracket_all.clone() } else { Vec::new() };
         let mut target = [0.0; FINGERS];
         for (t, &v) in target.iter_mut().zip(&profile.finger_target) {
@@ -382,6 +396,8 @@ impl Scorer {
             brackets,
             bracket_all,
             cb,
+            cp,
+            has_place,
             tri_start,
             tri_entries,
             tri_all,
@@ -415,7 +431,7 @@ impl Scorer {
             }
             out.profile.weights.insert(id.to_owned(), weight);
         }
-        for table in [&mut out.c1, &mut out.c2, &mut out.ck, &mut out.ckf, &mut out.cy, &mut out.c3, &mut out.cb] {
+        for table in [&mut out.c1, &mut out.c2, &mut out.ck, &mut out.ckf, &mut out.cy, &mut out.c3, &mut out.cb, &mut out.cp] {
             table.fill(0.0);
         }
         (out.w_load, out.w_hand, out.w_rss, out.w_peak, out.w_thumb) = (0.0, 0.0, 0.0, 0.0, 0.0);
@@ -461,6 +477,7 @@ impl Scorer {
                             &mut out.c3
                         }
                         Order::Brackets => &mut out.cb,
+                        Order::Place => &mut out.cp,
                         Order::Load => unreachable!(),
                     };
                     for (target, value) in target.iter_mut().zip(table) {
@@ -470,6 +487,7 @@ impl Scorer {
                 _ => {}
             }
         }
+        out.has_place = out.cp.iter().any(|&c| c != 0.0);
         out.has_load = [out.w_load, out.w_hand, out.w_rss, out.w_peak, out.w_thumb].iter().any(|&w| w != 0.0);
         out.brackets = if out.cb.iter().any(|&c| c != 0.0) { out.bracket_all.clone() } else { Vec::new() };
         let (effort, layer) = (out.profile.weight("M01"), out.profile.weight("Y01"));
@@ -607,6 +625,11 @@ impl Scorer {
                 sum += self.fsh[x] as f64 * self.csh[pos[x] as usize] as f64;
             }
         }
+        if self.has_place {
+            for x in 0..n {
+                sum += self.cp[x * n + pos[x] as usize] as f64;
+            }
+        }
         if self.has_shift_pair {
             for x in 0..n {
                 for y in 0..n {
@@ -667,6 +690,10 @@ impl Scorer {
         if self.has_shift {
             let (csh, fsh) = (&self.csh, &self.fsh);
             d += (fsh[a] * (csh[pb] - csh[pa]) + fsh[b] * (csh[pa] - csh[pb])) as f64;
+        }
+        if self.has_place {
+            let cp = &self.cp;
+            d += (cp[a * n + pb] - cp[a * n + pa] + cp[b * n + pa] - cp[b * n + pb]) as f64;
         }
 
         if self.has_pair || self.has_shift_pair {
@@ -984,6 +1011,7 @@ impl Scorer {
                 if self.has_shift {
                     v += self.fsh[x] as f64 * self.csh[i] as f64;
                 }
+                v += self.cp[x * n + i] as f64;
                 mono[x * n + i] = v;
             }
         }

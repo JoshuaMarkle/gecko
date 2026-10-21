@@ -172,6 +172,16 @@ the key no longer counts. Not modeled: the learning cost of rules (only `gecko m
   opener left) or mirrored (same row, finger and stretch flag on opposite hands, opener on the
   left hand); 50 for those shapes reversed; 100 otherwise. Reads "% of bracket use that is
   badly paired". The delta loops over ≤ 4 entries, and only when weighted.
+- **L01, L02** (`Order::Place`, an n × n symbol-on-slot table `Cp` folded like a mono term: `full` sums
+  `Cp[x, p(x)]`, a swap delta touches two entries, QAP terms add it to the mono matrix). Tables
+  are built in the scorer (they need the symbols) and already carry their weights. The QWERTY
+  reference is the 30 letter keys fitted onto the board (`metrics::qwerty_slots`); boards without
+  30 open keys have no reference. **L01** is per shortcut letter, not per keystroke: Z X C V
+  weight 1, A S Q W weight ½, normalized to sum 1; cost 100 off the left hand, else
+  `50 · min(d / 2, 1)` for distance `d` (key units) from the letter's QWERTY slot. **L02** needs
+  profile `familiar_to = "qwerty"` (else 0): each QWERTY symbol's keystroke share × 0 on its
+  reference key, 50 on another key of its finger, 75 on another finger of its hand, 100 on the
+  other hand. Sample profile: `data/profiles/familiar.toml` (scales are rough).
 - **Shift** (layout has `⇧` keys and the corpus has case counts, `GKCORP3`): a layer-like hold
   on its own fixed key. Each press (one per run of shifted symbols) is typed with the best `⇧`
   for the shifted key y: not on y's finger, then the other hand, then lowest effort. Costs, per

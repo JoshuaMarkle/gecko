@@ -26,6 +26,9 @@ pub enum Order {
     /// Open/close bracket pairs (`()`, `[]`, `{}`, `<>`) on the layout, weighted by their
     /// symbol frequency; a sparse list, not a corpus n-gram.
     Brackets,
+    /// A cost for symbol x on slot i (a table of n × n, symbol-major), already weighted by the
+    /// symbols it concerns: L01, L02.
+    Place,
     /// Non-linear: computed from per-finger load accumulators.
     Load,
 }
@@ -226,7 +229,29 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Same-hand rolls out of a home-row mod key (geometry `hrm`) onto another finger, where the hold can misfire.",
     ),
+    m(
+        "L01",
+        "Shortcut placement",
+        "%",
+        Order::Place,
+        Dir::Min,
+        "Shortcut letters Z X C V (and A S Q W at half weight) away from the left hand: 100 off it, up to 50 on it by distance from the QWERTY spot. Per shortcut letter, not per keystroke.",
+    ),
+    m(
+        "L02",
+        "Familiarity",
+        "%",
+        Order::Place,
+        Dir::Min,
+        "Distance from the reference layout (profile `familiar_to`), % of keystrokes: 0 on the reference key, 50 on another key of its finger, 75 on its hand, 100 otherwise.",
+    ),
 ];
+
+/// Shortcut letters scored by L01 and their weights.
+pub const SHORTCUTS: [(char, f32); 8] = [('z', 1.0), ('x', 1.0), ('c', 1.0), ('v', 1.0), ('a', 0.5), ('s', 0.5), ('q', 0.5), ('w', 0.5)];
+
+/// The QWERTY letter keys in slot order of a 3-row, 10-column board.
+const QWERTY: &str = "qwertyuiopasdfghjkl;zxcvbnm,./";
 
 /// Open/close symbol pairs scored by Y03.
 pub const BRACKET_PAIRS: [(char, char); 4] = [('(', ')'), ('[', ']'), ('{', '}'), ('<', '>')];
@@ -540,4 +565,64 @@ pub fn row_offset(g: &Geometry, p: &Profile, i: usize) -> f32 {
 /// The logical row that holds the home keys (most `home = true` keys).
 fn home_row(g: &Geometry) -> i8 {
     g.key.iter().find(|k| k.home).map(|k| k.row).unwrap_or(i8::MIN)
+}
+
+/// Slot of each symbol on the QWERTY reference placed on `base` (the board without layer keys);
+/// `None` for symbols QWERTY lacks, and for every symbol when the board has no 30 letter keys.
+pub fn qwerty_slots(base: &Geometry, chars: &[char]) -> Vec<Option<usize>> {
+    let fit = crate::Layout::from_chars("qwerty", &base.name, "", QWERTY.chars().collect()).and_then(|l| l.fit(base));
+    chars
+        .iter()
+        .map(|&c| {
+            let fit = fit.as_ref().ok()?;
+            QWERTY.contains(c).then(|| fit.chars.iter().position(|&q| q == c)).flatten()
+        })
+        .collect()
+}
+
+/// The n × n symbol-slot table of a [`Order::Place`] metric. `qwerty[x]` is symbol x's QWERTY
+/// slot; `f1` the normalized symbol frequencies. Values are in % (0–100).
+pub fn place_table(id: &str, g: &Geometry, p: &Profile, chars: &[char], qwerty: &[Option<usize>], f1: &[f32]) -> Vec<f32> {
+    let n = g.len();
+    let mut t = vec![0.0f32; n * n];
+    let k = &g.key;
+    match id {
+        "L01" => {
+            let total: f32 = SHORTCUTS.iter().filter(|(c, _)| chars.contains(c)).map(|(_, w)| w).sum();
+            for (x, c) in chars.iter().enumerate() {
+                let Some((_, w)) = SHORTCUTS.iter().find(|(s, _)| s == c) else { continue };
+                for i in 0..n {
+                    let cost = if k[i].hand() != Hand::L {
+                        100.0
+                    } else {
+                        let d = qwerty[x].map_or(0.0, |q| {
+                            let (a, b) = (k[i].pos, k[q].pos);
+                            ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2)).sqrt()
+                        });
+                        50.0 * (d / 2.0).min(1.0)
+                    };
+                    t[x * n + i] = w / total * cost;
+                }
+            }
+        }
+        "L02" if p.familiar_to.is_some() => {
+            for x in 0..n {
+                let Some(q) = qwerty[x] else { continue };
+                for i in 0..n {
+                    let cost = if i == q || g.same_key(i, q) {
+                        0.0
+                    } else if k[i].finger == k[q].finger {
+                        50.0
+                    } else if k[i].hand() == k[q].hand() {
+                        75.0
+                    } else {
+                        100.0
+                    };
+                    t[x * n + i] = f1[x] * cost;
+                }
+            }
+        }
+        _ => {}
+    }
+    t
 }

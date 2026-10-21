@@ -95,8 +95,8 @@ stats summing to 100% and makes reports easy to read.
 
 | ID | Metric | Dir | Pri | Definition |
 |---|---|---|---|---|
-| L01 | Shortcut placement | − | P1 | Z X C V (and A S Q W) reachable by the left hand / near QWERTY spots. |
-| L02 | Familiarity | ± | P2 | Distance from a reference layout: keys moved, keys kept on the same finger/hand. |
+| L01 | Shortcut placement | − | P1 | Z X C V (and A S Q W) reachable by the left hand / near QWERTY spots. Implemented (`Order::Place`; profile `familiar`): 100 off the left hand, up to 50 by distance from the QWERTY spot; A S Q W at half weight. |
+| L02 | Familiarity | ± | P2 | Distance from a reference layout: keys moved, keys kept on the same finger/hand. Implemented (profile `familiar_to = "qwerty"`): per keystroke 0 on the reference key, 50 same finger, 75 same hand, 100 otherwise. |
 | L03 | Grouping / symmetry | − | P2 | Related symbols kept together or mirrored (brackets, vowels, similar letters). |
 | L04 | Punctuation constraints | − | P1 | Required positions for `, . ; '` etc. Usually pins, sometimes soft. |
 | L05 | Corpus robustness | − | P2 | Score spread across several corpora (prose, chat, code). Report only: `gecko compare --corpora`. |

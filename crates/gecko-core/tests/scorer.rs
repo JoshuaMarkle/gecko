@@ -32,6 +32,7 @@ fn layout(name: &str) -> Layout {
 /// Every metric weighted, so every code path in the scorer is exercised.
 fn all_weights() -> Profile {
     let mut p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
+    p.familiar_to = Some("qwerty".into());
     for (i, d) in gecko_core::metrics::METRICS.iter().enumerate() {
         p.weights.insert(d.id.to_string(), 0.1 + i as f32 * 0.07);
     }
