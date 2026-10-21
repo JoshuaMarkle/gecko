@@ -99,7 +99,7 @@ enum Cmd {
         /// SA: swap attempts per restart.
         #[arg(long)]
         sa_steps: Option<u64>,
-        /// GA: population size.
+        /// GA/NSGA-II: population size.
         #[arg(long)]
         ga_pop: Option<usize>,
         /// Memetic: layouts per island (default 24).
@@ -120,6 +120,15 @@ enum Cmd {
         /// Memetic: best individuals sent per migration.
         #[arg(long)]
         migrants: Option<usize>,
+        /// Pareto objectives, e.g. B01,T03,M01 (NSGA-II or random-weight SA).
+        #[arg(long, value_delimiter = ',')]
+        objectives: Option<Vec<String>>,
+        /// NSGA-II generations (0 = use the time/evaluation budget).
+        #[arg(long)]
+        nsga_generations: Option<usize>,
+        /// Maximum diverse Pareto archive size.
+        #[arg(long)]
+        front_size: Option<usize>,
         /// Extra descent neighbourhoods: comma list of columns, cycle3, depth2, all (or swap).
         #[arg(long)]
         moves: Option<String>,
@@ -846,13 +855,16 @@ fn real_main(cli: Cli) -> Result<()> {
             islands,
             migration_interval,
             migrants,
+            objectives,
+            nsga_generations,
+            front_size,
             moves,
             depth2_width,
             inputs,
         } => {
             let l = ctx.load(&inputs)?;
             let algo =
-                Algo::parse(&algo).with_context(|| format!("unknown algo '{algo}' (hc, sa, ga, memetic, bls, explore, tabu, qd)"))?;
+                Algo::parse(&algo).with_context(|| format!("unknown algo '{algo}' (hc, sa, ga, memetic, bls, explore, tabu, qd, nsga2, rwsa)"))?;
             let start = ctx.layout(from.as_deref().unwrap_or(&ctx.store.defaults.reference), &l)?;
             let mut params = Params {
                 algo,
@@ -868,6 +880,7 @@ fn real_main(cli: Cli) -> Result<()> {
             }
             if let Some(p) = ga_pop {
                 params.ga.pop_size = p;
+                params.nsga2.pop_size = p;
             }
             if let Some(pop) = memetic_pop {
                 params.memetic.ga.pop_size = pop;
@@ -891,6 +904,9 @@ fn real_main(cli: Cli) -> Result<()> {
             if let Some(n) = migrants {
                 params.memetic.migrants = n;
             }
+            if let Some(ids) = objectives { params.nsga2.objectives = ids; }
+            if let Some(generations) = nsga_generations { params.nsga2.generations = generations; }
+            if let Some(size) = front_size { params.nsga2.archive_size = size; }
             if let Some(m) = moves {
                 params.moves = parse_moves(&m)?;
             }
@@ -920,6 +936,7 @@ fn real_main(cli: Cli) -> Result<()> {
                     res.elapsed_ms as f64 / 1000.0,
                     res.evals_per_sec / 1e6
                 );
+                if !res.front.is_empty() { println!("Pareto front: {} layouts over {}", res.front.len(), res.objectives.iter().map(|o| o.id.as_str()).collect::<Vec<_>>().join(", ")); }
                 for r in res.best.iter().take(5) {
                     println!("#{:<2} {:>8.3}  {}", r.rank, r.score, r.rows.join(" "));
                 }

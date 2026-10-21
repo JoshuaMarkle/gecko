@@ -27,6 +27,7 @@ pub const MAX_KEYS: usize = 128;
 /// `Scorer::hold` entry for base-layer slots.
 const NO_HOLD: u8 = u8::MAX;
 
+#[derive(Clone)]
 pub struct Scorer {
     pub n: usize,
     /// Symbol id → char. Symbol ids are the start layout's slot order.
@@ -398,6 +399,69 @@ impl Scorer {
             target,
             tables,
         })
+    }
+
+    /// Re-fold existing metric tables with new nonnegative weights in natural cost units.
+    /// Geometry, corpus, table parameters and symbol ids are unchanged. Construct fresh states
+    /// with the returned scorer: a state's cached costs belong to its constructing scorer.
+    pub fn with_weights(&self, weights: &[(&str, f32)]) -> Result<Self> {
+        let mut out = self.clone();
+        out.profile.weights.clear();
+        out.profile.scale.clear();
+        for &(id, weight) in weights {
+            let mi = metrics::index_of(id).ok_or_else(|| Error::invalid("objectives", format!("unknown metric '{id}'")))?;
+            if METRICS[mi].dir == Dir::Info || !weight.is_finite() || weight < 0.0 {
+                return Err(Error::invalid("objectives", format!("'{id}' needs a scored metric and a finite nonnegative weight")));
+            }
+            out.profile.weights.insert(id.to_owned(), weight);
+        }
+        for table in [&mut out.c1, &mut out.c2, &mut out.ck, &mut out.ckf, &mut out.cy, &mut out.c3, &mut out.cb] {
+            table.fill(0.0);
+        }
+        (out.w_load, out.w_hand, out.w_rss, out.w_peak, out.w_thumb) = (0.0, 0.0, 0.0, 0.0, 0.0);
+        (out.has_pair, out.has_far, out.has_sym, out.has_tri) = (false, false, false, false);
+        for (d, table) in METRICS.iter().zip(&out.tables) {
+            let w = out.profile.weight(d.id);
+            if w == 0.0 { continue; }
+            let signed = if d.dir == Dir::Max { -w } else { w };
+            match (d.order, table) {
+                (Order::Load, _) => match d.id {
+                    "M02" => out.w_load = w as f64,
+                    "M04" => out.w_hand = w as f64,
+                    "M03" => out.w_rss = w as f64,
+                    "M07" => out.w_peak = w as f64,
+                    "M09" => out.w_thumb = w as f64,
+                    _ => {},
+                },
+                (order, Some(table)) => {
+                    let target = match order {
+                        Order::Mono => &mut out.c1,
+                        Order::Bi => { out.has_pair = true; &mut out.c2 },
+                        Order::Skip => { out.has_pair = true; &mut out.ck },
+                        Order::SkipFar => { out.has_pair = true; out.has_far = true; &mut out.ckf },
+                        Order::SymBi => { out.has_pair = true; out.has_sym = true; &mut out.cy },
+                        Order::Tri => { out.has_tri = true; &mut out.c3 },
+                        Order::Brackets => &mut out.cb,
+                        Order::Load => unreachable!(),
+                    };
+                    for (target, value) in target.iter_mut().zip(table) { *target += signed * value; }
+                },
+                _ => {},
+            }
+        }
+        out.has_load = [out.w_load, out.w_hand, out.w_rss, out.w_peak, out.w_thumb].iter().any(|&w| w != 0.0);
+        out.brackets = if out.cb.iter().any(|&c| c != 0.0) { out.bracket_all.clone() } else { Vec::new() };
+        let (effort, layer) = (out.profile.weight("M01"), out.profile.weight("Y01"));
+        for ((cost, e), p) in out.csh.iter_mut().zip(&out.shift_effort).zip(&out.shift_press) { *cost = effort * e + layer * p; }
+        for (cost, p) in out.csb.iter_mut().zip(&out.shift_pair) { *cost = layer * p; }
+        out.has_shift_pair = out.has_shift && out.csb.iter().any(|&c| c != 0.0) && out.fsb.iter().any(|&f| f > 0.0);
+        Ok(out)
+    }
+
+    /// One metric's actual cost at unit weight (max metrics are negated; load targets retain
+    /// their nonlinear penalty). Raw report values may differ, e.g. M04 reports left share.
+    pub fn objective(&self, id: &str) -> Result<Self> {
+        self.with_weights(&[(id, 1.0)])
     }
 
     /// Symbol ids for `layout` in this scorer's alphabet. Errors if the symbol sets differ.

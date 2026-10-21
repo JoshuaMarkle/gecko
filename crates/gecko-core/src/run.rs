@@ -48,6 +48,14 @@ pub struct Ranked {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ParetoRanked {
+    #[serde(flatten)]
+    pub layout: Ranked,
+    pub raw: Vec<f64>,
+    pub costs: Vec<f64>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RunResult {
     pub schema: u32,
     pub id: String,
@@ -59,6 +67,10 @@ pub struct RunResult {
     #[serde(default)]
     pub params: Params,
     pub best: Vec<Ranked>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub objectives: Vec<optimize::nsga2::Objective>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub front: Vec<ParetoRanked>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -111,6 +123,9 @@ pub struct Prepared {
 
 /// Create the run directory and write `config.json`.
 pub fn prepare(runs: &Path, spec: &RunSpec) -> Result<Prepared> {
+    if matches!(spec.params.algo, optimize::Algo::Nsga2 | optimize::Algo::Rwsa) {
+        optimize::nsga2::validate(&spec.params.nsga2)?;
+    }
     let (stamp, iso) = now_stamp();
     let key = format!(
         "{}|{}|{}|{}|{}|{}",
@@ -194,6 +209,16 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
             })
         })
         .collect::<Result<Vec<_>>>()?;
+    let front = out.front.iter().enumerate().map(|(i, point)| {
+        let st = scorer.state_from_sym(point.sym.clone());
+        let chars = st.chars(&scorer);
+        let layout = Layout::from_flat("", spec.geometry, chars.clone())?.with_magic(spec.start.magic.clone())?;
+        Ok(ParetoRanked {
+            layout: Ranked { rank: i + 1, score: st.score, chars: chars.iter().collect(), rows: layout.all_rows(spec.geometry),
+                hash: hash::short(layout.hash()), breakdown: serde_json::to_value(breakdown(&scorer, &st)).unwrap() },
+            raw: point.raw.clone(), costs: point.costs.clone(),
+        })
+    }).collect::<Result<Vec<_>>>()?;
     let res = RunResult {
         schema: SCHEMA,
         id: prep.config.id.clone(),
@@ -203,6 +228,8 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
         evals_per_sec: out.evals_per_sec,
         params: out.params.clone(),
         best,
+        objectives: out.objectives.clone(),
+        front,
     };
     std::fs::write(prep.dir.join("best.json"), serde_json::to_string_pretty(&res).unwrap())?;
     Ok(res)
@@ -324,6 +351,16 @@ pub fn verify(store: &crate::store::Store, dir: &Path) -> Result<Verification> {
             expected: format!("{:.6} {}", a.score, a.chars),
             actual: format!("{:.6} {}", b.score, b.chars),
             ok: same,
+        });
+    }
+    checks.push(check("objectives", serde_json::to_string(&recorded.objectives).unwrap(), serde_json::to_string(&res.objectives).unwrap()));
+    checks.push(check("front", recorded.front.len(), res.front.len()));
+    for (a, b) in recorded.front.iter().zip(&res.front) {
+        let close = |xs: &[f64], ys: &[f64]| xs.len() == ys.len() && xs.iter().zip(ys).all(|(x,y)| (x-y).abs() <= 1e-9 * x.abs().max(1.0));
+        checks.push(Check { name: format!("front#{}", a.layout.rank),
+            expected: serde_json::to_string(a).unwrap(), actual: serde_json::to_string(b).unwrap(),
+            ok: a.layout.chars == b.layout.chars && close(&a.raw, &b.raw) && close(&a.costs, &b.costs)
+                && close(&[a.layout.score], &[b.layout.score]),
         });
     }
     let ok = checks.iter().all(|c| c.ok);

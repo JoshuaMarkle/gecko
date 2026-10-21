@@ -129,16 +129,22 @@ impl Optimizer for Genetic {
 pub(super) fn offspring(pop: &[State], slots: &[usize], p: &GaParams, rng: &mut Rng) -> Vec<u8> {
     let a = pick(pop, p, rng);
     let mut sym = if rng.f64() < p.crossover_rate { crossover(slots, a, pick(pop, p, rng), rng) } else { a.sym.clone() };
+    mutate(slots, &mut sym, &a.sym, p.mutation_rate, rng);
+    sym
+}
+
+/// Shared swap mutation restricted to movable slots.
+pub(super) fn mutate(slots: &[usize], sym: &mut [u8], parent: &[u8], mutation_rate: f64, rng: &mut Rng) {
+    if slots.len() < 2 { return; }
     let mut swaps = 0;
-    while rng.f64() < p.mutation_rate / (1.0 + p.mutation_rate) {
+    while rng.f64() < mutation_rate / (1.0 + mutation_rate) {
         swaps += 1;
     }
-    if swaps == 0 && sym == a.sym {
+    if swaps == 0 && sym == parent {
         swaps = 1;
     }
     for _ in 0..swaps {
         let (i, j) = (slots[rng.below(slots.len())], slots[rng.below(slots.len())]);
         sym.swap(i, j);
     }
-    sym
 }
