@@ -620,7 +620,7 @@ fn real_main(cli: Cli) -> Result<()> {
         }
         Cmd::Optimize { algo, time, evals, seed, threads, pin, from, top, sa_steps, ga_pop, inputs } => {
             let l = ctx.load(&inputs)?;
-            let algo = Algo::parse(&algo).with_context(|| format!("unknown algo '{algo}' (hc, sa, ga, bls, explore)"))?;
+            let algo = Algo::parse(&algo).with_context(|| format!("unknown algo '{algo}' (hc, sa, ga, bls, explore, tabu)"))?;
             let start = ctx.layout(from.as_deref().unwrap_or(&ctx.store.defaults.reference), &l)?;
             let mut params = Params {
                 algo,

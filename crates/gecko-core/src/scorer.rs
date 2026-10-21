@@ -52,6 +52,10 @@ pub struct Scorer {
     tri_entries: Vec<TriEntry>,
     /// All non-zero trigrams once (full evaluation).
     tri_all: Vec<TriEntry>,
+    /// Non-zero trigrams grouped by unordered symbol pair (CSR, key `x * n + y` with `x < y`):
+    /// every trigram containing both `x` and `y`. Used by [`Scorer::delta_shift`].
+    tri_pair_start: Vec<u32>,
+    tri_pair: Vec<TriEntry>,
     finger: Vec<u8>,
     w_load: f64,
     w_hand: f64,
@@ -212,6 +216,34 @@ impl Scorer {
             tri_entries.extend(tri_all.iter().filter(|e| e.x == s8 || e.y == s8 || e.z == s8));
         }
         tri_start[n] = tri_entries.len() as u32;
+        let pairs_of = |e: &TriEntry| {
+            let mut v = [(e.x, e.y), (e.x, e.z), (e.y, e.z)].map(|(a, b)| (a.min(b) as usize, a.max(b) as usize));
+            v.sort_unstable();
+            let mut out = [usize::MAX; 3];
+            for (i, &(a, b)) in v.iter().enumerate() {
+                if a != b && (i == 0 || v[i - 1] != (a, b)) {
+                    out[i] = a * n + b;
+                }
+            }
+            out
+        };
+        let mut tri_pair_start = vec![0u32; n * n + 1];
+        for e in &tri_all {
+            for k in pairs_of(e).into_iter().filter(|&k| k != usize::MAX) {
+                tri_pair_start[k + 1] += 1;
+            }
+        }
+        for k in 0..n * n {
+            tri_pair_start[k + 1] += tri_pair_start[k];
+        }
+        let mut tri_pair = vec![TriEntry { x: 0, y: 0, z: 0, f: 0.0 }; tri_pair_start[n * n] as usize];
+        let mut fill = tri_pair_start.clone();
+        for e in &tri_all {
+            for k in pairs_of(e).into_iter().filter(|&k| k != usize::MAX) {
+                tri_pair[fill[k] as usize] = *e;
+                fill[k] += 1;
+            }
+        }
         let mut target = [0.0; FINGERS];
         for (t, &v) in target.iter_mut().zip(&profile.finger_target) {
             *t = v as f64;
@@ -241,6 +273,8 @@ impl Scorer {
             tri_start,
             tri_entries,
             tri_all,
+            tri_pair_start,
+            tri_pair,
             finger: geometry.key.iter().map(|k| k.finger.index() as u8).collect(),
             w_load,
             w_hand,
@@ -352,6 +386,13 @@ impl Scorer {
     /// Score change if symbols `a` and `b` swap slots. No allocation.
     #[inline]
     pub fn delta(&self, st: &State, a: usize, b: usize) -> f64 {
+        self.delta_linear(st, a, b) + self.delta_load(st, a, b)
+    }
+
+    /// The part of [`Scorer::delta`] from the n-gram terms (everything but the finger-load
+    /// terms, which are not linear in the frequencies).
+    #[inline]
+    pub fn delta_linear(&self, st: &State, a: usize, b: usize) -> f64 {
         if a == b {
             return 0.0;
         }
@@ -396,16 +437,95 @@ impl Scorer {
             }
             d += acc;
         }
+        d
+    }
 
-        if self.w_load != 0.0 || self.w_hand != 0.0 {
-            let (fa, fb) = (self.finger[pa] as usize, self.finger[pb] as usize);
-            if fa != fb {
-                let mut l = st.load;
-                let moved = 100.0 * (self.f1[b] as f64 - self.f1[a] as f64);
-                l[fa] += moved;
-                l[fb] -= moved;
-                d += self.load_cost(&l) - self.load_cost(&st.load);
+    /// The finger-load part of [`Scorer::delta`] (M02, M04).
+    #[inline]
+    pub fn delta_load(&self, st: &State, a: usize, b: usize) -> f64 {
+        if self.w_load == 0.0 && self.w_hand == 0.0 {
+            return 0.0;
+        }
+        let (fa, fb) = (self.finger[st.pos[a] as usize] as usize, self.finger[st.pos[b] as usize] as usize);
+        if fa == fb {
+            return 0.0;
+        }
+        let mut l = st.load;
+        let moved = 100.0 * (self.f1[b] as f64 - self.f1[a] as f64);
+        l[fa] += moved;
+        l[fb] -= moved;
+        self.load_cost(&l) - self.load_cost(&st.load)
+    }
+
+    /// Change in `delta_linear(u, v)` caused by the swap of `r` and `s`, which `st` already
+    /// includes. `{u, v}` and `{r, s}` must be disjoint. Only terms holding a symbol of each
+    /// pair change: Taillard's O(1) QAP update for the pair channels, plus the trigrams that
+    /// contain both pairs (via the pair index). Lets tabu search keep a Δ matrix up to date
+    /// without recomputing every swap. No allocation.
+    #[inline]
+    pub fn delta_shift(&self, st: &State, r: usize, s: usize, u: usize, v: usize) -> f64 {
+        let n = self.n;
+        let pos = &st.pos;
+        // Slots before the r/s swap.
+        let (pr, ps, pu, pv) = (pos[s] as usize, pos[r] as usize, pos[u] as usize, pos[v] as usize);
+        let mut d = 0.0f64;
+        if self.has_pair {
+            let chan = |f: &[f32], c: &[f32]| {
+                let fwd = f[u * n + r] - f[v * n + r] - f[u * n + s] + f[v * n + s];
+                let rev = f[r * n + u] - f[r * n + v] - f[s * n + u] + f[s * n + v];
+                let g = c[pv * n + ps] - c[pu * n + ps] - c[pv * n + pr] + c[pu * n + pr];
+                let h = c[ps * n + pv] - c[ps * n + pu] - c[pr * n + pv] + c[pr * n + pu];
+                (fwd * g + rev * h) as f64
+            };
+            d += chan(&self.f2, &self.c2) + chan(&self.fk, &self.ck);
+            if self.has_far {
+                d += chan(&self.fkf, &self.ckf);
             }
+            if self.has_sym {
+                d += chan(&self.fy, &self.cy);
+            }
+        }
+        if self.has_tri {
+            let c3 = &self.c3;
+            // Slot of symbol `z` with the r/s swap undone (`back`) and/or u/v swapped (`uv`).
+            let slot = |z: usize, back: bool, uv: bool| -> usize {
+                if uv && z == u {
+                    pv
+                } else if uv && z == v {
+                    pu
+                } else if back && z == r {
+                    pr
+                } else if back && z == s {
+                    ps
+                } else {
+                    pos[z] as usize
+                }
+            };
+            let cost = |e: &TriEntry, back: bool, uv: bool| {
+                let (x, y, z) = (slot(e.x as usize, back, uv), slot(e.y as usize, back, uv), slot(e.z as usize, back, uv));
+                c3[(x * n + y) * n + z]
+            };
+            let has = |e: &TriEntry, w: usize| e.x as usize == w || e.y as usize == w || e.z as usize == w;
+            let list = |a: usize, b: usize| {
+                let k = a.min(b) * n + a.max(b);
+                &self.tri_pair[self.tri_pair_start[k] as usize..self.tri_pair_start[k + 1] as usize]
+            };
+            let mut acc = 0.0f64;
+            // Each trigram once: skip it in a later list if an earlier one already holds it.
+            for (i, (a, b)) in [(u, r), (u, s), (v, r), (v, s)].into_iter().enumerate() {
+                for e in list(a, b) {
+                    let seen = match i {
+                        1 => has(e, r),
+                        2 => has(e, u),
+                        3 => has(e, u) || has(e, r),
+                        _ => false,
+                    };
+                    if !seen {
+                        acc += (e.f * ((cost(e, false, true) - cost(e, false, false)) - (cost(e, true, true) - cost(e, true, false)))) as f64;
+                    }
+                }
+            }
+            d += acc;
         }
         d
     }
