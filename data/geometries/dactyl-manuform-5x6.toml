@@ -1,0 +1,507 @@
+name = "dactyl-manuform-5x6"
+description = "Dactyl-Manuform 5x6: 64-key split; flat QMK configurator projection (no bowl curvature or tenting)."
+# Source: https://github.com/qmk/qmk_firmware/blob/180f394b489c238cb231c2bf8b080262155e03c0/keyboards/handwired/dactyl_manuform/5x6/keyboard.json
+# LAYOUT_5x6; KLE input: sources/dactyl-manuform-5x6.kle.json
+# QMK 2D display coordinates in u, including its illustrative split spacing.
+# Imported with gecko geometry import-kle, then reviewed fingers/rows/efforts/fills.
+# Exactly 30 alpha slots have no fill; all remaining slots accept reference layouts.
+
+[[key]]
+pos = [0.0, 0.0, 0.0]
+finger = "LP"
+row = -1
+col = 0
+effort = 4
+fill = "none"
+
+[[key]]
+pos = [1.0, 0.0, 0.0]
+finger = "LP"
+row = -1
+col = 1
+effort = 4
+fill = "none"
+
+[[key]]
+pos = [2.0, 0.0, 0.0]
+finger = "LR"
+row = -1
+col = 2
+effort = 3.4
+fill = "none"
+
+[[key]]
+pos = [3.0, 0.0, 0.0]
+finger = "LM"
+row = -1
+col = 3
+effort = 3
+fill = "none"
+
+[[key]]
+pos = [4.0, 0.0, 0.0]
+finger = "LI"
+row = -1
+col = 4
+effort = 3.2
+fill = "none"
+
+[[key]]
+pos = [5.0, 0.0, 0.0]
+finger = "LI"
+row = -1
+col = 5
+stretch = true
+effort = 4
+fill = "none"
+
+[[key]]
+pos = [11.0, 0.0, 0.0]
+finger = "RI"
+row = -1
+col = 6
+stretch = true
+effort = 4
+fill = "none"
+
+[[key]]
+pos = [12.0, 0.0, 0.0]
+finger = "RI"
+row = -1
+col = 7
+effort = 3.2
+fill = "none"
+
+[[key]]
+pos = [13.0, 0.0, 0.0]
+finger = "RM"
+row = -1
+col = 8
+effort = 3
+fill = "none"
+
+[[key]]
+pos = [14.0, 0.0, 0.0]
+finger = "RR"
+row = -1
+col = 9
+effort = 3.4
+fill = "none"
+
+[[key]]
+pos = [15.0, 0.0, 0.0]
+finger = "RP"
+row = -1
+col = 10
+effort = 4
+fill = "none"
+
+[[key]]
+pos = [16.0, 0.0, 0.0]
+finger = "RP"
+row = -1
+col = 11
+effort = 4
+fill = "none"
+
+[[key]]
+pos = [0.0, 1.0, 0.0]
+finger = "LP"
+row = 0
+col = 0
+effort = 3
+fill = "none"
+
+[[key]]
+pos = [1.0, 1.0, 0.0]
+finger = "LP"
+row = 0
+col = 1
+effort = 3
+
+[[key]]
+pos = [2.0, 1.0, 0.0]
+finger = "LR"
+row = 0
+col = 2
+effort = 2.4
+
+[[key]]
+pos = [3.0, 1.0, 0.0]
+finger = "LM"
+row = 0
+col = 3
+effort = 2
+
+[[key]]
+pos = [4.0, 1.0, 0.0]
+finger = "LI"
+row = 0
+col = 4
+effort = 2.2
+
+[[key]]
+pos = [5.0, 1.0, 0.0]
+finger = "LI"
+row = 0
+col = 5
+stretch = true
+effort = 3
+
+[[key]]
+pos = [11.0, 1.0, 0.0]
+finger = "RI"
+row = 0
+col = 6
+stretch = true
+effort = 3
+
+[[key]]
+pos = [12.0, 1.0, 0.0]
+finger = "RI"
+row = 0
+col = 7
+effort = 2.2
+
+[[key]]
+pos = [13.0, 1.0, 0.0]
+finger = "RM"
+row = 0
+col = 8
+effort = 2
+
+[[key]]
+pos = [14.0, 1.0, 0.0]
+finger = "RR"
+row = 0
+col = 9
+effort = 2.4
+
+[[key]]
+pos = [15.0, 1.0, 0.0]
+finger = "RP"
+row = 0
+col = 10
+effort = 3
+
+[[key]]
+pos = [16.0, 1.0, 0.0]
+finger = "RP"
+row = 0
+col = 11
+effort = 3
+fill = "none"
+
+[[key]]
+pos = [0.0, 2.0, 0.0]
+finger = "LP"
+row = 1
+col = 0
+effort = 1.6
+fill = "none"
+
+[[key]]
+pos = [1.0, 2.0, 0.0]
+finger = "LP"
+row = 1
+col = 1
+home = true
+effort = 1.6
+
+[[key]]
+pos = [2.0, 2.0, 0.0]
+finger = "LR"
+row = 1
+col = 2
+home = true
+effort = 1.3
+
+[[key]]
+pos = [3.0, 2.0, 0.0]
+finger = "LM"
+row = 1
+col = 3
+home = true
+effort = 1.1
+
+[[key]]
+pos = [4.0, 2.0, 0.0]
+finger = "LI"
+row = 1
+col = 4
+home = true
+effort = 1
+
+[[key]]
+pos = [5.0, 2.0, 0.0]
+finger = "LI"
+row = 1
+col = 5
+home = true
+stretch = true
+effort = 2
+
+[[key]]
+pos = [11.0, 2.0, 0.0]
+finger = "RI"
+row = 1
+col = 6
+home = true
+stretch = true
+effort = 2
+
+[[key]]
+pos = [12.0, 2.0, 0.0]
+finger = "RI"
+row = 1
+col = 7
+home = true
+effort = 1
+
+[[key]]
+pos = [13.0, 2.0, 0.0]
+finger = "RM"
+row = 1
+col = 8
+home = true
+effort = 1.1
+
+[[key]]
+pos = [14.0, 2.0, 0.0]
+finger = "RR"
+row = 1
+col = 9
+home = true
+effort = 1.3
+
+[[key]]
+pos = [15.0, 2.0, 0.0]
+finger = "RP"
+row = 1
+col = 10
+home = true
+effort = 1.6
+
+[[key]]
+pos = [16.0, 2.0, 0.0]
+finger = "RP"
+row = 1
+col = 11
+effort = 1.6
+fill = "none"
+
+[[key]]
+pos = [0.0, 3.0, 0.0]
+finger = "LP"
+row = 2
+col = 0
+effort = 3.2
+fill = "none"
+
+[[key]]
+pos = [1.0, 3.0, 0.0]
+finger = "LP"
+row = 2
+col = 1
+effort = 3.2
+
+[[key]]
+pos = [2.0, 3.0, 0.0]
+finger = "LR"
+row = 2
+col = 2
+effort = 2.6
+
+[[key]]
+pos = [3.0, 3.0, 0.0]
+finger = "LM"
+row = 2
+col = 3
+effort = 2.3
+
+[[key]]
+pos = [4.0, 3.0, 0.0]
+finger = "LI"
+row = 2
+col = 4
+effort = 1.9
+
+[[key]]
+pos = [5.0, 3.0, 0.0]
+finger = "LI"
+row = 2
+col = 5
+stretch = true
+effort = 3.2
+
+[[key]]
+pos = [11.0, 3.0, 0.0]
+finger = "RI"
+row = 2
+col = 6
+stretch = true
+effort = 3.2
+
+[[key]]
+pos = [12.0, 3.0, 0.0]
+finger = "RI"
+row = 2
+col = 7
+effort = 1.9
+
+[[key]]
+pos = [13.0, 3.0, 0.0]
+finger = "RM"
+row = 2
+col = 8
+effort = 2.3
+
+[[key]]
+pos = [14.0, 3.0, 0.0]
+finger = "RR"
+row = 2
+col = 9
+effort = 2.6
+
+[[key]]
+pos = [15.0, 3.0, 0.0]
+finger = "RP"
+row = 2
+col = 10
+effort = 3.2
+
+[[key]]
+pos = [16.0, 3.0, 0.0]
+finger = "RP"
+row = 2
+col = 11
+effort = 3.2
+fill = "none"
+
+[[key]]
+pos = [2.0, 4.0, 0.0]
+finger = "LR"
+row = 3
+col = 0
+effort = 3.6
+fill = "none"
+
+[[key]]
+pos = [3.0, 4.0, 0.0]
+finger = "LM"
+row = 3
+col = 1
+effort = 3.3
+fill = "none"
+
+[[key]]
+pos = [4.0, 5.0, 0.0]
+finger = "LT"
+row = 3
+col = 2
+effort = 1.5
+fill = "esc"
+
+[[key]]
+pos = [5.0, 5.0, 0.0]
+finger = "LT"
+row = 3
+col = 3
+effort = 1.0
+fill = "space"
+
+[[key]]
+pos = [6.0, 6.0, 0.0]
+finger = "LT"
+row = 3
+col = 4
+effort = 1.5
+fill = "tab"
+
+[[key]]
+pos = [6.0, 7.0, 0.0]
+finger = "LT"
+row = 3
+col = 5
+effort = 1.5
+fill = "none"
+
+[[key]]
+pos = [7.0, 6.0, 0.0]
+finger = "LT"
+row = 3
+col = 6
+effort = 1.5
+fill = "none"
+
+[[key]]
+pos = [7.0, 7.0, 0.0]
+finger = "LT"
+row = 3
+col = 7
+effort = 1.5
+fill = "none"
+
+[[key]]
+pos = [9.0, 6.0, 0.0]
+finger = "RT"
+row = 3
+col = 8
+effort = 1.5
+fill = "none"
+
+[[key]]
+pos = [9.0, 7.0, 0.0]
+finger = "RT"
+row = 3
+col = 9
+effort = 1.5
+fill = "none"
+
+[[key]]
+pos = [10.0, 6.0, 0.0]
+finger = "RT"
+row = 3
+col = 10
+effort = 1.5
+fill = "none"
+
+[[key]]
+pos = [10.0, 7.0, 0.0]
+finger = "RT"
+row = 3
+col = 11
+effort = 1.5
+fill = "none"
+
+[[key]]
+pos = [11.0, 5.0, 0.0]
+finger = "RT"
+row = 3
+col = 12
+effort = 1.5
+fill = "enter"
+
+[[key]]
+pos = [12.0, 5.0, 0.0]
+finger = "RT"
+row = 3
+col = 13
+effort = 1.0
+fill = "bspc"
+
+[[key]]
+pos = [13.0, 4.0, 0.0]
+finger = "RM"
+row = 3
+col = 14
+effort = 3.3
+fill = "none"
+
+[[key]]
+pos = [14.0, 4.0, 0.0]
+finger = "RR"
+row = 3
+col = 15
+effort = 3.6
+fill = "none"
