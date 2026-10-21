@@ -33,8 +33,9 @@ delta == full (proptest), folding == breakdown, brute-force optimum on a 6-key b
 HC/SA/GA, determinism with an eval budget, pins respected, ranking sanity + QWERTY SFB,
 corpus counting (incl. skip-2/3, word imports) + binary round-trip + `GKCORP1` compatibility,
 imported corpora reproduce QWERTY SFB computed independently from their source tables,
-layout TOML round-trip. Explore (`tests/explore.rs` + unit tests in `explore/`): raw-vector
-re-scoring == full score (proptest); on a mirror-symmetric 6-key board the archive equals the
+layout TOML round-trip, word lists (fold/merge/TSV round-trip), worst words sum to B01 on a
+word corpus and Semimak shows `you're` on shai. Explore (`tests/explore.rs` + unit tests in
+`explore/`): raw-vector re-scoring == full score (proptest); on a mirror-symmetric 6-key board the archive equals the
 brute-forced set of canonical local optima; ansi atlas consistency (pins, constrained
 records, every unconstrained record locally optimal); distances, PCA, funnels, Chao1.
 BLS and explore are in the brute-force and determinism tests.

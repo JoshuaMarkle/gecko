@@ -58,7 +58,7 @@ When an item closes, tick it here. When scope changes, edit the issue first.
 31. [ ] [#87](https://github.com/JoshuaMarkle/gecko/issues/87) `L10` Mini keyboards everywhere · M · after [#83](https://github.com/JoshuaMarkle/gecko/issues/83)
 32. [ ] [#21](https://github.com/JoshuaMarkle/gecko/issues/21) `B4` NSGA-II Pareto fronts · M
 33. [ ] [#22](https://github.com/JoshuaMarkle/gecko/issues/22) `D4` Y04 home-row-mod misfire risk · S
-34. [ ] [#23](https://github.com/JoshuaMarkle/gecko/issues/23) `C5` Worst words report per metric · S
+34. [x] [#23](https://github.com/JoshuaMarkle/gecko/issues/23) `C5` Worst words report per metric · S
 35. [ ] [#24](https://github.com/JoshuaMarkle/gecko/issues/24) `D5` Thumb trigram classes + M09 thumb load · S
 36. [ ] [#25](https://github.com/JoshuaMarkle/gecko/issues/25) `G1` Parametric 2D geometry model · M · after [#3](https://github.com/JoshuaMarkle/gecko/issues/3), [#17](https://github.com/JoshuaMarkle/gecko/issues/17)
 37. [ ] [#26](https://github.com/JoshuaMarkle/gecko/issues/26) `C6` cmini community layout importer + ranking tests · M
