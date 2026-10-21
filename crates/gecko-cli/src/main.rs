@@ -426,8 +426,10 @@ fn print_breakdown(b: &Breakdown) {
 fn layout_rows(layout: &Layout, g: &gecko_core::Geometry) -> String {
     let rows = |rs: &[String]| rs.iter().map(|r| r.chars().map(|c| c.to_string()).collect::<Vec<_>>().join(" ")).collect::<Vec<_>>().join("\n  ");
     let mut out = rows(&layout.rows(g));
-    for (ly, rs) in layout.layers.iter().zip(layout.layer_rows(g)) {
-        out += &format!("\n  [{}]\n  {}", ly.name, rows(&rs));
+    let modes = layout.holders().unwrap_or_default();
+    for (li, (ly, rs)) in layout.layers.iter().zip(layout.layer_rows(g)).enumerate() {
+        let mode = modes.get(li).filter(|h| h.1 != gecko_core::LayerMode::Hold).map_or(String::new(), |h| format!(", {}", h.1.name()));
+        out += &format!("\n  [{}{mode}]\n  {}", ly.name, rows(&rs));
     }
     out
 }

@@ -37,5 +37,10 @@ describe("format", () => {
     expect(layerSlots(t, "ab\u2423\u00B7")).toEqual([[0, 1, 2, 3]]);
     // Base with layer 1 held by LT: layer 1 skips the LT key.
     expect(layerSlots(t, "ab\u2460\u00B7" + "()" + "\u00B7")).toEqual([[0, 1, 2, 3], [4, 5, null, 6]]);
+    // One-shot and toggle layers skip only the layer key.
+    const t2: Geometry = { ...t, key: [...t.key, k("LT", "none")] };
+    expect(layerSlots(t2, "ab\u24F5\u00B7\u00B7" + "()" + "\u00B7\u00B7")).toEqual([[0, 1, 2, 3, 4], [5, 6, null, 7, 8]]);
+    expect(layerSlots(t2, "ab\u2776\u00B7\u00B7" + "()" + "\u00B7\u00B7")).toEqual([[0, 1, 2, 3, 4], [5, 6, null, 7, 8]]);
+    expect(layerSlots(t2, "ab\u2460\u00B7\u00B7" + "()" + "\u00B7")).toEqual([[0, 1, 2, 3, 4], [5, 6, null, 7, null]]);
   });
 });

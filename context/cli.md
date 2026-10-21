@@ -37,7 +37,8 @@ Global flags: `--json`, `--root <dir with gecko.toml>`.
 A 30-key layout on a board with thumb keys (`--geometry corne-36`) gets the geometry's thumb
 fills. Tokens can be written `{space}`, `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `{none}` in
 `raw:` and `--pin`, e.g. `--pin '{space}{enter}{bspc}{tab}{esc}'` keeps the thumbs fixed.
-Layered layouts: `--from layered/corne-code`; their rows print per layer (`[sym]`, `[num]`),
+Layered layouts: `--from layered/corne-code`; their rows print per layer (`[sym]`, `[num]`;
+non-hold layers add their mode, `[num, toggle]`),
 and JSON `rows` lists the base rows then each layer's. Runs store the flat layered string.
 
 ## Conventions

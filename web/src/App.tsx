@@ -11,7 +11,7 @@ import { InputsPanel, type Group, type SearchSettings } from "./components/Input
 import { ResultPanel } from "./components/ResultPanel";
 import { ResultsView } from "./components/ResultsView";
 import { fingerLegend, PAIR_KINDS } from "./colors";
-import { EMPTY, fitChars, fmt, fmtCount, fmtTime, LAYER_KEYS, layerSlots, rowsOf, swapChars, undirected } from "./format";
+import { EMPTY, fitChars, fmt, fmtCount, fmtTime, layerKey, layerSlots, rowsOf, swapChars, undirected } from "./format";
 import { Keyboard3D, type Arc, type Overlay, type ViewMode } from "./three/Keyboard3D";
 import { Scorer } from "./wasm";
 
@@ -365,11 +365,16 @@ export function App() {
         <div className="viewctl">
           {slots.length > 1 && (
             <div className="seg inline" aria-label="Layer">
-              {slots.map((_, l) => (
-                <button key={l} className={shownLayer === l ? "on" : ""} aria-pressed={shownLayer === l}
-                  title={l === 0 ? "Base layer" : `Layer ${l}: hold ${LAYER_KEYS[l - 1]} (keys on that finger are unusable, shown dimmed)`}
-                  onClick={() => setLayer(l)}>{l === 0 ? "Base" : `${LAYER_KEYS[l - 1]} Layer ${l}`}</button>
-              ))}
+              {slots.map((_, l) => {
+                const lk = l === 0 ? null : layerKey([...viewChars].slice(0, slots[0].length), l);
+                const how = !lk ? "" : lk.mode === "hold" ? `hold ${lk.glyph} (keys on that finger are unusable, shown dimmed)`
+                  : lk.mode === "oneshot" ? `one-shot ${lk.glyph}: tap before each symbol` : `toggle ${lk.glyph}: tap to enter and to leave`;
+                return (
+                  <button key={l} className={shownLayer === l ? "on" : ""} aria-pressed={shownLayer === l}
+                    title={l === 0 ? "Base layer" : `Layer ${l}: ${how}`}
+                    onClick={() => setLayer(l)}>{l === 0 ? "Base" : `${lk?.glyph ?? ""} Layer ${l}`}</button>
+                );
+              })}
             </div>
           )}
           <div className="seg inline">
