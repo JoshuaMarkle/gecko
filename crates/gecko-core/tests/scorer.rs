@@ -697,6 +697,7 @@ fn engram_comfort_table() {
     assert_eq!(c(at(1, 1), at(1, 1)), 1.0, "repeats are left to B02");
 }
 
+<<<<<<< HEAD
 /// Column exchanges, 3-cycles and depth-2 swaps keep the delta-tracked score equal to a full
 /// evaluation, never move pinned symbols, and end in an optimum of every enabled neighbourhood.
 #[test]
@@ -886,4 +887,23 @@ fn hrm_slots_and_misfire_table() {
     let lg = sb.layered(&[sb.len() - 1]).unwrap();
     assert!((sb.len()..lg.len()).all(|i| !lg.hrm(i)));
     assert_eq!((0..sb.len()).filter(|&i| lg.hrm(i)).count(), 8);
+=======
+/// The default profile agrees (weakly) with cmini community likes: among liked layouts the
+/// Spearman ρ is positive, and the best-liked modern layouts rank near the top. See
+/// `context/objective.md` (Calibration) for the full numbers.
+#[test]
+fn cmini_likes_ranking() {
+    let Some(c) = real_corpus() else { return };
+    let b = gecko_core::community::Bundle::from_json(&read("data/community/cmini.json")).unwrap();
+    assert!(b.unique().count() > 1500, "{} unique cmini layouts", b.unique().count());
+    let g = ansi();
+    let p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
+    let r = gecko_core::community::likes_report(&g, &c, &p, b.unique().filter(|l| l.likes > 0)).unwrap();
+    assert!(r.all.rho > 0.05, "ρ over liked layouts {}", r.all.rho);
+    let n = r.layouts.len();
+    for name in ["graphite", "gallium"] {
+        let s = r.layouts.iter().find(|s| s.name == name).unwrap();
+        assert!(s.rank * 10 <= n, "{name} ranks {} of {n} liked cmini layouts", s.rank);
+    }
+>>>>>>> origin/fix/issue-26
 }

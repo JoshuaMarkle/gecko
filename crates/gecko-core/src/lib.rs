@@ -5,6 +5,7 @@
 #![allow(clippy::needless_range_loop)]
 
 pub mod calibrate;
+pub mod community;
 pub mod corpus;
 pub mod error;
 pub mod explore;

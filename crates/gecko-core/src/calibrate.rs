@@ -52,6 +52,39 @@ fn stdev(xs: impl Iterator<Item = f64> + Clone) -> f64 {
     (xs.map(|x| (x - mean) * (x - mean)).sum::<f64>() / n).sqrt()
 }
 
+/// Ranks (1-based) with ties sharing their average rank.
+fn ranks(xs: &[f64]) -> Vec<f64> {
+    let mut idx: Vec<usize> = (0..xs.len()).collect();
+    idx.sort_by(|&a, &b| xs[a].total_cmp(&xs[b]));
+    let mut r = vec![0.0; xs.len()];
+    let mut i = 0;
+    while i < idx.len() {
+        let mut j = i;
+        while j + 1 < idx.len() && xs[idx[j + 1]] == xs[idx[i]] {
+            j += 1;
+        }
+        for &k in &idx[i..=j] {
+            r[k] = (i + j) as f64 / 2.0 + 1.0;
+        }
+        i = j + 1;
+    }
+    r
+}
+
+/// Spearman rank correlation (Pearson on tie-averaged ranks). NaN when either side is constant.
+pub fn spearman(x: &[f64], y: &[f64]) -> f64 {
+    let (rx, ry) = (ranks(x), ranks(y));
+    let n = rx.len() as f64;
+    let (mx, my) = (rx.iter().sum::<f64>() / n, ry.iter().sum::<f64>() / n);
+    let (mut sxy, mut sxx, mut syy) = (0.0, 0.0, 0.0);
+    for (a, b) in rx.iter().zip(&ry) {
+        sxy += (a - mx) * (b - my);
+        sxx += (a - mx) * (a - mx);
+        syy += (b - my) * (b - my);
+    }
+    sxy / (sxx * syy).sqrt()
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct Fit {
     pub target: String,
@@ -142,7 +175,17 @@ fn nnls(xs: &[Vec<f64>], ys: &[f64]) -> (Vec<f64>, f64) {
 
 #[cfg(test)]
 mod tests {
-    use super::nnls;
+    use super::{nnls, spearman};
+
+    #[test]
+    fn spearman_handles_ties_and_order() {
+        assert!((spearman(&[1.0, 2.0, 3.0, 4.0], &[10.0, 20.0, 30.0, 400.0]) - 1.0).abs() < 1e-12);
+        assert!((spearman(&[1.0, 2.0, 3.0], &[3.0, 2.0, 1.0]) + 1.0).abs() < 1e-12);
+        // Ranks with ties: x = [1, 2.5, 2.5, 4], y = [1, 2, 3, 4] → ρ = 4.5 / sqrt(4.5 · 5).
+        let r = spearman(&[1.0, 2.0, 2.0, 3.0], &[1.0, 2.0, 3.0, 4.0]);
+        assert!((r - 4.5 / (4.5f64 * 5.0).sqrt()).abs() < 1e-12, "{r}");
+        assert!(spearman(&[1.0, 1.0], &[1.0, 2.0]).is_nan());
+    }
 
     #[test]
     fn nnls_recovers_nonnegative_weights() {
