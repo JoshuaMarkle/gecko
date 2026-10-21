@@ -69,6 +69,10 @@ a magic key (proptest); `[[magic]]` TOML round-trip; Magic Sturdy's rules halve 
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
 
+Bundled splits (`tests/boards.rs`): every Corne/Sweep/Lily58/Kyria/ErgoDox/Dactyl key
+matches pinned QMK-derived KLE inputs; counts, stagger, alpha fingers, fills, reference fits,
+TOML round-trips, and all-symbol score deltas (including ErgoDox above 64 slots) are checked.
+
 Integration coverage: corpus extension and adaptive-key rewriting retain Shift counts; tabu
 mixed deltas include Shift and bracket placement. Reference snapshots include S04, row
 effort offsets and Y03.
