@@ -1,9 +1,11 @@
-//! Per-metric breakdowns and analysis (finger loads, heat, worst n-grams). JSON shapes here are
+//! Per-metric breakdowns and analysis (finger loads, heat, worst n-grams and words). JSON shapes here are
 //! part of the stable `--json` schema; see `context/cli.md`.
 
 use serde::Serialize;
 
+use crate::corpus::{fold_char, WordList};
 use crate::geometry::{Finger, FINGERS};
+use crate::layout::SPACE;
 use crate::metrics::{Dir, Order, METRICS};
 use crate::scorer::{balance_rss, hand_cost, load_error_cost, peak_load, Scorer, State};
 
@@ -205,4 +207,112 @@ pub fn analyze(sc: &Scorer, st: &State, top: usize) -> Analysis {
         bigrams: all_pairs(sc, st, sc.f2(), &[(t("B01"), "sfb"), (t("B04"), "lsb"), (t("B05"), "scissor")], t("B08")),
         skipgrams: all_pairs(sc, st, sc.fk(), &[(t("S01"), "sfs")], t("B08")),
     }
+}
+
+/// One word's cost under one metric.
+#[derive(Clone, Debug, Serialize)]
+pub struct WordCost {
+    pub word: String,
+    /// % of all word occurrences.
+    pub freq: f64,
+    /// Per occurrence, summed over the word's n-grams: offending n-grams for % metrics (2 = two
+    /// SFBs), distance for `u` metrics, raw effort for M01.
+    pub cost: f64,
+    /// % of this metric's word-attributed total (Σ freq × cost over every word).
+    pub share: f64,
+    /// The word's n-grams with a non-zero cost, in typing order (a far skipgram once per gap).
+    pub ngrams: Vec<String>,
+}
+
+/// The words that cost most on one metric, by frequency × cost.
+#[derive(Clone, Debug, Serialize)]
+pub struct MetricWords {
+    pub id: &'static str,
+    pub name: &'static str,
+    pub unit: &'static str,
+    pub words: Vec<WordCost>,
+}
+
+/// Worst words per lower-is-better metric (cost tables only; load metrics have no per-word
+/// cost). Each word is typed as `␣word␣` when `␣` is on the layout, else as the bare word;
+/// a symbol not on the layout breaks n-grams, as in the corpus. N-grams spanning two words
+/// belong to neither. Metrics no word touches are left out.
+pub fn worst_words(sc: &Scorer, st: &State, words: &WordList, top: usize) -> Vec<MetricWords> {
+    let n = sc.n;
+    let space = sc.chars.iter().position(|&c| c == SPACE);
+    let decay = sc.profile.sfb.skip_decay as f64;
+    let total = words.total.max(1) as f64;
+    // Each word as slots (None = break), with its symbols for n-gram labels.
+    let typed: Vec<Vec<Option<(usize, char)>>> = words
+        .words
+        .iter()
+        .map(|(w, _)| {
+            let sym = |c: char| sc.chars.iter().position(|&x| x == c).map(|s| (st.pos[s] as usize, c));
+            let mut v = vec![space.map(|s| (st.pos[s] as usize, SPACE))];
+            v.extend(w.chars().map(|c| sym(fold_char(c))));
+            v.push(v[0]);
+            if space.is_none() {
+                v.remove(0);
+                v.pop();
+            }
+            v
+        })
+        .collect();
+    let mut out = Vec::new();
+    for (mi, d) in METRICS.iter().enumerate() {
+        let Some(t) = sc.table(mi) else { continue };
+        if d.dir != Dir::Min || d.order == Order::Load {
+            continue;
+        }
+        // Gaps between the n-gram's first and last symbol, with their weight.
+        let gaps: &[(usize, f64)] = match d.order {
+            Order::Mono => &[(0, 1.0)],
+            Order::Bi | Order::SymBi => &[(1, 1.0)],
+            Order::Skip => &[(2, 1.0)],
+            Order::SkipFar => &[(3, decay), (4, decay * decay)],
+            Order::Tri => &[(2, 1.0)],
+            Order::Load => continue,
+        };
+        // % and u tables hold 100 × the per-n-gram cost (metric values read per 100 n-grams).
+        let scale = if d.unit.is_empty() { 1.0 } else { 0.01 };
+        let mut rows: Vec<WordCost> = Vec::new();
+        let mut sum = 0.0;
+        for (ks, (w, count)) in typed.iter().zip(&words.words) {
+            let mut cost = 0.0;
+            let mut ngrams = Vec::new();
+            for &(g, wt) in gaps {
+                for i in 0..ks.len().saturating_sub(g) {
+                    let (Some((a, ca)), Some((b, cb))) = (ks[i], ks[i + g]) else { continue };
+                    let (c, label) = match d.order {
+                        Order::Mono => (t[a], ca.to_string()),
+                        Order::Tri => {
+                            let Some((m, cm)) = ks[i + 1] else { continue };
+                            (t[(a * n + m) * n + b], [ca, cm, cb].iter().collect())
+                        }
+                        Order::SymBi if !(ca.is_ascii_punctuation() && cb.is_ascii_punctuation()) => continue,
+                        _ => (t[a * n + b], [ca, cb].iter().collect()),
+                    };
+                    if c != 0.0 {
+                        cost += wt * scale * c as f64;
+                        ngrams.push(label);
+                    }
+                }
+            }
+            if cost > 0.0 {
+                let freq = 100.0 * *count as f64 / total;
+                sum += freq * cost;
+                rows.push(WordCost { word: w.clone(), freq, cost, share: 0.0, ngrams });
+            }
+        }
+        if rows.is_empty() || sum <= 0.0 {
+            continue;
+        }
+        rows.sort_by(|a, b| (b.freq * b.cost).total_cmp(&(a.freq * a.cost)).then_with(|| a.word.cmp(&b.word)));
+        rows.truncate(top);
+        for r in &mut rows {
+            r.share = 100.0 * r.freq * r.cost / sum;
+        }
+        out.push(MetricWords { id: d.id, name: d.name, unit: d.unit, words: rows });
+    }
+    out
 }

@@ -3,8 +3,9 @@
 
 use std::time::Duration;
 
+use gecko_core::corpus::WordList;
 use gecko_core::optimize::{self, Algo, Control, Ctx, Params};
-use gecko_core::report::{analyze, breakdown};
+use gecko_core::report::{analyze, breakdown, worst_words};
 use gecko_core::rng::Rng;
 use gecko_core::{Corpus, Geometry, Layout, Profile, Scorer};
 use proptest::prelude::*;
@@ -404,6 +405,52 @@ fn pair_kinds_match_metrics() {
     {
         assert!((got - want).abs() < 1e-3, "{got} vs {want}");
     }
+}
+
+/// On a word-import corpus without `␣` on the layout every bigram is inside a word, so the
+/// words' SFBs (freq × cost) add up to B01 exactly.
+#[test]
+fn worst_words_add_up_to_the_metric() {
+    let counts: Vec<(String, u64)> = [("the", 50), ("world", 7), ("you're", 9), ("decided", 4), ("my", 11), ("ice", 3), ("tree", 5)]
+        .iter()
+        .map(|&(w, n)| (w.to_string(), n))
+        .collect();
+    let mut c = Corpus::new("w", gecko_core::corpus::DEFAULT_CHARSET);
+    let mut e = c.word_edges();
+    for (w, n) in &counts {
+        c.add_word(w, *n, &mut e);
+    }
+    c.add_word_boundaries(&e);
+    let words = WordList::from_counts(counts, 100);
+    let sc = Scorer::new(&ansi(), &c, &all_weights(), &layout("qwerty")).unwrap();
+    let st = sc.identity();
+    let on = |ch: char| sc.chars.contains(&ch);
+    let bigrams: f64 = words
+        .words
+        .iter()
+        .map(|(w, n)| *n as f64 * w.as_bytes().windows(2).filter(|p| on(p[0] as char) && on(p[1] as char)).count() as f64)
+        .sum();
+    let ww = worst_words(&sc, &st, &words, 100);
+    let sfb = ww.iter().find(|m| m.id == "B01").unwrap();
+    let from_words: f64 = sfb.words.iter().map(|w| w.freq / 100.0 * words.total as f64 * w.cost).sum::<f64>() / bigrams * 100.0;
+    let b01 = breakdown(&sc, &st).metrics.iter().find(|m| m.id == "B01").unwrap().value;
+    assert!((from_words - b01).abs() < 1e-4, "{from_words} vs {b01}");
+    assert_eq!(sfb.words[0].word, "decided"); // de ec de ed: 4 SFBs
+    assert_eq!(sfb.words[0].ngrams, ["de", "ec", "de", "ed"]);
+    assert_eq!(sfb.words[0].cost, 4.0);
+    assert!((sfb.words.iter().map(|w| w.share).sum::<f64>() - 100.0).abs() < 1e-9);
+}
+
+/// Semimak's known awkward word (`you're`, the `'r` SFB) shows up on the bundled shai words.
+#[test]
+fn semimak_worst_sfb_words_include_youre() {
+    let words = WordList::from_tsv(&read("data/corpora/shai.words.tsv")).unwrap();
+    let c = Corpus::from_bytes(&std::fs::read(format!("{ROOT}/data/corpora/shai.gkc")).unwrap()).unwrap();
+    let p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
+    let sc = Scorer::new(&ansi(), &c, &p, &layout("semimak")).unwrap();
+    let ww = worst_words(&sc, &sc.identity(), &words, 5);
+    let sfb = ww.iter().find(|m| m.id == "B01").unwrap();
+    assert!(sfb.words.iter().any(|w| w.word == "you're" && w.ngrams == ["'r"]), "{:?}", sfb.words);
 }
 
 /// A 6-key board: small enough to brute-force all 720 layouts.

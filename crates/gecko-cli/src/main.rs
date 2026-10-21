@@ -7,9 +7,10 @@ use std::path::PathBuf;
 
 use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand};
+use gecko_core::corpus::WordList;
 use gecko_core::metrics::Dir;
 use gecko_core::optimize::{Algo, Control, Params};
-use gecko_core::report::{analyze, breakdown, Breakdown};
+use gecko_core::report::{analyze, breakdown, worst_words, Breakdown};
 use gecko_core::run::{self, RunSpec};
 use gecko_core::store::Store;
 use gecko_core::{Corpus, Layout, Scorer, SCHEMA};
@@ -64,6 +65,10 @@ enum Cmd {
         layout: String,
         #[arg(long, default_value_t = 10)]
         top: usize,
+        /// Also list the worst real words per metric (frequency × cost); needs a word-import
+        /// corpus (`<corpus>.words.tsv`), e.g. `-c shai`.
+        #[arg(long)]
+        words: bool,
         #[command(flatten)]
         inputs: Inputs,
     },
@@ -669,13 +674,18 @@ fn real_main(cli: Cli) -> Result<()> {
                 }
             }
         }
-        Cmd::Analyze { layout, top, inputs } => {
+        Cmd::Analyze { layout, top, words, inputs } => {
             let l = ctx.load(&inputs)?;
             let layout = ctx.layout(&layout, &l)?;
             let (sc, st) = score_layout(&l, &layout)?;
             let a = analyze(&sc, &st, top);
+            let ww = if words { Some(worst_words(&sc, &st, &ctx.store.words(&l.corpus.name)?, top)) } else { None };
             if ctx.json {
-                ctx.print(json!({"schema": SCHEMA, "layout": layout.name, "rows": layout.all_rows(&l.geometry), "analysis": a}));
+                let mut v = json!({"schema": SCHEMA, "layout": layout.name, "rows": layout.all_rows(&l.geometry), "analysis": a});
+                if let Some(ww) = &ww {
+                    v["worst_words"] = json!(ww);
+                }
+                ctx.print(v);
             } else {
                 println!("{}\n  {}\n", layout.name, layout_rows(&layout, &l.geometry));
                 print_breakdown(&a.breakdown);
@@ -694,6 +704,13 @@ fn real_main(cli: Cli) -> Result<()> {
                 for (title, v) in [("SFB", &a.worst_sfb), ("SFS", &a.worst_sfs), ("LSB", &a.worst_lsb), ("scissors", &a.worst_scissors)] {
                     let s: Vec<String> = v.iter().map(|n| format!("{} {:.2}", n.ngram, n.freq)).collect();
                     println!("\nworst {title}: {}", s.join(" · "));
+                }
+                if let Some(ww) = &ww {
+                    println!("\nworst words  (word share%  — % of the metric's word cost)");
+                    for m in ww {
+                        let s: Vec<String> = m.words.iter().map(|w| format!("{} {:.1}", w.word, w.share)).collect();
+                        println!("  {:<16} {}", m.name, s.join(" · "));
+                    }
                 }
             }
         }
@@ -944,10 +961,16 @@ fn real_main(cli: Cli) -> Result<()> {
             let words = dir.join("words.json");
             let files = if words.is_file() {
                 let mut e = c.word_edges();
-                for (w, n) in read_counts(&words)? {
-                    c.add_word(&if fold { gecko_core::corpus::fold_diacritics(&w) } else { w }, n, &mut e);
+                let counts: Vec<_> = read_counts(&words)?.into_iter().map(|(w,n)| (if fold { gecko_core::corpus::fold_diacritics(&w) } else { w }, n)).collect();
+                for (w, n) in &counts {
+                    c.add_word(w, *n, &mut e);
                 }
                 c.add_word_boundaries(&e);
+                let list = WordList::from_counts(counts, gecko_core::corpus::WORDS_KEEP);
+                let path = ctx.store.words_path(&out);
+                std::fs::create_dir_all(path.parent().unwrap())?;
+                std::fs::write(&path, list.to_tsv())?;
+                eprintln!("wrote {} ({} words)", path.display(), list.words.len());
                 1
             } else {
                 let names = ["monograms.json", "bigrams.json", "trigrams.json"];
