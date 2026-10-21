@@ -10,6 +10,7 @@ pub mod error;
 pub mod explore;
 pub mod geometry;
 pub mod hash;
+pub mod kle;
 pub mod layout;
 pub mod metrics;
 pub mod optimize;
