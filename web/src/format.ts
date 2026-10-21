@@ -54,7 +54,8 @@ export function rowsOf(chars: string, g: Geometry): string[] {
 export const LAYER_KEYS = ["\u2460", "\u2461", "\u2462"];
 const TOKEN_NAMES: Record<string, string> = {
   space: "\u2423", spc: "\u2423", enter: "\u23CE", ent: "\u23CE", ret: "\u23CE", bspc: "\u232B", backspace: "\u232B",
-  tab: "\u21E5", esc: "\u238B", escape: "\u238B", none: "\u00B7", empty: "\u00B7", _: "\u00B7",
+  tab: "\u21E5", esc: "\u238B", escape: "\u238B",
+  left: "\u2190", down: "\u2193", up: "\u2191", right: "\u2192", none: "\u00B7", empty: "\u00B7", _: "\u00B7",
   layer1: LAYER_KEYS[0], l1: LAYER_KEYS[0], layer2: LAYER_KEYS[1], l2: LAYER_KEYS[1], layer3: LAYER_KEYS[2], l3: LAYER_KEYS[2],
 };
 
@@ -153,7 +154,7 @@ export function scoredMetrics(ms: MetricValue[]): MetricValue[] {
 }
 
 /** Special-key token glyphs (gecko-core `layout::TOKENS`) and the empty-slot glyph. */
-export const TOKENS = "\u2423\u23CE\u232B\u21E5\u238B\u2460\u2461\u2462";
+export const TOKENS = "\u2423\u23CE\u232B\u21E5\u238B\u2190\u2193\u2191\u2192\u2460\u2461\u2462";
 export const EMPTY = "\u00B7";
 
 /** Validate a layout string against a geometry and allowed charset. Returns an error or null.
