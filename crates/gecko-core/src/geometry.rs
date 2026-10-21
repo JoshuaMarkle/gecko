@@ -249,6 +249,12 @@ impl Geometry {
         self.phys(i) == self.phys(j)
     }
 
+    /// Physical key holding the layer of slot `i` (`None` on the base layer).
+    pub fn holder(&self, i: usize) -> Option<usize> {
+        let l = self.key[i].layer as usize;
+        (l > 0).then(|| self.layer_keys[l - 1])
+    }
+
     /// Number of physical keys (all keys unless layered).
     pub fn physical_len(&self) -> usize {
         self.key.iter().filter(|k| k.layer == 0).count()
@@ -257,8 +263,8 @@ impl Geometry {
     /// The virtual geometry of a layered layout: the base keys, then for each layer `l` a copy
     /// of every key not on the finger that holds the layer key `holders[l - 1]` (that finger is
     /// busy holding), with `layer = l` and `phys` set. Every metric then sees a layered symbol
-    /// at its physical key; layer-key presses are scored by Y01/Y02. Comfort tables expand
-    /// by physical key.
+    /// at its physical key; layer-key presses are scored by Y01/Y02, and holding the layer key
+    /// adds to M01 effort and finger loads. Comfort tables expand by physical key.
     pub fn layered(&self, holders: &[usize]) -> Result<Geometry> {
         if !self.layer_keys.is_empty() || self.key.iter().any(|k| k.layer != 0) {
             return Err(Error::invalid("geometry", "already layered"));

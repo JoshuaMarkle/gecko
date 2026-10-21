@@ -83,7 +83,7 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Geometric stretch between same-hand fingers per 100 bigrams (Oxeylyzer 2); covers LSB, scissors, crossings.",
     ),
-    m("M01", "Effort", "", Order::Mono, Dir::Min, "Average base key effort per keystroke."),
+    m("M01", "Effort", "", Order::Mono, Dir::Min, "Average base key effort per keystroke; a layer symbol adds its layer key's effort."),
     m("M02", "Finger load error", "%", Order::Load, Dir::Min, "RMS gap between finger loads and the profile's target loads."),
     m("M04", "Left hand", "%", Order::Load, Dir::Min, "Share of keystrokes on the left hand; scored as squared distance from 50%."),
     m("M05", "Home row", "%", Order::Mono, Dir::Max, "Share of keystrokes on the home row."),
@@ -167,7 +167,8 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
     };
     let pct = |b: bool| if b { 100.0 } else { 0.0 };
     match d.id {
-        "M01" => mono(&|i| k[i].effort),
+        // A layer symbol is typed with its layer key held: both keys' effort count.
+        "M01" => mono(&|i| k[i].effort + g.holder(i).map_or(0.0, |h| k[h].effort)),
         "M05" => mono(&|i| pct(k[i].home || k[i].row == home_row(g))),
         "M06" => mono(&|i| pct(k[i].stretch)),
         "B01" | "S01" | "S02" => pair(&|i, j| pct(same_finger(i, j))),
