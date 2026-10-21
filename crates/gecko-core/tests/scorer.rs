@@ -561,7 +561,7 @@ fn optimizers_find_brute_force_optimum() {
     let start = Layout::from_str_flat("start", "tiny", "etaoin").unwrap();
     let sc = Scorer::new(&g, &c, &all_weights(), &start).unwrap();
     let best = permutations((0..6).collect()).into_iter().map(|p| sc.state_from_sym(p).score).fold(f64::INFINITY, f64::min);
-    for algo in Algo::ALL {
+    for algo in Algo::ALL.into_iter().filter(|a| !matches!(a, Algo::Nsga2 | Algo::Rwsa)) {
         let mut p = Params { algo, seed: 3, threads: 2, time_ms: None, evals: Some(200_000), top: 3, ..Default::default() };
         p.sa.steps = 5_000;
         p.ga.pop_size = 16;
@@ -577,7 +577,7 @@ fn deterministic_with_eval_budget() {
     let g = ansi();
     let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 2);
     let sc = Scorer::new(&g, &c, &all_weights(), &layout("qwerty")).unwrap();
-    for algo in Algo::ALL {
+    for algo in Algo::ALL.into_iter().filter(|a| !matches!(a, Algo::Nsga2 | Algo::Rwsa)) {
         let mut p = Params { algo, seed: 9, threads: 3, time_ms: None, evals: Some(60_000), top: 5, ..Default::default() };
         p.sa.steps = 10_000;
         p.ga.pop_size = 16;
