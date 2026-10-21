@@ -53,6 +53,9 @@ gecko serve    [--port 7777] [--web web/dist]
 
 Global flags: `--json`, `--root <dir with gecko.toml>`.
 
+`--geometry` accepts board names, explicit `.toml` paths and parametric `.param.toml`
+paths (`corne-36.param` also selects that named model). See [geometry.md](geometry.md).
+
 `<layout>` is a reference name (`data/layouts/<name>.toml`), a `.toml` path,
 `run:<id>[#rank]`, `cmini:<name>` (imported community layout), or `raw:<slot-ordered symbols>` (e.g. `raw:qwertyuiopasdfghjkl;zxcvbnm,./`).
 A 30-key layout on a board with thumb keys (`--geometry corne-36`) gets the geometry's thumb

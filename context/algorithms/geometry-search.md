@@ -16,6 +16,11 @@ geometry scores as well as possible under the hand-model costs, with no intersec
 
 **Parameters:** `sigma0`, `popsize`, `inner_budget`, `collision_margin`, which parameters are free.
 
+The 2D candidate representation is implemented in `gecko_core::parametric`:
+zones/columns/rows with column stagger/splay, split spread/angle and thumb arc/pose.
+See [../geometry.md](../geometry.md); existing parametric Corne/ortho models reproduce the
+explicit boards exactly. The continuous optimizer and collision constraints are next.
+
 **Pitfalls:** inner-loop noise (short SA) misleads the outer search; use common random
 seeds and warm starts. The hand model must be validated before results mean anything.
 

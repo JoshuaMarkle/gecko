@@ -90,6 +90,13 @@ covered by the delta/full properties and extended-neighbourhood regressions. Ful
 recomputes trigram terms independently of the cache. Reference snapshots include S04, row
 effort offsets and Y03.
 
+Parametric geometry (`tests/parametric.rs`): ortho-30 and corrected QMK corne-36 generation
+matches every explicit key/metadata field and content hash, and all reference scores/raw
+metrics/contributions under every bundled profile exactly. Analytic tests cover home-pivot
+splay, split reflection/angle/spread, circular thumb arcs and zone pose; invalid parameters
+and duplicate logical slots fail. Store tests cover parameter-only discovery, direct paths,
+explicit-file precedence, de-duplication and comfort-table resolution.
+
 ## CI
 
 `.github/workflows/ci.yml` runs the `make test` checks on every push and PR, in two jobs:
@@ -98,6 +105,7 @@ effort offsets and Y03.
 between runs. The WASM package is built before the type check because `web/src/wasm/pkg`
 is generated and not committed. The parity command builds it first; failures upload the
 generated CLI fixture as a CI artifact for inspection. `make test` also runs parity.
+
 
 ## Snapshots (`insta`)
 

@@ -60,7 +60,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 33. [x] [#22](https://github.com/JoshuaMarkle/gecko/issues/22) `D4` Y04 home-row-mod misfire risk · S
 34. [x] [#23](https://github.com/JoshuaMarkle/gecko/issues/23) `C5` Worst words report per metric · S
 35. [x] [#24](https://github.com/JoshuaMarkle/gecko/issues/24) `D5` Thumb trigram classes + M09 thumb load · S
-36. [ ] [#25](https://github.com/JoshuaMarkle/gecko/issues/25) `G1` Parametric 2D geometry model · M · after [#3](https://github.com/JoshuaMarkle/gecko/issues/3), [#17](https://github.com/JoshuaMarkle/gecko/issues/17)
+36. [x] [#25](https://github.com/JoshuaMarkle/gecko/issues/25) `G1` Parametric 2D geometry model · M · after [#3](https://github.com/JoshuaMarkle/gecko/issues/3), [#17](https://github.com/JoshuaMarkle/gecko/issues/17)
 37. [x] [#26](https://github.com/JoshuaMarkle/gecko/issues/26) `C6` cmini community layout importer + ranking tests · M
 38. [x] [#27](https://github.com/JoshuaMarkle/gecko/issues/27) `D6` Count the layer key's own keystroke in effort and finger load · S
 39. [ ] [#88](https://github.com/JoshuaMarkle/gecko/issues/88) `L4` Corpus tab: stats and sample text · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82)
