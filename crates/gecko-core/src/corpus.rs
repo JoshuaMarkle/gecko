@@ -36,6 +36,49 @@ pub fn charset_named(s: &str) -> &str {
         _ => s,
     }
 }
+/// Fold Latin diacritics and ligatures to ASCII letters (`é` → `e`, `œ` → `oe`, `ß` → `ss`),
+/// for non-English text on an ASCII charset: an accented letter then counts as its base key
+/// (typed with a dead key or compose) instead of breaking the n-gram. Also repairs the
+/// cp1252 apostrophe and `œ` that leak into some corpora as C1 controls (U+0092, U+009C).
+/// Opt-in (`--fold`), so existing corpora rebuild byte-identically.
+pub fn fold_diacritics(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for ch in s.chars() {
+        if ch.is_ascii() {
+            out.push(ch);
+            continue;
+        }
+        let lower = ch.to_lowercase().next().unwrap_or(ch);
+        let base = match lower {
+            'à' | 'á' | 'â' | 'ã' | 'ä' | 'å' | 'ā' | 'ă' | 'ą' => "a",
+            'æ' => "ae",
+            'ç' | 'ć' | 'č' => "c",
+            'ď' | 'đ' => "d",
+            'è' | 'é' | 'ê' | 'ë' | 'ē' | 'ė' | 'ę' | 'ě' => "e",
+            'ğ' => "g",
+            'ì' | 'í' | 'î' | 'ï' | 'ī' | 'į' | 'ı' => "i",
+            'ł' => "l",
+            'ñ' | 'ń' | 'ň' => "n",
+            'ò' | 'ó' | 'ô' | 'õ' | 'ö' | 'ø' | 'ő' => "o",
+            'œ' | '\u{9c}' => "oe",
+            'ř' => "r",
+            'ś' | 'š' | 'ş' | 'ș' => "s",
+            'ß' => "ss",
+            'ť' | 'ţ' | 'ț' => "t",
+            'ù' | 'ú' | 'û' | 'ü' | 'ū' | 'ů' | 'ű' => "u",
+            'ý' | 'ÿ' => "y",
+            'ź' | 'ż' | 'ž' => "z",
+            '\u{92}' => "'",
+            _ => {
+                out.push(ch);
+                continue;
+            }
+        };
+        out.push_str(base);
+    }
+    out
+}
+
 const MAGIC_V3: &[u8; 8] = b"GKCORP3\0";
 const MAGIC: &[u8; 8] = b"GKCORP2\0";
 const MAGIC_V1: &[u8; 8] = b"GKCORP1\0";
@@ -535,6 +578,16 @@ mod tests {
                                         // b ends 2 of 3 words, a starts 2 of 3: 3 · (2/3) · (2/3) = 4/3, scaled by 1000.
         assert_eq!(c.skip[1 * 3 + 0], 1333);
         assert_eq!(c.skip[0 * 3 + 2], 333);
+    }
+
+    #[test]
+    fn folds_diacritics_to_ascii() {
+        assert_eq!(fold_diacritics("Été à l\u{92}œuvre, Straße"), "ete a l'oeuvre, Strasse");
+        assert_eq!(fold_diacritics("naïve 😂"), "naive 😂");
+        let mut c = Corpus::new("t", "et");
+        c.add_text(&fold_diacritics("été"));
+        assert_eq!(c.bi[0 * 2 + 1], 1); // et, not broken by é
+        assert_eq!(c.mono, vec![2, 1]);
     }
 
     #[test]

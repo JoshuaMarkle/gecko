@@ -25,9 +25,9 @@ gecko atlas    <run> [--top 10] [--cut 8] [--pool 300] [-p profile]
 gecko verify   run:<id>                                           # re-run an --evals run from config.json;
                                                                   #   check input hashes, evals and best.json
 gecko perf     [--layout qwerty] [--record]                       # full evals/s and swap deltas/s (1 thread); --record appends to bench/history.jsonl
-gecko corpus build <files or dirs...> [--out english] [--charset default|code|<symbols>] [--ext txt]
+gecko corpus build <files or dirs...> [--out english] [--charset default|code|<symbols>] [--ext txt] [--fold]
 gecko corpus mix <corpus>[:weight]... --out <name>                     # weighted mix, same charset
-gecko corpus import <cmini corpus dir> --out <name> [--charset ...]   # words.json or n-gram JSON
+gecko corpus import <cmini corpus dir> --out <name> [--charset ...] [--fold]   # words.json or n-gram JSON; --fold: é→e
 gecko geometry import-kle <file.json> --out <name> [--force]       # KLE board → data/geometries/<name>.toml
                                                                   #   (fingers/rows/home/effort guessed; edit after)
 gecko profile normalize [-p profile] [--layouts a,b] [--out name]   # weights → spread units

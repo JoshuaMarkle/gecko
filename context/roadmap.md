@@ -50,7 +50,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 22. [x] [#83](https://github.com/JoshuaMarkle/gecko/issues/83) `L9` Flatten any board to a 2D view · M
 23. [ ] [#13](https://github.com/JoshuaMarkle/gecko/issues/13) `B3` Memetic algorithm (GA + local search, islands) · M · after [#8](https://github.com/JoshuaMarkle/gecko/issues/8)
 24. [x] [#14](https://github.com/JoshuaMarkle/gecko/issues/14) `C3` Asymmetric row costs per finger · S
-25. [ ] [#15](https://github.com/JoshuaMarkle/gecko/issues/15) `E3` Chat and multilingual corpora · S
+25. [x] [#15](https://github.com/JoshuaMarkle/gecko/issues/15) `E3` Chat and multilingual corpora · S
 26. [ ] [#84](https://github.com/JoshuaMarkle/gecko/issues/84) `L2` Board tab: board catalog, current board, start layout · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82), [#11](https://github.com/JoshuaMarkle/gecko/issues/11)
 27. [ ] [#17](https://github.com/JoshuaMarkle/gecko/issues/17) `C4` Remaining P1/P2 metrics · M
 28. [ ] [#85](https://github.com/JoshuaMarkle/gecko/issues/85) `E4` Import layouts from Oxeylyzer, genkey and cmini formats · S

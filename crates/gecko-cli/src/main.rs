@@ -240,6 +240,9 @@ enum CorpusCmd {
         /// File extensions to read from directories, comma-separated (e.g. `rs,py,ts`).
         #[arg(long, default_value = "txt")]
         ext: String,
+        /// Fold diacritics to ASCII letters first (`é` → `e`, `œ` → `oe`), for non-English text.
+        #[arg(long)]
+        fold: bool,
     },
     /// Weighted mix of corpora with the same charset (each normalized first), e.g.
     /// `gecko corpus mix code-rs:1 code-py:1 --out code`.
@@ -257,6 +260,9 @@ enum CorpusCmd {
         out: String,
         #[arg(long, default_value = "default")]
         charset: String,
+        /// Fold diacritics to ASCII letters first (`é` → `e`, `œ` → `oe`), for non-English text.
+        #[arg(long)]
+        fold: bool,
     },
 }
 
@@ -859,7 +865,7 @@ fn real_main(cli: Cli) -> Result<()> {
                 }
             }
         }
-        Cmd::Corpus { cmd: CorpusCmd::Build { sources, out, charset, ext } } => {
+        Cmd::Corpus { cmd: CorpusCmd::Build { sources, out, charset, ext, fold } } => {
             if sources.is_empty() {
                 bail!("give at least one text file or directory");
             }
@@ -878,7 +884,8 @@ fn real_main(cli: Cli) -> Result<()> {
             }
             for f in &files {
                 let bytes = std::fs::read(f).with_context(|| format!("reading {}", f.display()))?;
-                c.add_text(&String::from_utf8_lossy(&bytes));
+                let text = String::from_utf8_lossy(&bytes);
+                c.add_text(&if fold { gecko_core::corpus::fold_diacritics(&text) } else { text.into_owned() });
             }
             write_corpus(&ctx, &c, files.len())?;
         }
@@ -893,13 +900,13 @@ fn real_main(cli: Cli) -> Result<()> {
             let refs: Vec<(&Corpus, f64)> = loaded.iter().map(|(c, w)| (c, *w)).collect();
             write_corpus(&ctx, &Corpus::mix(&out, &refs)?, parts.len())?;
         }
-        Cmd::Corpus { cmd: CorpusCmd::Import { dir, out, charset } } => {
+        Cmd::Corpus { cmd: CorpusCmd::Import { dir, out, charset, fold } } => {
             let mut c = Corpus::new(&out, gecko_core::corpus::charset_named(&charset));
             let words = dir.join("words.json");
             let files = if words.is_file() {
                 let mut e = c.word_edges();
                 for (w, n) in read_counts(&words)? {
-                    c.add_word(&w, n, &mut e);
+                    c.add_word(&if fold { gecko_core::corpus::fold_diacritics(&w) } else { w }, n, &mut e);
                 }
                 c.add_word_boundaries(&e);
                 1
@@ -907,7 +914,7 @@ fn real_main(cli: Cli) -> Result<()> {
                 let names = ["monograms.json", "bigrams.json", "trigrams.json"];
                 for f in names {
                     for (g, n) in read_counts(&dir.join(f))? {
-                        c.add_ngram(&g, n);
+                        c.add_ngram(&if fold { gecko_core::corpus::fold_diacritics(&g) } else { g }, n);
                     }
                 }
                 names.len()
