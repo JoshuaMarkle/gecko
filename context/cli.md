@@ -30,6 +30,9 @@ gecko corpus mix <corpus>[:weight]... --out <name>                     # weighte
 gecko corpus import <cmini corpus dir> --out <name> [--charset ...] [--fold]   # words.json or n-gram JSON; --fold: é→e
 gecko geometry import-kle <file.json> --out <name> [--force]       # KLE board → data/geometries/<name>.toml
                                                                   #   (fingers/rows/home/effort guessed; edit after)
+gecko layouts import <file> [--from oxeylyzer|genkey|cmini|auto] [--out <name>] [--force]
+               [--name N] [-g geometry]          # → layout TOML (stdout, or data/layouts/<out>.toml)
+gecko layouts export <layout> --to oxeylyzer|genkey|cmini [-g geometry]   # 30 alpha keys → stdout
 gecko profile normalize [-p profile] [--layouts a,b] [--out name]   # weights → spread units
 gecko profile fit [--target E05] [--layouts a,b] [--out name]       # fit weights to a judge metric
 gecko list     layouts|geometries|profiles|corpora|runs|metrics
@@ -46,6 +49,13 @@ fills. Tokens can be written `{space}`, `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `
 Layered layouts: `--from layered/corne-code`; their rows print per layer (`[sym]`, `[num]`;
 non-hold layers add their mode, `[num, toggle]`),
 and JSON `rows` lists the base rows then each layer's. Runs store the flat layered string.
+
+`layouts import` reads an Oxeylyzer `.dof` (JSON) or Oxeylyzer 1 grid (`.kb`), a genkey file
+(name, 3 key rows, 3 finger rows) or a cmini JSON; `auto` guesses from the content. E.g.
+`gecko layouts import --from oxeylyzer sturdy.dof --out sturdy-oxey`. Keys map by position onto
+the 30 alpha keys; the geometry defaults to `ansi-30` (`ortho-30` for ortho/colstag sources).
+Dropped keys and ignored fingering (angle mod) are reported as `warning:` lines on stderr and
+in JSON `warnings`; a letter outside the 30 keys is an error.
 
 ## Conventions
 

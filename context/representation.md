@@ -70,6 +70,10 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   geometry = "ansi-30"
   rows = ["qwfpbjluy;", "arstgmneio", "zxcdvkh,./"]
   ```
+- Other analyzers' files (`gecko layouts import`, `gecko_core::import`): Oxeylyzer `.dof` JSON
+  and v1 grids, genkey text, cmini JSON. Mapped by physical position onto rows 0–2 × cols 0–9;
+  extra columns, number and thumb rows are dropped (warning; a dropped letter is an error);
+  source fingering (angle mod) is not imported. `export` writes the 30 alpha keys back.
 - Stable hash = hash(geometry hash, sym array). Used to de-duplicate results.
 - Layers: `chars` is the base and `layers[l-1].chars` layer l, one symbol per key
   (`sym[layer][key]`). Layer l is reached by the base key carrying its layer-key token, whose
