@@ -89,6 +89,7 @@ pub fn breakdown(sc: &Scorer, st: &State) -> Breakdown {
                 }
                 v
             }
+            (Order::Place, Some(t)) => (0..n).map(|x| t[x * n + pos[x] as usize] as f64).sum(),
             (Order::Brackets, Some(t)) => {
                 sc.bracket_pairs().iter().map(|e| e.f as f64 * t[pos[e.x as usize] as usize * n + pos[e.y as usize] as usize] as f64).sum()
             }
@@ -273,7 +274,7 @@ pub fn worst_words(sc: &Scorer, st: &State, words: &WordList, top: usize) -> Vec
             Order::Skip => &[(2, 1.0)],
             Order::SkipFar => &[(3, decay), (4, decay * decay)],
             Order::Tri => &[(2, 1.0)],
-            Order::Load | Order::Brackets => continue,
+            Order::Load | Order::Brackets | Order::Place => continue,
         };
         // % and u tables hold 100 × the per-n-gram cost (metric values read per 100 n-grams).
         let scale = if d.unit.is_empty() { 1.0 } else { 0.01 };

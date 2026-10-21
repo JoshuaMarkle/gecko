@@ -1,0 +1,59 @@
+name = "familiar"
+description = "Default profile plus costs for staying learnable: Z X C V (and A S Q W) reachable by the left hand near their QWERTY spots (L01), and keys kept near their QWERTY finger (L02)."
+scale_basis = "stdev over the 10 reference layouts on english / ansi-30 (gecko profile normalize)"
+
+# Target % per finger: LP LR LM LI LT RT RI RM RR RP
+finger_target = [8.0, 11.0, 15.0, 16.0, 0.0, 0.0, 16.0, 15.0, 11.0, 8.0]
+
+# L02 measures distance from this reference layout (only "qwerty" is built in).
+familiar_to = "qwerty"
+
+# M01 effort added off the home row per finger (pinky ring middle index), [above, below] home.
+# KLO's key costs: the top row is easy for middle/ring, the bottom row easy for index.
+row_offset = [[0.0, 0.0], [-0.1, 0.1], [-0.2, 0.2], [0.2, -0.2]]
+
+# Weights are in spread units: the scorer applies weight / scale, and each scale is the metric's
+# standard deviation over the reference layouts, so weight 1 = "one reference spread" and weights
+# compare directly. Direction comes from the metric (rewards like rolls subtract). Larger = care
+# more. Ids: research/metrics-catalog.md. Rescale with `gecko profile normalize`.
+[weights]
+B01 = 8.28   # SFB %
+S01 = 1.06   # SFS %, one key between
+S02 = 0.31   # far SFS %, 2–3 keys between (decayed); same per-% weight as S01
+B03 = 0.053  # finger speed
+B14 = 2.0    # geometric stretch (replaces B04 LSB 0.71 + B05 scissors 1.26)
+B11 = 0.5    # finger-pair movement (KLO table + ring coupling); on top of B14, reference order unchanged
+S04 = 0.19   # skip stretch (B14 on keys 1–3 of a trigram); B14 per-unit weight × S01/B01 ratio (0.12)
+M01 = 0.279  # effort
+M02 = 0.119  # finger load error (mean squared %)
+M04 = 0.087  # hand balance
+T03 = 0.105  # rolls in
+T04 = 0.126  # rolls out
+T01 = 0.176  # alternates
+T06 = 0.461  # redirects
+T07 = 0.26   # bad redirects
+E05 = 1.0    # measured key-pair discomfort (Engram); ~free: costs 0.2% of the rest at the optimum
+L01 = 0.3    # shortcut letters off the left hand / far from their QWERTY spot
+L02 = 0.5    # % of keystrokes on keys away from their QWERTY finger
+
+[scale]
+B01 = 1.655
+S01 = 1.765
+S02 = 0.5204
+B03 = 2.626
+B14 = 2.476
+B11 = 18.3
+S04 = 1.964
+M01 = 0.1395
+M02 = 3.955
+M04 = 1.748
+T01 = 5.88
+T03 = 2.09
+T04 = 4.2
+T06 = 3.074
+T07 = 0.6511
+E05 = 1.94
+# L01/L02: rough spreads (random arrangements put ~½ the shortcut letters on the right hand;
+# L02 sits near 90 with little spread); not from `profile normalize`.
+L01 = 25.0
+L02 = 25.0
