@@ -99,3 +99,5 @@ locked; both presets fit the board to the viewport. A floor grid (1u cells, 5u s
 
 `npm run wasm` (after Rust changes to the scorer), `npm run dev` (proxies `/api` to :7777),
 `npm run build` → `web/dist`, `npm run typecheck`, `npm test`.
+`npm run test:parity` builds WASM and the native CLI and checks every reference score and
+metric against fresh CLI output across all bundled profiles (1e-6 relative).
