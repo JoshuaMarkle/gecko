@@ -20,6 +20,8 @@ gecko landscape [--samples 4000] [--walks 64] [--walk-len 400] [--seed 1] [--fro
 gecko atlas    <run> [--top 10] [--cut 8] [--pool 300] [-p profile]
                                                                   # summary, ranked, families, consensus,
                                                                   #   funnels, FDC; -p re-ranks under a profile
+gecko verify   run:<id>                                           # re-run an --evals run from config.json;
+                                                                  #   check input hashes, evals and best.json
 gecko perf     [--layout qwerty]                                  # full evals/s and swap deltas/s (1 thread)
 gecko corpus build <files or dirs...> [--out english] [--charset default|code|<symbols>] [--ext txt]
 gecko corpus mix <corpus>[:weight]... --out <name>                     # weighted mix, same charset
@@ -47,4 +49,9 @@ and JSON `rows` lists the base rows then each layer's. Runs store the flat layer
 - Exit code 0 on success, non-zero with a one-line `error:` on failure.
 - `optimize` always writes `runs/<timestamp>-<algo>-<hash>/` and prints its id.
 - `--evals` budgets are deterministic for a given seed and thread count; `--time` is not.
+- `verify` loads geometry and corpus by their recorded names (the profile is stored in
+  `config.json`). If a hash differs it fails without re-running. Otherwise it re-runs with the
+  recorded params into a temp dir, leaving the run untouched, and compares evals and every
+  ranked layout: chars exact, score to 1e-9 relative. Exit code 1 when it does not
+  reproduce; time-budget runs are an error.
 - Defaults (geometry, corpus, profile, reference layout, data/runs dirs) come from `gecko.toml`.
