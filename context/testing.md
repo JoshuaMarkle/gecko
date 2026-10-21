@@ -27,8 +27,12 @@
 TypeScript type check + a few Vitest tests for data shaping. A smoke test that the
 WASM scorer matches the CLI on reference layouts.
 
-## Implemented (`crates/gecko-core/tests/scorer.rs`, `tests/corpora.rs` + unit tests)
+## Implemented (`crates/gecko-core/tests/scorer.rs`, `tests/corpora.rs`, `tests/metrics.rs` + unit tests)
 
+Metric unit tests (`tests/metrics.rs`): every implemented metric on a 6-key board (plus a
+2-key crossed-finger board for B14 and a 6-key layered board for Y01/Y02 and thumb loads)
+with explicit n-gram counts; each expected value is commented with its arithmetic and checked
+through both `breakdown` and the folded `Scorer::full`.
 delta == full (proptest), folding == breakdown, brute-force optimum on a 6-key board for
 HC/SA/GA, determinism with an eval budget, pins respected, ranking sanity + QWERTY SFB,
 corpus counting (incl. skip-2/3, word imports) + binary round-trip + `GKCORP1` compatibility,
@@ -41,7 +45,7 @@ BLS and explore are in the brute-force and determinism tests.
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
 
-Still to add: metric unit tests with hand-computed answers per metric, `insta` snapshots,
+Still to add: `insta` snapshots,
 criterion benches + `bench/history.jsonl`.
 
 ## CI
