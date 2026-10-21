@@ -49,7 +49,7 @@ Notation: `f(x)` corpus frequency; keys `i,j,k`; fingers LP LR LM LI LT | RT RI 
 | S01 | SFS / DSFB | − | P0 | Same finger with one key between. Oxeylyzer default weight 0.11 vs SFB per frequency unit. |
 | S02 | Decayed skipgrams | − | P1 | Same finger at gaps 2 and 3 with decaying weights (Oxeylyzer fspeed). |
 | S03 | SFS distance | − | P1 | Distance-weighted S01, like B03. |
-| S04 | Skip LSB / skip scissor | − | P2 | B04/B05 applied to skipgrams. |
+| S04 | Skip stretch (skip LSB / scissor) | − | P2 | B14 stretch on keys 1 and 3 of a trigram (Kühlmak's disjoint bigrams). Implemented; default weight 0.19 spread units (B14's per-unit weight × the S01/B01 ratio 0.12). |
 | S05 | Secondary bigram comfort | − | P2 | Movement cost of 1st→3rd key in a trigram (KLO). |
 
 ## 4. Trigram
