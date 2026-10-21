@@ -33,7 +33,8 @@ delta == full (proptest), folding == breakdown, brute-force optimum on a 6-key b
 HC/SA/GA, determinism with an eval budget, pins respected, ranking sanity + QWERTY SFB,
 corpus counting (incl. skip-2/3, word imports) + binary round-trip + `GKCORP1` compatibility,
 imported corpora reproduce QWERTY SFB computed independently from their source tables,
-layout TOML round-trip. Explore (`tests/explore.rs` + unit tests in `explore/`): raw-vector
+layout TOML round-trip. Reference snapshots (`tests/snapshots.rs`): score + weighted
+metrics of the 10 `data/layouts/*.toml` × default/sfb/engram/code on `english`, 4 decimals. Explore (`tests/explore.rs` + unit tests in `explore/`): raw-vector
 re-scoring == full score (proptest); on a mirror-symmetric 6-key board the archive equals the
 brute-forced set of canonical local optima; ansi atlas consistency (pins, constrained
 records, every unconstrained record locally optimal); distances, PCA, funnels, Chao1.
@@ -41,8 +42,17 @@ BLS and explore are in the brute-force and determinism tests.
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
 
-Still to add: metric unit tests with hand-computed answers per metric, `insta` snapshots,
+Still to add: metric unit tests with hand-computed answers per metric,
 criterion benches + `bench/history.jsonl`.
+
+## Snapshots (`insta`)
+
+A changed score or metric fails `cargo test` (snapshots in `crates/gecko-core/tests/snapshots/`).
+If the change is intended: `cargo install cargo-insta` once, then `cargo insta test --release`
+and `cargo insta review` (accept/reject each diff), and commit the updated `.snap` files with
+the change. Without cargo-insta: `INSTA_UPDATE=always cargo test --release --test snapshots`
+overwrites them, then review with `git diff`. With `CI` set, insta never writes files, so
+unreviewed changes just fail.
 
 ## Rule
 
