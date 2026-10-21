@@ -504,3 +504,78 @@ fn engram_comfort_table() {
     assert_eq!(c(at(1, 1), at(1, 1)), 1.0, "repeats are left to B02");
 }
 
+/// Column exchanges, 3-cycles and depth-2 swaps keep the delta-tracked score equal to a full
+/// evaluation, never move pinned symbols, and end in an optimum of every enabled neighbourhood.
+#[test]
+fn extended_moves_track_score_and_respect_pins() {
+    use gecko_core::optimize::moves::{self, MoveParams};
+    let g = ansi();
+    let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 5);
+    let sc = Scorer::new(&g, &c, &all_weights(), &layout("qwerty")).unwrap();
+    let pinned: Vec<usize> = ",.q".chars().map(|ch| sc.chars.iter().position(|&x| x == ch).unwrap()).collect();
+    for spec in ["columns", "cycle3", "depth2", "all"] {
+        let mut mv = MoveParams::parse(spec).unwrap();
+        mv.depth2_width = 8;
+        for (seed, pins) in [(1, false), (2, true)] {
+            let movable: Vec<usize> = (0..30).filter(|s| !pins || !pinned.contains(s)).collect();
+            let ctx = Ctx::new(&sc, movable, sc.identity()).with_moves(mv.clone());
+            assert!(!ctx.col_pairs.is_empty(), "ansi-30 has same-finger column pairs");
+            for (a, b) in &ctx.col_pairs {
+                assert_eq!(a.len(), b.len());
+                assert_eq!(sc.finger_of_slot(a[0]), sc.finger_of_slot(b[0]));
+            }
+            let mut st = ctx.random_state(&mut Rng::new(seed));
+            let before = st.sym.clone();
+            optimize::steepest_descent(&ctx, &mut st);
+            let full = sc.full(&st);
+            assert!((st.score - full).abs() < 1e-6 * full.abs().max(1.0), "{spec}: tracked {} vs full {full}", st.score);
+            for (l, s) in sc.loads(&st.pos).iter().zip(st.load.iter()) {
+                assert!((l - s).abs() < 1e-6);
+            }
+            if pins {
+                for &x in &pinned {
+                    assert_eq!(st.sym[ctx.start.pos[x] as usize], before[ctx.start.pos[x] as usize]);
+                }
+            }
+            // A local optimum of every enabled neighbourhood, and trial moves leave no trace.
+            let snap = st.clone();
+            for (on, f) in [
+                (mv.columns, moves::column_move as moves::MoveFn),
+                (mv.cycle3, moves::cycle3_move),
+                (mv.depth2, moves::depth2_move),
+            ] {
+                if on {
+                    assert!(!f(&ctx, &mut st).1, "{spec}: improving move left after descent");
+                    assert_eq!((st.sym.clone(), st.score, st.load), (snap.sym.clone(), snap.score, snap.load));
+                }
+            }
+        }
+    }
+    assert_eq!(MoveParams::parse("cycle3,columns").unwrap().name(), "columns,cycle3");
+    assert_eq!(MoveParams::parse("swap").unwrap(), MoveParams::default());
+    assert!(MoveParams::parse("bogus").is_none());
+}
+
+/// With every neighbourhood on (full-width depth 2), optimizers still find the brute-force
+/// optimum and stay deterministic.
+#[test]
+fn extended_moves_find_optimum_deterministically() {
+    use gecko_core::optimize::moves::MoveParams;
+    let g = tiny();
+    let c = synthetic("etaoin", 11);
+    let start = Layout::from_str_flat("start", "tiny", "etaoin").unwrap();
+    let sc = Scorer::new(&g, &c, &all_weights(), &start).unwrap();
+    let best = permutations((0..6).collect()).into_iter().map(|p| sc.state_from_sym(p).score).fold(f64::INFINITY, f64::min);
+    let moves = MoveParams { depth2_width: 0, ..MoveParams::parse("all").unwrap() };
+    for algo in [Algo::Hc, Algo::Bls] {
+        let p =
+            Params { algo, seed: 3, threads: 2, time_ms: None, evals: Some(50_000), top: 3, moves: moves.clone(), ..Default::default() };
+        let run = || {
+            let ctx = Ctx::new(&sc, (0..6).collect(), sc.identity());
+            optimize::run(&ctx, &p, Duration::from_secs(60), &Control::default(), |_| {}).top
+        };
+        let a = run();
+        assert!((a[0].score - best).abs() < 1e-6, "{}: {} vs optimum {best}", algo.name(), a[0].score);
+        assert_eq!(a, run(), "{} not deterministic", algo.name());
+    }
+}
