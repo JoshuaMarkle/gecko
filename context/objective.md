@@ -95,6 +95,27 @@ regression test pins these rankings (`ranking_sanity_on_english`). On the bundle
 QWERTY SFB = 6.63% (published ≈ 6.6%). Cross-checks: `gecko compare -p engram` (measured
 comfort) and `gecko compare --corpora english,shai,mt-10k,mt-450k,reddit,french` (robustness, L05).
 
+**Community likes (cmini, `gecko layouts likes`).** 4121 cmini layouts → 1965 importable
+(30-key core, all letters, standard or angle fingering) → 1904 after merging 55 duplicates and
+6 mirrors; 303 have at least one like. Spearman ρ of GECKO goodness (−score) vs likes, ansi-30:
+
+| profile · corpus | all (1904) | liked only (303) | ortho (1504) | angle (358) | stagger (40) |
+|---|---|---|---|---|---|
+| default · english | +0.039 | +0.105 | +0.059 | +0.005 | −0.310 |
+| default · shai | +0.039 | +0.105 | +0.064 | −0.007 | −0.310 |
+| engram · english | +0.050 | +0.036 | +0.056 | +0.062 | −0.321 |
+| default · english on ortho-30 | +0.022 | +0.098 | +0.047 | −0.030 | −0.284 |
+
+Liked layouts sit at a mean GECKO rank percentile of 47.7 % vs 50.4 % for unliked ones.
+Reading: likes barely track layout quality. They measure fame and age (Graphite 77 likes, rank
+18; the joke layout `inqwerted` 76 likes, rank 1818; Dvorak and Colemak-DH ~20 likes, rank
+~1460), and 84 % of layouts have zero likes (ties). The weak positive ρ among liked layouts is
+the usable signal; `cmini_likes_ranking` pins it (ρ > 0.05, Graphite and Gallium in the top
+10 % of liked layouts). Angle layouts are scored with standard fingering until angle-mod
+geometry (#47), which hurts them (Canary: rank 1021). The stagger group is small (40, 9 liked) and
+noisy. Per-metric ρ vs likes is printed too (all |ρ| ≤ 0.07). Use these
+layouts for C7 as preference pairs between liked layouts, not as raw like counts.
+
 ## Multi-objective
 
 Besides the weighted sum: rank-sum selection over many results (Kühlmak) and Pareto

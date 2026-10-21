@@ -126,6 +126,7 @@ impl Store {
         Corpus::from_bytes(&bytes)
     }
 
+<<<<<<< HEAD
     /// Word-count side file of a corpus (written by `gecko corpus import` from `words.json`).
     pub fn words_path(&self, name: &str) -> PathBuf {
         self.dir("corpora").join(format!("{name}.words.tsv"))
@@ -143,7 +144,28 @@ impl Store {
     }
 
     /// Resolve a layout spec: a reference name, a `.toml` path, `run:<id>[#rank]` or `raw:<chars>`.
+=======
+    /// The imported cmini bundle (`gecko layouts import-cmini`).
+    pub fn community_path(&self) -> PathBuf {
+        self.dir("community").join("cmini.json")
+    }
+
+    pub fn community(&self) -> Result<crate::community::Bundle> {
+        let p = self.community_path();
+        if !p.is_file() {
+            return Err(Error::invalid("cmini", format!("{} not found (run `gecko layouts import-cmini <cmini checkout>`)", p.display())));
+        }
+        crate::community::Bundle::from_json(&read(&p)?)
+    }
+
+    /// Resolve a layout spec: a reference name, a `.toml` path, `run:<id>[#rank]`, `cmini:<name>`
+    /// or `raw:<chars>`.
+>>>>>>> origin/fix/issue-26
     pub fn layout(&self, spec: &str, geometry: &str) -> Result<Layout> {
+        if let Some(name) = spec.strip_prefix("cmini:") {
+            let b = self.community()?;
+            return b.get(name).ok_or_else(|| Error::invalid("layout", format!("no cmini layout '{name}'")))?.layout(geometry);
+        }
         if let Some(chars) = spec.strip_prefix("raw:") {
             return Layout::from_str_flat("raw", geometry, chars);
         }

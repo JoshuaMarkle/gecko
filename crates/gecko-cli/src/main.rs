@@ -209,17 +209,24 @@ enum Cmd {
         #[command(subcommand)]
         cmd: CorpusCmd,
     },
+<<<<<<< HEAD
     /// Geometry tools.
     Geometry {
         #[command(subcommand)]
         cmd: GeometryCmd,
     },
     /// Import layouts from other analyzers, export them back.
+=======
+    /// Community layout tools (cmini).
+>>>>>>> origin/fix/issue-26
     Layouts {
         #[command(subcommand)]
         cmd: LayoutsCmd,
     },
+<<<<<<< HEAD
     },
+=======
+>>>>>>> origin/fix/issue-26
     /// Profile calibration tools.
     Profile {
         #[command(subcommand)]
@@ -319,6 +326,24 @@ enum LayoutsCmd {
         /// oxeylyzer | genkey | cmini.
         #[arg(long)]
         to: String,
+        #[command(flatten)]
+        inputs: Inputs,
+    },
+}
+
+#[derive(Subcommand)]
+enum LayoutsCmd {
+    /// Import a cmini checkout (layouts/*.json, likes.json, authors.json) into
+    /// data/community/cmini.json: 30-key cores, likes, duplicates and mirrors marked.
+    ImportCmini { dir: PathBuf },
+    /// Rank the imported cmini layouts with GECKO and report the Spearman correlation with likes.
+    Likes {
+        /// Rows of the best-by-GECKO and most-liked tables.
+        #[arg(long, default_value_t = 10)]
+        top: usize,
+        /// Keep duplicates and mirrors (default: one layout per group).
+        #[arg(long)]
+        dups: bool,
         #[command(flatten)]
         inputs: Inputs,
     },
@@ -983,6 +1008,7 @@ fn real_main(cli: Cli) -> Result<()> {
             };
             write_corpus(&ctx, &c, files)?;
         }
+<<<<<<< HEAD
         Cmd::Geometry { cmd: GeometryCmd::ImportKle { file, out, force } } => {
             let text = std::fs::read_to_string(&file).with_context(|| format!("reading {}", file.display()))?;
             let g = gecko_core::kle::import(&out, &text)?;
@@ -1053,6 +1079,81 @@ fn real_main(cli: Cli) -> Result<()> {
             }
         }
         }
+=======
+        Cmd::Layouts { cmd: LayoutsCmd::ImportCmini { dir } } => {
+            let b = gecko_core::community::import_cmini_dir(&dir)?;
+            let path = ctx.store.community_path();
+            std::fs::create_dir_all(path.parent().unwrap())?;
+            std::fs::write(&path, b.to_json()).with_context(|| format!("writing {}", path.display()))?;
+            let mut reasons: std::collections::BTreeMap<String, usize> = Default::default();
+            for sk in &b.skipped {
+                *reasons.entry(sk.kind().to_string()).or_default() += 1;
+            }
+            let dups = b.layouts.iter().filter(|l| l.dup_of.is_some() && !l.mirror).count();
+            let mirrors = b.layouts.iter().filter(|l| l.mirror).count();
+            let liked = b.unique().filter(|l| l.likes > 0).count();
+            if ctx.json {
+                ctx.print(json!({"schema": SCHEMA, "path": path, "imported": b.layouts.len(), "unique": b.unique().count(),
+                    "duplicates": dups, "mirrors": mirrors, "liked": liked, "skipped": b.skipped.len(), "skip_reasons": reasons}));
+            } else {
+                println!("wrote {}", path.display());
+                println!(
+                    "{} imported ({} unique, {} liked), {} duplicates, {} mirrors, {} skipped",
+                    b.layouts.len(),
+                    b.unique().count(),
+                    liked,
+                    dups,
+                    mirrors,
+                    b.skipped.len()
+                );
+                for (r, n) in &reasons {
+                    println!("  skipped {n:>5}  {r}");
+                }
+            }
+        }
+        Cmd::Layouts { cmd: LayoutsCmd::Likes { top, dups, inputs } } => {
+            let l = ctx.load(&inputs)?;
+            let b = ctx.store.community()?;
+            let r = if dups {
+                gecko_core::community::likes_report(&l.geometry, &l.corpus, &l.profile, b.layouts.iter())?
+            } else {
+                gecko_core::community::likes_report(&l.geometry, &l.corpus, &l.profile, b.unique())?
+            };
+            if ctx.json {
+                ctx.print(json!({"schema": SCHEMA, "report": r}));
+            } else {
+                println!("{} cmini layouts on {} · {} · {}", r.all.n, r.geometry, r.profile, r.corpus);
+                println!("Spearman ρ (GECKO goodness vs likes; > 0 = agree)");
+                let rho = |v: f64| if v.is_finite() { format!("{v:+.3}") } else { "-".into() };
+                println!("  all          n={:<5} ρ={}", r.all.n, rho(r.all.rho));
+                println!("  liked only   n={:<5} ρ={}", r.liked.n, rho(r.liked.rho));
+                for (bd, a) in &r.boards {
+                    println!("  {:<12} n={:<5} ρ={}", bd, a.n, rho(a.rho));
+                }
+                println!(
+                    "mean GECKO rank percentile: liked {:.1}%, unliked {:.1}% (0 = best)",
+                    100.0 * r.liked_percentile,
+                    100.0 * r.unliked_percentile
+                );
+                let mut ms = r.metrics.clone();
+                ms.sort_by(|a, b| b.1.total_cmp(&a.1));
+                println!(
+                    "metric goodness vs likes (ρ): {}",
+                    ms.iter().map(|(id, v)| format!("{id} {v:+.2}")).collect::<Vec<_>>().join(", ")
+                );
+                println!("\nbest by GECKO");
+                for s in r.layouts.iter().take(top) {
+                    println!("  {:>5} {:<32} {:>8.3} {:>4} likes  {}", s.rank, s.name, s.score, s.likes, s.board);
+                }
+                let mut liked: Vec<_> = r.layouts.iter().collect();
+                liked.sort_by(|a, b| b.likes.cmp(&a.likes).then(a.rank.cmp(&b.rank)));
+                println!("\nmost liked (GECKO rank of {})", r.all.n);
+                for s in liked.iter().take(top) {
+                    println!("  {:>5} {:<32} {:>8.3} {:>4} likes  {}", s.rank, s.name, s.score, s.likes, s.board);
+                }
+            }
+        }
+>>>>>>> origin/fix/issue-26
         Cmd::Profile { cmd: ProfileCmd::Normalize { layouts, out, inputs } } => {
             let l = ctx.load(&inputs)?;
             let (refs, basis) = reference_layouts(&ctx, &l, layouts)?;
