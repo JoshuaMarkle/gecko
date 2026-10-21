@@ -375,3 +375,21 @@ fn engram_comfort_table() {
     assert!(c(at(0, 3), at(1, 3)) < 0.5, "same-finger reach");
     assert_eq!(c(at(1, 1), at(1, 1)), 1.0, "repeats are left to B02");
 }
+
+#[test]
+fn row_offsets_shift_effort_per_finger() {
+    use gecko_core::metrics::{def, table};
+    let g = ansi();
+    let mut p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
+    let with = table(&g, &p, def("M01").unwrap()).unwrap();
+    p.row_offset = Default::default();
+    let base = table(&g, &p, def("M01").unwrap()).unwrap();
+    let delta = |r, c| with[at(r, c)] - base[at(r, c)];
+    // Middle (col 2) and ring (col 1): top row cheaper, bottom dearer; index (col 3) the reverse.
+    assert!(delta(0, 2) < 0.0 && delta(2, 2) > 0.0, "middle");
+    assert!(delta(0, 1) < 0.0 && delta(2, 1) > 0.0, "ring");
+    assert!(delta(0, 3) > 0.0 && delta(2, 3) < 0.0, "index");
+    assert!((0..10).all(|c| delta(1, c) == 0.0), "home row unchanged");
+    // The asymmetry now holds in the final effort, not just the offset.
+    assert!(with[at(0, 7)] < with[at(2, 7)] && with[at(2, 6)] < with[at(0, 6)]);
+}
