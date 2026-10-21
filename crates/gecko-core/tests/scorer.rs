@@ -208,7 +208,9 @@ fn pair_kinds_match_metrics() {
     let a = analyze(&sc, &sc.identity(), 10);
     let value = |id: &str| a.breakdown.metrics.iter().find(|m| m.id == id).unwrap().value;
     let sum = |v: &[gecko_core::report::Pair], k: &str| v.iter().filter(|p| p.kind == k).map(|p| p.freq).sum::<f64>();
-    for (got, want) in [(sum(&a.bigrams, "sfb"), value("B01")), (sum(&a.bigrams, "alternate"), value("B08")), (sum(&a.skipgrams, "sfs"), value("S01"))] {
+    for (got, want) in
+        [(sum(&a.bigrams, "sfb"), value("B01")), (sum(&a.bigrams, "alternate"), value("B08")), (sum(&a.skipgrams, "sfs"), value("S01"))]
+    {
         assert!((got - want).abs() < 1e-3, "{got} vs {want}");
     }
 }
@@ -374,4 +376,79 @@ fn engram_comfort_table() {
     assert_eq!(c(at(1, 2), at(1, 3)), 1.0, "home-row inward roll");
     assert!(c(at(0, 3), at(1, 3)) < 0.5, "same-finger reach");
     assert_eq!(c(at(1, 1), at(1, 1)), 1.0, "repeats are left to B02");
+}
+
+/// Hand-computed values for the C4 metrics (B06 B07 B09 B10 S05 T09 T10, M03 M07) on ansi-30.
+#[test]
+fn c4_metrics_on_known_keys() {
+    use gecko_core::metrics::{def, stretch, table};
+    let g = ansi();
+    let p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
+    let t = |id: &str| table(&g, &p, def(id).unwrap()).unwrap();
+    let n = 30;
+    let bi = |id: &str, a: usize, b: usize| t(id)[a * n + b];
+    // B06: the shorter finger (pinky < index < ring < middle) on the upper row, one row apart.
+    assert_eq!(bi("B06", at(0, 0), at(1, 1)), 100.0, "pinky top, ring home");
+    assert_eq!(bi("B06", at(1, 0), at(0, 1)), 0.0, "pinky home, ring top");
+    assert_eq!(bi("B06", at(0, 1), at(1, 2)), 100.0, "ring top, middle home");
+    assert_eq!(bi("B06", at(1, 3), at(0, 2)), 0.0, "index home, middle top");
+    assert_eq!(bi("B06", at(0, 3), at(1, 2)), 100.0, "index top, middle home");
+    assert_eq!(bi("B06", at(0, 9), at(1, 8)), 100.0, "right pinky top, ring home");
+    assert_eq!(bi("B06", at(0, 0), at(2, 1)), 0.0, "two rows is a full scissor (B05)");
+    // B07: inward rolls only.
+    assert_eq!(bi("B07", at(1, 0), at(1, 1)), 100.0);
+    assert_eq!(bi("B07", at(1, 1), at(1, 0)), 0.0);
+    assert_eq!(bi("B07", at(1, 9), at(0, 6)), 100.0);
+    assert_eq!(bi("B07", at(1, 3), at(1, 6)), 0.0, "different hands");
+    // B09: pinky–ring on one hand, either direction.
+    assert_eq!(bi("B09", at(1, 1), at(1, 0)), 100.0);
+    assert_eq!(bi("B09", at(1, 9), at(0, 8)), 100.0);
+    assert_eq!(bi("B09", at(1, 1), at(1, 2)), 0.0);
+    assert_eq!(bi("B09", at(1, 0), at(1, 9)), 0.0, "different hands");
+    // B10: |Δy| × 100 on one hand.
+    assert_eq!(bi("B10", at(0, 0), at(2, 1)), 200.0);
+    assert_eq!(bi("B10", at(0, 3), at(1, 3)), 100.0);
+    assert_eq!(bi("B10", at(0, 0), at(2, 9)), 0.0, "different hands");
+    assert_eq!(bi("B10", at(1, 2), at(1, 3)), 0.0);
+    // S05 is B14's stretch on skipgrams.
+    assert_eq!(bi("S05", at(1, 2), at(1, 4)), 100.0 * stretch(&g, at(1, 2), at(1, 4)));
+    assert!(bi("S05", at(1, 2), at(1, 4)) > 0.0);
+    // Trigrams.
+    let tri = |id: &str, a: usize, b: usize, c: usize| t(id)[(a * n + b) * n + c];
+    let s = stretch(&g, at(1, 2), at(1, 4)) + stretch(&g, at(1, 4), at(1, 2));
+    assert!((tri("T09", at(1, 2), at(1, 4), at(1, 2)) - 100.0 * s).abs() < 1e-4, "LSB there and back");
+    assert_eq!(tri("T09", at(1, 2), at(1, 4), at(1, 7)), 0.0, "second step changes hands");
+    assert_eq!(tri("T09", at(1, 1), at(1, 2), at(1, 3)), 0.0, "home-row roll");
+    assert_eq!(tri("T10", at(0, 1), at(2, 0), at(0, 1)), 100.0, "scissor twice");
+    assert_eq!(tri("T10", at(0, 2), at(2, 2), at(2, 4)), 100.0, "SFB then LSB");
+    assert_eq!(tri("T10", at(0, 2), at(2, 2), at(1, 7)), 0.0, "only one bad step");
+    assert_eq!(tri("T10", at(1, 0), at(1, 1), at(1, 2)), 0.0);
+}
+
+#[test]
+fn c4_load_metrics() {
+    use gecko_core::scorer::{balance_rss, peak_load};
+    let target = [8.0, 11.0, 15.0, 16.0, 0.0, 0.0, 16.0, 15.0, 11.0, 8.0];
+    let even = [12.5, 12.5, 12.5, 12.5, 0.0, 0.0, 12.5, 12.5, 12.5, 12.5];
+    assert!((balance_rss(&even) - 1250f64.sqrt()).abs() < 1e-9);
+    // Thumb load is ignored: shares are of non-thumb keystrokes.
+    let thumbs = even.map(|l| l * 0.8);
+    let thumbs = {
+        let mut t = thumbs;
+        t[4] = 20.0;
+        t
+    };
+    assert!((balance_rss(&thumbs) - 1250f64.sqrt()).abs() < 1e-9);
+    // Pinkies at 12.5 against a target of 8 are the peak: 156.25%.
+    assert!((peak_load(&even, &target) - 156.25).abs() < 1e-9);
+    let mut on_target = target;
+    on_target[4] = 0.0;
+    assert!((peak_load(&on_target, &target) - 100.0).abs() < 1e-9);
+    let mut skewed = target;
+    skewed[0] = 24.0;
+    skewed[3] = 0.0;
+    // Shares: LP 24 of 100 → 300% of its 8% target; RSS = √(Σ shares²).
+    assert!((peak_load(&skewed, &target) - 300.0).abs() < 1e-9);
+    let rss = skewed.iter().map(|s| s * s).sum::<f64>().sqrt();
+    assert!((balance_rss(&skewed) - rss).abs() < 1e-9);
 }
