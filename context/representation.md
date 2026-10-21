@@ -177,7 +177,7 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   bigrams are exact (from bigrams/trigrams); a trigram's first symbol uses its leading
   bigram's share after a trigger (Markov); skipgram ends use `x ? z` trigrams (gap 1) or a
   Markov chain `skip(g-1)[x,y]·bi[y,z]/mono[y]` (gaps 2–3); skipgram starts use the symbol's
-  overall share. Against the truly rewritten text (research notes, Magic Sturdy rules) the
+  overall share. Shift tables are retained using the same context shares (estimates). Against the truly rewritten text (research notes, Magic Sturdy rules) the
   score is off by 0.01 (0.06 with an extra repeat key) for a 3.1 effect.
 - `code` corpus (`--charset code`: default + digits, all ASCII punctuation, `⏎`; 70 symbols):
   1:1:1 `gecko corpus mix` of Rust (serde, serde_json, regex-syntax, tokio, axum, clap_builder,

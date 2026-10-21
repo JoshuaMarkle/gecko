@@ -69,6 +69,10 @@ a magic key (proptest); `[[magic]]` TOML round-trip; Magic Sturdy's rules halve 
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
 
+Integration coverage: corpus extension and adaptive-key rewriting retain Shift counts; tabu
+mixed deltas include Shift and bracket placement. Reference snapshots include S04, row
+effort offsets and Y03.
+
 ## CI
 
 `.github/workflows/ci.yml` runs the `make test` checks on every push and PR, in two jobs:
