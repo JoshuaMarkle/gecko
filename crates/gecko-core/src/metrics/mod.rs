@@ -83,6 +83,14 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Geometric stretch between same-hand fingers per 100 bigrams (Oxeylyzer 2); covers LSB, scissors, crossings.",
     ),
+    m(
+        "B11",
+        "Movement",
+        "u",
+        Order::Bi,
+        Dir::Min,
+        "Same-hand finger-pair movement cost per 100 bigrams (KLO table, finger-length scissor rule, ring coupling).",
+    ),
     m("M01", "Effort", "", Order::Mono, Dir::Min, "Average base key effort per keystroke."),
     m("M02", "Finger load error", "%", Order::Load, Dir::Min, "RMS gap between finger loads and the profile's target loads."),
     m("M04", "Left hand", "%", Order::Load, Dir::Min, "Share of keystrokes on the left hand; scored as squared distance from 50%."),
@@ -174,6 +182,7 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
         "B02" => pair(&|i, j| pct(g.same_key(i, j))),
         "B03" | "S03" => pair(&|i, j| if same_finger(i, j) { 100.0 * finger_speed(g, &p.sfb, i, j) } else { 0.0 }),
         "B14" => pair(&|i, j| 100.0 * stretch(g, i, j)),
+        "B11" => pair(&|i, j| 100.0 * movement(g, i, j)),
         "E04" | "E05" => {
             let c = g.comfort_tables.get(d.id)?;
             pair(&|i, j| 100.0 * (1.0 - c[i * n + j]))
@@ -241,6 +250,57 @@ pub fn stretch(g: &Geometry, i: usize, j: usize) -> f32 {
     } else {
         0.0
     }
+}
+
+/// KLO's movement-pattern seed (`config/evaluation/default.yml`, `finger_switch_factor`) per
+/// ordered finger pair `[from][to]`, by `Finger::ord` (pinky, ring, middle, index). Pairs KLO
+/// leaves out cost 0.
+#[rustfmt::skip]
+const MOVE_SEED: [[f32; 4]; 4] = [
+    [0.0, 4.0, 2.0, 0.0],
+    [6.0, 0.0, 2.0, 0.1],
+    [3.0, 5.0, 0.0, 0.6],
+    [0.1, 0.3, 0.9, 0.0],
+];
+
+/// Häger-Ross & Schieber (2000) individuation index per `Finger::ord` (right hand means).
+const INDIVIDUATION: [f32; 4] = [0.943, 0.907, 0.937, 0.982];
+
+/// KLO finger lengths per `Finger::ord` for the scissor-direction rule.
+const FINGER_LENGTH: [f32; 4] = [1.0, 2.0, 3.0, 2.0];
+
+/// Movement cost per ordered finger pair: [`MOVE_SEED`], with ring-finger pairs scaled by
+/// their coupling `(1 − I_a) + (1 − I_b)` relative to the mean over all six finger pairs.
+fn move_pair(from: usize, to: usize) -> f32 {
+    let c = |a: usize, b: usize| 2.0 - INDIVIDUATION[a] - INDIVIDUATION[b];
+    let mut sum = 0.0;
+    for a in 0..4 {
+        for b in a + 1..4 {
+            sum += c(a, b);
+        }
+    }
+    let ring = from == 1 || to == 1;
+    MOVE_SEED[from][to] * if ring { c(from, to) / (sum / 6.0) } else { 1.0 }
+}
+
+/// B11: KLO-style movement cost for two keys on the same hand and different non-thumb fingers;
+/// 0 otherwise. `pair · direction · (0.1 + rows² + lateral)`: `rows` is the logical row change;
+/// `direction` = 1 + 2·|Δlength| when a shorter finger goes down to a longer one or a longer
+/// finger goes up to a shorter one (the scissor that hurts); `lateral` = columns spanned beyond
+/// the fingers' own spacing (LSB). KLO uses `lateral_stretch_factor` 0; GECKO adds it so one
+/// table covers LSB too.
+pub fn movement(g: &Geometry, i: usize, j: usize) -> f32 {
+    let (a, b) = (&g.key[i], &g.key[j]);
+    if a.finger == b.finger || a.hand() != b.hand() || a.finger.is_thumb() || b.finger.is_thumb() {
+        return 0.0;
+    }
+    let (fa, fb) = (a.finger.ord() as usize, b.finger.ord() as usize);
+    let rows = (a.row - b.row).abs() as f32;
+    let dlen = FINGER_LENGTH[fa] - FINGER_LENGTH[fb];
+    let (down, up) = (b.row > a.row, b.row < a.row);
+    let direction = if (down && dlen < 0.0) || (up && dlen > 0.0) { 1.0 + 2.0 * dlen.abs() } else { 1.0 };
+    let lateral = ((a.col - b.col).abs() as f32 - fa.abs_diff(fb) as f32).max(0.0);
+    move_pair(fa, fb) * direction * (0.1 + rows * rows + lateral)
 }
 
 /// How far two neighbouring fingers naturally overlap sideways (Oxeylyzer 2 `x_finger_overlap`).
