@@ -280,7 +280,6 @@ enum Cmd {
         #[command(subcommand)]
         cmd: LayoutsCmd,
     },
-    },
     /// Profile calibration tools.
     Profile {
         #[command(subcommand)]

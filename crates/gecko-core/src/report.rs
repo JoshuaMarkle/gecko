@@ -273,7 +273,7 @@ pub fn worst_words(sc: &Scorer, st: &State, words: &WordList, top: usize) -> Vec
             Order::Skip => &[(2, 1.0)],
             Order::SkipFar => &[(3, decay), (4, decay * decay)],
             Order::Tri => &[(2, 1.0)],
-            Order::Load => continue,
+            Order::Load | Order::Brackets => continue,
         };
         // % and u tables hold 100 × the per-n-gram cost (metric values read per 100 n-grams).
         let scale = if d.unit.is_empty() { 1.0 } else { 0.01 };

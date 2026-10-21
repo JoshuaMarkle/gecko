@@ -30,14 +30,6 @@ improvements applied, one `State` per thread) on the `gecko.toml` defaults with 
 `-dirty` when the tree has uncommitted changes). Record after any scorer change; compare
 entries from the same machine only.
 
-Implemented: `cargo bench -p gecko-core` (`crates/gecko-core/benches/scorer.rs`) runs
-`full_eval`, `swap_delta/single` and `swaps_all_cores/<n>_threads` (random swap deltas with
-improvements applied, one `State` per thread) on the `gecko.toml` defaults with QWERTY.
-`gecko perf --record` appends one JSON line to `bench/history.jsonl`:
-`{date, commit, layout, geometry, corpus, profile, full_per_sec, delta_per_sec}` (`commit` gets
-`-dirty` when the tree has uncommitted changes). Record after any scorer change; compare
-entries from the same machine only.
-
 ## Web
 
 TypeScript type check + a few Vitest tests for data shaping. A smoke test that the
@@ -62,7 +54,7 @@ brute-forced set of canonical local optima; ansi atlas consistency (pins, constr
 records, every unconstrained record locally optimal); distances, PCA, funnels, Chao1.
 BLS, explore and tabu are in the brute-force and determinism tests. Tabu's incremental Δ
 matrix: `delta_shift` == recomputed `delta_linear` for every disjoint pair after a swap
-(proptest), and delta == linear + load.
+(proptest, including Shift and brackets), and delta == linear + load.
 External validation (`tests/validation.rs`): every non-thumb finger triple in cmini's
 `table.json` (pinned in `tests/fixtures/cmini-table.json`) gets the matching trigram class;
 ansi-30 distances `rg` 1.6 u, `my` 2.66 u, `vt` 2.02 u match the Layouts Doc.

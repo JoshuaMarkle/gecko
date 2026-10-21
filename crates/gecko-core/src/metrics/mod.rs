@@ -350,6 +350,8 @@ fn layer_presses(g: &Geometry, i: usize, j: usize) -> f32 {
     } else {
         100.0 * (presses + sf) as f32
     }
+}
+
 /// `[N×N×N]` table from `f(i, j, k)`.
 fn tri(g: &Geometry, f: &dyn Fn(usize, usize, usize) -> f32) -> Option<Vec<f32>> {
     let n = g.len();

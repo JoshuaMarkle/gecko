@@ -83,6 +83,7 @@ impl Imported {
             source: self.source.clone(),
             rows: self.rows.iter().map(|r| r.iter().collect()).collect(),
             layer: Vec::new(),
+            magic: Vec::new(),
         }
     }
 

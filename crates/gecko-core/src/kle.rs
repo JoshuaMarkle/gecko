@@ -258,6 +258,7 @@ pub fn import(name: &str, text: &str) -> Result<Geometry> {
                 stretch,
                 effort: (effort * 10.0).round() / 10.0,
                 fill: None,
+                hrm: None,
                 layer: 0,
                 phys: None,
             });
@@ -271,6 +272,7 @@ pub fn import(name: &str, text: &str) -> Result<Geometry> {
         comfort: Default::default(),
         comfort_tables: Default::default(),
         layer_keys: Vec::new(),
+        layer_modes: Vec::new(),
     };
     g.validate()?;
     Ok(g)

@@ -25,6 +25,7 @@ fn key(finger: Finger, row: i8, col: i8, x: f32, y: f32) -> Key {
         stretch: false,
         effort: 1.0,
         fill: None,
+        hrm: None,
         layer: 0,
         phys: None,
     }
@@ -37,7 +38,7 @@ fn board(key: Vec<Key>) -> Geometry {
         key,
         comfort: BTreeMap::new(),
         comfort_tables: BTreeMap::new(),
-        layer_keys: Vec::new(),
+        layer_modes: Vec::new(), layer_keys: Vec::new(),
     };
     g.validate().unwrap();
     g

@@ -37,3 +37,26 @@ fn every_bundled_corpus_has_skipgrams_of_each_gap() {
         }
     }
 }
+
+/// Adding navigation/adaptive symbols must retain case data introduced by the Shift PR.
+#[test]
+fn corpus_transforms_preserve_shift_counts() {
+    use gecko_core::magic::{self, Magic, MAGIC};
+    let mut c = Corpus::new("cased", "ab");
+    c.add_text("aB Ab aBB ab");
+    assert!(c.has_shift());
+    let extended = c.extended("nav", &gecko_core::layout::ARROWS).unwrap();
+    let inert_key = Magic { key: MAGIC, ..Default::default() };
+    let rewritten = magic::rewrite(&c, &[inert_key]).unwrap();
+    for (got, scale) in [(&extended, 1), (&rewritten, magic::SCALE as u64)] {
+        for x in 0..c.size() {
+            assert_eq!(got.shift[x], c.shift[x] * scale);
+            for y in 0..c.size() {
+                assert_eq!(got.shift_bi[x * got.size() + y], c.shift_bi[x * c.size() + y] * scale);
+            }
+        }
+        let back = Corpus::from_bytes(&got.to_bytes()).unwrap();
+        assert_eq!(back.shift, got.shift);
+        assert_eq!(back.shift_bi, got.shift_bi);
+    }
+}

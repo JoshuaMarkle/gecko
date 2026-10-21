@@ -15,11 +15,11 @@ optimization on top.
 
 ## Phases
 
-Status 2026-10-20: phase 1 done (scorer, P0 metrics + trigram classes, ranking test);
-phase 2 partly done (HC, SA, GA, `gecko bench`); phase 4 MVP done (single-screen UI, 3D view,
+Status 2026-10-21: phase 1 done (scorer, P0 metrics + trigram classes, ranking test);
+phase 2 partly done (HC, SA, GA, tabu, `gecko bench`); phase 4 MVP done (single-screen UI, 3D view,
 live editor, runs); phase 3 started (B14, S02/S03, Engram comfort judge E05, extra corpora +
 robustness report, spread-normalized weights, `gecko profile fit`); search-space exploration
-done (BLS, `gecko explore` atlas, Explore view). Next: tabu, lower bounds, MAP-Elites.
+done (BLS, `gecko explore` atlas, Explore view, MAP-Elites). Next: lower bounds, memetic search.
 
 | # | Phase | Done when |
 |---|---|---|
@@ -27,7 +27,7 @@ done (BLS, `gecko explore` atlas, Explore view). Next: tabu, lower bounds, MAP-E
 | 2 | **Optimizers:** hill climb, SA, GA, tabu, memetic; algorithm leaderboard | Finds layouts that beat the best known layouts under our profile |
 | 3 | **Full metric set:** P1/P2 metrics, profiles, rank-sum and Pareto selection | |
 | 4 | **Web UI:** run browser, compare, interactive editor, 3D viewer | |
-| 5 | **Symbol layers:** symbols, layers, modifiers, code corpora | Started: thumb keys/tokens, hold layers (Y01, Y02), paired brackets (Y03), hold/one-shot/toggle layer modes, Shift, `code` corpus, layer view in the UI. Y04 HRM misfires |
+| 5 | **Symbol layers:** symbols, layers, modifiers, code corpora | Started: thumb keys/tokens, hold layers (Y01, Y02), paired brackets (Y03), hold/one-shot/toggle layer modes, Shift, `code` corpus, layer view in the UI. Y04 HRM misfires, number/navigation layers, adaptive keys |
 | 6 | **2D geometry:** optimize key x, y, rotation on a plane, no overlaps | |
 | 7 | **3D geometry:** add z, tilt, tent; hand model | |
 | 8 | **Free-form 3D:** curved keyboards, full 6-DoF keys, thumb clusters, no intersections | |

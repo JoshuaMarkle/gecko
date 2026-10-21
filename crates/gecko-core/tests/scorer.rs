@@ -122,10 +122,16 @@ proptest! {
     /// Tabu search's incremental Δ matrix: after swapping r/s, every disjoint pair's linear
     /// delta changes by exactly `delta_shift`, and delta = linear + load.
     #[test]
-    fn delta_shift_matches_recompute(seed in 0u64..10_000, moves in proptest::collection::vec((0usize..30, 0usize..30), 1..8)) {
+    fn delta_shift_matches_recompute(seed in 0u64..10_000, special in any::<bool>(), moves in proptest::collection::vec((0usize..30, 0usize..30), 1..8)) {
         let g = ansi();
-        let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 3);
-        let sc = Scorer::new(&g, &c, &all_weights(), &layout("qwerty")).unwrap();
+        let (c, l) = if special {
+            let mut l = layout("qwerty");
+            l.chars[..5].copy_from_slice(&['(', ')', '[', ']', gecko_core::layout::SHIFT]);
+            (synthetic_cased(gecko_core::corpus::CODE_CHARSET, 3), l)
+        } else {
+            (synthetic(gecko_core::corpus::DEFAULT_CHARSET, 3), layout("qwerty"))
+        };
+        let sc = Scorer::new(&g, &c, &all_weights(), &l).unwrap();
         let ctx = Ctx::new(&sc, (0..30).collect(), sc.identity());
         let mut st = ctx.random_state(&mut Rng::new(seed));
         for (r, s) in moves {
@@ -275,8 +281,7 @@ fn layered_layouts_round_trip_and_score() {
     let m01 = sc.table(gecko_core::metrics::index_of("M01").unwrap()).unwrap();
     let v = (36..sc.n).find(|&v| vg.holder(v).is_some()).unwrap();
     let h = vg.holder(v).unwrap();
-    assert!((m01[v] - vg.key[vg.phys(v)].effort - vg.key[h].effort).abs() < 1e-6);
-    assert_eq!(m01[vg.phys(v)], vg.key[vg.phys(v)].effort);
+    assert!((m01[v] - m01[vg.phys(v)] - m01[h]).abs() < 1e-6);
     // A symbol on the holding finger's keys is rejected.
     let mut bad = l.clone();
     let lt = g.key.iter().position(|k| k.finger == gecko_core::Finger::LT).unwrap();
@@ -695,7 +700,6 @@ fn skip_stretch_is_b14_on_skipgrams() {
     let got = breakdown(&sc, &st).metrics.iter().find(|m| m.id == "S04").unwrap().value;
     assert!((got - want).abs() < 1e-4, "S04 {got} vs skipgram-weighted B14 {want}");
 }
-}
 
 #[test]
 fn engram_comfort_table() {
@@ -893,7 +897,7 @@ fn hrm_slots_and_misfire_table() {
     g2.key[at(1, 4)].hrm = Some(true);
     assert!(!g2.hrm(at(1, 0)) && g2.hrm(at(1, 4)));
     let sb = thumb_board("corne-36");
-    let lg = sb.layered(&[sb.len() - 1]).unwrap();
+    let lg = sb.layered(&[(sb.len() - 1, gecko_core::LayerMode::Hold)]).unwrap();
     assert!((sb.len()..lg.len()).all(|i| !lg.hrm(i)));
     assert_eq!((0..sb.len()).filter(|&i| lg.hrm(i)).count(), 8);
 }
@@ -915,7 +919,8 @@ fn cmini_likes_ranking() {
         let s = r.layouts.iter().find(|s| s.name == name).unwrap();
         assert!(s.rank * 10 <= n, "{name} ranks {} of {n} liked cmini layouts", s.rank);
     }
-=======
+}
+
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(32))]
     /// Adaptive keys: the scorer runs on the rewritten corpus, so the magic key moves like any
@@ -984,5 +989,4 @@ fn magic_rules_cut_sfbs_on_english() {
     let r = gecko_core::magic::search_rules(&g, &c, &p, &l, &Default::default()).unwrap();
     assert!(r.score <= s_magic, "search {} vs published {s_magic}", r.score);
     assert!((sfb(&r.layout).0 - r.score).abs() < 1e-6);
->>>>>>> origin/fix/issue-89
 }

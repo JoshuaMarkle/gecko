@@ -77,7 +77,7 @@ in JSON `warnings`; a letter outside the 30 keys is an error.
 ### `analyze --words`
 
 Ranks the words of the corpus's word list (`data/corpora/<corpus>.words.tsv`) by frequency ×
-cost for every lower-is-better metric with a cost table (load metrics and higher-is-better
+cost for every lower-is-better metric with a cost table (load metrics, paired-bracket placement and higher-is-better
 metrics are skipped; so is any metric no word touches). A word is typed as `␣word␣` when `␣`
 is on the layout, else bare; symbols not on the layout break n-grams; n-grams spanning two
 words belong to neither. `--top` sets the words per metric. JSON adds a top-level field:

@@ -544,9 +544,11 @@ impl Corpus {
         let (c, n) = (self.size(), cs.len());
         let mut out = Corpus::new(name, &cs.iter().collect::<String>());
         out.mono[..c].copy_from_slice(&self.mono);
+        out.shift[..c].copy_from_slice(&self.shift);
         for x in 0..c {
             for y in 0..c {
                 out.bi[x * n + y] = self.bi[x * c + y];
+                out.shift_bi[x * n + y] = self.shift_bi[x * c + y];
                 out.skip[x * n + y] = self.skip[x * c + y];
                 out.skip2[x * n + y] = self.skip2[x * c + y];
                 out.skip3[x * n + y] = self.skip3[x * c + y];
@@ -624,7 +626,7 @@ impl Corpus {
             prev = Some(x);
         }
         let mut stream = Corpus::new(name, &base.charset.iter().collect::<String>());
-        stream.count(&t, 1, 1);
+        stream.count(&t, &vec![false; t.len()], 1, 1);
         let a = arrow.iter().map(|&i| stream.mono[i as usize]).sum::<u64>() as f64 / stream.total_chars().max(1) as f64;
         if !(share > 0.0 && share < a) {
             return Err(Error::invalid("corpus nav", format!("share must be in (0, {a:.2})")));
