@@ -1,21 +1,28 @@
 // 3D keyboard: one tapered, round-cornered keycap per geometry key, placed from pos/rot/size (1 unit = 1u).
-// Flat and (later) curved boards share this code path. Overlays: fingers, heat, SFB arcs.
+// Flat and (later) curved boards share this code path. Overlays: none, fingers, heat, n-gram arcs.
+// Layered layouts show one layer at a time: the caller passes that layer's symbols per key and
+// `muted` keys (on the finger holding the layer key), which are dimmed and not clickable.
 
 import { Canvas, useThree } from "@react-three/fiber";
-import { Edges, OrbitControls, QuadraticBezierLine, RoundedBox } from "@react-three/drei";
+import { Edges, Grid, OrbitControls, QuadraticBezierLine } from "@react-three/drei";
 import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
-import type { Geometry, Key, Ngram } from "../api";
+import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import type { Geometry, Key } from "../api";
 import { ACCENT, fingerColor, heatColor, heatText, INK } from "../colors";
 
-export type Overlay = "fingers" | "heat" | "sfb";
+export type Overlay = "none" | "fingers" | "heat" | "ngrams";
+/** One arc between the keys holding chars `ngram[0]` and `ngram[1]`; `w` in [0, 1] sets width and opacity. */
+export interface Arc { ngram: string; w: number; color: string }
 export type ViewMode = "3d" | "top";
 
 interface Props {
   geometry: Geometry;
   chars: string;
   heat: number[];
-  sfb: Ngram[];
+  /** Keys that hold no slot on the shown layer. */
+  muted?: boolean[];
+  arcs: Arc[];
   overlay: Overlay;
   mode: ViewMode;
   selected: number | null;
@@ -28,7 +35,30 @@ const TAPER = 0.09;
 const R_BASE = 0.09;
 const R_TOP = 0.07;
 const CORNER_SEGS = 6;
+/** Keycap color when no overlay colors the keys; muted keys (unusable on the shown layer). */
+const CAP = "#ffffff";
+const MUTED = "#c8c8c8";
+/** Empty-slot glyph (gecko-core `layout::EMPTY`): drawn as a blank cap. */
+const EMPTY = "\u00B7";
 const caps = new Map<string, THREE.BufferGeometry>();
+/** Case under the keys: margin around the key bounds, height, plan-view corner radius. */
+const CASE_PAD = 0.3;
+const CASE_H = 0.5;
+const CASE_R = 0.3;
+
+/** Case slab with its top at y = 0: rounded vertical corners like the caps, sharp top and bottom edges. */
+function caseGeometry(w: number, d: number): THREE.BufferGeometry {
+  const [hx, hz, r] = [w / 2, d / 2, CASE_R];
+  const s = new THREE.Shape();
+  s.absarc(hx - r, -hz + r, r, -Math.PI / 2, 0, false);
+  s.absarc(hx - r, hz - r, r, 0, Math.PI / 2, false);
+  s.absarc(-hx + r, hz - r, r, Math.PI / 2, Math.PI, false);
+  s.absarc(-hx + r, -hz + r, r, Math.PI, 1.5 * Math.PI, false);
+  const g = new THREE.ExtrudeGeometry(s, { depth: CASE_H, bevelEnabled: false, curveSegments: 12 });
+  g.rotateX(-Math.PI / 2);
+  g.translate(0, -CASE_H, 0);
+  return toCreasedNormals(g, Math.PI / 4);
+}
 
 /**
  * Keycap centred on the origin: a rounded rectangle at the base lofted to a smaller rounded
@@ -165,7 +195,7 @@ function CameraRig({ mode, w, h }: { mode: ViewMode; w: number; h: number }) {
   return null;
 }
 
-export function Keyboard3D({ geometry, chars, heat, sfb, overlay, mode, selected, onKey }: Props) {
+export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, selected, onKey }: Props) {
   const keys = geometry.key;
   const bounds = useMemo(() => {
     const xs = keys.flatMap((k) => [k.pos[0], k.pos[0] + k.size[0]]);
@@ -173,31 +203,35 @@ export function Keyboard3D({ geometry, chars, heat, sfb, overlay, mode, selected
     const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
     return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, w: x1 - x0, h: y1 - y0 };
   }, [keys]);
+  const caseGeo = useMemo(() => caseGeometry(bounds.w + 2 * CASE_PAD, bounds.h + 2 * CASE_PAD), [bounds.w, bounds.h]);
+  useEffect(() => () => caseGeo.dispose(), [caseGeo]);
   const maxHeat = Math.max(...heat, 1e-9);
-  const slotOf = useMemo(() => new Map([...chars].map((c, i) => [c, i])), [chars]);
-  const arcs = overlay === "sfb" ? sfb.slice(0, 12) : [];
-  const maxArc = Math.max(...arcs.map((a) => a.freq), 1e-9);
+  const sym = useMemo(() => [...chars], [chars]);
+  const slotOf = useMemo(() => new Map(sym.map((c, i) => [c, i])), [sym]);
 
   return (
     <Canvas camera={{ fov: 32, near: 0.1, far: 200 }} dpr={[1, 2]} onPointerMissed={() => onKey(-1)}>
       <color attach="background" args={["#f3f3f3"]} />
-      <ambientLight intensity={1.6} />
-      <directionalLight position={[4, 10, 6]} intensity={1.4} />
-      <directionalLight position={[-6, 6, -4]} intensity={0.4} />
+      <ambientLight intensity={1.8} />
+      <directionalLight position={[3, 10, -6]} intensity={4.2} />
+      <directionalLight position={[-6, 6, 4]} intensity={0.4} />
+      {/* Floor grid under the case: 1u cells, 5u sections, fading out with distance. */}
+      <Grid position={[0, -CASE_H - 0.001, 0]} infiniteGrid cellSize={1} sectionSize={5} cellThickness={0.6} sectionThickness={1} cellColor="#dcdcdc" sectionColor="#c4c4c4" fadeDistance={40} fadeStrength={1.5} />
       <CameraRig mode={mode} w={bounds.w} h={bounds.h} />
-      <RoundedBox args={[bounds.w + 0.6, 0.3, bounds.h + 0.6]} radius={0.12} position={[0, -0.15, 0]}>
-        <meshStandardMaterial color="#e6e6e6" roughness={0.9} />
-      </RoundedBox>
+      <mesh geometry={caseGeo}>
+        <meshStandardMaterial color="#d2d2d2" roughness={0.9} />
+      </mesh>
       {keys.map((k, i) => {
-        const ch = chars[i] ?? "";
-        const t = heat[i] / maxHeat;
-        const color = overlay === "heat" ? heatColor(t) : fingerColor(k.finger);
+        const off = muted?.[i] ?? false;
+        const ch = off || sym[i] === EMPTY ? "" : sym[i] ?? "";
+        const t = (heat[i] ?? 0) / maxHeat;
+        const color = off ? MUTED : overlay === "heat" ? heatColor(t) : overlay === "fingers" || overlay === "ngrams" ? fingerColor(k.finger) : CAP;
         const text = overlay === "heat" ? heatText(t) : INK;
         return (
           <Keycap key={i} k={k} cx={bounds.cx} cy={bounds.cy} ch={ch} color={color} text={text} selected={selected === i} onClick={() => onKey(i)} />
         );
       })}
-      {arcs.map((a) => {
+      {overlay === "ngrams" && arcs.map((a, n) => {
         const [i, j] = [slotOf.get(a.ngram[0]), slotOf.get(a.ngram[1])];
         if (i === undefined || j === undefined) return null;
         const pi = place(keys[i], bounds.cx, bounds.cy).p;
@@ -209,15 +243,17 @@ export function Keyboard3D({ geometry, chars, heat, sfb, overlay, mode, selected
             key={a.ngram}
             start={[pi[0], top, pi[2]]}
             end={[pj[0], top, pj[2]]}
-            mid={[(pi[0] + pj[0]) / 2, top + 0.35 + dist * 0.35, (pi[2] + pj[2]) / 2]}
-            color={INK}
-            lineWidth={1 + 5 * (a.freq / maxArc)}
+            mid={[(pi[0] + pj[0]) / 2, top + 0.25 + dist * 0.3, (pi[2] + pj[2]) / 2]}
+            color={a.color}
+            lineWidth={0.6 + 5 * a.w}
             transparent
-            opacity={0.85}
+            opacity={0.15 + 0.85 * a.w}
+            depthWrite={false}
+            renderOrder={arcs.length - n}
           />
         );
       })}
-      <OrbitControls makeDefault enablePan enableDamping dampingFactor={0.12} maxPolarAngle={Math.PI / 2.05} minDistance={3} maxDistance={40} />
+      <OrbitControls makeDefault enableRotate={mode === "3d"} enablePan enableDamping dampingFactor={0.12} maxPolarAngle={Math.PI / 2.05} minDistance={3} maxDistance={40} />
     </Canvas>
   );
 }

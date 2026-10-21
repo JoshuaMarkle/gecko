@@ -5,7 +5,7 @@
 | Test | What it guards |
 |---|---|
 | Metric unit tests | Each metric on a tiny geometry (3–6 keys) with hand-computed answers |
-| Delta == full (property test, `proptest`) | Random layouts + random swaps: delta matches re-evaluation within 1e-5 relative |
+| Delta == full (property test, `proptest`) | Random layouts + random swaps: delta matches re-evaluation within 1e-5 relative (ansi-30; also corne-36/sweep-34 with tokens and empty slots) |
 | Folding == unfolded | Folded score equals sum of individually computed metrics |
 | Reference snapshot | Scores and metric values of reference layouts per profile (`insta`). Changes must be intentional |
 | Ranking sanity | Default profile ranks modern layouts > Colemak > Dvorak > QWERTY |

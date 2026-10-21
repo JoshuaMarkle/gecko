@@ -5,7 +5,7 @@ B01 SFB, S01 SFS, S02 far SFS (gaps 2–3, decayed), S03 SFS distance, B03 finge
 B04 LSB, B05 scissors, B14 geometric stretch (Oxeylyzer 2), M01 effort, M02 finger-load error,
 M04 hand balance, M05 home row, M06 center columns, B08 alternation, T01–T08 trigram classes,
 E04/E05 Engram key-pair discomfort (formula / measured; geometry `[comfort]` tables),
-B02 repeats (info). Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
+B02 repeats (info), Y01 layer switches, Y02 code-symbol bigrams. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
 lateral multiplier and per-finger factors, and S02's `skip_decay`.
 
 ## Metric contract
@@ -76,3 +76,16 @@ comfort) and `gecko compare --corpora english,shai,mt-10k,mt-450k` (robustness, 
 
 Besides the weighted sum: rank-sum selection over many results (Kühlmak) and Pareto
 fronts (NSGA-II). Reports always show the per-metric breakdown.
+
+## Layers (Y01, Y02)
+
+- **Y01** (bigram table on the layered geometry): 100 when the second symbol is on a
+  non-base layer the first isn't on (one layer-key press, hold model), 200 when the first key
+  is on the layer key's finger (same-finger into the layer key). Reads "presses per 100
+  bigrams". Releases are free.
+- **Y02** (own channel `fy`/`Cy`, `Order::SymBi`): frequencies are only bigrams of two ASCII
+  punctuation symbols, normalized on their own; cost 100 when they are on one finger (two keys)
+  or on different layers. Reads "% of symbol bigrams that are awkward". Adds one term to the
+  pair delta only when weighted.
+- Not modeled yet: the layer key's own keystroke in effort/finger load, one-shot layers,
+  thumb-trigram classes. Profile `code` weights both (scales are rough estimates).

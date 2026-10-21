@@ -13,6 +13,8 @@ export interface Key {
   home: boolean;
   stretch: boolean;
   effort: number;
+  /** Symbol (token name or one char) this key gets when a layout lists only the other keys. */
+  fill?: string;
 }
 
 export interface Geometry {
@@ -37,7 +39,9 @@ export interface Profile {
 export type Dir = "min" | "max" | "info";
 export interface MetricDef { id: string; name: string; unit: string; order: string; dir: Dir; desc: string }
 
-export interface LayoutInfo { id: string; name: string; geometry: string; source: string; chars: string }
+/** `chars` is slot-ordered; for a layered layout it is the flat string over its layer slots
+ *  (see `layerSlots`), and `layers` names layers 1, 2, …. */
+export interface LayoutInfo { id: string; name: string; geometry: string; source: string; chars: string; layers?: string[] }
 export interface CorpusInfo { id: string; name: string; chars: number; charset: string }
 
 export interface Meta {
@@ -52,6 +56,9 @@ export interface Meta {
 export interface MetricValue { id: string; name: string; unit: string; dir: Dir; value: number; weight: number; weighted: number }
 export interface Breakdown { score: number; metrics: MetricValue[] }
 export interface Ngram { ngram: string; freq: number }
+/** One directional pair and its class (gecko-core `report::Pair`). */
+export type PairKind = "sfb" | "sfs" | "lsb" | "scissor" | "same_hand" | "alternate";
+export interface Pair { ngram: string; freq: number; kind: PairKind }
 export interface Analysis {
   breakdown: Breakdown;
   finger_load: number[];
@@ -62,6 +69,8 @@ export interface Analysis {
   worst_sfs: Ngram[];
   worst_lsb: Ngram[];
   worst_scissors: Ngram[];
+  bigrams: Pair[];
+  skipgrams: Pair[];
 }
 export interface ScoreResponse { schema: number; chars: string; rows: string[]; analysis: Analysis }
 

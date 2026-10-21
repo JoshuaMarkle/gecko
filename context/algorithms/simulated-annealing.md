@@ -34,3 +34,22 @@ profile, english corpus, ansi-30; lower is better; Semimak 11.85, Graphite 12.26
 | sa | 8.416 | 8.408 | 0.005 | 3.2 |
 | ga | 8.890 | 8.566 | 0.249 | 0.9 |
 
+Thumb boards 2026-10-20 (`--geometry corne-36 --time 20s`, default profile, english incl.
+space; Semimak 12.34, Sturdy 12.43 with Miryoku thumbs):
+
+| pins | score | layout | run |
+|---|---|---|---|
+| all six thumbs (`{space}{enter}{bspc}{tab}{esc}{none}`) | 9.857 | `jmypvqbuo, rtsdwxneai lkfcgzh/;. ⎋␣⇥⏎⌫·` | `20261020-222832-sa-705705b1` |
+| tokens only (empty thumb free) | 8.066 | `bldvz·,ajy nrtmg.ioeh pxkcw;uq/f ⎋␣⇥⏎⌫s` | `20261020-222852-sa-1ef8fe2f` |
+
+With the empty right-outer thumb movable, SA moves a frequent letter there (`s`, effort 1.8)
+and leaves a top-row slot empty: a letter on a thumb is worth ~1.8 points under the default
+profile. Thumb-trigram and thumb-load metrics (M09) don't exist yet, so this probably
+overrates thumb letters.
+
+Layers 2026-10-20 (`--from layered/corne-code --geometry corne-36 --corpus code --profile code
+--time 20s`, base letters and thumbs pinned; 102 slots, 2.3 M evals/s on 20 threads): start
+score 34.16 (Y01 11.0 %, Y02 25.0 %) → 27.972 (run `20261020-224013-sa-0d1258cd`). SA swaps
+which layer holds digits and which holds symbols: most digits end up on ① (left inner thumb), the
+code symbols on ② (right outer thumb). It converges in ~4 s; the top 5 differ in where a few
+rare symbols and digits sit.

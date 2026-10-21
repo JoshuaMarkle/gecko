@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import type { CorpusInfo, Geometry, LayoutInfo, Meta, Profile } from "../api";
-import { checkLayout, fmtCount, rowsOf } from "../format";
+import { checkLayout, fitChars, fmtCount, layoutText, parseLayoutText, slotCount } from "../format";
 
 export type Group = "layout" | "board" | "corpus" | "profile" | "search";
 const GROUPS: [Group, string][] = [["layout", "Layout"], ["board", "Board"], ["corpus", "Corpus"], ["profile", "Profile"], ["search", "Search"]];
@@ -71,9 +71,11 @@ function Num({ label, help, value, onChange, unit, step = 1, min, max }: {
 
 function LayoutGroup(p: Props) {
   const [text, setText] = useState<string | null>(null);
-  const rowsText = rowsOf(p.chars, p.geometry).join("\n");
+  const rowsText = layoutText(p.geometry, fitChars(p.chars, p.geometry));
   const shown = text ?? rowsText;
-  const error = text === null ? null : checkLayout(text.replace(/\s/g, ""), p.geometry.key.length, p.corpus?.charset ?? "");
+  const parsed = text === null ? null : parseLayoutText(p.geometry, text);
+  const edited = parsed ? fitChars(parsed.chars, p.geometry) : "";
+  const error = !parsed ? null : parsed.error ?? checkLayout(edited, slotCount(p.geometry, edited), p.corpus?.charset ?? "");
   return (
     <>
       <Sec id="lay-load" title="Start layout" note="the editor and runs start here">
@@ -95,10 +97,10 @@ function LayoutGroup(p: Props) {
       </Sec>
       <Sec id="lay-edit" title="Edit" note="click two keys to swap them">
         <div className="row wide">
-          <textarea className={`mono ${error ? "invalid" : ""}`} rows={3} spellCheck={false} value={shown}
-            title="Slot-ordered symbols, row by row. Whitespace is ignored."
+          <textarea className={`mono ${error ? "invalid" : ""}`} rows={Math.max(3, Math.min(16, shown.split("\n").length))} spellCheck={false} value={shown}
+            title="Slot-ordered symbols, row by row. Whitespace is ignored. Layers follow the base after a blank line."
             onChange={(e) => setText(e.target.value)}
-            onBlur={() => { if (text !== null && !error) { p.setChars(text.replace(/\s/g, ""), "edited"); } setText(null); }} />
+            onBlur={() => { if (parsed && !error) { p.setChars(edited, "edited"); } setText(null); }} />
         </div>
         {error && <div className="hint" style={{ color: "var(--error)" }}>{error}</div>}
         <div className="btns">

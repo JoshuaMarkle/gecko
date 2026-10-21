@@ -21,6 +21,8 @@ pub enum Order {
     /// Skipgrams with two and three keys between, mixed with decaying weights (`sfb.skip_decay`).
     SkipFar,
     Tri,
+    /// Bigrams of two code symbols (ASCII punctuation, e.g. `()`, `->`), normalized on their own.
+    SymBi,
     /// Non-linear: computed from per-finger load accumulators.
     Load,
 }
@@ -112,6 +114,22 @@ pub static METRICS: &[MetricDef] = &[
         "Bigram discomfort, mean of 1 − comfort, fitted from Engram's pairwise choices (geometry `comfort.E05`).",
     ),
     m("B02", "Same-key repeats", "%", Order::Bi, Dir::Info, "The same key twice in a row."),
+    m(
+        "Y01",
+        "Layer switches",
+        "%",
+        Order::Bi,
+        Dir::Min,
+        "Layer-key presses per 100 bigrams (hold model: a press when the next symbol is on another non-base layer); a press right after a key on the layer key's finger counts double.",
+    ),
+    m(
+        "Y02",
+        "Symbol bigrams",
+        "%",
+        Order::SymBi,
+        Dir::Min,
+        "Code-symbol bigrams (`()`, `->`, `!=`, …) typed with one finger on two keys or across a layer change, as % of symbol bigrams.",
+    ),
 ];
 
 pub fn def(id: &str) -> Option<&'static MetricDef> {
@@ -137,16 +155,23 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
         Some(t)
     };
     let k = &g.key;
-    let same_finger = |i: usize, j: usize| i != j && k[i].finger == k[j].finger;
+    // Layer copies of a key are the same physical key: no finger movement between them.
+    let same_finger = |i: usize, j: usize| !g.same_key(i, j) && k[i].finger == k[j].finger;
     let same_hand = |i: usize, j: usize| k[i].hand() == k[j].hand();
-    let adjacent = |i: usize, j: usize| same_hand(i, j) && (k[i].finger.ord() as i8 - k[j].finger.ord() as i8).abs() == 1;
+    // Thumbs move independently of the finger rows, so a thumb is never part of a scissor.
+    let adjacent = |i: usize, j: usize| {
+        same_hand(i, j)
+            && !k[i].finger.is_thumb()
+            && !k[j].finger.is_thumb()
+            && (k[i].finger.ord() as i8 - k[j].finger.ord() as i8).abs() == 1
+    };
     let pct = |b: bool| if b { 100.0 } else { 0.0 };
     match d.id {
         "M01" => mono(&|i| k[i].effort),
         "M05" => mono(&|i| pct(k[i].home || k[i].row == home_row(g))),
         "M06" => mono(&|i| pct(k[i].stretch)),
         "B01" | "S01" | "S02" => pair(&|i, j| pct(same_finger(i, j))),
-        "B02" => pair(&|i, j| pct(i == j)),
+        "B02" => pair(&|i, j| pct(g.same_key(i, j))),
         "B03" | "S03" => pair(&|i, j| if same_finger(i, j) { 100.0 * finger_speed(g, &p.sfb, i, j) } else { 0.0 }),
         "B14" => pair(&|i, j| 100.0 * stretch(g, i, j)),
         "E04" | "E05" => {
@@ -159,6 +184,19 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
         }),
         "B05" => pair(&|i, j| pct(adjacent(i, j) && (k[i].row - k[j].row).abs() >= 2)),
         "B08" => pair(&|i, j| pct(!same_hand(i, j))),
+        "Y01" => pair(&|i, j| {
+            let lj = k[j].layer as usize;
+            if lj == 0 || k[i].layer as usize == lj {
+                return 0.0;
+            }
+            let h = g.layer_keys[lj - 1];
+            if k[i].finger == k[h].finger && g.phys(i) != h {
+                200.0
+            } else {
+                100.0
+            }
+        }),
+        "Y02" => pair(&|i, j| pct(same_finger(i, j) || k[i].layer != k[j].layer)),
         id if id.starts_with('T') => Some(trigram::table(g, trigram::class_for(id)?)),
         _ => None,
     }

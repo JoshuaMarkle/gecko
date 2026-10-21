@@ -148,7 +148,7 @@ pub fn prepare(runs: &Path, spec: &RunSpec) -> Result<Prepared> {
 pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progress: impl FnMut(&Progress)) -> Result<RunResult> {
     let scorer = Scorer::new(spec.geometry, spec.corpus, spec.profile, spec.start)?;
     let start = scorer.identity();
-    let pinned: Vec<char> = spec.pins.chars().filter(|c| !c.is_whitespace()).collect();
+    let pinned: Vec<char> = crate::layout::parse_symbols(spec.pins)?;
     for c in &pinned {
         if !scorer.chars.contains(c) {
             return Err(Error::invalid("pins", format!("'{c}' is not on the start layout")));
@@ -176,17 +176,17 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
         .map(|(i, s)| {
             let st = scorer.state_from_sym(s.sym.clone());
             let chars: Vec<char> = st.chars(&scorer);
-            let l = Layout { name: String::new(), geometry: spec.geometry.name.clone(), source: String::new(), chars: chars.clone() };
-            Ranked {
+            let l = Layout::from_flat("", spec.geometry, chars.clone())?;
+            Ok(Ranked {
                 rank: i + 1,
                 score: st.score,
                 chars: chars.iter().collect(),
-                rows: l.rows(spec.geometry),
+                rows: l.all_rows(spec.geometry),
                 hash: hash::short(l.hash()),
                 breakdown: serde_json::to_value(breakdown(&scorer, &st)).unwrap(),
-            }
+            })
         })
-        .collect();
+        .collect::<Result<Vec<_>>>()?;
     let res = RunResult {
         schema: SCHEMA,
         id: prep.config.id.clone(),

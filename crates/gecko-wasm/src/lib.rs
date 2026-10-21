@@ -28,20 +28,20 @@ impl Engine {
     }
 
     /// Analysis JSON for slot-ordered `chars` under `profile_json` (same shape as `POST /api/score`).
+    /// A layered layout's `chars` is the flat string over its virtual slots (`Layout::flat`).
     pub fn analyze(&self, chars: &str, profile_json: &str, top: usize) -> Result<String, JsError> {
         let profile: Profile = serde_json::from_str(profile_json).map_err(js)?;
-        let layout = Layout::from_str_flat("custom", &self.geometry.name, chars).map_err(js)?;
+        let layout = Layout::from_str_flat("custom", &self.geometry.name, chars).and_then(|l| l.fit(&self.geometry)).map_err(js)?;
         let sc = Scorer::new(&self.geometry, &self.corpus, &profile, &layout).map_err(js)?;
         let st = sc.identity();
-        let v =
-            serde_json::json!({"schema": SCHEMA, "chars": chars, "rows": layout.rows(&self.geometry), "analysis": analyze(&sc, &st, top)});
+        let v = serde_json::json!({"schema": SCHEMA, "chars": chars, "rows": layout.all_rows(&self.geometry), "analysis": analyze(&sc, &st, top)});
         Ok(v.to_string())
     }
 
     /// Score change for swapping every pair of slots of `chars` (`m[i * n + j]`).
     pub fn swap_matrix(&self, chars: &str, profile_json: &str) -> Result<Vec<f32>, JsError> {
         let profile: Profile = serde_json::from_str(profile_json).map_err(js)?;
-        let layout = Layout::from_str_flat("custom", &self.geometry.name, chars).map_err(js)?;
+        let layout = Layout::from_str_flat("custom", &self.geometry.name, chars).and_then(|l| l.fit(&self.geometry)).map_err(js)?;
         let sc = Scorer::new(&self.geometry, &self.corpus, &profile, &layout).map_err(js)?;
         Ok(swap_matrix(&sc, &sc.identity()))
     }

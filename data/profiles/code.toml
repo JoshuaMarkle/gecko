@@ -1,0 +1,48 @@
+name = "code"
+description = "Default profile plus layer costs for programming: few layer switches (Y01), comfortable code-symbol bigrams (Y02)."
+scale_basis = "stdev over the 10 reference layouts on english / ansi-30 (gecko profile normalize)"
+
+# Target % per finger: LP LR LM LI LT RT RI RM RR RP
+finger_target = [8.0, 11.0, 15.0, 16.0, 0.0, 0.0, 16.0, 15.0, 11.0, 8.0]
+
+# Weights are in spread units: the scorer applies weight / scale, and each scale is the metric's
+# standard deviation over the reference layouts, so weight 1 = "one reference spread" and weights
+# compare directly. Direction comes from the metric (rewards like rolls subtract). Larger = care
+# more. Ids: research/metrics-catalog.md. Rescale with `gecko profile normalize`.
+[weights]
+B01 = 8.28   # SFB %
+S01 = 1.06   # SFS %, one key between
+S02 = 0.31   # far SFS %, 2–3 keys between (decayed); same per-% weight as S01
+B03 = 0.053  # finger speed
+B14 = 2.0    # geometric stretch (replaces B04 LSB 0.71 + B05 scissors 1.26)
+M01 = 0.279  # effort
+M02 = 0.119  # finger load error (mean squared %)
+M04 = 0.087  # hand balance
+T03 = 0.105  # rolls in
+T04 = 0.126  # rolls out
+T01 = 0.176  # alternates
+T06 = 0.461  # redirects
+T07 = 0.26   # bad redirects
+E05 = 1.0    # measured key-pair discomfort (Engram); ~free: costs 0.2% of the rest at the optimum
+Y01 = 1.0    # layer-key presses per 100 bigrams (SFB into the layer key counts double)
+Y02 = 1.0    # code-symbol bigrams on one finger or across a layer change, % of symbol bigrams
+
+[scale]
+B01 = 1.655
+S01 = 1.765
+S02 = 0.5204
+B03 = 2.626
+B14 = 2.476
+M01 = 0.1395
+M02 = 3.955
+M04 = 1.748
+T01 = 5.88
+T03 = 2.09
+T04 = 4.2
+T06 = 3.074
+T07 = 0.6511
+E05 = 1.94
+# Y01/Y02: rough spread of random symbol/number layer arrangements of layered/corne-code on
+# code / corne-36 (not from `profile normalize`, which needs several layered references).
+Y01 = 2.0
+Y02 = 8.0

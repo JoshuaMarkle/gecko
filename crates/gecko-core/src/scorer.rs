@@ -3,7 +3,11 @@
 //! score = Σ f1[x]·C1[p(x)] + Σ f2[x,y]·C2[p(x),p(y)] + Σ fk[x,z]·Ck[p(x),p(z)]
 //!       + Σ fkf[x,z]·Ckf[p(x),p(z)] + Σ f3[x,y,z]·C3[p(x),p(y),p(z)] + load terms (M02, M04)
 //!
-//! `fk` is gap-1 skipgrams; `fkf` mixes gap-2 and gap-3 skipgrams with `sfb.skip_decay`.
+//! `fk` is gap-1 skipgrams; `fkf` mixes gap-2 and gap-3 skipgrams with `sfb.skip_decay`;
+//! `fy` is bigrams of two code symbols (Y02), with its own cost table `Cy`.
+//!
+//! A layered layout is scored on its virtual geometry (`Geometry::layered`): one slot per
+//! (layer, key), so layers cost nothing extra in the hot loop beyond the larger N.
 //!
 //! Frequencies are normalized over the symbols present on the layout, so values read as
 //! "% of keystrokes / bigrams / skipgrams / trigrams typed on this layout".
@@ -12,13 +16,14 @@ use crate::geometry::FINGERS;
 use crate::metrics::{self, Dir, Order, METRICS};
 use crate::{Corpus, Error, Geometry, Layout, Profile, Result};
 
-/// Max symbols / slots supported by the stack buffers in the hot loop.
-pub const MAX_KEYS: usize = 64;
+/// Max symbols / slots (layer slots included) supported by the stack buffers in the hot loop.
+pub const MAX_KEYS: usize = 128;
 
 pub struct Scorer {
     pub n: usize,
     /// Symbol id → char. Symbol ids are the start layout's slot order.
     pub chars: Vec<char>,
+    /// The geometry slots index: the board, or its virtual layered geometry.
     pub geometry: Geometry,
     pub profile: Profile,
     pub corpus_name: String,
@@ -26,16 +31,20 @@ pub struct Scorer {
     f2: Vec<f32>,
     fk: Vec<f32>,
     fkf: Vec<f32>,
+    fy: Vec<f32>,
     f3: Vec<f32>,
     c1: Vec<f32>,
     c2: Vec<f32>,
     ck: Vec<f32>,
     ckf: Vec<f32>,
+    cy: Vec<f32>,
     c3: Vec<f32>,
     /// Any bigram, skipgram or far-skipgram cost is non-zero.
     has_pair: bool,
     /// The far-skipgram channel is in use (skipped otherwise; it costs ~12% of delta speed).
     has_far: bool,
+    /// The code-symbol bigram channel (Y02) is in use.
+    has_sym: bool,
     has_tri: bool,
     /// Non-zero trigrams grouped by symbol (CSR): every trigram containing symbol `s` is
     /// stored in `tri_entries[tri_start[s]..tri_start[s + 1]]`. Exact, just sparse.
@@ -78,14 +87,15 @@ impl State {
 }
 
 impl Scorer {
-    /// Build a scorer for the symbol set of `layout` (which must fit `geometry`).
+    /// Build a scorer for the symbol set of `layout` (which must fit `geometry`; layers are
+    /// flattened onto the virtual geometry).
     pub fn new(geometry: &Geometry, corpus: &Corpus, profile: &Profile, layout: &Layout) -> Result<Self> {
-        layout.check_geometry(geometry)?;
+        let (vg, chars) = layout.flat(geometry)?;
+        let geometry = &vg;
         let n = geometry.len();
         if n > MAX_KEYS {
             return Err(Error::invalid("geometry", format!("at most {MAX_KEYS} keys")));
         }
-        let chars = layout.chars.clone();
         let cidx: Vec<Option<usize>> = chars.iter().map(|&c| corpus.index_of(c)).collect();
         let cs = corpus.size();
         let norm = |v: &mut Vec<f32>| {
@@ -114,7 +124,9 @@ impl Scorer {
                 }
             }
         }
-        for v in [&mut f1, &mut f2, &mut fk, &mut fk2, &mut fk3, &mut f3] {
+        let is_sym: Vec<bool> = chars.iter().map(|c| c.is_ascii_punctuation()).collect();
+        let mut fy: Vec<f32> = (0..n * n).map(|xy| if is_sym[xy / n] && is_sym[xy % n] { f2[xy] } else { 0.0 }).collect();
+        for v in [&mut f1, &mut f2, &mut fk, &mut fk2, &mut fk3, &mut fy, &mut f3] {
             norm(v);
         }
         // Far skipgrams: gap 2 × decay + gap 3 × decay², each normalized like gap 1, so S02 reads
@@ -129,8 +141,9 @@ impl Scorer {
         let mut c2 = vec![0f32; n * n];
         let mut ck = vec![0f32; n * n];
         let mut ckf = vec![0f32; n * n];
+        let mut cy = vec![0f32; n * n];
         let mut c3 = vec![0f32; n * n * n];
-        let (mut has_pair, mut has_far, mut has_tri) = (false, false, false);
+        let (mut has_pair, mut has_far, mut has_sym, mut has_tri) = (false, false, false, false);
         let (mut w_load, mut w_hand) = (0.0, 0.0);
         for (d, t) in METRICS.iter().zip(&tables) {
             let w = profile.effective_weight(d.id);
@@ -163,6 +176,11 @@ impl Scorer {
                             has_pair = true;
                             has_far = true;
                             &mut ckf
+                        }
+                        Order::SymBi => {
+                            has_pair = true;
+                            has_sym = true;
+                            &mut cy
                         }
                         Order::Tri => {
                             has_tri = true;
@@ -208,14 +226,17 @@ impl Scorer {
             f2,
             fk,
             fkf,
+            fy,
             f3,
             c1,
             c2,
             ck,
             ckf,
+            cy,
             c3,
             has_pair,
             has_far,
+            has_sym,
             has_tri,
             tri_start,
             tri_entries,
@@ -230,16 +251,38 @@ impl Scorer {
 
     /// Symbol ids for `layout` in this scorer's alphabet. Errors if the symbol sets differ.
     pub fn state_for(&self, layout: &Layout) -> Result<State> {
-        layout.check_geometry(&self.geometry)?;
+        let flat = if layout.layers.is_empty() { layout.chars.clone() } else { layout.flat(&self.base_geometry())?.1 };
+        if flat.len() != self.n {
+            return Err(Error::invalid("layout", format!("'{}' has {} slots, this scorer has {}", layout.name, flat.len(), self.n)));
+        }
         let mut sym = Vec::with_capacity(self.n);
-        for &c in &layout.chars {
-            let s =
-                self.chars.iter().position(|&x| x == c).ok_or_else(|| {
-                    Error::invalid("layout", format!("'{}' uses symbol '{c}' not in this scorer's symbol set", layout.name))
-                })?;
+        // Repeated symbols (empty slots) take the next unused id with that char.
+        let mut used = 0u128;
+        for &c in &flat {
+            let s = (0..self.n).find(|&i| self.chars[i] == c && used & (1 << i) == 0).ok_or_else(|| {
+                Error::invalid("layout", format!("'{}' uses symbol '{c}' not in this scorer's symbol set", layout.name))
+            })?;
+            used |= 1 << s;
             sym.push(s as u8);
         }
         Ok(self.state_from_sym(sym))
+    }
+
+    /// The physical board (the scorer geometry without its layer keys).
+    pub fn base_geometry(&self) -> Geometry {
+        let mut g = self.geometry.clone();
+        g.key.retain(|k| k.layer == 0);
+        g.layer_keys.clear();
+        let (n0, n) = (g.len(), self.n);
+        for t in g.comfort_tables.values_mut() {
+            *t = (0..n0 * n0).map(|ij| t[(ij / n0) * n + ij % n0]).collect();
+        }
+        g
+    }
+
+    /// The layout of state `st` (layers split back out).
+    pub fn layout_of(&self, st: &State, name: &str) -> Result<Layout> {
+        Layout::from_flat(name, &self.base_geometry(), st.chars(self))
     }
 
     pub fn state_from_sym(&self, sym: Vec<u8>) -> State {
@@ -292,7 +335,8 @@ impl Scorer {
                     let (xy, p) = (x * n + y, px + pos[y] as usize);
                     sum += self.f2[xy] as f64 * self.c2[p] as f64
                         + self.fk[xy] as f64 * self.ck[p] as f64
-                        + self.fkf[xy] as f64 * self.ckf[p] as f64;
+                        + self.fkf[xy] as f64 * self.ckf[p] as f64
+                        + self.fy[xy] as f64 * self.cy[p] as f64;
                 }
             }
         }
@@ -326,7 +370,12 @@ impl Scorer {
         let mut d = (f1[a] * (c1[pb] - c1[pa]) + f1[b] * (c1[pa] - c1[pb])) as f64;
 
         if self.has_pair {
-            d += if self.has_far { self.pair_delta::<true>(old, new, a, b) } else { self.pair_delta::<false>(old, new, a, b) };
+            d += match (self.has_far, self.has_sym) {
+                (false, false) => self.pair_delta::<false, false>(old, new, a, b),
+                (true, false) => self.pair_delta::<true, false>(old, new, a, b),
+                (false, true) => self.pair_delta::<false, true>(old, new, a, b),
+                (true, true) => self.pair_delta::<true, true>(old, new, a, b),
+            };
         }
 
         if self.has_tri {
@@ -361,19 +410,23 @@ impl Scorer {
         d
     }
 
-    /// Bigram + skipgram (+ far skipgram if `FAR`) part of a swap delta; `old`/`new` are `pos` before/after.
+    /// Bigram + skipgram (+ far skipgram if `FAR`, + symbol bigram if `SYM`) part of a swap
+    /// delta; `old`/`new` are `pos` before/after.
     #[inline]
-    fn pair_delta<const FAR: bool>(&self, old: &[u8], new: &[u8], a: usize, b: usize) -> f64 {
+    fn pair_delta<const FAR: bool, const SYM: bool>(&self, old: &[u8], new: &[u8], a: usize, b: usize) -> f64 {
         let n = self.n;
         let (c2, ck, ckf, f2, fk, fkf) = (&self.c2, &self.ck, &self.ckf, &self.f2, &self.fk, &self.fkf);
+        let (cy, fy) = (&self.cy, &self.fy);
         // Change in the pair channels for frequency index `xy` moving from slot pair `o` to `nw`.
         let term = |xy: usize, o: usize, nw: usize| {
-            let t = f2[xy] * (c2[nw] - c2[o]) + fk[xy] * (ck[nw] - ck[o]);
+            let mut t = f2[xy] * (c2[nw] - c2[o]) + fk[xy] * (ck[nw] - ck[o]);
             if FAR {
-                t + fkf[xy] * (ckf[nw] - ckf[o])
-            } else {
-                t
+                t += fkf[xy] * (ckf[nw] - ckf[o]);
             }
+            if SYM {
+                t += fy[xy] * (cy[nw] - cy[o]);
+            }
+            t
         };
         let mut acc = 0.0f64;
         for &x in &[a, b] {
@@ -428,6 +481,9 @@ impl Scorer {
     pub fn fkf(&self) -> &[f32] {
         &self.fkf
     }
+    pub fn fy(&self) -> &[f32] {
+        &self.fy
+    }
     pub fn f3(&self) -> &[f32] {
         &self.f3
     }
@@ -462,10 +518,17 @@ fn truncate_coverage(f: &mut [f32], coverage: f64) {
 }
 
 /// M02 cost: mean squared gap (%²) between finger loads and targets over non-thumb fingers.
+/// Loads are taken as shares of non-thumb keystrokes, so thumb keys (Space) don't skew them.
 pub fn load_error_cost(load: &[f64; FINGERS], target: &[f64; FINGERS]) -> f64 {
+    const NON_THUMB: [usize; 8] = [0, 1, 2, 3, 6, 7, 8, 9];
+    if load[4] == 0.0 && load[5] == 0.0 {
+        return NON_THUMB.iter().map(|&f| (load[f] - target[f]).powi(2)).sum::<f64>() / 8.0;
+    }
+    let total: f64 = NON_THUMB.iter().map(|&f| load[f]).sum();
+    let k = if total > 0.0 { 100.0 / total } else { 0.0 };
     let mut s = 0.0;
-    for f in [0, 1, 2, 3, 6, 7, 8, 9] {
-        let e = load[f] - target[f];
+    for f in NON_THUMB {
+        let e = k * load[f] - target[f];
         s += e * e;
     }
     s / 8.0

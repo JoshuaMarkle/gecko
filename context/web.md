@@ -28,6 +28,12 @@ layout), **Explore** (atlas of an explore run, below). The view is remembered in
 - Play starts a run with Inputs › Search (algorithm, budget) or resumes a paused one. Pause
   freezes the workers and the budget clock. End cancels; results so far are saved.
 - Click two keys (3D or heatmap) to swap them; the score updates live via WASM.
+- Layered layouts (flat string, see `representation.md`): a Base / ① Layer 1 / … toggle in the
+  view controls picks the layer the 3D view shows (symbols, heat); keys on the holding finger
+  are dimmed and ignore clicks. A selection survives switching layers, so symbols swap across
+  layers. The Edit box shows the base and each layer as blocks separated by a blank line.
+  `format.ts` `layerSlots` / `fitChars` mirror `Geometry::layered` / `Layout::fit`; 30-key
+  layouts get the board's thumb fills client-side too. The 2D heatmap shows the base layer.
 - Profile weights and targets are editable; edits re-score live and are sent with each run
   (`profile_override`), so the run's `config.json` records exactly what was optimized.
 - While a run is going, the 3D view shows the live best layout.
@@ -51,9 +57,12 @@ neighbourhoods use WASM when the geometry and corpus match the loaded scorer, el
 ## 3D rendering
 
 Each key is a keycap (sharp base, tapered walls with smooth rounded corners, flat top; `capGeometry`, cached per size) placed from the geometry's `pos`, `rot`, `size` (1 unit = 1u =
-19.05 mm; board y → three z). Legends are cached canvas textures. Overlays: finger colors,
-frequency heat, SFB arcs (top same-finger bigrams, width ∝ frequency). 3D/top camera presets
-fit the board to the viewport. Flat and curved boards use the same code path.
+19.05 mm; board y → three z). Legends are cached canvas textures. Overlays: none (default,
+plain keys), frequency heat, finger colors, n-grams (finger-colored keys plus one arc per undirected bigram or skipgram, all
+of them; width and opacity ∝ √(frequency / most frequent visible pair); colored by class: SFB/SFS red, LSB orange, scissors
+violet, other same-hand ink, alternation faint; same-hand and alternate start hidden; legend chips toggle each class and show its %).
+A 3D toggle (default on) switches between the orbit camera and a flat top-down view with rotation
+locked; both presets fit the board to the viewport. A floor grid (1u cells, 5u sections) sits under the case. Flat and curved boards use the same code path.
 
 ## API (gecko serve)
 

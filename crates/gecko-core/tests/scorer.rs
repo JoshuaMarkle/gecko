@@ -4,7 +4,7 @@
 use std::time::Duration;
 
 use gecko_core::optimize::{self, Algo, Control, Ctx, Params};
-use gecko_core::report::breakdown;
+use gecko_core::report::{analyze, breakdown};
 use gecko_core::rng::Rng;
 use gecko_core::{Corpus, Geometry, Layout, Profile, Scorer};
 use proptest::prelude::*;
@@ -81,6 +81,111 @@ proptest! {
             for (l, s) in loads.iter().zip(st.load.iter()) { prop_assert!((l - s).abs() < 1e-6); }
         }
     }
+
+    /// Thumb boards: tokens (Space on a thumb carries most load there) and empty slots move
+    /// like any symbol.
+    #[test]
+    fn delta_matches_full_with_thumbs(seed in 0u64..10_000, board in 0usize..2, swaps in proptest::collection::vec((0usize..36, 0usize..36), 1..40)) {
+        let g = thumb_board(["corne-36", "sweep-34"][board]);
+        let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 3);
+        let sc = Scorer::new(&g, &c, &all_weights(), &layout("qwerty").fit(&g).unwrap()).unwrap();
+        let ctx = Ctx::new(&sc, (0..sc.n).collect(), sc.identity());
+        let mut st = ctx.random_state(&mut Rng::new(seed));
+        for (a, b) in swaps {
+            let (a, b) = (a % sc.n, b % sc.n);
+            let before = sc.full(&st);
+            let d = sc.delta(&st, a, b);
+            sc.apply(&mut st, a, b, d);
+            let after = sc.full(&st);
+            prop_assert!((after - before - d).abs() < 1e-5 * before.abs().max(1.0), "delta {d} vs full diff {}", after - before);
+        }
+    }
+}
+
+/// Layered layouts: symbols move between layers and onto empty layer slots; Y01/Y02 weighted
+/// (all_weights), so the code-symbol channel is exercised.
+fn layered_scorer() -> (Scorer, Layout) {
+    let g = thumb_board("corne-36");
+    let l = Layout::from_toml(&read("data/layouts/layered/corne-code.toml")).unwrap().fit(&g).unwrap();
+    let c = synthetic(gecko_core::corpus::CODE_CHARSET, 7);
+    (Scorer::new(&g, &c, &all_weights(), &l).unwrap(), l)
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(32))]
+    #[test]
+    fn delta_matches_full_with_layers(seed in 0u64..10_000, swaps in proptest::collection::vec((0usize..128, 0usize..128), 1..40)) {
+        let (sc, _) = layered_scorer();
+        let ctx = Ctx::new(&sc, (0..sc.n).collect(), sc.identity());
+        let mut st = ctx.random_state(&mut Rng::new(seed));
+        for (a, b) in swaps {
+            let (a, b) = (ctx.movable[a % ctx.movable.len()], ctx.movable[b % ctx.movable.len()]);
+            let before = sc.full(&st);
+            let d = sc.delta(&st, a, b);
+            sc.apply(&mut st, a, b, d);
+            let after = sc.full(&st);
+            prop_assert!((after - before - d).abs() < 1e-5 * before.abs().max(1.0), "delta {d} vs full diff {}", after - before);
+        }
+    }
+}
+
+#[test]
+fn layered_layouts_round_trip_and_score() {
+    let (sc, l) = layered_scorer();
+    let g = thumb_board("corne-36");
+    assert_eq!(sc.n, 36 + 33 + 33);
+    // Layer keys never move.
+    let ctx = Ctx::new(&sc, (0..sc.n).collect(), sc.identity());
+    assert!(ctx.movable.iter().all(|&s| !gecko_core::layout::is_layer_key(sc.chars[s])));
+    // Flat string ↔ layers, and TOML round trip.
+    let st = sc.identity();
+    // Flat strings carry symbols, not layer names.
+    let chars = |l: &Layout| l.layers.iter().map(|ly| ly.chars.clone()).collect::<Vec<_>>();
+    assert_eq!(chars(&sc.layout_of(&st, &l.name).unwrap()), chars(&l));
+    let back = Layout::from_toml(&l.to_toml(&g)).unwrap();
+    assert_eq!(back.layers, l.layers);
+    assert!((sc.state_for(&back).unwrap().score - st.score).abs() < 1e-9);
+    let b = breakdown(&sc, &st);
+    assert!((b.score - st.score).abs() < 1e-6 * st.score.abs().max(1.0));
+    let y01 = b.metrics.iter().find(|m| m.id == "Y01").unwrap().value;
+    assert!(y01 > 0.0 && y01 < 100.0, "Y01 {y01}");
+    // A symbol on the holding finger's keys is rejected.
+    let mut bad = l.clone();
+    let lt = g.key.iter().position(|k| k.finger == gecko_core::Finger::LT).unwrap();
+    let i = bad.layers[0].chars.iter().position(|&c| c == '!').unwrap();
+    bad.layers[0].chars.swap(i, lt);
+    assert!(bad.flat(&g).is_err());
+}
+
+fn thumb_board(name: &str) -> Geometry {
+    Geometry::from_toml(&read(&format!("data/geometries/{name}.toml"))).unwrap()
+}
+
+#[test]
+fn thumb_layouts_score_and_round_trip() {
+    let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 5);
+    for name in ["corne-36", "sweep-34"] {
+        let g = thumb_board(name);
+        let l = layout("graphite").fit(&g).unwrap();
+        let sc = Scorer::new(&g, &c, &all_weights(), &l).unwrap();
+        let st = sc.identity();
+        let b = breakdown(&sc, &st);
+        assert!((b.score - st.score).abs() < 1e-6 * st.score.abs().max(1.0), "{name}: {} vs {}", b.score, st.score);
+        // Space sits on a thumb and carries real load there.
+        let space = sc.chars.iter().position(|&ch| ch == gecko_core::layout::SPACE).unwrap();
+        assert!(g.key[st.pos[space] as usize].finger.is_thumb());
+        assert!(st.load[4] + st.load[5] > 10.0);
+        // Any arrangement, including empty slots holding letters, maps back to the same state.
+        let mut st2 = sc.identity();
+        let empty = sc.chars.iter().position(|&ch| ch == gecko_core::layout::EMPTY);
+        if let Some(e) = empty {
+            let d = sc.delta(&st2, 0, e);
+            sc.apply(&mut st2, 0, e, d);
+        }
+        let back = sc.state_for(&Layout::from_chars("x", name, "", st2.chars(&sc)).unwrap()).unwrap();
+        assert_eq!(back.chars(&sc), st2.chars(&sc));
+        assert!((back.score - st2.score).abs() < 1e-6 * st2.score.abs().max(1.0));
+    }
 }
 
 #[test]
@@ -92,6 +197,19 @@ fn folding_matches_breakdown() {
         let st = sc.identity();
         let b = breakdown(&sc, &st);
         assert!((b.score - st.score).abs() < 1e-6 * st.score.abs().max(1.0), "{name}: {} vs {}", b.score, st.score);
+    }
+}
+
+#[test]
+fn pair_kinds_match_metrics() {
+    let g = ansi();
+    let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 7);
+    let sc = Scorer::new(&g, &c, &all_weights(), &layout("qwerty")).unwrap();
+    let a = analyze(&sc, &sc.identity(), 10);
+    let value = |id: &str| a.breakdown.metrics.iter().find(|m| m.id == id).unwrap().value;
+    let sum = |v: &[gecko_core::report::Pair], k: &str| v.iter().filter(|p| p.kind == k).map(|p| p.freq).sum::<f64>();
+    for (got, want) in [(sum(&a.bigrams, "sfb"), value("B01")), (sum(&a.bigrams, "alternate"), value("B08")), (sum(&a.skipgrams, "sfs"), value("S01"))] {
+        assert!((got - want).abs() < 1e-3, "{got} vs {want}");
     }
 }
 

@@ -111,11 +111,36 @@ pub struct Key {
     #[serde(default)]
     pub stretch: bool,
     pub effort: f32,
+    /// Symbol this key gets when a layout lists only the keys without a fill (a 30-key layout
+    /// on a board with thumb keys): a token name (`space`, `enter`, `bspc`, `tab`, `esc`,
+    /// `none`) or a single char. Usually set on thumb and other non-alpha keys.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fill: Option<String>,
+    /// Layer of a virtual key (0 = base). Set only by [`Geometry::layered`].
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub layer: u8,
+    /// Physical key (index into the base keys) of a virtual layer key.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub phys: Option<u16>,
+}
+
+fn is_zero(v: &u8) -> bool {
+    *v == 0
 }
 
 impl Key {
     pub fn hand(&self) -> Hand {
         self.finger.hand()
+    }
+
+    /// The fill as a layout symbol (`None` when unset or not a valid symbol).
+    pub fn fill_symbol(&self) -> Option<char> {
+        let f = self.fill.as_deref()?;
+        let mut cs = f.chars();
+        match (cs.next(), cs.next()) {
+            (Some(c), None) => Some(c),
+            _ => crate::layout::token(f),
+        }
     }
 }
 
@@ -132,6 +157,10 @@ pub struct Geometry {
     /// the store from `comfort`. Serialized so the browser scorer gets them with the geometry.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub comfort_tables: BTreeMap<String, Vec<f32>>,
+    /// Layered (virtual) geometries only: the physical key that holds layer `l` is
+    /// `layer_keys[l - 1]`. See [`Geometry::layered`].
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub layer_keys: Vec<usize>,
 }
 
 impl Geometry {
@@ -145,11 +174,19 @@ impl Geometry {
         if self.key.is_empty() {
             return Err(Error::invalid("geometry", "no keys"));
         }
-        if self.key.len() > 64 {
-            return Err(Error::invalid("geometry", "more than 64 keys is not supported yet"));
+        if self.key.len() > crate::scorer::MAX_KEYS {
+            return Err(Error::invalid("geometry", format!("more than {} keys (layers included) is not supported", crate::scorer::MAX_KEYS)));
         }
         if self.comfort_tables.values().any(|t| t.len() != self.len() * self.len()) {
             return Err(Error::invalid("geometry", "comfort tables must have N×N entries"));
+        }
+        let mut fills = std::collections::BTreeSet::new();
+        for k in &self.key {
+            let Some(f) = &k.fill else { continue };
+            let c = k.fill_symbol().ok_or_else(|| Error::invalid("geometry", format!("'{}': unknown fill '{f}'", self.name)))?;
+            if c != crate::layout::EMPTY && !fills.insert(c) {
+                return Err(Error::invalid("geometry", format!("'{}': fill '{f}' appears twice", self.name)));
+            }
         }
         Ok(())
     }
@@ -200,6 +237,47 @@ impl Geometry {
             }
         }
         out
+    }
+
+    /// Physical key of slot `i` (itself unless `i` is a virtual layer key).
+    pub fn phys(&self, i: usize) -> usize {
+        self.key[i].phys.map_or(i, |p| p as usize)
+    }
+
+    /// Slots `i` and `j` are the same physical key (possibly on different layers).
+    pub fn same_key(&self, i: usize, j: usize) -> bool {
+        self.phys(i) == self.phys(j)
+    }
+
+    /// Number of physical keys (all keys unless layered).
+    pub fn physical_len(&self) -> usize {
+        self.key.iter().filter(|k| k.layer == 0).count()
+    }
+
+    /// The virtual geometry of a layered layout: the base keys, then for each layer `l` a copy
+    /// of every key not on the finger that holds the layer key `holders[l - 1]` (that finger is
+    /// busy holding), with `layer = l` and `phys` set. Every metric then sees a layered symbol
+    /// at its physical key; layer-key presses are scored by Y01/Y02. Comfort tables expand
+    /// by physical key.
+    pub fn layered(&self, holders: &[usize]) -> Result<Geometry> {
+        if !self.layer_keys.is_empty() || self.key.iter().any(|k| k.layer != 0) {
+            return Err(Error::invalid("geometry", "already layered"));
+        }
+        let mut g = self.clone();
+        g.layer_keys = holders.to_vec();
+        for (li, &h) in holders.iter().enumerate() {
+            let f = self.key.get(h).ok_or_else(|| Error::invalid("geometry", "layer key out of range"))?.finger;
+            for (k, key) in self.key.iter().enumerate().filter(|(_, key)| key.finger != f) {
+                g.key.push(Key { layer: li as u8 + 1, phys: Some(k as u16), fill: None, ..key.clone() });
+            }
+        }
+        let (n0, n) = (self.len(), g.len());
+        for t in g.comfort_tables.values_mut() {
+            let src = std::mem::take(t);
+            *t = (0..n * n).map(|ij| src[g.key[ij / n].phys.map_or(ij / n, |p| p as usize) * n0 + g.key[ij % n].phys.map_or(ij % n, |p| p as usize)]).collect();
+        }
+        g.validate()?;
+        Ok(g)
     }
 
     /// Planar distance between key centers in units.

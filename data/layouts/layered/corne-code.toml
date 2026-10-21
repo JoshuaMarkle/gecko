@@ -1,0 +1,14 @@
+name = "Colemak-DH + code layers"
+geometry = "corne-36"
+source = "GECKO start layout for code: Colemak-DH base, Miryoku-like thumbs, symbol and number layers"
+# Base thumbs: Esc Space [hold layer 1] | Enter Backspace [hold layer 2].
+# A layer's keys on the finger that holds it are unusable (written ·).
+rows = ['qwfpbjluy;', 'arstgmneio', 'zxcdvkh,./', '{esc}{space}{layer1}{enter}{bspc}{layer2}']
+
+[[layer]]
+name = "sym"
+rows = ['!@#$%^&*~`', '{}()=+_?:"', '[]<>|\····', '······']
+
+[[layer]]
+name = "num"
+rows = ['··········', '1234567890', '··········', '······']

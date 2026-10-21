@@ -1,17 +1,35 @@
 //! Text → n-gram count tables over a fixed charset. Binary cache format with header + hash.
 //!
-//! Tokenization: lowercase; whitespace collapses to one space token; characters outside the
-//! charset are "other" tokens. Bigrams and trigrams count only runs of charset symbols;
+//! Tokenization: lowercase; whitespace collapses to one space token, which is the charset
+//! symbol `␣` (`layout::SPACE`) when the charset has it; characters outside the charset are
+//! "other" tokens. With `⏎` (`layout::ENTER`) in the charset, a newline is that symbol and
+//! the indentation after it is dropped (editors indent), as are spaces before it; `\r` is
+//! ignored. Bigrams and trigrams count only runs of charset symbols;
 //! skipgrams with gap g (x, g tokens, z; g = 1..3) count when x and z are charset symbols,
 //! whatever sits between.
 //!
 //! Word-frequency imports (`add_word` + `add_word_boundaries`) count every n-gram inside a word
-//! exactly; n-grams never span words, as with text. Skipgrams across a word boundary are
-//! estimated by assuming consecutive words are independent (see `add_word_boundaries`).
+//! exactly, including those with the space before or after it; letter n-grams never span
+//! words, as with text. N-grams across a word boundary that need both words (`x ␣ z`,
+//! skipgrams) are estimated by assuming consecutive words are independent (see
+//! `add_word_boundaries`).
 
+use crate::layout::{ENTER as ENTER_SYM, SPACE as SPACE_SYM};
 use crate::{hash, Error, Result};
 
-pub const DEFAULT_CHARSET: &str = "abcdefghijklmnopqrstuvwxyz,./;'-";
+pub const DEFAULT_CHARSET: &str = "abcdefghijklmnopqrstuvwxyz,./;'-\u{2423}";
+/// Charset for programming corpora: the default plus digits, the other ASCII punctuation and
+/// Enter (`--charset code`).
+pub const CODE_CHARSET: &str = "abcdefghijklmnopqrstuvwxyz,./;'-\u{2423}0123456789()[]{}<>=+*&|!?:\"_#$%^~`@\\\u{23CE}";
+
+/// A charset argument: `default`, `code`, or the literal symbols.
+pub fn charset_named(s: &str) -> &str {
+    match s {
+        "default" => DEFAULT_CHARSET,
+        "code" => CODE_CHARSET,
+        _ => s,
+    }
+}
 const MAGIC: &[u8; 8] = b"GKCORP2\0";
 const MAGIC_V1: &[u8; 8] = b"GKCORP1\0";
 /// Word imports scale skipgram counts so cross-word estimates (fractions) survive rounding.
@@ -43,12 +61,14 @@ fn strip_gutenberg(text: &str) -> &str {
     &text[start..end]
 }
 
-/// Edge statistics of imported words: `ends[i][x]` = occurrences of words whose (i+1)-th token
-/// from the end is symbol x; `starts[j][z]` likewise from the start; `words` = occurrences.
+/// Edge statistics of imported words, each counted as the segment `␣word` (a space token,
+/// which is "other" without `␣` in the charset, then the word): `ends[i][x]` = occurrences of
+/// segments whose token i from the end is x; `starts[j][z]` likewise from the start (token 0
+/// is the space); `words` = occurrences.
 #[derive(Clone, Debug)]
 pub struct WordEdges {
-    ends: [Vec<f64>; 3],
-    starts: [Vec<f64>; 3],
+    ends: [Vec<f64>; 4],
+    starts: [Vec<f64>; 4],
     words: f64,
 }
 
@@ -76,8 +96,15 @@ impl Corpus {
         self.charset.iter().position(|&c| c == ch)
     }
 
+    /// Token for whitespace: the `␣` symbol's index, else `SPACE` (not a symbol).
+    fn space_token(&self) -> u8 {
+        self.index_of(SPACE_SYM).map_or(SPACE, |i| i as u8)
+    }
+
     /// Text → tokens (charset index, `SPACE` or `OTHER`), with whitespace runs collapsed.
     fn tokens(&self, text: &str) -> Vec<u8> {
+        let space = self.space_token();
+        let enter = self.index_of(ENTER_SYM).map(|i| i as u8);
         let mut lut = [OTHER; 128];
         for (i, &ch) in self.charset.iter().enumerate() {
             if (ch as u32) < 128 {
@@ -85,20 +112,38 @@ impl Corpus {
             }
         }
         let mut out = Vec::with_capacity(text.len());
+        let mut line_start = false;
         for raw in text.chars() {
+            if let Some(e) = enter {
+                if raw == '\r' {
+                    continue;
+                }
+                if raw == '\n' {
+                    if out.last() == Some(&space) {
+                        out.pop();
+                    }
+                    out.push(e);
+                    line_start = true;
+                    continue;
+                }
+                if line_start && raw.is_whitespace() {
+                    continue;
+                }
+                line_start = false;
+            }
             let ch = match raw {
                 '\u{2018}' | '\u{2019}' => '\'',
                 '\u{2013}' | '\u{2014}' => '-',
                 _ => raw.to_ascii_lowercase(),
             };
             let t = if ch.is_whitespace() {
-                SPACE
+                space
             } else if (ch as u32) < 128 {
                 lut[ch as usize]
             } else {
                 OTHER
             };
-            if t == SPACE && out.last() == Some(&SPACE) {
+            if t == space && out.last() == Some(&space) {
                 continue;
             }
             out.push(t);
@@ -135,20 +180,38 @@ impl Corpus {
 
     pub fn word_edges(&self) -> WordEdges {
         let z = || vec![0.0; self.size()];
-        WordEdges { ends: [z(), z(), z()], starts: [z(), z(), z()], words: 0.0 }
+        WordEdges { ends: [z(), z(), z(), z()], starts: [z(), z(), z(), z()], words: 0.0 }
     }
 
-    /// Count one word (no whitespace inside) that occurs `count` times.
+    /// Count one word (no whitespace inside) that occurs `count` times, as the segment `␣word`
+    /// plus, when `␣` is a symbol, the n-grams that run into the next segment's space
+    /// (`x ␣`, `y x ␣`), which every word has whatever follows.
     pub fn add_word(&mut self, word: &str, count: u64, edges: &mut WordEdges) {
-        let t = self.tokens(word.trim());
+        let space = self.space_token();
+        let mut t = vec![space];
+        t.extend(self.tokens(word.trim()));
+        if t.len() < 2 {
+            return;
+        }
         self.count(&t, count, count * SKIP_SCALE as u64);
         let c = self.size();
-        for k in 0..3.min(t.len()) {
-            if let Some(&x) = t.get(t.len() - 1 - k).filter(|&&x| (x as usize) < c) {
-                edges.ends[k][x as usize] += count as f64;
+        let sym = |i: usize| t.get(i).map(|&x| x as usize).filter(|&x| x < c);
+        let n = t.len();
+        if (space as usize) < c {
+            let sp = space as usize;
+            if let Some(x) = sym(n - 1) {
+                self.bi[x * c + sp] += count;
+                if let Some(y) = sym(n - 2) {
+                    self.tri[(y * c + x) * c + sp] += count;
+                }
             }
-            if let Some(&z) = t.get(k).filter(|&&z| (z as usize) < c) {
-                edges.starts[k][z as usize] += count as f64;
+        }
+        for k in 0..4.min(n) {
+            if let Some(x) = sym(n - 1 - k) {
+                edges.ends[k][x] += count as f64;
+            }
+            if let Some(z) = sym(k) {
+                edges.starts[k][z] += count as f64;
             }
         }
         edges.words += count as f64;
@@ -180,20 +243,30 @@ impl Corpus {
         }
     }
 
-    /// Estimate skipgrams that span a space between two words, assuming consecutive words are
-    /// independent: x at offset i from the end of one word and z at offset j from the start of
-    /// the next are i + j − 1 tokens apart. Spans across three or more words are ignored.
+    /// Estimate n-grams that need two consecutive `␣word` segments, assuming consecutive words
+    /// are independent: x at offset i from the end of one segment and z at offset j from the
+    /// start of the next are i + j tokens apart. With `␣` a symbol that adds the trigrams
+    /// `x ␣ z`; skipgrams always. Spans across three or more segments are ignored.
     pub fn add_word_boundaries(&mut self, e: &WordEdges) {
         if e.words <= 0.0 {
             return;
         }
         let c = self.size();
+        let sp = self.space_token() as usize;
+        if sp < c {
+            // x ␣ z: the next segment starts `␣ z`. (`y x ␣` is exact, counted in `add_word`.)
+            for x in 0..c {
+                for z in 0..c {
+                    self.tri[(x * c + sp) * c + z] += (e.ends[0][x] * e.starts[1][z] / e.words).round() as u64;
+                }
+            }
+        }
         for (g, table) in [(1, &mut self.skip), (2, &mut self.skip2), (3, &mut self.skip3)] {
-            for i in 1..=g {
-                let j = g + 1 - i;
+            for i in 0..=g {
+                let j = g - i;
                 for x in 0..c {
                     for z in 0..c {
-                        let v = e.ends[i - 1][x] * e.starts[j - 1][z] / e.words * SKIP_SCALE;
+                        let v = e.ends[i][x] * e.starts[j][z] / e.words * SKIP_SCALE;
                         table[x * c + z] += v.round() as u64;
                     }
                 }
@@ -345,5 +418,43 @@ mod tests {
                                         // b ends 2 of 3 words, a starts 2 of 3: 3 · (2/3) · (2/3) = 4/3, scaled by 1000.
         assert_eq!(c.skip[1 * 3 + 0], 1333);
         assert_eq!(c.skip[0 * 3 + 2], 333);
+    }
+
+    #[test]
+    fn enter_ends_lines_and_drops_indentation() {
+        let mut c = Corpus::new("t", "ab\u{2423}\u{23CE}");
+        c.add_text("a b \r\n    b\n\na");
+        // tokens: a ␣ b ⏎ b ⏎ ⏎ a
+        assert_eq!(c.mono, vec![2, 2, 1, 3]);
+        assert_eq!(c.bi[1 * 4 + 3], 2); // b⏎ twice
+        assert_eq!(c.bi[3 * 4 + 1], 1); // ⏎b
+        assert_eq!(c.bi[3 * 4 + 3], 1); // ⏎⏎
+        assert_eq!(c.bi[1 * 4 + 2], 0); // no trailing space
+    }
+
+    #[test]
+    fn space_is_a_symbol_when_in_charset() {
+        let mut c = Corpus::new("t", "ab\u{2423}");
+        c.add_text("ab  b\na");
+        // tokens: a b ␣ b ␣ a
+        assert_eq!(c.mono, vec![2, 2, 2]);
+        assert_eq!(c.bi[1 * 3 + 2], 2); // b␣
+        assert_eq!(c.tri[(1 * 3 + 2) * 3 + 1], 1); // b␣b
+        assert_eq!(c.skip[2 * 3 + 2], 1); // ␣ b ␣
+
+        // Words: every n-gram touching one word's spaces is exact; x ␣ z is estimated.
+        let mut w = Corpus::new("w", "ab\u{2423}");
+        let mut e = w.word_edges();
+        w.add_word("ab", 3, &mut e);
+        w.add_word("b", 1, &mut e);
+        w.add_word_boundaries(&e);
+        assert_eq!(w.mono, vec![3, 4, 4]);
+        assert_eq!(w.bi[2 * 3 + 0], 3); // ␣a
+        assert_eq!(w.bi[1 * 3 + 2], 4); // b␣
+        assert_eq!(w.tri[(0 * 3 + 1) * 3 + 2], 3); // ab␣
+        assert_eq!(w.tri[(2 * 3 + 1) * 3 + 2], 1); // ␣b␣
+        assert_eq!(w.tri[(1 * 3 + 2) * 3 + 0], 3); // b␣a: 4 · 3/4
+        // ␣ _ ␣ around "b": exact, as the segment end meets the next segment's space.
+        assert_eq!(w.skip[2 * 3 + 2], 1000);
     }
 }

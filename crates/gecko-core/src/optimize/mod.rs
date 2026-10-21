@@ -126,7 +126,9 @@ pub struct Ctx<'a> {
 }
 
 impl<'a> Ctx<'a> {
-    pub fn new(scorer: &'a Scorer, movable: Vec<usize>, start: State) -> Self {
+    /// Layer keys never move: they define the layered slot structure.
+    pub fn new(scorer: &'a Scorer, mut movable: Vec<usize>, start: State) -> Self {
+        movable.retain(|&s| !crate::layout::is_layer_key(scorer.chars[s]));
         Ctx { scorer, movable, start, observer: None }
     }
 

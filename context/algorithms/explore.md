@@ -68,3 +68,9 @@ ansi-30, default profile, `english`, 20 threads (2026-10-20):
   winners, so one atlas answers many weightings.
 - Runs: `runs/20261020-203032-explore-ea34e8fa`, `20261020-203446-explore-e0b34b3c`,
   `20261020-204749-explore-863c1309` (10 s from the UI).
+- 120 s, 8 threads, seed 2, `'` in place of `;` (`20261020-210913-explore-f5db8e69`): same
+  best (15.9089, the `'` variant), found at 4.7 s and unbeaten for 456 M evals. 41 k optima,
+  Chao1 ≈ 151 k (the tail is far from enumerated), but no singletons within 2 % of the best
+  and the top 3 have 360–610 hits each: the top band is saturated. The top is a plateau:
+  #2 is 0.13 % worse at d = 15, 12 optima sit within 1 %, and only 13/30 slots agree across
+  them (`n d h`, `u o ,`, `e a i`, `b`, `/ ' .` fixed; the rest of the consonants vary).

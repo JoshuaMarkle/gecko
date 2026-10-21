@@ -1,9 +1,9 @@
-// Data colors for the keyboard (context/design.md): a muted finger palette mirrored per hand,
+// Data colors for the keyboard (context/design.md): a vivid finger palette mirrored per hand,
 // and a white → ink ramp for frequency heat. Chrome colors live in styles.css tokens.
 
-import type { Finger } from "./api";
+import type { Finger, PairKind } from "./api";
 
-const BY_ORD = ["#cdbfe3", "#b3cde6", "#b9dcc6", "#efd8ae", "#e0e0e0"]; // pinky, ring, middle, index, thumb
+const BY_ORD = ["#a98ae0", "#72aeea", "#6fcf94", "#f5bf55", "#d6d6d6"]; // pinky, ring, middle, index, thumb
 const ORD: Record<Finger, number> = { LP: 0, LR: 1, LM: 2, LI: 3, LT: 4, RT: 4, RI: 3, RM: 2, RR: 1, RP: 0 };
 
 export const fingerColor = (f: Finger) => BY_ORD[ORD[f]];
@@ -20,6 +20,16 @@ export const SUCCESS = "#24a148";
 export const ERROR = "#da1e28";
 export const MUTED = "#707070";
 export const HAIR = "#e0e0e0";
+
+/** N-gram arc colors: same-finger red, lateral stretch orange, scissors violet, other same-hand ink, alternation faint. */
+export const PAIR_KINDS: Record<PairKind, [string, string]> = {
+  sfb: ["SFB", ERROR],
+  sfs: ["SFS", ERROR],
+  lsb: ["LSB", "#ff832b"],
+  scissor: ["Scissors", "#8a3ffc"],
+  same_hand: ["Same hand", INK],
+  alternate: ["Alternate", "#adadad"],
+};
 
 /** t in [0, 1] → white..ink. */
 export function heatColor(t: number): string {

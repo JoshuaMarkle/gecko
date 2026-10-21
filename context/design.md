@@ -34,9 +34,10 @@ Tokens live in `web/src/styles.css` `:root`; use them, never literal values.
 | `--warning` | #f1c21b | Near a limit; fill or edge only, never text on white |
 | `--error` | #da1e28 | Worse than reference, failed run, errors, danger button |
 
-Finger colors in the 3D view and heatmaps are data, not chrome: a muted 8-step
-qualitative palette (pinky → index, mirrored per hand), plus a white → ink sequential ramp
-for frequency heat. Keep them desaturated so the accent still stands out.
+Finger colors in the 3D view and heatmaps are data, not chrome: a vivid 8-step
+qualitative palette (pinky → index, mirrored per hand; mid-lightness so ink legends stay
+readable), plus a white → ink sequential ramp for frequency heat. Keep finger hues lighter
+than the accent blue so selection still stands out.
 
 ## Typography
 
@@ -64,7 +65,8 @@ Mono (`ui-monospace, Menlo, Consolas`) for layout strings and n-grams.
   selects, segmented tracks) · `--r-md` 8px (cards, notices) · `--r-full` only for
   switches and progress tracks. Never stadium-pill buttons.
 - Keycaps in the 2D view: `--r-sm`; in 3D: a sharp base and tapered walls with rounded
-  vertical corners (plan radius larger at the base than the top), and a flat top with no bevel.
+  vertical corners (plan radius larger at the base than the top), and a flat top with no bevel. The case is a
+  flat slab with the same treatment: rounded vertical corners, sharp top and bottom edges.
 
 ## Elevation
 
@@ -112,8 +114,9 @@ left, transport controls dead centre, run progress right.
   - Left, Inputs: a segmented control picks one group at a time (Layout, Board, Corpus,
     Profile, Search). Search starts with the Algorithm picker and shows only that
     algorithm's settings. The chosen group and collapsed sections are remembered per browser.
-  - Centre: the 3D keyboard (on `--soft`) with view controls top-right (3D / top) and an
-    overlay picker (fingers, heat, SFB arcs). Below it, chart tabs as one segmented track:
+  - Centre: the 3D keyboard (on `--soft`) with view controls top-right on one row: a 3D
+    toggle (default on; off = flat top-down), then the overlay picker (Default = uncolored
+    keys, Heat, Fingers, N-grams). Below it, chart tabs as one segmented track:
     Convergence, Metrics, Finger load, Heatmap, Worst n-grams.
   - Right, Result: run errors (notice), the layout with its `Best` badge and score, the
     layout string (mono, copyable), per-metric table vs reference, run results, runs list,

@@ -127,11 +127,16 @@ async fn meta(State(app): State<AppState>) -> ApiResult {
 
 async fn layouts(State(app): State<AppState>) -> ApiResult {
     let mut out = Vec::new();
-    for id in app.store.list("layouts") {
+    // Layered layouts live in `layouts/layered/` (kept out of `compare`); their `chars` is the
+    // flat string over the virtual layered slots.
+    let layered = app.store.list("layouts/layered").into_iter().map(|id| format!("layered/{id}"));
+    for id in app.store.list("layouts").into_iter().chain(layered) {
         let l = app.store.layout(&id, "")?;
-        out.push(
-            json!({"id": id, "name": l.name, "geometry": l.geometry, "source": l.source, "chars": l.chars.iter().collect::<String>()}),
-        );
+        let chars: String = match app.store.geometry(&l.geometry).and_then(|g| l.flat(&g)) {
+            Ok((_, flat)) if !l.layers.is_empty() => flat.iter().collect(),
+            _ => l.chars.iter().collect(),
+        };
+        out.push(json!({"id": id, "name": l.name, "geometry": l.geometry, "source": l.source, "chars": chars, "layers": l.layers.iter().map(|ly| &ly.name).collect::<Vec<_>>()}));
     }
     Ok(Json(json!(out)))
 }
@@ -207,8 +212,8 @@ fn resolve(store: &Store, r: &InputsReq) -> std::result::Result<Resolved, ApiErr
         (Some(c), _) => Layout::from_str_flat("custom", &geometry.name, c)?,
         (None, Some(spec)) => store.layout(spec, &geometry.name)?,
         (None, None) => store.layout(&d.reference, &geometry.name)?,
-    };
-    layout.check_geometry(&geometry)?;
+    }
+    .fit(&geometry)?;
     Ok(Resolved { geometry, corpus, profile, layout })
 }
 
@@ -228,7 +233,8 @@ async fn score(State(app): State<AppState>, Json(req): Json<ScoreReq>) -> ApiRes
         let r = resolve(&app.store, &req.inputs)?;
         let sc = Scorer::new(&r.geometry, &r.corpus, &r.profile, &r.layout)?;
         let st = sc.identity();
-        Ok(json!({"schema": SCHEMA, "chars": r.layout.chars.iter().collect::<String>(), "rows": r.layout.rows(&r.geometry), "analysis": analyze(&sc, &st, req.top)}))
+        let chars: String = st.chars(&sc).iter().collect();
+        Ok(json!({"schema": SCHEMA, "chars": chars, "rows": r.layout.all_rows(&r.geometry), "analysis": analyze(&sc, &st, req.top)}))
     })
     .await??;
     Ok(Json(v))

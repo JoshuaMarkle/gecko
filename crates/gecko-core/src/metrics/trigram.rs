@@ -35,7 +35,7 @@ pub fn class_for(id: &str) -> Option<TriClass> {
 
 pub fn classify(g: &Geometry, i: usize, j: usize, k: usize) -> TriClass {
     let (a, b, c) = (&g.key[i], &g.key[j], &g.key[k]);
-    if a.finger.is_thumb() || b.finger.is_thumb() || c.finger.is_thumb() || i == j || j == k {
+    if a.finger.is_thumb() || b.finger.is_thumb() || c.finger.is_thumb() || g.same_key(i, j) || g.same_key(j, k) {
         return TriClass::Other;
     }
     let (ha, hb, hc) = (a.hand(), b.hand(), c.hand());

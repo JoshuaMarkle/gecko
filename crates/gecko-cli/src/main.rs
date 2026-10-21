@@ -202,13 +202,26 @@ enum Cmd {
 
 #[derive(Subcommand)]
 enum CorpusCmd {
-    /// Count n-grams of text files (or directories of .txt files) into data/corpora/<out>.gkc.
+    /// Count n-grams of text files (or directories, searched recursively for files with the
+    /// `--ext` extensions) into data/corpora/<out>.gkc.
     Build {
         sources: Vec<PathBuf>,
         #[arg(long, default_value = "english")]
         out: String,
-        #[arg(long, default_value = gecko_core::corpus::DEFAULT_CHARSET)]
+        /// Symbols to count, or `default` / `code` (adds digits, all ASCII punctuation, Enter).
+        #[arg(long, default_value = "default")]
         charset: String,
+        /// File extensions to read from directories, comma-separated (e.g. `rs,py,ts`).
+        #[arg(long, default_value = "txt")]
+        ext: String,
+    },
+    /// Weighted mix of corpora with the same charset (each normalized first), e.g.
+    /// `gecko corpus mix code-rs:1 code-py:1 --out code`.
+    Mix {
+        /// `<corpus>[:weight]` (weight 1 when omitted).
+        parts: Vec<String>,
+        #[arg(long)]
+        out: String,
     },
     /// Import precomputed counts from a cmini-style directory: words.json (preferred), else
     /// monograms/bigrams/trigrams.json. Writes data/corpora/<out>.gkc.
@@ -216,7 +229,7 @@ enum CorpusCmd {
         dir: PathBuf,
         #[arg(long)]
         out: String,
-        #[arg(long, default_value = gecko_core::corpus::DEFAULT_CHARSET)]
+        #[arg(long, default_value = "default")]
         charset: String,
     },
 }
@@ -286,6 +299,21 @@ fn reference_layouts(ctx: &Ctx, l: &Loaded, names: Vec<String>) -> Result<(Vec<L
     Ok((layouts, basis))
 }
 
+/// Files under `dir` (recursively, skipping hidden directories) with one of `exts`.
+fn walk(dir: &std::path::Path, exts: &[&str], out: &mut Vec<PathBuf>) -> Result<()> {
+    for e in std::fs::read_dir(dir)?.flatten() {
+        let p = e.path();
+        if p.is_dir() {
+            if !e.file_name().to_string_lossy().starts_with('.') {
+                walk(&p, exts, out)?;
+            }
+        } else if p.extension().is_some_and(|x| exts.iter().any(|e| x == *e)) {
+            out.push(p);
+        }
+    }
+    Ok(())
+}
+
 /// A JSON object of `"gram": count` pairs.
 fn read_counts(path: &std::path::Path) -> Result<Vec<(String, u64)>> {
     let text = std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
@@ -351,9 +379,7 @@ impl Ctx {
     }
 
     fn layout(&self, spec: &str, l: &Loaded) -> Result<Layout> {
-        let layout = self.store.layout(spec, &l.geometry.name)?;
-        layout.check_geometry(&l.geometry)?;
-        Ok(layout)
+        Ok(self.store.layout(spec, &l.geometry.name)?.fit(&l.geometry)?)
     }
 
     fn print(&self, v: serde_json::Value) {
@@ -398,7 +424,12 @@ fn print_breakdown(b: &Breakdown) {
 }
 
 fn layout_rows(layout: &Layout, g: &gecko_core::Geometry) -> String {
-    layout.rows(g).iter().map(|r| r.chars().map(|c| c.to_string()).collect::<Vec<_>>().join(" ")).collect::<Vec<_>>().join("\n  ")
+    let rows = |rs: &[String]| rs.iter().map(|r| r.chars().map(|c| c.to_string()).collect::<Vec<_>>().join(" ")).collect::<Vec<_>>().join("\n  ");
+    let mut out = rows(&layout.rows(g));
+    for (ly, rs) in layout.layers.iter().zip(layout.layer_rows(g)) {
+        out += &format!("\n  [{}]\n  {}", ly.name, rows(&rs));
+    }
+    out
 }
 
 /// `compare --corpora`: each layout's score and rank per corpus, and how far its rank moves (L05).
@@ -485,7 +516,7 @@ fn real_main(cli: Cli) -> Result<()> {
             let (sc, st) = score_layout(&l, &layout)?;
             let b = breakdown(&sc, &st);
             if ctx.json {
-                ctx.print(json!({"schema": SCHEMA, "layout": layout.name, "rows": layout.rows(&l.geometry),
+                ctx.print(json!({"schema": SCHEMA, "layout": layout.name, "rows": layout.all_rows(&l.geometry),
                     "geometry": l.geometry.name, "profile": l.profile.name, "corpus": l.corpus.name, "breakdown": b}));
             } else {
                 println!(
@@ -512,7 +543,7 @@ fn real_main(cli: Cli) -> Result<()> {
             rows.sort_by(|a, b| a.1.score.total_cmp(&b.1.score));
             if ctx.json {
                 let v: Vec<_> =
-                    rows.iter().map(|(lay, b)| json!({"layout": lay.name, "rows": lay.rows(&l.geometry), "breakdown": b})).collect();
+                    rows.iter().map(|(lay, b)| json!({"layout": lay.name, "rows": lay.all_rows(&l.geometry), "breakdown": b})).collect();
                 ctx.print(json!({"schema": SCHEMA, "geometry": l.geometry.name, "profile": l.profile.name, "corpus": l.corpus.name, "layouts": v}));
             } else {
                 let cols = ["B01", "S01", "B04", "B05", "M01", "T03", "T06", "M04"];
@@ -538,7 +569,7 @@ fn real_main(cli: Cli) -> Result<()> {
             let (sc, st) = score_layout(&l, &layout)?;
             let a = analyze(&sc, &st, top);
             if ctx.json {
-                ctx.print(json!({"schema": SCHEMA, "layout": layout.name, "rows": layout.rows(&l.geometry), "analysis": a}));
+                ctx.print(json!({"schema": SCHEMA, "layout": layout.name, "rows": layout.all_rows(&l.geometry), "analysis": a}));
             } else {
                 println!("{}\n  {}\n", layout.name, layout_rows(&layout, &l.geometry));
                 print_breakdown(&a.breakdown);
@@ -606,7 +637,7 @@ fn real_main(cli: Cli) -> Result<()> {
                     println!("#{:<2} {:>8.3}  {}", r.rank, r.score, r.rows.join(" "));
                 }
                 if let Some(b) = res.best.first() {
-                    let layout = Layout::from_chars("best", &l.geometry.name, "", b.chars.chars().collect())?;
+                    let layout = Layout::from_flat("best", &l.geometry, b.chars.chars().collect())?;
                     let (sc, st) = score_layout(&l, &layout)?;
                     println!("\nbest\n  {}\n", layout_rows(&layout, &l.geometry));
                     print_breakdown(&breakdown(&sc, &st));
@@ -699,16 +730,17 @@ fn real_main(cli: Cli) -> Result<()> {
                 println!("swap delta       {:>12.0} /s  ({:.3} µs)", delta, 1e6 / delta);
             }
         }
-        Cmd::Corpus { cmd: CorpusCmd::Build { sources, out, charset } } => {
+        Cmd::Corpus { cmd: CorpusCmd::Build { sources, out, charset, ext } } => {
             if sources.is_empty() {
                 bail!("give at least one text file or directory");
             }
-            let mut c = Corpus::new(&out, &charset);
+            let mut c = Corpus::new(&out, gecko_core::corpus::charset_named(&charset));
+            let exts: Vec<&str> = ext.split(',').map(str::trim).collect();
             let mut files = Vec::new();
             for s in &sources {
                 if s.is_dir() {
-                    let mut v: Vec<_> =
-                        std::fs::read_dir(s)?.flatten().map(|e| e.path()).filter(|p| p.extension().is_some_and(|e| e == "txt")).collect();
+                    let mut v = Vec::new();
+                    walk(s, &exts, &mut v)?;
                     v.sort();
                     files.extend(v);
                 } else {
@@ -721,8 +753,19 @@ fn real_main(cli: Cli) -> Result<()> {
             }
             write_corpus(&ctx, &c, files.len())?;
         }
+        Cmd::Corpus { cmd: CorpusCmd::Mix { parts, out } } => {
+            let loaded = parts
+                .iter()
+                .map(|p| {
+                    let (name, w) = p.split_once(':').unwrap_or((p, "1"));
+                    Ok((ctx.store.corpus(name)?, w.parse::<f64>().with_context(|| format!("bad weight in '{p}'"))?))
+                })
+                .collect::<Result<Vec<_>>>()?;
+            let refs: Vec<(&Corpus, f64)> = loaded.iter().map(|(c, w)| (c, *w)).collect();
+            write_corpus(&ctx, &Corpus::mix(&out, &refs)?, parts.len())?;
+        }
         Cmd::Corpus { cmd: CorpusCmd::Import { dir, out, charset } } => {
-            let mut c = Corpus::new(&out, &charset);
+            let mut c = Corpus::new(&out, gecko_core::corpus::charset_named(&charset));
             let words = dir.join("words.json");
             let files = if words.is_file() {
                 let mut e = c.word_edges();

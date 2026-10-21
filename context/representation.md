@@ -7,7 +7,14 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 
 - TOML in `data/geometries/`. One `[[key]]` per slot, listed row by row, with
   `pos[3], rot[3], size[2], finger, row, col, home, stretch, effort` (hand comes from finger;
-  `role` comes with symbol layers). Boards: `ansi-30`, `ortho-30`.
+  `role` comes with symbol layers). Boards: `ansi-30`, `ortho-30`, `corne-36` (3x5+3),
+  `sweep-34` (3x5+2); the split boards' stagger and thumb poses are approximate.
+- Thumb keys use fingers `LT`/`RT` on their own row (row 3). Optional `fill` per key (token
+  name or one char): what the key gets when a layout lists only the keys without a fill, so
+  every 30-key reference layout fits `corne-36`/`sweep-34` (`Layout::fit`; the CLI and server
+  apply it). Thumb fills follow Miryoku: `⎋ ␣ ⇥ | ⏎ ⌫ ·` (36), `␣ ⇥ | ⏎ ⌫` (34).
+- Thumbs: trigrams with a thumb class as "other"; B05 scissors ignore thumbs; M02 compares
+  non-thumb finger loads as shares of non-thumb keystrokes (unchanged when thumbs are idle).
 - Optional `[comfort]` maps comfort metrics to key-pair tables: `E04 = "engram-2key"` loads
   `data/comfort/engram-2key.csv` (`a_row,a_col,b_row,b_col,score,…`, 0..1, higher = more
   comfortable, keys matched by row/col). The store loads them into `comfort_tables`, which are
@@ -25,24 +32,42 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 
 - `pos: [u8; S]` symbol → slot and `sym: [u8; N]` slot → symbol. Swap is O(1).
 - `locked: u64` bitmask (u128 or bitset once N > 64).
+- Symbols are chars. Special keys are tokens with reserved glyphs so each slot stays one char
+  in strings/JSON/UI: `␣` space, `⏎` enter, `⌫` bspc, `⇥` tab, `⎋` esc, and `·` = empty slot
+  (zero frequency, may repeat, unpinned unless `--pin '{none}'`). Text input (layout rows,
+  `raw:`, `--pin`) also takes `{space}`, `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `{none}`.
+  The scorer gives repeated `·` distinct symbol ids.
 - Text format: rows of symbols matching the geometry's rows (`data/layouts/*.toml`), e.g.
   ```
   geometry = "ansi-30"
   rows = ["qwfpbjluy;", "arstgmneio", "zxcdvkh,./"]
   ```
 - Stable hash = hash(geometry hash, sym array). Used to de-duplicate results.
-- Layers (phase 5): `sym[layer][slot]`; modifiers are keys with a `layer` role.
+- Layers: `chars` is the base and `layers[l-1].chars` layer l, one symbol per key
+  (`sym[layer][key]`). Layer l is held by the base key carrying `①②③` (`{layer1}`…), hold
+  model only (no one-shot/toggle yet). TOML: base `rows`, then one `[[layer]]` table per layer
+  (`name`, `rows`); layered layouts live in `data/layouts/layered/` (example `corne-code`), so
+  `compare` keeps ranking like-for-like layouts. Keys on the finger that holds a layer are
+  unusable on it (written `·`).
+- Scoring flattens a layered layout onto `Geometry::layered`: the base keys, then each layer's
+  usable keys as virtual keys (`layer`, `phys` set; `layer_keys` = holders). Metrics see each
+  symbol at its physical key (layer copies of one key are the same key: repeats, not SFBs);
+  Y01/Y02 add the layer costs. The flat char string (base, then layer 1's usable keys, …) is
+  what runs, `raw:`, `/api/score` and WASM use; `Layout::from_flat` / `fit` split it back
+  using the `①②③` positions. Layer keys never move (`Ctx::new`). ≤ 128 slots in all.
 
 ## Corpus
 
-- Symbols mapped to ids `0..S`. S ≈ 30 now, ≤ 64 with layers.
+- Symbols mapped to ids `0..S`. S ≈ 30–36 on one layer, ≤ 128 slots with layers.
 - Tables (f32, normalized to sum 1 each): mono `[S]`, bi `[S×S]`, skip (gap 1), skip2, skip3
   `[S×S]`, tri `[S×S×S]` (dense up to S=64 = 1 MB; switch to top-K sparse beyond).
 - `data/corpora/<name>.gkc`: magic `GKCORP2`, name, charset, u64 counts for mono, bi, skip,
   skip2, skip3, tri. `GKCORP1` files (no skip2/skip3) still load with those tables zero.
   Mixes are weighted sums of normalized tables.
-- Tokenization: lowercase; curly quotes → `'`, dashes → `-`; whitespace runs → one space;
-  other characters break n-grams. Bigrams/trigrams count only charset runs; skip-g counts
+- Tokenization: lowercase; curly quotes → `'`, dashes → `-`; whitespace runs → one space
+  token, the symbol `␣` when the charset has it (else it breaks n-grams); other characters
+  break n-grams. Word imports count each word as `␣word` plus the exact `x␣`, `yx␣` that
+  follow it; only `x␣z` trigrams and cross-word skipgrams are estimated (independent words). Bigrams/trigrams count only charset runs; skip-g counts
   x and z with exactly g tokens between, whatever they are. Project Gutenberg headers are stripped.
 - `gecko corpus build <text>` counts raw text. `gecko corpus import <dir>` reads cmini-style
   JSON counts: from `words.json` every in-word n-gram is exact, and skipgrams across a space are
@@ -50,19 +75,28 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   word imports scale skip counts ×1000 so small estimates survive rounding (tables are
   normalized separately, so this is harmless). Without `words.json` it reads
   mono/bi/trigrams.json: skip-1 comes from trigram ends (in-word only), skip-2/3 stay empty.
-- Default charset: `a–z , . / ; ' -` (32).
+- Default charset: `a–z , . / ; ' - ␣` (33). Frequencies are normalized over the symbols on
+  the layout, so 30-key layouts (no `␣`) score exactly as before; layouts with `␣` read as
+  "% of all keystrokes incl. space" and are not directly comparable to 30-key numbers.
 - Bundled corpora (`gecko compare --corpora english,shai,mt-10k,mt-450k` for the L05 report):
 
   | Name | Source | Size | QWERTY SFB |
   |---|---|---|---|
-  | `english` | 10 Project Gutenberg novels (raw text in `data/corpora/src/`, not committed) | 6.1M chars | 6.63 % |
-  | `shai` | cmini `corpora/shai/words.json` (iweb-based English; the community default) | 430M chars | 6.70 % |
-  | `mt-10k` | cmini `corpora/english-10k` (Monkeytype 10k word list, each word once) | 72k chars | 8.40 % |
-  | `mt-450k` | cmini `corpora/english-450k` (Monkeytype 450k list) | 4.3M chars | 8.30 % |
+  | `english` | 10 Project Gutenberg novels (raw text in `data/corpora/src/`, not committed) | 7.5M chars incl. space | 6.63 % |
+  | `shai` | cmini `corpora/shai/words.json` (iweb-based English; the community default) | 520M | 6.70 % |
+  | `mt-10k` | cmini `corpora/english-10k` (Monkeytype 10k word list, each word once) | 82k | 8.40 % |
+  | `mt-450k` | cmini `corpora/english-450k` (Monkeytype 450k list) | 4.8M | 8.30 % |
 
   cmini data from https://github.com/Apsu/cmini (GPL-3.0; only aggregated counts are
   committed). Word lists weight every word once, as a Monkeytype test samples them.
-- Uppercase folded by default; Shift modeled only once layers exist.
+- Uppercase folded; Shift not modeled yet.
+- `code` corpus (`--charset code`: default + digits, all ASCII punctuation, `⏎`; 70 symbols):
+  1:1:1 `gecko corpus mix` of Rust (serde, serde_json, regex-syntax, tokio, axum, clap_builder,
+  hyper, rand, proptest from the cargo registry; 7.8M chars), Python 3.14 stdlib top-level
+  modules (3.7M) and TypeScript (hls.js `src`, @use-gesture; 1.5M). Only `code.gkc` is
+  committed. Rebuild: `gecko corpus build --charset code --ext rs --out code-rs <crate>/src…`
+  (likewise `code-py` from `/usr/lib/python3.14/*.py`, `code-ts` from the `.ts` files, not
+  `.d.ts`), then `gecko corpus mix code-rs code-py code-ts --out code`.
 
 ## Results
 
