@@ -38,6 +38,9 @@ re-scoring == full score (proptest); on a mirror-symmetric 6-key board the archi
 brute-forced set of canonical local optima; ansi atlas consistency (pins, constrained
 records, every unconstrained record locally optimal); distances, PCA, funnels, Chao1.
 BLS and explore are in the brute-force and determinism tests.
+External validation (`tests/validation.rs`): every non-thumb finger triple in cmini's
+`table.json` (pinned in `tests/fixtures/cmini-table.json`) gets the matching trigram class;
+ansi-30 distances `rg` 1.6 u, `my` 2.66 u, `vt` 2.02 u match the Layouts Doc.
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`.
 WASM == CLI is checked by hand for now (same `gecko-core` code; scores match to 3 decimals).
 

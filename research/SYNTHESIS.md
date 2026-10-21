@@ -153,5 +153,5 @@ local search). ([ml-approaches](sources/ml-approaches.md))
 - Whether 136M data is downloadable from the user's machine (blocked from the research env).
 - carpalx defaults are taken from a mirror's config files; matches the formulas on the archived
   site but individual values are **(verify)**.
-- Which skipgram definition GECKO reports (any middle char vs valid chars only) when comparing
-  with other analyzers.
+- ~~Which skipgram definition GECKO reports~~ — resolved: any middle char (decisions.md
+  2026-10-21). Trigram classes and `rg`/`my`/`vt` distances are tested (`tests/validation.rs`).
