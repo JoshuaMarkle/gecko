@@ -1,6 +1,6 @@
 # Algorithms
 
-All discrete optimizers implement one trait in `gecko-core::optimize`:
+Single-population discrete optimizers implement one trait in `gecko-core::optimize`:
 
 ```rust
 trait Optimizer {
@@ -10,8 +10,10 @@ trait Optimizer {
 }
 ```
 
-Implemented: HC, SA, GA, BLS, tabu, Explore, MAP-Elites (`gecko-core/src/optimize/`, `explore/`). The runner handles time budgets, threads/restarts, progress events, and persistence,
-so algorithms contain only search logic. All moves respect pins.
+Implemented: HC, SA, GA, memetic islands, BLS, tabu, Explore, MAP-Elites (`gecko-core/src/optimize/`, `explore/`). The runner handles time budgets, threads/restarts, progress events, and persistence,
+so algorithms contain only search logic. Memetic uses a synchronized generation coordinator
+with independent RNG streams per island and snapshot migration; its GA/local-search primitives
+are shared with the single-population algorithms. All moves respect pins.
 
 | File | Kind | Status | Role |
 |---|---|---|---|
@@ -19,7 +21,7 @@ so algorithms contain only search logic. All moves respect pins.
 | [simulated-annealing.md](simulated-annealing.md) | Local search | Phase 2 | Main workhorse (carpalx, KLO, Kühlmak use it) |
 | [genetic.md](genetic.md) | Population | Phase 2 | Comparison; staying near a start layout |
 | [tabu-search.md](tabu-search.md) | Local search | Done | Strong for QAP; cross-checks SA's optimum |
-| [memetic.md](memetic.md) | Hybrid | Phase 2–3 | GA + local search, island model |
+| [memetic.md](memetic.md) | Hybrid | Done | GA + local search, island model |
 | [nsga2.md](nsga2.md) | Multi-objective | Phase 3 | Pareto fronts |
 | [explore.md](explore.md) | Local search + archive | Done | BLS; explore = probe + BLS with exclusion restarts, writes an atlas of local optima |
 | [map-elites.md](map-elites.md) | Quality diversity | Done | Grid over behaviour axes (roll ratio, index load, …), best layout per cell; `gecko qd` |

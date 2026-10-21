@@ -101,6 +101,24 @@ enum Cmd {
         /// GA: population size.
         #[arg(long)]
         ga_pop: Option<usize>,
+        /// Memetic: layouts per island (default 24).
+        #[arg(long)]
+        memetic_pop: Option<usize>,
+        /// Memetic refinement: hc or tabu.
+        #[arg(long, value_parser = ["hc", "tabu"])]
+        local_search: Option<String>,
+        /// Memetic: maximum improving HC moves or tabu iterations per child.
+        #[arg(long)]
+        local_steps: Option<usize>,
+        /// Memetic: number of islands (default one per worker).
+        #[arg(long)]
+        islands: Option<usize>,
+        /// Memetic: generations between ring migrations (0 disables).
+        #[arg(long)]
+        migration_interval: Option<u64>,
+        /// Memetic: best individuals sent per migration.
+        #[arg(long)]
+        migrants: Option<usize>,
         /// Extra descent neighbourhoods: comma list of columns, cycle3, depth2, all (or swap).
         #[arg(long)]
         moves: Option<String>,
@@ -805,9 +823,30 @@ fn real_main(cli: Cli) -> Result<()> {
                 }
             }
         }
-        Cmd::Optimize { algo, time, evals, seed, threads, pin, from, top, sa_steps, ga_pop, moves, depth2_width, inputs } => {
+        Cmd::Optimize {
+            algo,
+            time,
+            evals,
+            seed,
+            threads,
+            pin,
+            from,
+            top,
+            sa_steps,
+            ga_pop,
+            memetic_pop,
+            local_search,
+            local_steps,
+            islands,
+            migration_interval,
+            migrants,
+            moves,
+            depth2_width,
+            inputs,
+        } => {
             let l = ctx.load(&inputs)?;
-            let algo = Algo::parse(&algo).with_context(|| format!("unknown algo '{algo}' (hc, sa, ga, bls, explore, tabu)"))?;
+            let algo =
+                Algo::parse(&algo).with_context(|| format!("unknown algo '{algo}' (hc, sa, ga, memetic, bls, explore, tabu, qd)"))?;
             let start = ctx.layout(from.as_deref().unwrap_or(&ctx.store.defaults.reference), &l)?;
             let mut params = Params {
                 algo,
@@ -823,6 +862,28 @@ fn real_main(cli: Cli) -> Result<()> {
             }
             if let Some(p) = ga_pop {
                 params.ga.pop_size = p;
+            }
+            if let Some(pop) = memetic_pop {
+                params.memetic.ga.pop_size = pop;
+            }
+            if let Some(local) = local_search {
+                params.memetic.local_search = if local == "tabu" {
+                    gecko_core::optimize::memetic::LocalSearch::Tabu
+                } else {
+                    gecko_core::optimize::memetic::LocalSearch::Hc
+                };
+            }
+            if let Some(steps) = local_steps {
+                params.memetic.local_steps = steps;
+            }
+            if let Some(n) = islands {
+                params.memetic.islands = n;
+            }
+            if let Some(n) = migration_interval {
+                params.memetic.migration_interval = n;
+            }
+            if let Some(n) = migrants {
+                params.memetic.migrants = n;
             }
             if let Some(m) = moves {
                 params.moves = parse_moves(&m)?;
@@ -864,14 +925,12 @@ fn real_main(cli: Cli) -> Result<()> {
                 }
             }
         }
-        Cmd::Explore { time, evals, seed, threads, pin, from, samples, max_optima, inputs } => explore_cmd::explore(
-            &ctx,
-            explore_cmd::ExploreArgs { time, evals, seed, threads, pin, from, samples, max_optima, inputs },
-        )?,
-        Cmd::Qd { time, evals, seed, threads, pin, from, axes, bins, seeds, descent, show, inputs } => explore_cmd::qd(
-            &ctx,
-            explore_cmd::QdArgs { time, evals, seed, threads, pin, from, axes, bins, seeds, descent, show, inputs },
-        )?,
+        Cmd::Explore { time, evals, seed, threads, pin, from, samples, max_optima, inputs } => {
+            explore_cmd::explore(&ctx, explore_cmd::ExploreArgs { time, evals, seed, threads, pin, from, samples, max_optima, inputs })?
+        }
+        Cmd::Qd { time, evals, seed, threads, pin, from, axes, bins, seeds, descent, show, inputs } => {
+            explore_cmd::qd(&ctx, explore_cmd::QdArgs { time, evals, seed, threads, pin, from, axes, bins, seeds, descent, show, inputs })?
+        }
         Cmd::Landscape { samples, walks, walk_len, seed, from, inputs } => {
             explore_cmd::landscape(&ctx, &inputs, from.as_deref(), samples, walks, walk_len, seed)?
         }
@@ -1104,7 +1163,10 @@ fn real_main(cli: Cli) -> Result<()> {
             let words = dir.join("words.json");
             let files = if words.is_file() {
                 let mut e = c.word_edges();
-                let counts: Vec<_> = read_counts(&words)?.into_iter().map(|(w,n)| (if fold { gecko_core::corpus::fold_diacritics(&w) } else { w }, n)).collect();
+                let counts: Vec<_> = read_counts(&words)?
+                    .into_iter()
+                    .map(|(w, n)| (if fold { gecko_core::corpus::fold_diacritics(&w) } else { w }, n))
+                    .collect();
                 for (w, n) in &counts {
                     c.add_word(w, *n, &mut e);
                 }

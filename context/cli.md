@@ -10,8 +10,10 @@ gecko compare  [<layout>...] [--corpora a,b,c]                   # rank layouts 
                                                                   #   --corpora: score/rank per corpus (L05)
 gecko analyze  <layout> [--top 10] [--words]                      # finger loads, worst SFB/SFS/LSB/scissors; JSON adds all bigrams/skipgrams with a `kind`;
                                                                   #   --words: worst real words per metric (needs -c shai or mt-10k)
-gecko optimize [--algo sa|hc|ga|bls|tabu|explore|qd] [--time 30s | --evals N] [--seed 1] [--threads N]
+gecko optimize [--algo sa|hc|ga|memetic|bls|tabu|explore|qd] [--time 30s | --evals N] [--seed 1] [--threads N]
                [--pin ",./;"] [--from <layout>] [--top 10] [--sa-steps N] [--ga-pop N]
+               [--memetic-pop 24] [--local-search hc|tabu] [--local-steps 12] [--islands N]
+               [--migration-interval 5] [--migrants 2]
                [--moves swap|columns,cycle3,depth2|all] [--depth2-width 32]
 gecko bench    [--algos hc,sa,ga,bls,tabu] [--seeds 3] [--time 5s]         # algorithm leaderboard
                [--moves "swap/cycle3/depth2"] [--depth2-width N]      # one row per algo × variant

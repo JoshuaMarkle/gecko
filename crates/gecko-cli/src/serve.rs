@@ -261,6 +261,8 @@ struct RunReq {
     sa_steps: Option<u64>,
     #[serde(default)]
     ga_pop: Option<usize>,
+    #[serde(default)]
+    memetic: Option<gecko_core::optimize::memetic::MemeticParams>,
     /// Extra descent neighbourhoods, e.g. "cycle3,depth2".
     #[serde(default)]
     moves: Option<String>,
@@ -285,6 +287,13 @@ async fn start_run(State(app): State<AppState>, Json(req): Json<RunReq>) -> ApiR
     }
     if let Some(p) = req.ga_pop {
         params.ga.pop_size = p.clamp(4, 10_000);
+    }
+    if let Some(mut m) = req.memetic {
+        m.ga.pop_size = m.ga.pop_size.clamp(4, 10_000);
+        m.islands = m.islands.min(cores.max(1));
+        m.local_steps = m.local_steps.min(10_000);
+        m.migrants = m.migrants.min(m.ga.pop_size);
+        params.memetic = m;
     }
     if let Some(m) = &req.moves {
         params.moves = gecko_core::optimize::moves::MoveParams::parse(m)
@@ -397,7 +406,8 @@ async fn atlas_file(State(app): State<AppState>, Path((id, file)): Path<(String,
     if !["optima", "edges", "samples"].contains(&file.as_str()) {
         return Err(ApiError(StatusCode::NOT_FOUND, format!("no atlas file '{file}'")));
     }
-    let bytes = std::fs::read(app.store.runs.join(&id).join(format!("{file}.bin"))).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
+    let bytes =
+        std::fs::read(app.store.runs.join(&id).join(format!("{file}.bin"))).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
     Ok(([(header::CONTENT_TYPE, "application/octet-stream"), (header::CACHE_CONTROL, "no-store")], bytes).into_response())
 }
 

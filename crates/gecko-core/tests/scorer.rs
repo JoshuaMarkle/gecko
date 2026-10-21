@@ -247,7 +247,9 @@ fn shift_costs_effort_and_y01() {
     assert_eq!(sc.chars.iter().filter(|&&c| c == SHIFT).count(), 2);
     // No ⇧ on the layout: Shift costs nothing.
     let g = thumb_board("corne-36");
-    let plain = Scorer::new(&g, &synthetic_cased(gecko_core::corpus::DEFAULT_CHARSET, 11), &all_weights(), &layout("qwerty").fit(&g).unwrap()).unwrap();
+    let plain =
+        Scorer::new(&g, &synthetic_cased(gecko_core::corpus::DEFAULT_CHARSET, 11), &all_weights(), &layout("qwerty").fit(&g).unwrap())
+            .unwrap();
     let pst = plain.identity();
     assert_eq!(value(&plain, &pst, "Y01"), 0.0);
     assert_eq!(plain.shift_value("M01", &pst), 0.0);
@@ -746,11 +748,9 @@ fn extended_moves_track_score_and_respect_pins() {
             }
             // A local optimum of every enabled neighbourhood, and trial moves leave no trace.
             let snap = st.clone();
-            for (on, f) in [
-                (mv.columns, moves::column_move as moves::MoveFn),
-                (mv.cycle3, moves::cycle3_move),
-                (mv.depth2, moves::depth2_move),
-            ] {
+            for (on, f) in
+                [(mv.columns, moves::column_move as moves::MoveFn), (mv.cycle3, moves::cycle3_move), (mv.depth2, moves::depth2_move)]
+            {
                 if on {
                     assert!(!f(&ctx, &mut st).1, "{spec}: improving move left after descent");
                     assert_eq!((st.sym.clone(), st.score, st.load), (snap.sym.clone(), snap.score, snap.load));
@@ -989,4 +989,72 @@ fn magic_rules_cut_sfbs_on_english() {
     let r = gecko_core::magic::search_rules(&g, &c, &p, &l, &Default::default()).unwrap();
     assert!(r.score <= s_magic, "search {} vs published {s_magic}", r.score);
     assert!((sfb(&r.layout).0 - r.score).abs() < 1e-6);
+}
+
+/// Migration occurs on every generation here, well before the evaluation budget expires.
+/// Explicit island count decouples deterministic search from physical worker scheduling.
+#[test]
+fn memetic_migration_is_deterministic_across_worker_counts_and_respects_pins() {
+    use gecko_core::optimize::memetic::LocalSearch;
+    let g = tiny();
+    let c = synthetic("etaoin", 11);
+    let start = Layout::from_str_flat("start", "tiny", "etaoin").unwrap();
+    let sc = Scorer::new(&g, &c, &all_weights(), &start).unwrap();
+    let ctx = Ctx::new(&sc, vec![1, 2, 3, 4], sc.identity());
+    let exact = permutations(vec![1, 2, 3, 4])
+        .into_iter()
+        .map(|middle| {
+            let mut sym = vec![0];
+            sym.extend(middle);
+            sym.push(5);
+            sc.state_from_sym(sym).score
+        })
+        .fold(f64::INFINITY, f64::min);
+    for local_search in [LocalSearch::Hc, LocalSearch::Tabu] {
+        let mut p = Params { algo: Algo::Memetic, threads: 1, time_ms: None, evals: Some(30_000), top: 8, ..Default::default() };
+        p.memetic.ga.pop_size = 6;
+        p.memetic.islands = 3;
+        p.memetic.local_search = local_search;
+        p.memetic.local_steps = 3;
+        p.memetic.migration_interval = 1;
+        let serial = optimize::run(&ctx, &p, Duration::from_secs(60), &Control::default(), |_| {});
+        p.threads = 3;
+        let parallel = optimize::run(&ctx, &p, Duration::from_secs(60), &Control::default(), |_| {});
+        assert_eq!(serial.top, parallel.top);
+        assert_eq!(serial.evals, parallel.evals);
+        assert!(parallel.evals >= 30_000);
+        assert!((parallel.top[0].score - exact).abs() < 1e-6);
+        for s in &parallel.top {
+            assert_eq!(s.sym[0], 0);
+            assert_eq!(s.sym[5], 5);
+        }
+    }
+}
+
+#[test]
+fn memetic_handles_fixed_layouts_and_cancellation_at_generation_boundaries() {
+    let g = tiny();
+    let c = synthetic("etaoin", 11);
+    let start = Layout::from_str_flat("start", "tiny", "etaoin").unwrap();
+    let sc = Scorer::new(&g, &c, &all_weights(), &start).unwrap();
+    let mut p = Params { algo: Algo::Memetic, threads: 2, time_ms: None, evals: Some(100_000), ..Default::default() };
+    p.memetic.ga.pop_size = 4;
+    p.memetic.local_steps = 2;
+    p.memetic.migration_interval = 1;
+    for movable in [vec![], vec![1]] {
+        let ctx = Ctx::new(&sc, movable, sc.identity());
+        let out = optimize::run(&ctx, &p, Duration::ZERO, &Control::default(), |_| {});
+        assert_eq!(out.top[0].sym, ctx.start.sym);
+        assert_eq!(out.evals, 0);
+    }
+    let ctx = Ctx::new(&sc, (0..6).collect(), sc.identity());
+    let control = Control::default();
+    let mut reports = 0;
+    let out = optimize::run(&ctx, &p, Duration::ZERO, &control, |_| {
+        reports += 1;
+        control.cancel();
+    });
+    assert!(reports >= 1);
+    assert!(out.evals < 100_000);
+    assert!(!out.top.is_empty());
 }

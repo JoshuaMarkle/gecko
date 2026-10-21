@@ -4,7 +4,7 @@
 import { useCallback, useState } from "react";
 import type { Profile } from "./api";
 
-export interface SearchSettings { algo: string; timeS: number; threads: number; seed: number; saSteps: number; gaPop: number }
+export interface SearchSettings { algo: string; timeS: number; threads: number; seed: number; saSteps: number; gaPop: number; memeticPop?: number; localSearch?: "hc" | "tabu"; localSteps?: number; islands?: number; migrationInterval?: number; migrants?: number }
 
 /** `useState` persisted in `localStorage` under `gecko.<key>`. */
 export function usePref<T>(key: string, init: T): [T, (v: T) => void] {

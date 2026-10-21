@@ -86,7 +86,7 @@ locked; both presets fit the board to the viewport. A floor grid (1u cells, 5u s
 | `GET /api/layouts` · `/api/geometries` · `/api/profiles` · `/api/corpora` | data dir contents |
 | `GET /api/corpora/{name}` | `.gkc` bytes (for WASM) |
 | `POST /api/score` | `{geometry, corpus, profile \| profile_override, chars \| layout, top}` → analysis |
-| `GET /api/runs` · `POST /api/runs` | list / start (`algo, time_ms \| evals, threads, seed, pins, sa_steps, ga_pop, moves` + score inputs) |
+| `GET /api/runs` · `POST /api/runs` | list / start (`algo, time_ms \| evals, threads, seed, pins, sa_steps, ga_pop, memetic, moves` + score inputs) |
 | `GET /api/runs/{id}` | config, result, progress, running, paused |
 | `GET /api/runs/{id}/events` | SSE: `progress`, then `done` (RunResult) or `failed` |
 | `POST /api/runs/{id}/cancel` | stop early (results are still saved) |
@@ -99,3 +99,10 @@ locked; both presets fit the board to the viewport. A floor grid (1u cells, 5u s
 
 `npm run wasm` (after Rust changes to the scorer), `npm run dev` (proxies `/api` to :7777),
 `npm run build` → `web/dist`, `npm run typecheck`, `npm test`.
+
+
+Search includes memetic islands: population per island, HC/tabu refinement and its step
+cap, island count (0 = threads), migration interval (0 disables), and migrant count.
+`POST /api/runs` accepts optional `memetic` using the core `MemeticParams` shape; omitted
+fields use defaults. The server limits islands to core count and caps population/refinement
+work. Older saved Search preferences acquire defaults for the new fields.
