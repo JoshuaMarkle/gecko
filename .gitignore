@@ -1,6 +1,7 @@
 /target
 /web/node_modules
 /web/dist
+/web/.cache
 /web/src/wasm/pkg
 /runs/*
 !/runs/.gitkeep

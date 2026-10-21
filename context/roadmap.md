@@ -28,7 +28,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 1. [x] [#1](https://github.com/JoshuaMarkle/gecko/issues/1) `A1` CI: GitHub Actions for Rust and web checks · S
 2. [x] [#7](https://github.com/JoshuaMarkle/gecko/issues/7) `A2` Metric unit tests with hand-computed answers · M
 3. [x] [#12](https://github.com/JoshuaMarkle/gecko/issues/12) `A3` insta snapshots of reference layout scores · S
-4. [ ] [#16](https://github.com/JoshuaMarkle/gecko/issues/16) `A4` Automated WASM == CLI test · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
+4. [x] [#16](https://github.com/JoshuaMarkle/gecko/issues/16) `A4` Automated WASM == CLI test · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
 5. [x] [#18](https://github.com/JoshuaMarkle/gecko/issues/18) `A5` criterion benches + bench/history.jsonl · S
 6. [x] [#20](https://github.com/JoshuaMarkle/gecko/issues/20) `A6` Scorer speed: cache per-trigram cost in State · M · after [#18](https://github.com/JoshuaMarkle/gecko/issues/18)
 7. [x] [#28](https://github.com/JoshuaMarkle/gecko/issues/28) `A7` Validate trigram classes and pair distances against external data · S
@@ -45,7 +45,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 18. [x] [#8](https://github.com/JoshuaMarkle/gecko/issues/8) `B2` More neighbourhoods: 3-cycle, column swap, depth-2 swaps · S
 19. [x] [#9](https://github.com/JoshuaMarkle/gecko/issues/9) `C2` S04 skipgram LSB / scissor / stretch · S
 20. [x] [#10](https://github.com/JoshuaMarkle/gecko/issues/10) `D2` One-shot and toggle layers · M
-21. [ ] [#11](https://github.com/JoshuaMarkle/gecko/issues/11) `E2` More boards: Lily58, Kyria, Ergodox, Dactyl-Manuform 5x6 · S · after [#5](https://github.com/JoshuaMarkle/gecko/issues/5)
+21. [x] [#11](https://github.com/JoshuaMarkle/gecko/issues/11) `E2` More boards: Lily58, Kyria, Ergodox, Dactyl-Manuform 5x6 · S · after [#5](https://github.com/JoshuaMarkle/gecko/issues/5)
 22. [x] [#83](https://github.com/JoshuaMarkle/gecko/issues/83) `L9` Flatten any board to a 2D view · M
 23. [ ] [#13](https://github.com/JoshuaMarkle/gecko/issues/13) `B3` Memetic algorithm (GA + local search, islands) · M · after [#8](https://github.com/JoshuaMarkle/gecko/issues/8)
 24. [x] [#14](https://github.com/JoshuaMarkle/gecko/issues/14) `C3` Asymmetric row costs per finger · S
