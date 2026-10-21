@@ -443,8 +443,8 @@ enum ProfileCmd {
         #[command(flatten)]
         inputs: Inputs,
     },
-    /// Fit non-negative spread-unit weights so the other metrics predict a judge metric (e.g. E05)
-    /// over layouts sampled around the references. Prints TOML unless --out.
+    /// Fit non-negative spread-unit weights to a judge metric (e.g. E05), or use
+    /// --target likes for pairwise cmini ranking with 20% of layouts held out.
     Fit {
         #[arg(long, default_value = "E05")]
         target: String,
@@ -1351,6 +1351,31 @@ fn real_main(cli: Cli) -> Result<()> {
         }
         Cmd::Profile { cmd: ProfileCmd::Fit { target, layouts, out, seed, inputs } } => {
             let l = ctx.load(&inputs)?;
+            if target.eq_ignore_ascii_case("likes") {
+                if !layouts.is_empty() {
+                    bail!("--target likes uses the community bundle; --layouts is only for judge-metric fits");
+                }
+                let bundle = ctx.store.community()?;
+                let fit = gecko_core::calibrate::fit_preferences(&l.geometry, &l.corpus, &l.profile, &bundle, seed)?;
+                let mut p = l.profile.clone();
+                p.name = out.clone().unwrap_or_else(|| "fit-likes".into());
+                p.description = format!(
+                    "Pairwise cmini likes fit, seed {seed}, {} train/{} held-out layouts; held-out accuracy {}. Opt-in popularity model.",
+                    fit.training_layouts.len(), fit.held_out_layouts.len(),
+                    fit.held_out_accuracy.map_or_else(|| "unavailable".into(), |a| format!("{:.1}%", 100.0 * a))
+                );
+                p.weights = fit.weights.clone();
+                p.scale = fit.scales.clone();
+                p.scale_basis = format!("cmini training layouts; seed {seed}; {}", fit.input_hashes["community"]);
+                if ctx.json {
+                    ctx.print(json!({"schema": SCHEMA, "fit": fit, "profile": p}));
+                } else {
+                    eprintln!("likes: {} training pairs, {} held-out pairs; accuracy {}", fit.training_pairs, fit.held_out_pairs,
+                        fit.held_out_accuracy.map_or_else(|| "unavailable".into(), |a| format!("{:.1}%", 100.0 * a)));
+                }
+                emit_profile(&ctx, &p, out.as_deref())?;
+                return Ok(());
+            }
             let (refs, basis) = reference_layouts(&ctx, &l, layouts)?;
             let fit = gecko_core::calibrate::fit_to(&l.geometry, &l.corpus, &l.profile, &refs, &target, seed)?;
             let mut p = l.profile.clone();

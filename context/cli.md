@@ -47,6 +47,7 @@ gecko layouts likes [--top 10] [--dups] [-g -p -c]                     # GECKO r
 gecko corpus nav <corpus> [--share 0.03] [--seed 1] --out <name>        # add modelled arrow keys
 gecko profile normalize [-p profile] [--layouts a,b] [--out name]   # weights → spread units
 gecko profile fit [--target E05] [--layouts a,b] [--out name]       # fit weights to a judge metric
+gecko profile fit --target likes [--seed 1] [--out learned] --json  # pairwise fit, 20% layout holdout
 gecko list     layouts|geometries|profiles|corpora|runs|metrics
 gecko serve    [--port 7777] [--web web/dist]
 ```
@@ -114,3 +115,10 @@ Corpora without a word list (`english`, `code`, `mt-450k`, mixes) give an `error
   ranked layout: chars exact, score to 1e-9 relative. Exit code 1 when it does not
   reproduce; time-budget runs are an error.
 - Defaults (geometry, corpus, profile, reference layout, data/runs dirs) come from `gecko.toml`.
+
+`profile fit --target likes` uses unique positively liked cmini layouts, not `--layouts`.
+Its schema-1 JSON has `fit` (weights/scales, seed, input hashes, training/held-out layout
+names, pair counts, logistic loss, training/test accuracy and default/Engram baselines) and
+`profile`. Prediction ties count half, like ties are excluded; absent test pairs report null.
+`--out learned` writes an opt-in profile; defaults are unchanged. See
+`research/profile-ranking.md` for fitting rules, measured accuracy and limitations.
