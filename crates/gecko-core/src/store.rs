@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use crate::corpus::WordList;
 use crate::{Corpus, Error, Geometry, Layout, Profile, Result};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -123,6 +124,22 @@ impl Store {
         let bytes = std::fs::read(&p)
             .map_err(|e| Error::invalid("corpus", format!("{}: {e} (build it with `gecko corpus build`)", p.display())))?;
         Corpus::from_bytes(&bytes)
+    }
+
+    /// Word-count side file of a corpus (written by `gecko corpus import` from `words.json`).
+    pub fn words_path(&self, name: &str) -> PathBuf {
+        self.dir("corpora").join(format!("{name}.words.tsv"))
+    }
+
+    pub fn words(&self, name: &str) -> Result<WordList> {
+        let p = self.words_path(name);
+        let text = std::fs::read_to_string(&p).map_err(|e| {
+            Error::invalid(
+                "words",
+                format!("{}: {e} (corpus '{name}' has no word counts; use a word-import corpus such as shai)", p.display()),
+            )
+        })?;
+        WordList::from_tsv(&text)
     }
 
     /// Resolve a layout spec: a reference name, a `.toml` path, `run:<id>[#rank]` or `raw:<chars>`.
