@@ -367,6 +367,11 @@ fn thumb_layouts_score_and_round_trip() {
         let space = sc.chars.iter().position(|&ch| ch == gecko_core::layout::SPACE).unwrap();
         assert!(g.key[st.pos[space] as usize].finger.is_thumb());
         assert!(st.load[4] + st.load[5] > 10.0);
+        // Thumb trigrams get their own classes (T12/T13), and M09 reads the thumb share.
+        let val = |id: &str| b.metrics.iter().find(|m| m.id == id).unwrap().value;
+        assert!(val("T12") > 0.0 && val("T13") > 0.0, "{name}: T12 {} T13 {}", val("T12"), val("T13"));
+        let share = 100.0 * (st.load[4] + st.load[5]) / st.load.iter().sum::<f64>();
+        assert!((val("M09") - share).abs() < 1e-9);
         // Any arrangement, including empty slots holding letters, maps back to the same state.
         let mut st2 = sc.identity();
         let empty = sc.chars.iter().position(|&ch| ch == gecko_core::layout::EMPTY);
@@ -378,6 +383,48 @@ fn thumb_layouts_score_and_round_trip() {
         assert_eq!(back.chars(&sc), st2.chars(&sc));
         assert!((back.score - st2.score).abs() < 1e-6 * st2.score.abs().max(1.0));
     }
+}
+
+#[test]
+fn thumb_trigram_classes() {
+    use gecko_core::metrics::trigram::{classify, TriClass};
+    use gecko_core::Finger;
+    let g = thumb_board("corne-36");
+    let on = |f: Finger| -> Vec<usize> { (0..g.len()).filter(|&i| g.key[i].finger == f).collect() };
+    let (li, lm, ri, lt, rt) = (on(Finger::LI)[0], on(Finger::LM)[0], on(Finger::RI)[0], on(Finger::LT), on(Finger::RT)[0]);
+    // Same-hand step into or out of the thumb: roll.
+    assert_eq!(classify(&g, li, lt[0], ri), TriClass::ThumbRoll);
+    assert_eq!(classify(&g, ri, li, lt[0]), TriClass::ThumbRoll);
+    // Every thumb step changes hands: alternate (the LM → LI step doesn't touch the thumb).
+    assert_eq!(classify(&g, li, rt, lm), TriClass::ThumbAlt);
+    assert_eq!(classify(&g, lm, li, rt), TriClass::ThumbAlt);
+    assert_eq!(classify(&g, lt[0], ri, lt[1]), TriClass::ThumbAlt);
+    // Two keys on one thumb in a row, or a repeated key: other.
+    assert_eq!(classify(&g, lt[0], lt[1], ri), TriClass::Other);
+    assert_eq!(classify(&g, rt, rt, li), TriClass::Other);
+    // Trigrams without a thumb are unchanged.
+    assert_eq!(classify(&g, li, ri, lm), TriClass::Alternate);
+}
+
+#[test]
+fn m09_scores_distance_from_thumb_target() {
+    let g = thumb_board("corne-36");
+    let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 5);
+    let l = layout("graphite").fit(&g).unwrap();
+    let mut p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
+    p.weights = [("M09".to_string(), 1.0)].into();
+    p.scale.clear();
+    let score_at = |t: f32| {
+        let mut p = p.clone();
+        p.thumb_target = t;
+        let sc = Scorer::new(&g, &c, &p, &l).unwrap();
+        let st = sc.identity();
+        let share = breakdown(&sc, &st).metrics.iter().find(|m| m.id == "M09").unwrap().value;
+        (share, st.score)
+    };
+    let (share, _) = score_at(15.0);
+    assert!(score_at(share as f32).1.abs() < 1e-4);
+    assert!((score_at(share as f32 + 10.0).1 - 10.0).abs() < 1e-3);
 }
 
 #[test]

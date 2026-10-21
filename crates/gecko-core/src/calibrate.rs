@@ -24,7 +24,7 @@ fn costs(sc: &Scorer, st: &State) -> Vec<f64> {
     breakdown(sc, st).metrics.iter().map(|m| m.weighted).collect()
 }
 
-/// Population standard deviation of each metric's raw cost over `layouts` (M02/M04 use their
+/// Population standard deviation of each metric's raw cost over `layouts` (M02/M04/M09 use their
 /// squared costs, like the scorer). Metrics with zero spread are left out.
 pub fn spread_scales(g: &Geometry, corpus: &Corpus, profile: &Profile, layouts: &[Layout]) -> Result<BTreeMap<String, f32>> {
     let unit = unit_profile(profile);

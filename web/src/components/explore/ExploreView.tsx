@@ -274,7 +274,11 @@ export function ExploreView(p: Props) {
     const m = data.metrics.length;
     const prof = JSON.parse(profJson) as Profile;
     const w = (id: string) => (prof.weights[id] ?? 0) / (prof.scale?.[id] ?? 1);
-    const contrib = (id: string, dir: string, v: number) => id === "M02" ? w(id) * v * v : id === "M04" ? (w(id) * (v - 50) * (v - 50)) / 10 : dir === "max" ? -w(id) * v : w(id) * v;
+    const centre = (id: string) => (id === "M04" ? 50 : id === "M09" ? prof.thumb_target ?? 18 : null);
+    const contrib = (id: string, dir: string, v: number) => {
+      const c = centre(id);
+      return id === "M02" ? w(id) * v * v : c !== null ? (w(id) * (v - c) * (v - c)) / 10 : dir === "max" ? -w(id) * v : w(id) * v;
+    };
     return {
       row: pick, rank: ranked.rank[pick], total: data.n, chars: rowChars(data.syms, data.slots, pick, data.alphabet),
       bestChars: rowChars(data.syms, data.slots, ranked.best, data.alphabet), score: ranked.scores[pick], best: ranked.scores[ranked.best],

@@ -1,7 +1,7 @@
 //! Folded scorer: full evaluation and O(S)/O(S²) swap deltas. See `context/objective.md`.
 //!
 //! score = Σ f1[x]·C1[p(x)] + Σ f2[x,y]·C2[p(x),p(y)] + Σ fk[x,z]·Ck[p(x),p(z)]
-//!       + Σ fkf[x,z]·Ckf[p(x),p(z)] + Σ f3[x,y,z]·C3[p(x),p(y),p(z)] + load terms (M02, M03, M04, M07)
+//!       + Σ fkf[x,z]·Ckf[p(x),p(z)] + Σ f3[x,y,z]·C3[p(x),p(y),p(z)] + load terms (M02, M03, M04, M07, M09)
 //!
 //! `fk` is gap-1 skipgrams; `fkf` mixes gap-2 and gap-3 skipgrams with `sfb.skip_decay`;
 //! `fy` is bigrams of two code symbols (Y02), with its own cost table `Cy`. Y03 adds
@@ -85,6 +85,8 @@ pub struct Scorer {
     w_peak: f64,
     /// Any load (non-linear) metric is weighted.
     has_load: bool,
+    w_thumb: f64,
+    thumb_target: f64,
     target: [f64; FINGERS],
     /// Unfolded per-metric tables aligned with `METRICS` (reports only).
     tables: Vec<Option<Vec<f32>>>,
@@ -218,6 +220,7 @@ impl Scorer {
         let csb: Vec<f32> = shift_pair.iter().map(|p| w_y01 * p).collect();
         let has_shift_pair = has_shift && csb.iter().any(|&c| c != 0.0) && fsb.iter().any(|&f| f > 0.0);
         let (mut w_load, mut w_hand, mut w_rss, mut w_peak) = (0.0, 0.0, 0.0, 0.0);
+        let mut w_thumb = 0.0;
         for (d, t) in METRICS.iter().zip(&tables) {
             let w = profile.effective_weight(d.id);
             let signed = match d.dir {
@@ -234,6 +237,7 @@ impl Scorer {
                     "M04" => w_hand = w as f64,
                     "M03" => w_rss = w as f64,
                     "M07" => w_peak = w as f64,
+                    "M09" => w_thumb = w as f64,
                     _ => {}
                 },
                 (order, Some(t)) => {
@@ -365,7 +369,9 @@ impl Scorer {
             w_hand,
             w_rss,
             w_peak,
-            has_load: w_load != 0.0 || w_hand != 0.0 || w_rss != 0.0 || w_peak != 0.0,
+            has_load: w_load != 0.0 || w_hand != 0.0 || w_rss != 0.0 || w_peak != 0.0 || w_thumb != 0.0,
+            w_thumb,
+            thumb_target: profile.thumb_target as f64,
             target,
             tables,
         })
@@ -444,6 +450,9 @@ impl Scorer {
         }
         if self.w_peak != 0.0 {
             c += self.w_peak * peak_load(load, &self.target);
+        }
+        if self.w_thumb != 0.0 {
+            c += self.w_thumb * thumb_cost(load, self.thumb_target);
         }
         c
     }
@@ -761,6 +770,9 @@ impl Scorer {
     pub fn target(&self) -> &[f64; FINGERS] {
         &self.target
     }
+    pub fn thumb_target(&self) -> f64 {
+        self.thumb_target
+    }
     pub fn finger_of_slot(&self, slot: usize) -> usize {
         self.finger[slot] as usize
     }
@@ -855,13 +867,33 @@ pub fn load_error_cost(load: &[f64; FINGERS], target: &[f64; FINGERS]) -> f64 {
     s / 8.0
 }
 
+/// M04 value: left-hand share in % of keystrokes.
+pub fn left_share(load: &[f64; FINGERS]) -> f64 {
+    100.0 * load[..5].iter().sum::<f64>() / load.iter().sum::<f64>().max(1e-12)
+}
+
+/// M09 value: thumb share (both thumbs) in % of keystrokes.
+pub fn thumb_share(load: &[f64; FINGERS]) -> f64 {
+    100.0 * (load[4] + load[5]) / load.iter().sum::<f64>().max(1e-12)
+}
+
+/// Squared distance of a share from its target, scaled by 1/10 (M04, M09).
+pub fn target_cost(share: f64, target: f64) -> f64 {
+    (share - target) * (share - target) / 10.0
+}
+
 /// M04 cost: squared distance of the left-hand share from 50%, scaled by 1/10.
 pub fn hand_cost(load: &[f64; FINGERS]) -> f64 {
-    let left: f64 = load[..5].iter().sum();
-    let total: f64 = load.iter().sum();
-    if total <= 0.0 {
+    if load.iter().sum::<f64>() <= 0.0 {
         return 0.0;
     }
-    let l = 100.0 * left / total;
-    (l - 50.0) * (l - 50.0) / 10.0
+    target_cost(left_share(load), 50.0)
+}
+
+/// M09 cost: squared distance of the thumb share from `target`, scaled by 1/10.
+pub fn thumb_cost(load: &[f64; FINGERS], target: f64) -> f64 {
+    if load.iter().sum::<f64>() <= 0.0 {
+        return 0.0;
+    }
+    target_cost(thumb_share(load), target)
 }

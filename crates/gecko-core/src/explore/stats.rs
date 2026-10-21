@@ -15,8 +15,8 @@ enum Term {
     Linear(f64),
     /// M02: `w · v²` (v is the RMS load error).
     Squared(f64),
-    /// M04: `w · (v − 50)² / 10` (v is the left-hand share).
-    Hand(f64),
+    /// M04, M09: `w · (v − target)² / 10` (v is the left-hand / thumb share, target 50 / `thumb_target`).
+    Target(f64, f64),
 }
 
 /// A profile's weights aligned with an atlas's metric list; `score(raw)` equals
@@ -40,7 +40,8 @@ impl Weights {
                 match (d.dir, d.id) {
                     (Dir::Info, _) => Term::Off,
                     (_, "M02") => Term::Squared(w),
-                    (_, "M04") => Term::Hand(w),
+                    (_, "M04") => Term::Target(w, 50.0),
+                    (_, "M09") => Term::Target(w, profile.thumb_target as f64),
                     (Dir::Min, _) => Term::Linear(w),
                     (Dir::Max, _) => Term::Linear(-w),
                 }
@@ -57,7 +58,7 @@ impl Weights {
             Term::Off => 0.0,
             Term::Linear(w) => w * v,
             Term::Squared(w) => w * v * v,
-            Term::Hand(w) => w * (v - 50.0) * (v - 50.0) / 10.0,
+            Term::Target(w, t) => w * (v - t) * (v - t) / 10.0,
         }
     }
 
