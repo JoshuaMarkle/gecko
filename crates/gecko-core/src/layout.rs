@@ -7,13 +7,15 @@
 //!
 //! Layers: `chars` is the base layer and `layers[l - 1].chars` layer `l`, each one symbol per
 //! physical key (`sym[layer][key]`). Layer `l` is held by the base key with token [`LAYER_KEYS`]
-//! `[l - 1]` (`{layer1}` = `①`). For scoring, a layered layout flattens onto the virtual
+//! `[l - 1]` (`{layer1}` = `①`); the one-shot (`{os1}` = `⓵`) and toggle (`{tg1}` = `❶`)
+//! tokens reach it in those modes instead ([`LayerMode`]), so a flat string carries its layer
+//! modes. TOML may also give `mode` per `[[layer]]` table. For scoring, a layered layout flattens onto the virtual
 //! geometry of [`Geometry::layered`]: base keys, then each layer's keys except those on the
 //! holding finger ([`Layout::flat`]); the flat char string round-trips via [`Layout::from_flat`].
 
 use serde::{Deserialize, Serialize};
 
-use crate::{hash, Error, Geometry, Result};
+use crate::{geometry::LayerMode, hash, Error, Geometry, Result};
 
 pub const SPACE: char = '\u{2423}'; // ␣
 pub const ENTER: char = '\u{23CE}'; // ⏎
@@ -28,6 +30,10 @@ pub const EMPTY: char = '\u{00B7}'; // ·
 pub const SHIFT: char = '\u{21E7}'; // ⇧
 /// Base-layer keys that hold layers 1, 2, 3 (`①②③`). Never moved by the optimizer.
 pub const LAYER_KEYS: [char; 3] = ['\u{2460}', '\u{2461}', '\u{2462}'];
+/// One-shot layer keys for layers 1, 2, 3 (`⓵⓶⓷`).
+pub const ONESHOT_KEYS: [char; 3] = ['\u{24F5}', '\u{24F6}', '\u{24F7}'];
+/// Toggle layer keys for layers 1, 2, 3 (`❶❷❸`).
+pub const TOGGLE_KEYS: [char; 3] = ['\u{2776}', '\u{2777}', '\u{2778}'];
 
 /// Token glyphs and their names (first name is canonical).
 pub const TOKENS: &[(char, &[&str])] = &[
@@ -41,10 +47,35 @@ pub const TOKENS: &[(char, &[&str])] = &[
     (LAYER_KEYS[0], &["layer1", "l1"]),
     (LAYER_KEYS[1], &["layer2", "l2"]),
     (LAYER_KEYS[2], &["layer3", "l3"]),
+    (ONESHOT_KEYS[0], &["os1", "oneshot1"]),
+    (ONESHOT_KEYS[1], &["os2", "oneshot2"]),
+    (ONESHOT_KEYS[2], &["os3", "oneshot3"]),
+    (TOGGLE_KEYS[0], &["tg1", "toggle1"]),
+    (TOGGLE_KEYS[1], &["tg2", "toggle2"]),
+    (TOGGLE_KEYS[2], &["tg3", "toggle3"]),
 ];
 
+/// The token of the key reaching layer `l` (1-based) in `mode`.
+pub fn layer_key(l: usize, mode: LayerMode) -> char {
+    match mode {
+        LayerMode::Hold => LAYER_KEYS[l - 1],
+        LayerMode::Oneshot => ONESHOT_KEYS[l - 1],
+        LayerMode::Toggle => TOGGLE_KEYS[l - 1],
+    }
+}
+
+/// Layer (1-based) and mode of a layer-key token.
+pub fn layer_key_info(c: char) -> Option<(usize, LayerMode)> {
+    LayerMode::ALL.into_iter().find_map(|m| (1..=3).find(|&l| layer_key(l, m) == c).map(|l| (l, m)))
+}
+
 pub fn is_layer_key(c: char) -> bool {
-    LAYER_KEYS.contains(&c)
+    layer_key_info(c).is_some()
+}
+
+/// Base key reaching layer `l` (1-based) and its mode, if the base has one.
+fn find_layer_key(base: &[char], l: usize) -> Option<(usize, LayerMode)> {
+    base.iter().enumerate().find_map(|(k, &c)| layer_key_info(c).filter(|i| i.0 == l).map(|i| (k, i.1)))
 }
 
 /// Keys the optimizer never moves: layer keys and Shift.
@@ -102,6 +133,9 @@ pub struct LayoutFile {
 pub struct LayerFile {
     #[serde(default)]
     pub name: String,
+    /// How the layer is reached; sets the base layer key's token (`hold` when absent).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<LayerMode>,
     pub rows: Vec<String>,
 }
 
@@ -132,6 +166,15 @@ impl Layout {
         for (i, lf) in f.layer.iter().enumerate() {
             let name = if lf.name.is_empty() { format!("layer{}", i + 1) } else { lf.name.clone() };
             l.layers.push(Layer { name, chars: parse_symbols(&lf.rows.concat())? });
+            if let (Some(m), Some((k, cur))) = (lf.mode, find_layer_key(&l.chars, i + 1)) {
+                if cur != LayerMode::Hold && cur != m {
+                    return Err(Error::invalid(
+                        "layout",
+                        format!("'{}': layer {} has mode {} but its key is {}", l.name, i + 1, m.name(), cur.name()),
+                    ));
+                }
+                l.chars[k] = layer_key(i + 1, m);
+            }
         }
         l.check_unique()?;
         Ok(l)
@@ -159,7 +202,7 @@ impl Layout {
         if flat.len() <= n {
             return Self::from_chars(name, &g.name, "", flat);
         }
-        let holders: Vec<usize> = LAYER_KEYS.iter().map_while(|t| flat[..n].iter().position(|c| c == t)).collect();
+        let holders: Vec<_> = (1..=LAYER_KEYS.len()).map_while(|l| find_layer_key(&flat[..n], l)).collect();
         let vg = g.layered(&holders)?;
         if vg.len() != flat.len() {
             return Err(Error::invalid(
@@ -179,11 +222,11 @@ impl Layout {
         Ok(l)
     }
 
-    /// Base keys holding layers 1, 2, … (where the layer-key tokens sit).
-    pub fn holders(&self) -> Result<Vec<usize>> {
+    /// Base keys reaching layers 1, 2, … (where the layer-key tokens sit) and their modes.
+    pub fn holders(&self) -> Result<Vec<(usize, LayerMode)>> {
         (0..self.layers.len())
             .map(|i| {
-                self.chars.iter().position(|&c| c == LAYER_KEYS[i]).ok_or_else(|| {
+                find_layer_key(&self.chars, i + 1).ok_or_else(|| {
                     Error::invalid("layout", format!("'{}' has layer {} but no {{layer{}}} key on the base", self.name, i + 1, i + 1))
                 })
             })
@@ -209,7 +252,7 @@ impl Layout {
             if let Some(k) = (0..g.len()).find(|&k| !placed[li][k] && layer.chars[k] != EMPTY) {
                 return Err(Error::invalid(
                     "layout",
-                    format!("'{}': layer {} puts '{}' on a key of the finger that holds it", self.name, li + 1, layer.chars[k]),
+                    format!("'{}': layer {} puts '{}' on a key it cannot use", self.name, li + 1, layer.chars[k]),
                 ));
             }
         }
@@ -301,7 +344,15 @@ impl Layout {
     }
 
     pub fn to_toml(&self, g: &Geometry) -> String {
-        let layer = self.layers.iter().zip(self.layer_rows(g)).map(|(ly, rows)| LayerFile { name: ly.name.clone(), rows }).collect();
+        let modes = self.holders().unwrap_or_default();
+        let mode = |li: usize| modes.get(li).map(|h| h.1).filter(|&m| m != LayerMode::Hold);
+        let layer = self
+            .layers
+            .iter()
+            .zip(self.layer_rows(g))
+            .enumerate()
+            .map(|(li, (ly, rows))| LayerFile { name: ly.name.clone(), mode: mode(li), rows })
+            .collect();
         let f =
             LayoutFile { name: self.name.clone(), geometry: self.geometry.clone(), source: self.source.clone(), rows: self.rows(g), layer };
         toml::to_string(&f).unwrap_or_default()

@@ -61,13 +61,17 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   ```
 - Stable hash = hash(geometry hash, sym array). Used to de-duplicate results.
 - Layers: `chars` is the base and `layers[l-1].chars` layer l, one symbol per key
-  (`sym[layer][key]`). Layer l is held by the base key carrying `①②③` (`{layer1}`…), hold
-  model only (no one-shot/toggle yet). TOML: base `rows`, then one `[[layer]]` table per layer
-  (`name`, `rows`); layered layouts live in `data/layouts/layered/` (example `corne-code`), so
-  `compare` keeps ranking like-for-like layouts. Keys on the finger that holds a layer are
-  unusable on it (written `·`).
+  (`sym[layer][key]`). Layer l is reached by the base key carrying its layer-key token, whose
+  glyph is the layer mode: hold `①②③` (`{layer1}`…), one-shot `⓵⓶⓷` (`{os1}`…), toggle `❶❷❸`
+  (`{tg1}`…). TOML: base `rows`, then one `[[layer]]` table per layer (`name`, `rows`, optional
+  `mode = "hold" | "oneshot" | "toggle"`, which rewrites a `{layerN}` token; a conflicting
+  `{osN}`/`{tgN}` is an error). Layered layouts live in `data/layouts/layered/` (examples
+  `corne-code`, `corne-code-oneshot`, `corne-code-numtoggle`), so `compare` keeps ranking
+  like-for-like layouts. A hold layer cannot use the keys of the finger holding it; one-shot and
+  toggle layers only lose the layer key itself (on a toggle layer that is the key that leaves).
+  Unusable keys are written `·`. The flat string carries the modes through its tokens.
 - Scoring flattens a layered layout onto `Geometry::layered`: the base keys, then each layer's
-  usable keys as virtual keys (`layer`, `phys` set; `layer_keys` = holders). Metrics see each
+  usable keys as virtual keys (`layer`, `phys` set; `layer_keys` = holders, `layer_modes`). Metrics see each
   symbol at its physical key (layer copies of one key are the same key: repeats, not SFBs);
   Y01/Y02 add the layer costs. The flat char string (base, then layer 1's usable keys, …) is
   what runs, `raw:`, `/api/score` and WASM use; `Layout::from_flat` / `fit` split it back

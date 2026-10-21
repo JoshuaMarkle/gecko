@@ -52,11 +52,33 @@ export function rowsOf(chars: string, g: Geometry): string[] {
 
 /** Layer-key glyphs `①②③` (gecko-core `layout::LAYER_KEYS`): the base key holding layer 1, 2, 3. */
 export const LAYER_KEYS = ["\u2460", "\u2461", "\u2462"];
+/** One-shot (`⓵⓶⓷`) and toggle (`❶❷❸`) layer keys (gecko-core `ONESHOT_KEYS`, `TOGGLE_KEYS`). */
+export const ONESHOT_KEYS = ["\u24F5", "\u24F6", "\u24F7"];
+export const TOGGLE_KEYS = ["\u2776", "\u2777", "\u2778"];
+export type LayerMode = "hold" | "oneshot" | "toggle";
+const MODE_KEYS: [LayerMode, string[]][] = [["hold", LAYER_KEYS], ["oneshot", ONESHOT_KEYS], ["toggle", TOGGLE_KEYS]];
+
+/** The base key reaching layer `l` (1-based), its glyph and mode, or null. */
+export function layerKey(base: string[], l: number): { key: number; glyph: string; mode: LayerMode } | null {
+  for (const [mode, keys] of MODE_KEYS) {
+    const key = base.indexOf(keys[l - 1]);
+    if (key >= 0) return { key, glyph: keys[l - 1], mode };
+  }
+  return null;
+}
+
+/** Key `k` is on layer `l` reached through `lk` (gecko-core `Geometry::layered`): a hold layer
+ *  skips the holding finger's keys, one-shot and toggle layers only the layer key. */
+function onLayer(g: Geometry, lk: { key: number; mode: LayerMode }, k: number): boolean {
+  return lk.mode === "hold" ? g.key[k].finger !== g.key[lk.key].finger : k !== lk.key;
+}
 const TOKEN_NAMES: Record<string, string> = {
   space: "\u2423", spc: "\u2423", enter: "\u23CE", ent: "\u23CE", ret: "\u23CE", bspc: "\u232B", backspace: "\u232B",
   tab: "\u21E5", esc: "\u238B", escape: "\u238B", none: "\u00B7", empty: "\u00B7", _: "\u00B7",
   shift: "\u21E7", sft: "\u21E7",
   layer1: LAYER_KEYS[0], l1: LAYER_KEYS[0], layer2: LAYER_KEYS[1], l2: LAYER_KEYS[1], layer3: LAYER_KEYS[2], l3: LAYER_KEYS[2],
+  os1: ONESHOT_KEYS[0], oneshot1: ONESHOT_KEYS[0], os2: ONESHOT_KEYS[1], oneshot2: ONESHOT_KEYS[1], os3: ONESHOT_KEYS[2], oneshot3: ONESHOT_KEYS[2],
+  tg1: TOGGLE_KEYS[0], toggle1: TOGGLE_KEYS[0], tg2: TOGGLE_KEYS[1], toggle2: TOGGLE_KEYS[1], tg3: TOGGLE_KEYS[2], toggle3: TOGGLE_KEYS[2],
 };
 
 /** A key's fill as a symbol (`Key.fill`: token name or one char). */
@@ -77,8 +99,8 @@ export function fitChars(chars: string, g: Geometry): string {
 
 /**
  * Where each layer's keys sit in a flat layered string (gecko-core `Geometry::layered`):
- * `slot[layer][key]` is an index into `[...chars]`, or null on the finger that holds that
- * layer's key. The base is keys 0..N; layer l follows, skipping the holding finger's keys.
+ * `slot[layer][key]` is an index into `[...chars]`, or null where the layer has no key (its
+ * layer key, and for a hold layer the holding finger). The base is keys 0..N; layer l follows.
  * A plain layout has one layer.
  */
 export function layerSlots(g: Geometry, chars: string): (number | null)[][] {
@@ -88,16 +110,16 @@ export function layerSlots(g: Geometry, chars: string): (number | null)[][] {
   if (a.length <= n) return [base];
   const out: (number | null)[][] = [base];
   let next = n;
-  for (const t of LAYER_KEYS) {
-    const h = a.slice(0, n).indexOf(t);
-    if (h < 0) break;
-    out.push(g.key.map((k) => (k.finger === g.key[h].finger ? null : next++)));
+  for (let l = 1; l <= LAYER_KEYS.length; l++) {
+    const lk = layerKey(a.slice(0, n), l);
+    if (!lk) break;
+    out.push(g.key.map((_, k) => (onLayer(g, lk, k) ? next++ : null)));
   }
   return next === a.length ? out : [base];
 }
 
 /** Layout as editable text: base rows, then each layer's rows after a blank line (`·` on the
- *  keys of the finger that holds the layer). */
+ *  keys the layer cannot use). */
 export function layoutText(g: Geometry, chars: string): string {
   const a = [...chars];
   return layerSlots(g, chars).map((slots) => rowsOf(slots.map((s) => (s === null ? EMPTY : a[s])).join(""), g).join("\n")).join("\n\n");
@@ -113,11 +135,11 @@ export function parseLayoutText(g: Geometry, text: string): { chars: string; err
   if (bad >= 0) return { chars: "", error: `${bad === 0 ? "base" : `layer ${bad}`} has ${blocks[bad].length} symbols, the board has ${n} keys` };
   let flat = blocks[0].join("");
   for (let l = 1; l < blocks.length; l++) {
-    const h = blocks[0].indexOf(LAYER_KEYS[l - 1]);
-    if (h < 0) return { chars: "", error: `layer ${l} needs a ${LAYER_KEYS[l - 1]} key on the base` };
+    const lk = layerKey(blocks[0], l);
+    if (!lk) return { chars: "", error: `layer ${l} needs a ${LAYER_KEYS[l - 1]} (or ${ONESHOT_KEYS[l - 1]}, ${TOGGLE_KEYS[l - 1]}) key on the base` };
     for (let k = 0; k < n; k++) {
-      if (g.key[k].finger !== g.key[h].finger) flat += blocks[l][k];
-      else if (blocks[l][k] !== EMPTY) return { chars: "", error: `layer ${l}: '${blocks[l][k]}' is on the finger that holds the layer` };
+      if (onLayer(g, lk, k)) flat += blocks[l][k];
+      else if (blocks[l][k] !== EMPTY) return { chars: "", error: `layer ${l}: '${blocks[l][k]}' is on a key the layer cannot use` };
     }
   }
   return { chars: flat, error: null };
@@ -154,7 +176,7 @@ export function scoredMetrics(ms: MetricValue[]): MetricValue[] {
 }
 
 /** Special-key token glyphs (gecko-core `layout::TOKENS`) and the empty-slot glyph. */
-export const TOKENS = "\u2423\u23CE\u232B\u21E5\u238B\u21E7\u2460\u2461\u2462";
+export const TOKENS = "\u2423\u23CE\u232B\u21E5\u238B\u21E7" + LAYER_KEYS.join("") + ONESHOT_KEYS.join("") + TOGGLE_KEYS.join("");
 export const EMPTY = "\u00B7";
 /** Shift (gecko-core `layout::SHIFT`); like the empty slot it may repeat (one per hand). */
 export const SHIFT = "\u21E7";

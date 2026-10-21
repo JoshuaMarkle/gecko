@@ -104,7 +104,7 @@ stats summing to 100% and makes reports easy to read.
 
 | ID | Metric | Dir | Pri | Definition |
 |---|---|---|---|---|
-| Y01 | Layer switch cost | − | P2 | Modifier press cost (hold vs one-shot) expanded into the n-grams. |
+| Y01 | Layer switch cost | − | P2 | Modifier press cost (hold, one-shot, toggle) expanded into the n-grams. Implemented. |
 | Y02 | Symbol n-grams | − | P2 | Code corpora bigrams such as `()`, `->`, `=>`, `!=`. |
 | Y03 | Paired symbol layout | − | P2 | Open/close pairs adjacent or mirrored. |
 | Y04 | Home-row-mod misfire risk | − | P3 | Fast same-hand rolls through mod keys. |

@@ -55,3 +55,18 @@ score 34.16 (Y01 11.0 %, Y02 25.0 %) → 27.972 (run `20261020-224013-sa-0d1258c
 which layer holds digits and which holds symbols: most digits end up on ① (left inner thumb), the
 code symbols on ② (right outer thumb). It converges in ~4 s; the top 5 differ in where a few
 rare symbols and digits sit.
+
+Layer modes 2026-10-21 (same setup, `--pin 'qwfpbjluy;arstgmneiozxcdvkh,./{esc}{space}{enter}{bspc}'`):
+
+| start layout | start | Y01 / Y02 start | best | Y01 / Y02 best | run |
+|---|---|---|---|---|---|
+| `corne-code` (hold, hold) | 34.160 | 11.0 / 25.0 | 27.971 | 9.8 / 22.9 | `20261021-063224-sa-d8fe64ac` |
+| `corne-code-numtoggle` (hold, toggle) | 34.583 | 11.8 / 25.0 | 28.809 | 11.5 / 23.2 | `20261021-063305-sa-61baea70` |
+| `corne-code-oneshot` (one-shot ×2) | 42.731 | 14.3 / 80.5 | 35.987 | 12.8 / 80.5 | `20261021-063245-sa-7e873956` |
+
+Hold wins on code: symbols come in runs (`()`, `->`, `!=`), which one-shot pays a tap for
+each, and Y02 counts every one-shot symbol pair as awkward (80 % is its floor once the base
+is pinned). SA does use the thumb keys one-shot frees (`"`, `<`, `3`, `:` land there), but
+that cannot make up for the extra taps. A toggled number layer costs a little: numbers in code are short runs,
+so the exit tap outweighs saved holds. One-shot should pay off only for layers typed one
+symbol at a time, which this corpus/profile doesn't reward.

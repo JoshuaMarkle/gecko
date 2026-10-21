@@ -23,7 +23,7 @@ pub mod store;
 
 pub use corpus::Corpus;
 pub use error::{Error, Result};
-pub use geometry::{Finger, Geometry, Hand, Key};
+pub use geometry::{Finger, Geometry, Hand, Key, LayerMode};
 pub use layout::Layout;
 pub use profile::Profile;
 pub use scorer::{Scorer, State};
