@@ -183,6 +183,11 @@ enum Cmd {
         #[command(subcommand)]
         cmd: CorpusCmd,
     },
+    /// Import layouts from other analyzers, export them back.
+    Layouts {
+        #[command(subcommand)]
+        cmd: LayoutsCmd,
+    },
     /// Profile calibration tools.
     Profile {
         #[command(subcommand)]
@@ -231,6 +236,39 @@ enum CorpusCmd {
         out: String,
         #[arg(long, default_value = "default")]
         charset: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum LayoutsCmd {
+    /// Convert an Oxeylyzer (.dof or v1 grid), genkey or cmini layout file to layout TOML.
+    /// Prints the TOML unless --out.
+    Import {
+        file: PathBuf,
+        /// oxeylyzer | genkey | cmini | auto (guess from the file).
+        #[arg(long, default_value = "auto")]
+        from: String,
+        /// Write data/layouts/<out>.toml.
+        #[arg(long)]
+        out: Option<String>,
+        /// Overwrite an existing data/layouts/<out>.toml.
+        #[arg(long)]
+        force: bool,
+        /// Layout name (default: the file's name field, else the file stem).
+        #[arg(long)]
+        name: Option<String>,
+        /// Target geometry (default: ansi-30 for staggered sources, ortho-30 for ortho).
+        #[arg(long, short)]
+        geometry: Option<String>,
+    },
+    /// Write a layout's 30 alpha keys as an Oxeylyzer .dof, genkey or cmini file (stdout).
+    Export {
+        layout: String,
+        /// oxeylyzer | genkey | cmini.
+        #[arg(long)]
+        to: String,
+        #[command(flatten)]
+        inputs: Inputs,
     },
 }
 
@@ -784,6 +822,57 @@ fn real_main(cli: Cli) -> Result<()> {
                 names.len()
             };
             write_corpus(&ctx, &c, files)?;
+        }
+        Cmd::Layouts { cmd: LayoutsCmd::Import { file, from, out, force, name, geometry } } => {
+            use gecko_core::import::{import, Format};
+            let text = std::fs::read_to_string(&file).with_context(|| format!("reading {}", file.display()))?;
+            let stem = file.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+            let mut imp = import(Format::parse(&from)?, &text, &stem)?;
+            if let Some(n) = name {
+                imp.name = n;
+            }
+            let lf = imp.to_file(geometry.as_deref());
+            // The layout must load on its geometry (fills added on boards with thumb keys).
+            let g = ctx.store.geometry(&lf.geometry)?;
+            Layout::from_rows(&lf.name, &lf.geometry, &lf.source, &lf.rows)?.fit(&g)?.check_geometry(&g)?;
+            for w in &imp.warnings {
+                eprintln!("warning: {w}");
+            }
+            let toml_text = toml::to_string(&lf)?;
+            let path = match &out {
+                Some(o) => {
+                    if o.is_empty() || o.contains(['/', '\\']) || o.starts_with('.') {
+                        bail!("--out takes a layout name, not a path: '{o}'");
+                    }
+                    let p = ctx.store.data.join("layouts").join(format!("{o}.toml"));
+                    if p.exists() && !force {
+                        bail!("{} exists (use --force to overwrite)", p.display());
+                    }
+                    std::fs::write(&p, &toml_text).with_context(|| format!("writing {}", p.display()))?;
+                    Some(p)
+                }
+                None => None,
+            };
+            if ctx.json {
+                ctx.print(json!({"schema": SCHEMA, "name": lf.name, "geometry": lf.geometry, "source": lf.source,
+                    "rows": lf.rows, "warnings": imp.warnings, "path": path.map(|p| p.display().to_string())}));
+            } else if let Some(p) = path {
+                println!("wrote {}", p.display());
+            } else {
+                print!("{toml_text}");
+            }
+        }
+        Cmd::Layouts { cmd: LayoutsCmd::Export { layout, to, inputs } } => {
+            use gecko_core::import::{export, Format};
+            let f = Format::parse(&to)?;
+            let g = ctx.store.geometry(inputs.geometry.as_deref().unwrap_or(&ctx.store.defaults.geometry))?;
+            let lay = ctx.store.layout(&layout, &g.name)?.fit(&g)?;
+            let text = export(f, &lay, &g)?;
+            if ctx.json {
+                ctx.print(json!({"schema": SCHEMA, "format": f.name(), "layout": lay.name, "text": text}));
+            } else {
+                print!("{}", if text.ends_with('\n') { text } else { text + "\n" });
+            }
         }
         Cmd::Profile { cmd: ProfileCmd::Normalize { layouts, out, inputs } } => {
             let l = ctx.load(&inputs)?;
