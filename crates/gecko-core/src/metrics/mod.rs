@@ -55,7 +55,7 @@ const fn m(id: &'static str, name: &'static str, unit: &'static str, order: Orde
 /// Every metric GECKO knows, in report order.
 pub static METRICS: &[MetricDef] = &[
     m("B01", "SFB", "%", Order::Bi, Dir::Min, "Same-finger bigrams: consecutive keys on one finger (different keys)."),
-    m("S01", "SFS", "%", Order::Skip, Dir::Min, "Same-finger skipgrams: keys 1 and 3 of a trigram on one finger."),
+    m("S01", "SFS", "%", Order::Skip, Dir::Min, "Same-finger skipgrams: two keys on one finger with any one symbol between (space too)."),
     m(
         "B03",
         "Finger speed",
