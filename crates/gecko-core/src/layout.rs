@@ -22,6 +22,10 @@ pub const TAB: char = '\u{21E5}'; // ⇥
 pub const ESC: char = '\u{238B}'; // ⎋
 /// A slot with no symbol (zero frequency). Not unique: a layout may have several.
 pub const EMPTY: char = '\u{00B7}'; // ·
+/// Shift (`⇧`): a base key held for uppercase and shifted symbols. Fixed like layer keys; a
+/// layout may have several (the scorer uses the best one per symbol). Without one, Shift
+/// costs nothing.
+pub const SHIFT: char = '\u{21E7}'; // ⇧
 /// Base-layer keys that hold layers 1, 2, 3 (`①②③`). Never moved by the optimizer.
 pub const LAYER_KEYS: [char; 3] = ['\u{2460}', '\u{2461}', '\u{2462}'];
 
@@ -33,6 +37,7 @@ pub const TOKENS: &[(char, &[&str])] = &[
     (TAB, &["tab"]),
     (ESC, &["esc", "escape"]),
     (EMPTY, &["none", "empty", "_"]),
+    (SHIFT, &["shift", "sft"]),
     (LAYER_KEYS[0], &["layer1", "l1"]),
     (LAYER_KEYS[1], &["layer2", "l2"]),
     (LAYER_KEYS[2], &["layer3", "l3"]),
@@ -40,6 +45,11 @@ pub const TOKENS: &[(char, &[&str])] = &[
 
 pub fn is_layer_key(c: char) -> bool {
     LAYER_KEYS.contains(&c)
+}
+
+/// Keys the optimizer never moves: layer keys and Shift.
+pub fn is_fixed_key(c: char) -> bool {
+    is_layer_key(c) || c == SHIFT
 }
 
 /// Glyph for a token name (case-insensitive), e.g. `space` → `␣`.
@@ -206,9 +216,13 @@ impl Layout {
         Ok((vg, flat))
     }
 
+    /// Symbols are unique except `·` and `⇧`; `⇧` sits on the base only.
     fn check_unique(&self) -> Result<()> {
+        if self.layers.iter().any(|l| l.chars.contains(&SHIFT)) {
+            return Err(Error::invalid("layout", format!("'{}': Shift (⇧) belongs on the base layer", self.name)));
+        }
         let mut seen = std::collections::BTreeSet::new();
-        for &c in self.chars.iter().chain(self.layers.iter().flat_map(|l| l.chars.iter())).filter(|&&c| c != EMPTY) {
+        for &c in self.chars.iter().chain(self.layers.iter().flat_map(|l| l.chars.iter())).filter(|&&c| c != EMPTY && c != SHIFT) {
             if !seen.insert(c) {
                 return Err(Error::invalid("layout", format!("'{}': symbol '{c}' appears twice", self.name)));
             }
@@ -325,7 +339,8 @@ mod tests {
     fn tokens_and_empty_slots() {
         let l = Layout::from_str_flat("x", "g", "ab {space}{Enter} {none}{_}·").unwrap();
         assert_eq!(l.chars, vec!['a', 'b', SPACE, ENTER, EMPTY, EMPTY, EMPTY]);
-        assert!(Layout::from_str_flat("x", "g", "a{shift}").is_err());
+        assert!(Layout::from_str_flat("x", "g", "a{hyper}").is_err());
+        assert_eq!(Layout::from_str_flat("x", "g", "a{shift}{sft}").unwrap().chars, vec!['a', SHIFT, SHIFT]);
         assert_eq!(parse_symbols("{}{(}{l1}").unwrap(), vec!['{', '}', '{', '(', '}', LAYER_KEYS[0]]);
         assert_eq!(token_name(BACKSPACE), Some("bspc"));
     }

@@ -6,6 +6,10 @@
 //! `fk` is gap-1 skipgrams; `fkf` mixes gap-2 and gap-3 skipgrams with `sfb.skip_decay`;
 //! `fy` is bigrams of two code symbols (Y02), with its own cost table `Cy`.
 //!
+//! Shift (layout has `⇧` keys, corpus has case counts): `+ Σ fsh[y]·Csh[p(y)]` (presses
+//! before y, per keystroke: the Shift key's effort in M01 and one press in Y01) `+ Σ fsb[x,y]·
+//! Csb[p(x),p(y)]` (presses right after x: Y01's same-finger-into-Shift extra).
+//!
 //! A layered layout is scored on its virtual geometry (`Geometry::layered`): one slot per
 //! (layer, key), so layers cost nothing extra in the hot loop beyond the larger N.
 //!
@@ -39,6 +43,18 @@ pub struct Scorer {
     ckf: Vec<f32>,
     cy: Vec<f32>,
     c3: Vec<f32>,
+    /// Shift presses before symbol y / between x and y, per keystroke (zero without Shift).
+    fsh: Vec<f32>,
+    fsb: Vec<f32>,
+    csh: Vec<f32>,
+    csb: Vec<f32>,
+    /// Unfolded Shift tables (reports): M01 and Y01 per press before slot j, Y01 per (i, j).
+    shift_effort: Vec<f32>,
+    shift_press: Vec<f32>,
+    shift_pair: Vec<f32>,
+    /// The Shift channels are in use: `fsh`/`csh` (mono), `fsb`/`csb` (pair).
+    has_shift: bool,
+    has_shift_pair: bool,
     /// Any bigram, skipgram or far-skipgram cost is non-zero.
     has_pair: bool,
     /// The far-skipgram channel is in use (skipped otherwise; it costs ~12% of delta speed).
@@ -133,6 +149,20 @@ impl Scorer {
         // as "% of skipgram volume, decayed" relative to S01.
         let decay = profile.sfb.skip_decay;
         let fkf: Vec<f32> = fk2.iter().zip(&fk3).map(|(a, b)| decay * a + decay * decay * b).collect();
+        let shift_keys: Vec<usize> = (0..n).filter(|&i| chars[i] == crate::layout::SHIFT).collect();
+        let (mut fsh, mut fsb) = (vec![0f32; n], vec![0f32; n * n]);
+        let mono_total: f64 = (0..n).filter_map(|x| cidx[x]).map(|cx| corpus.mono[cx] as f64).sum();
+        if !shift_keys.is_empty() && mono_total > 0.0 {
+            for x in 0..n {
+                let Some(cx) = cidx[x] else { continue };
+                fsh[x] = (corpus.shift[cx] as f64 / mono_total) as f32;
+                for y in 0..n {
+                    let Some(cy) = cidx[y] else { continue };
+                    fsb[x * n + y] = (corpus.shift_bi[cx * cs + cy] as f64 / mono_total) as f32;
+                }
+            }
+        }
+        let (shift_effort, shift_press, shift_pair) = shift_tables(geometry, &shift_keys);
         truncate_coverage(&mut f3, profile.trigram_coverage as f64);
         norm(&mut f3);
 
@@ -144,6 +174,12 @@ impl Scorer {
         let mut cy = vec![0f32; n * n];
         let mut c3 = vec![0f32; n * n * n];
         let (mut has_pair, mut has_far, mut has_sym, mut has_tri) = (false, false, false, false);
+        let has_shift = fsh.iter().any(|&f| f > 0.0);
+        let w_of = |id: &str| if has_shift { profile.effective_weight(id) } else { 0.0 };
+        let (w_effort, w_y01) = (w_of("M01"), w_of("Y01"));
+        let csh: Vec<f32> = shift_effort.iter().zip(&shift_press).map(|(e, p)| w_effort * e + w_y01 * p).collect();
+        let csb: Vec<f32> = shift_pair.iter().map(|p| w_y01 * p).collect();
+        let has_shift_pair = has_shift && csb.iter().any(|&c| c != 0.0) && fsb.iter().any(|&f| f > 0.0);
         let (mut w_load, mut w_hand) = (0.0, 0.0);
         for (d, t) in METRICS.iter().zip(&tables) {
             let w = profile.effective_weight(d.id);
@@ -234,6 +270,15 @@ impl Scorer {
             ckf,
             cy,
             c3,
+            fsh,
+            fsb,
+            csh,
+            csb,
+            shift_effort,
+            shift_press,
+            shift_pair,
+            has_shift,
+            has_shift_pair,
             has_pair,
             has_far,
             has_sym,
@@ -328,6 +373,18 @@ impl Scorer {
         for x in 0..n {
             sum += self.f1[x] as f64 * self.c1[pos[x] as usize] as f64;
         }
+        if self.has_shift {
+            for x in 0..n {
+                sum += self.fsh[x] as f64 * self.csh[pos[x] as usize] as f64;
+            }
+        }
+        if self.has_shift_pair {
+            for x in 0..n {
+                for y in 0..n {
+                    sum += self.fsb[x * n + y] as f64 * self.csb[pos[x] as usize * n + pos[y] as usize] as f64;
+                }
+            }
+        }
         if self.has_pair {
             for x in 0..n {
                 let px = pos[x] as usize * n;
@@ -368,13 +425,21 @@ impl Scorer {
 
         let (c1, f1) = (&self.c1, &self.f1);
         let mut d = (f1[a] * (c1[pb] - c1[pa]) + f1[b] * (c1[pa] - c1[pb])) as f64;
+        if self.has_shift {
+            let (csh, fsh) = (&self.csh, &self.fsh);
+            d += (fsh[a] * (csh[pb] - csh[pa]) + fsh[b] * (csh[pa] - csh[pb])) as f64;
+        }
 
-        if self.has_pair {
-            d += match (self.has_far, self.has_sym) {
-                (false, false) => self.pair_delta::<false, false>(old, new, a, b),
-                (true, false) => self.pair_delta::<true, false>(old, new, a, b),
-                (false, true) => self.pair_delta::<false, true>(old, new, a, b),
-                (true, true) => self.pair_delta::<true, true>(old, new, a, b),
+        if self.has_pair || self.has_shift_pair {
+            d += match (self.has_far, self.has_sym, self.has_shift_pair) {
+                (false, false, false) => self.pair_delta::<false, false, false>(old, new, a, b),
+                (true, false, false) => self.pair_delta::<true, false, false>(old, new, a, b),
+                (false, true, false) => self.pair_delta::<false, true, false>(old, new, a, b),
+                (true, true, false) => self.pair_delta::<true, true, false>(old, new, a, b),
+                (false, false, true) => self.pair_delta::<false, false, true>(old, new, a, b),
+                (true, false, true) => self.pair_delta::<true, false, true>(old, new, a, b),
+                (false, true, true) => self.pair_delta::<false, true, true>(old, new, a, b),
+                (true, true, true) => self.pair_delta::<true, true, true>(old, new, a, b),
             };
         }
 
@@ -410,13 +475,13 @@ impl Scorer {
         d
     }
 
-    /// Bigram + skipgram (+ far skipgram if `FAR`, + symbol bigram if `SYM`) part of a swap
-    /// delta; `old`/`new` are `pos` before/after.
+    /// Bigram + skipgram (+ far skipgram if `FAR`, + symbol bigram if `SYM`, + Shift pair if
+    /// `SHIFT`) part of a swap delta; `old`/`new` are `pos` before/after.
     #[inline]
-    fn pair_delta<const FAR: bool, const SYM: bool>(&self, old: &[u8], new: &[u8], a: usize, b: usize) -> f64 {
+    fn pair_delta<const FAR: bool, const SYM: bool, const SHIFT: bool>(&self, old: &[u8], new: &[u8], a: usize, b: usize) -> f64 {
         let n = self.n;
         let (c2, ck, ckf, f2, fk, fkf) = (&self.c2, &self.ck, &self.ckf, &self.f2, &self.fk, &self.fkf);
-        let (cy, fy) = (&self.cy, &self.fy);
+        let (cy, fy, csb, fsb) = (&self.cy, &self.fy, &self.csb, &self.fsb);
         // Change in the pair channels for frequency index `xy` moving from slot pair `o` to `nw`.
         let term = |xy: usize, o: usize, nw: usize| {
             let mut t = f2[xy] * (c2[nw] - c2[o]) + fk[xy] * (ck[nw] - ck[o]);
@@ -425,6 +490,9 @@ impl Scorer {
             }
             if SYM {
                 t += fy[xy] * (cy[nw] - cy[o]);
+            }
+            if SHIFT {
+                t += fsb[xy] * (csb[nw] - csb[o]);
             }
             t
         };
@@ -487,12 +555,59 @@ impl Scorer {
     pub fn f3(&self) -> &[f32] {
         &self.f3
     }
+    /// Unweighted Shift part of metric `id` (M01, Y01; 0 otherwise or without Shift).
+    pub fn shift_value(&self, id: &str, st: &State) -> f64 {
+        if !self.has_shift {
+            return 0.0;
+        }
+        let (n, pos) = (self.n, &st.pos);
+        let mono = |t: &[f32]| (0..n).map(|y| self.fsh[y] as f64 * t[pos[y] as usize] as f64).sum::<f64>();
+        match id {
+            "M01" => mono(&self.shift_effort),
+            "Y01" => {
+                let mut v = mono(&self.shift_press);
+                for x in 0..n {
+                    for y in 0..n {
+                        v += self.fsb[x * n + y] as f64 * self.shift_pair[pos[x] as usize * n + pos[y] as usize] as f64;
+                    }
+                }
+                v
+            }
+            _ => 0.0,
+        }
+    }
     pub fn target(&self) -> &[f64; FINGERS] {
         &self.target
     }
     pub fn finger_of_slot(&self, slot: usize) -> usize {
         self.finger[slot] as usize
     }
+}
+
+/// Unfolded Shift cost tables for the `⇧` slots `keys` (all zero without one): the Shift key
+/// that types slot j is the best of `keys` by (on j's finger, on j's hand, effort, index).
+/// Per press before slot j: that key's effort (M01) and Y01 = 100, 200 when it is on j's finger
+/// (held while j presses). Per press between slots i and j: Y01 + 100 when i is a different key
+/// on that Shift key's finger (same finger into Shift).
+fn shift_tables(g: &Geometry, keys: &[usize]) -> (Vec<f32>, Vec<f32>, Vec<f32>) {
+    let n = g.len();
+    let (mut effort, mut press, mut pair) = (vec![0f32; n], vec![0f32; n], vec![0f32; n * n]);
+    if keys.is_empty() {
+        return (effort, press, pair);
+    }
+    let k = &g.key;
+    for j in 0..n {
+        let rank = |s: usize| (k[s].finger == k[j].finger, k[s].hand() == k[j].hand());
+        let s = keys.iter().copied().min_by(|&a, &b| rank(a).cmp(&rank(b)).then(k[a].effort.total_cmp(&k[b].effort))).unwrap();
+        effort[j] = k[s].effort;
+        press[j] = if k[s].finger == k[j].finger { 200.0 } else { 100.0 };
+        for i in 0..n {
+            if k[i].finger == k[s].finger && g.phys(i) != s {
+                pair[i * n + j] = 100.0;
+            }
+        }
+    }
+    (effort, press, pair)
 }
 
 /// Zero the least frequent entries so the rest cover `coverage` of the total.
