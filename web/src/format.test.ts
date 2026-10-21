@@ -28,6 +28,7 @@ describe("format", () => {
     expect(checkLayout("ab", 3, "abc")).toMatch(/2 symbols/);
     expect(checkLayout("abz", 3, "abc")).toMatch(/charset/);
     expect(checkLayout("a\u00B7\u00B7\u23CE", 4, "abc")).toBeNull();
+    expect(checkLayout("a\u21E7b\u21E7", 4, "abc")).toBeNull();
   });
   it("fits thumb fills and maps layer slots", () => {
     const k = (finger: Key["finger"], fill?: string): Key => ({ ...key(0), finger, fill });

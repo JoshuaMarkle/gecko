@@ -34,8 +34,9 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 - `locked: u64` bitmask (u128 or bitset once N > 64).
 - Symbols are chars. Special keys are tokens with reserved glyphs so each slot stays one char
   in strings/JSON/UI: `␣` space, `⏎` enter, `⌫` bspc, `⇥` tab, `⎋` esc, and `·` = empty slot
-  (zero frequency, may repeat, unpinned unless `--pin '{none}'`). Text input (layout rows,
-  `raw:`, `--pin`) also takes `{space}`, `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `{none}`.
+  (zero frequency, may repeat, unpinned unless `--pin '{none}'`), `⇧` Shift (base layer only,
+  may repeat, never moves). Text input (layout rows, `raw:`, `--pin`) also takes `{space}`,
+  `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `{none}`, `{shift}`.
   The scorer gives repeated `·` distinct symbol ids.
 - Text format: rows of symbols matching the geometry's rows (`data/layouts/*.toml`), e.g.
   ```
@@ -62,9 +63,16 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 - Tables (f32, normalized to sum 1 each): mono `[S]`, bi `[S×S]`, skip (gap 1), skip2, skip3
   `[S×S]`, tri `[S×S×S]` (dense up to S=64 = 1 MB; switch to top-K sparse beyond).
 - `data/corpora/<name>.gkc`: magic `GKCORP2`, name, charset, u64 counts for mono, bi, skip,
-  skip2, skip3, tri. `GKCORP1` files (no skip2/skip3) still load with those tables zero.
-  Mixes are weighted sums of normalized tables.
-- Tokenization: lowercase; curly quotes → `'`, dashes → `-`; whitespace runs → one space
+  skip2, skip3, tri. `GKCORP3` (written only when the corpus has case counts, so other files
+  keep their bytes and hash) appends `shift [S]` (Shift presses before symbol y: starts of runs
+  of shifted symbols, hold model) and `shift_bi [S×S]` (the presses right after symbol x).
+  `GKCORP1` files (no skip2/skip3) and `GKCORP2` (no Shift) still load with those tables zero.
+  Mixes are weighted sums of normalized tables; Shift counts scale with mono, so presses per
+  keystroke survive.
+- Tokenization: lowercase, an uppercase letter counting as shifted; a character outside the
+  charset whose US-QWERTY unshifted key is in it is that key, shifted (`:` → `;`, `"` → `'`,
+  `?` → `/`, `!` → `1`, …; with `--charset code` they are their own symbols); curly quotes →
+  `'`, dashes → `-`; whitespace runs → one space
   token, the symbol `␣` when the charset has it (else it breaks n-grams); other characters
   break n-grams. Word imports count each word as `␣word` plus the exact `x␣`, `yx␣` that
   follow it; only `x␣z` trigrams and cross-word skipgrams are estimated (independent words). Bigrams/trigrams count only charset runs; skip-g counts
@@ -89,7 +97,9 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 
   cmini data from https://github.com/Apsu/cmini (GPL-3.0; only aggregated counts are
   committed). Word lists weight every word once, as a Monkeytype test samples them.
-- Uppercase folded; Shift not modeled yet.
+- Shift: case counts need a rebuild with the current tokenizer; the bundled corpora predate
+  them (`GKCORP2`), so Shift costs nothing on them until rebuilt (their raw sources are not
+  committed). cmini word lists are lowercase.
 - `code` corpus (`--charset code`: default + digits, all ASCII punctuation, `⏎`; 70 symbols):
   1:1:1 `gecko corpus mix` of Rust (serde, serde_json, regex-syntax, tokio, axum, clap_builder,
   hyper, rand, proptest from the cargo registry; 7.8M chars), Python 3.14 stdlib top-level

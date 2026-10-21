@@ -1,12 +1,18 @@
 //! Text → n-gram count tables over a fixed charset. Binary cache format with header + hash.
 //!
-//! Tokenization: lowercase; whitespace collapses to one space token, which is the charset
+//! Tokenization: lowercase (an uppercase letter is its lowercase symbol typed with Shift);
+//! a character outside the charset whose US-QWERTY unshifted key is in it (`:` → `;`, `!` →
+//! `1`, …) is that key with Shift; whitespace collapses to one space token, which is the charset
 //! symbol `␣` (`layout::SPACE`) when the charset has it; characters outside the charset are
 //! "other" tokens. With `⏎` (`layout::ENTER`) in the charset, a newline is that symbol and
 //! the indentation after it is dropped (editors indent), as are spaces before it; `\r` is
 //! ignored. Bigrams and trigrams count only runs of charset symbols;
 //! skipgrams with gap g (x, g tokens, z; g = 1..3) count when x and z are charset symbols,
 //! whatever sits between.
+//!
+//! Shift (hold model): `shift[y]` counts Shift presses before symbol y, one per run of shifted
+//! symbols; `shift_bi[x, y]` the subset typed right after symbol x (unshifted). Files store them
+//! only when non-zero (`GKCORP3`), so corpora without case counts keep their bytes and hash.
 //!
 //! Word-frequency imports (`add_word` + `add_word_boundaries`) count every n-gram inside a word
 //! exactly, including those with the space before or after it; letter n-grams never span
@@ -30,6 +36,7 @@ pub fn charset_named(s: &str) -> &str {
         _ => s,
     }
 }
+const MAGIC_V3: &[u8; 8] = b"GKCORP3\0";
 const MAGIC: &[u8; 8] = b"GKCORP2\0";
 const MAGIC_V1: &[u8; 8] = b"GKCORP1\0";
 /// Word imports scale skipgram counts so cross-word estimates (fractions) survive rounding.
@@ -49,7 +56,36 @@ pub struct Corpus {
     /// Gap 3 (x _ _ _ z).
     pub skip3: Vec<u64>,
     pub tri: Vec<u64>,
+    /// Shift presses before symbol y (start of a run of shifted symbols).
+    pub shift: Vec<u64>,
+    /// Shift presses between symbols x and y (`x` unshifted, `y` starts a shifted run).
+    pub shift_bi: Vec<u64>,
 }
+
+/// US-QWERTY shifted characters and the key they are typed on.
+const US_SHIFT: &[(char, char)] = &[
+    ('!', '1'),
+    ('@', '2'),
+    ('#', '3'),
+    ('$', '4'),
+    ('%', '5'),
+    ('^', '6'),
+    ('&', '7'),
+    ('*', '8'),
+    ('(', '9'),
+    (')', '0'),
+    ('_', '-'),
+    ('+', '='),
+    ('{', '['),
+    ('}', ']'),
+    ('|', '\\'),
+    (':', ';'),
+    ('"', '\''),
+    ('<', ','),
+    ('>', '.'),
+    ('?', '/'),
+    ('~', '`'),
+];
 
 const SPACE: u8 = 254;
 const OTHER: u8 = 255;
@@ -85,6 +121,8 @@ impl Corpus {
             skip2: vec![0; c * c],
             skip3: vec![0; c * c],
             tri: vec![0; c * c * c],
+            shift: vec![0; c],
+            shift_bi: vec![0; c * c],
         }
     }
 
@@ -101,8 +139,9 @@ impl Corpus {
         self.index_of(SPACE_SYM).map_or(SPACE, |i| i as u8)
     }
 
-    /// Text → tokens (charset index, `SPACE` or `OTHER`), with whitespace runs collapsed.
-    fn tokens(&self, text: &str) -> Vec<u8> {
+    /// Text → tokens (charset index, `SPACE` or `OTHER`), with whitespace runs collapsed, and
+    /// whether each token is typed with Shift.
+    fn tokens(&self, text: &str) -> (Vec<u8>, Vec<bool>) {
         let space = self.space_token();
         let enter = self.index_of(ENTER_SYM).map(|i| i as u8);
         let mut lut = [OTHER; 128];
@@ -111,7 +150,14 @@ impl Corpus {
                 lut[ch as usize] = i as u8;
             }
         }
+        let mut shifted_lut = [OTHER; 128];
+        for &(s, base) in US_SHIFT {
+            if lut[s as usize] == OTHER {
+                shifted_lut[s as usize] = lut[base as usize];
+            }
+        }
         let mut out = Vec::with_capacity(text.len());
+        let mut shift = Vec::with_capacity(text.len());
         let mut line_start = false;
         for raw in text.chars() {
             if let Some(e) = enter {
@@ -121,8 +167,10 @@ impl Corpus {
                 if raw == '\n' {
                     if out.last() == Some(&space) {
                         out.pop();
+                        shift.pop();
                     }
                     out.push(e);
+                    shift.push(false);
                     line_start = true;
                     continue;
                 }
@@ -134,30 +182,44 @@ impl Corpus {
             let ch = match raw {
                 '\u{2018}' | '\u{2019}' => '\'',
                 '\u{2013}' | '\u{2014}' => '-',
-                _ => raw.to_ascii_lowercase(),
+                _ => raw,
             };
-            let t = if ch.is_whitespace() {
-                space
+            let (t, sh) = if ch.is_whitespace() {
+                (space, false)
             } else if (ch as u32) < 128 {
-                lut[ch as usize]
+                let lower = lut[ch.to_ascii_lowercase() as usize];
+                if ch.is_ascii_uppercase() || lower != OTHER {
+                    (lower, ch.is_ascii_uppercase() && lower != OTHER)
+                } else {
+                    let s = shifted_lut[ch as usize];
+                    (s, s != OTHER)
+                }
             } else {
-                OTHER
+                (OTHER, false)
             };
             if t == space && out.last() == Some(&space) {
                 continue;
             }
             out.push(t);
+            shift.push(sh);
         }
-        out
+        (out, shift)
     }
 
-    /// Add every n-gram of a token sequence `w` times (skipgrams `skip_w` times).
-    fn count(&mut self, t: &[u8], w: u64, skip_w: u64) {
+    /// Add every n-gram of a token sequence `w` times (skipgrams `skip_w` times); `sh` marks
+    /// shifted tokens.
+    fn count(&mut self, t: &[u8], sh: &[bool], w: u64, skip_w: u64) {
         let c = self.size();
         let sym = |i: usize| -> Option<usize> { t.get(i).map(|&x| x as usize).filter(|&x| x < c) };
         for i in 0..t.len() {
             let Some(x) = sym(i) else { continue };
             self.mono[x] += w;
+            if sh[i] && (i == 0 || !sh[i - 1]) {
+                self.shift[x] += w;
+                if let Some(p) = i.checked_sub(1).and_then(sym) {
+                    self.shift_bi[p * c + x] += w;
+                }
+            }
             if let Some(y) = sym(i + 1) {
                 self.bi[x * c + y] += w;
                 if let Some(z) = sym(i + 2) {
@@ -174,8 +236,8 @@ impl Corpus {
 
     /// Count n-grams of `text` into this corpus.
     pub fn add_text(&mut self, text: &str) {
-        let t = self.tokens(strip_gutenberg(text));
-        self.count(&t, 1, 1);
+        let (t, sh) = self.tokens(strip_gutenberg(text));
+        self.count(&t, &sh, 1, 1);
     }
 
     pub fn word_edges(&self) -> WordEdges {
@@ -188,12 +250,14 @@ impl Corpus {
     /// (`x ␣`, `y x ␣`), which every word has whatever follows.
     pub fn add_word(&mut self, word: &str, count: u64, edges: &mut WordEdges) {
         let space = self.space_token();
-        let mut t = vec![space];
-        t.extend(self.tokens(word.trim()));
+        let (w, wsh) = self.tokens(word.trim());
+        let (mut t, mut sh) = (vec![space], vec![false]);
+        t.extend(w);
+        sh.extend(wsh);
         if t.len() < 2 {
             return;
         }
-        self.count(&t, count, count * SKIP_SCALE as u64);
+        self.count(&t, &sh, count, count * SKIP_SCALE as u64);
         let c = self.size();
         let sym = |i: usize| t.get(i).map(|&x| x as usize).filter(|&x| x < c);
         let n = t.len();
@@ -219,9 +283,10 @@ impl Corpus {
 
     /// Add one precomputed 1-, 2- or 3-gram (no spaces) that occurs `count` times. Without word
     /// counts, skip-1 comes from the trigrams' outer symbols (inside words only) and skip-2/3
-    /// stay empty; prefer `add_word` when the source has word frequencies.
+    /// stay empty; prefer `add_word` when the source has word frequencies. Shift: a shifted
+    /// 1-gram counts one press, a 2-gram `x Y` a press after x.
     pub fn add_ngram(&mut self, gram: &str, count: u64) {
-        let t = self.tokens(gram);
+        let (t, sh) = self.tokens(gram);
         let c = self.size();
         if t.iter().any(|&x| x as usize >= c) {
             // Mirrors text: a non-charset symbol breaks the n-gram, but a trigram's ends still form a skipgram.
@@ -233,8 +298,18 @@ impl Corpus {
             return;
         }
         match t[..] {
-            [x] => self.mono[x as usize] += count,
-            [x, y] => self.bi[x as usize * c + y as usize] += count,
+            [x] => {
+                self.mono[x as usize] += count;
+                if sh[0] {
+                    self.shift[x as usize] += count;
+                }
+            }
+            [x, y] => {
+                self.bi[x as usize * c + y as usize] += count;
+                if sh[1] && !sh[0] {
+                    self.shift_bi[x as usize * c + y as usize] += count;
+                }
+            }
             [x, y, z] => {
                 self.tri[(x as usize * c + y as usize) * c + z as usize] += count;
                 self.skip[x as usize * c + z as usize] += count;
@@ -278,16 +353,23 @@ impl Corpus {
         self.mono.iter().sum()
     }
 
+    /// The corpus has Shift counts (written as `GKCORP3`).
+    pub fn has_shift(&self) -> bool {
+        self.shift.iter().any(|&v| v > 0)
+    }
+
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut out = Vec::new();
-        out.extend_from_slice(MAGIC);
+        let v3 = self.has_shift();
+        out.extend_from_slice(if v3 { MAGIC_V3 } else { MAGIC });
         let name = self.name.as_bytes();
         let cs: String = self.charset.iter().collect();
         for s in [name, cs.as_bytes()] {
             out.extend_from_slice(&(s.len() as u32).to_le_bytes());
             out.extend_from_slice(s);
         }
-        for t in [&self.mono, &self.bi, &self.skip, &self.skip2, &self.skip3, &self.tri] {
+        let shift = if v3 { [&self.shift, &self.shift_bi] } else { [&vec![], &vec![]] };
+        for t in [&self.mono, &self.bi, &self.skip, &self.skip2, &self.skip3, &self.tri].into_iter().chain(shift) {
             for &v in t.iter() {
                 out.extend_from_slice(&v.to_le_bytes());
             }
@@ -297,8 +379,9 @@ impl Corpus {
 
     pub fn from_bytes(b: &[u8]) -> Result<Self> {
         let bad = || Error::parse("corpus", "truncated or corrupt corpus file");
-        let v1 = b.len() >= 8 && &b[..8] == MAGIC_V1;
-        if b.len() < 8 || (&b[..8] != MAGIC && !v1) {
+        let magic = b.get(..8).unwrap_or_default();
+        let (v1, v3) = (magic == MAGIC_V1, magic == MAGIC_V3);
+        if magic != MAGIC && !v1 && !v3 {
             return Err(Error::parse("corpus", "not a GECKO corpus file (bad magic)"));
         }
         let mut i = 8;
@@ -312,9 +395,11 @@ impl Corpus {
         let name = take_str(&mut i)?;
         let cs = take_str(&mut i)?;
         let mut c = Corpus::new(&name, &cs);
-        // GKCORP1 has no skip2/skip3; they stay zero.
+        // GKCORP1 has no skip2/skip3; before GKCORP3 no Shift counts. Missing tables stay zero.
         let tables = if v1 {
             vec![&mut c.mono, &mut c.bi, &mut c.skip, &mut c.tri]
+        } else if v3 {
+            vec![&mut c.mono, &mut c.bi, &mut c.skip, &mut c.skip2, &mut c.skip3, &mut c.tri, &mut c.shift, &mut c.shift_bi]
         } else {
             vec![&mut c.mono, &mut c.bi, &mut c.skip, &mut c.skip2, &mut c.skip3, &mut c.tri]
         };
@@ -331,7 +416,8 @@ impl Corpus {
         hash::fnv1a(&self.to_bytes())
     }
 
-    /// Weighted mix of corpora with the same charset (each normalized first).
+    /// Weighted mix of corpora with the same charset (each normalized first; Shift counts
+    /// scale with mono, so presses per keystroke are kept).
     pub fn mix(name: &str, parts: &[(&Corpus, f64)]) -> Result<Self> {
         let first = parts.first().ok_or_else(|| Error::invalid("corpus mix", "empty"))?.0;
         let cs: String = first.charset.iter().collect();
@@ -352,6 +438,12 @@ impl Corpus {
                 let tot: u64 = src.iter().sum::<u64>().max(1);
                 for (d, &s) in dst.iter_mut().zip(src.iter()) {
                     *d += (s as f64 / tot as f64 * w * SCALE) as u64;
+                }
+            }
+            let tot = c.mono.iter().sum::<u64>().max(1) as f64;
+            for (dst, src) in [(&mut out.shift, &c.shift), (&mut out.shift_bi, &c.shift_bi)] {
+                for (d, &s) in dst.iter_mut().zip(src.iter()) {
+                    *d += (s as f64 / tot * w * SCALE) as u64;
                 }
             }
         }
@@ -403,6 +495,31 @@ mod tests {
         assert_eq!(back.skip, c.skip);
         assert_eq!(back.tri, c.tri);
         assert!(back.skip2.iter().all(|&v| v == 0));
+    }
+
+    #[test]
+    fn shift_counts_runs_and_round_trips() {
+        let mut c = Corpus::new("t", "ab;\u{2423}");
+        // tokens: A b ␣ B A ␣ a : b — runs start at A, B (after ␣) and : (folded onto ;).
+        c.add_text("Ab BA a: b");
+        assert_eq!(c.mono, vec![3, 3, 1, 3]);
+        assert_eq!(c.shift, vec![1, 1, 1, 0]);
+        assert_eq!(c.shift_bi[3 * 4 + 1], 1); // ␣ B
+        assert_eq!(c.shift_bi[0 * 4 + 2], 1); // a :
+        assert_eq!(c.shift_bi.iter().sum::<u64>(), 2);
+        assert_eq!(c.bi[0 * 4 + 2], 1); // a; (the ':' key)
+        let b = c.to_bytes();
+        assert_eq!(&b[..8], MAGIC_V3);
+        let back = Corpus::from_bytes(&b).unwrap();
+        assert_eq!((back.shift, back.shift_bi), (c.shift.clone(), c.shift_bi.clone()));
+        // Without case counts the file stays GKCORP2 (same bytes and hash as before).
+        let mut l = Corpus::new("t", "ab;\u{2423}");
+        l.add_text("ab ba");
+        assert_eq!(&l.to_bytes()[..8], MAGIC);
+        // Mixing keeps presses per keystroke.
+        let m = Corpus::mix("m", &[(&c, 1.0), (&l, 1.0)]).unwrap();
+        let per_key = |c: &Corpus| c.shift.iter().sum::<u64>() as f64 / c.mono.iter().sum::<u64>() as f64;
+        assert!((per_key(&m) - per_key(&c) / 2.0).abs() < 1e-9);
     }
 
     #[test]

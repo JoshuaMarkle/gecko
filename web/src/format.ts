@@ -55,6 +55,7 @@ export const LAYER_KEYS = ["\u2460", "\u2461", "\u2462"];
 const TOKEN_NAMES: Record<string, string> = {
   space: "\u2423", spc: "\u2423", enter: "\u23CE", ent: "\u23CE", ret: "\u23CE", bspc: "\u232B", backspace: "\u232B",
   tab: "\u21E5", esc: "\u238B", escape: "\u238B", none: "\u00B7", empty: "\u00B7", _: "\u00B7",
+  shift: "\u21E7", sft: "\u21E7",
   layer1: LAYER_KEYS[0], l1: LAYER_KEYS[0], layer2: LAYER_KEYS[1], l2: LAYER_KEYS[1], layer3: LAYER_KEYS[2], l3: LAYER_KEYS[2],
 };
 
@@ -153,17 +154,19 @@ export function scoredMetrics(ms: MetricValue[]): MetricValue[] {
 }
 
 /** Special-key token glyphs (gecko-core `layout::TOKENS`) and the empty-slot glyph. */
-export const TOKENS = "\u2423\u23CE\u232B\u21E5\u238B\u2460\u2461\u2462";
+export const TOKENS = "\u2423\u23CE\u232B\u21E5\u238B\u21E7\u2460\u2461\u2462";
 export const EMPTY = "\u00B7";
+/** Shift (gecko-core `layout::SHIFT`); like the empty slot it may repeat (one per hand). */
+export const SHIFT = "\u21E7";
 
 /** Validate a layout string against a geometry and allowed charset. Returns an error or null.
- *  Tokens are allowed whatever the charset; the empty-slot glyph may repeat. */
+ *  Tokens are allowed whatever the charset; the empty-slot and Shift glyphs may repeat. */
 export function checkLayout(chars: string, keys: number, charset: string): string | null {
   const a = [...chars];
   if (a.length !== keys) return `${a.length} symbols, the board has ${keys} keys`;
   const seen = new Set<string>();
   for (const c of a) {
-    if (c === EMPTY) continue;
+    if (c === EMPTY || c === SHIFT) continue;
     if (seen.has(c)) return `'${c}' appears twice`;
     if (!charset.includes(c) && !TOKENS.includes(c)) return `'${c}' is not in the corpus charset`;
     seen.add(c);
