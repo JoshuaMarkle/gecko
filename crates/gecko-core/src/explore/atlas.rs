@@ -135,7 +135,7 @@ impl<'a> Reader<'a> {
         Ok(f64::from_le_bytes(self.take(8)?.try_into().unwrap()))
     }
     fn f32s(&mut self, n: usize) -> Result<Vec<f32>> {
-        Ok(self.take(4 * n)?.chunks_exact(4).map(|c| f32::from_le_bytes(c.try_into().unwrap())).collect())
+        Ok(self.take(4 * n)?.as_chunks::<4>().0.iter().map(|c| f32::from_le_bytes(*c)).collect())
     }
     fn magic(&mut self, m: &[u8; 8]) -> Result<()> {
         if self.take(8)? != m {

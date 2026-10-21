@@ -191,7 +191,7 @@ pub fn features(enc: Encoding, syms: &[u8], s: usize, raw: &[f32], m: usize, fin
 /// every row is projected. Signs are fixed so row 0 has non-negative coordinates (a stable map).
 /// Returns (coords n×2, share of variance per component).
 pub fn pca2(x: &[f32], d: usize, max_fit: usize) -> (Vec<f32>, [f64; 2]) {
-    let n = if d == 0 { 0 } else { x.len() / d };
+    let n = x.len().checked_div(d).unwrap_or(0);
     if n == 0 {
         return (Vec::new(), [0.0; 2]);
     }
@@ -369,7 +369,7 @@ pub fn chao1(hits: &[u32]) -> (usize, f64) {
 /// if that metric's weight were multiplied by the factor (all else equal). Contributions are
 /// linear in each weight, so this is exact. Returns `winner[k * factors.len() + f]`.
 pub fn stability(w: &Weights, raw: &[f32], m: usize, metrics: &[usize], factors: &[f64]) -> Vec<u32> {
-    let n = if m == 0 { 0 } else { raw.len() / m };
+    let n = raw.len().checked_div(m).unwrap_or(0);
     let base: Vec<f64> = w.score_all(raw, m);
     let mut out = Vec::with_capacity(metrics.len() * factors.len());
     for &k in metrics {
