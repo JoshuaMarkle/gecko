@@ -36,6 +36,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 9. [x] [#79](https://github.com/JoshuaMarkle/gecko/issues/79) `A9` Issue and PR templates for agent work · S
 10. [ ] [#80](https://github.com/JoshuaMarkle/gecko/issues/80) `A10` Claude Code GitHub Action · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
 11. [ ] [#81](https://github.com/JoshuaMarkle/gecko/issues/81) `A11` Release builds with the web UI embedded · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
+<<<<<<< HEAD
 12. [x] [#2](https://github.com/JoshuaMarkle/gecko/issues/2) `B1` Tabu search (robust tabu, RoTS) optimizer · M
 13. [x] [#3](https://github.com/JoshuaMarkle/gecko/issues/3) `C1` B11 finger-pair movement table · M
 14. [x] [#4](https://github.com/JoshuaMarkle/gecko/issues/4) `D1` Model Shift · M
@@ -43,7 +44,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 16. [x] [#6](https://github.com/JoshuaMarkle/gecko/issues/6) `H1` Verify hand-model parameters · S
 17. [x] [#82](https://github.com/JoshuaMarkle/gecko/issues/82) `L1` Navbar restructure: inputs become top-level tabs · M
 18. [x] [#8](https://github.com/JoshuaMarkle/gecko/issues/8) `B2` More neighbourhoods: 3-cycle, column swap, depth-2 swaps · S
-19. [ ] [#9](https://github.com/JoshuaMarkle/gecko/issues/9) `C2` S04 skipgram LSB / scissor / stretch · S
+19. [x] [#9](https://github.com/JoshuaMarkle/gecko/issues/9) `C2` S04 skipgram LSB / scissor / stretch · S
 20. [ ] [#10](https://github.com/JoshuaMarkle/gecko/issues/10) `D2` One-shot and toggle layers · M
 21. [ ] [#11](https://github.com/JoshuaMarkle/gecko/issues/11) `E2` More boards: Lily58, Kyria, Ergodox, Dactyl-Manuform 5x6 · S · after [#5](https://github.com/JoshuaMarkle/gecko/issues/5)
 22. [ ] [#83](https://github.com/JoshuaMarkle/gecko/issues/83) `L9` Flatten any board to a 2D view · M

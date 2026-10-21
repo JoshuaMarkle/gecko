@@ -91,6 +91,14 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Same-hand finger-pair movement cost per 100 bigrams (KLO table, finger-length scissor rule, ring coupling).",
     ),
+    m(
+        "S04",
+        "Skip stretch",
+        "u",
+        Order::Skip,
+        Dir::Min,
+        "Stretch (B14) between keys 1 and 3 of a trigram per 100 skipgrams: disjoint LSB / scissors (Kühlmak).",
+    ),
     m("M01", "Effort", "", Order::Mono, Dir::Min, "Average base key effort per keystroke, plus the Shift key's effort per Shift press."),
     m("M02", "Finger load error", "%", Order::Load, Dir::Min, "RMS gap between finger loads and the profile's target loads."),
     m("M04", "Left hand", "%", Order::Load, Dir::Min, "Share of keystrokes on the left hand; scored as squared distance from 50%."),
@@ -181,7 +189,7 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
         "B01" | "S01" | "S02" => pair(&|i, j| pct(same_finger(i, j))),
         "B02" => pair(&|i, j| pct(g.same_key(i, j))),
         "B03" | "S03" => pair(&|i, j| if same_finger(i, j) { 100.0 * finger_speed(g, &p.sfb, i, j) } else { 0.0 }),
-        "B14" => pair(&|i, j| 100.0 * stretch(g, i, j)),
+        "B14" | "S04" => pair(&|i, j| 100.0 * stretch(g, i, j)),
         "B11" => pair(&|i, j| 100.0 * movement(g, i, j)),
         "E04" | "E05" => {
             let c = g.comfort_tables.get(d.id)?;
