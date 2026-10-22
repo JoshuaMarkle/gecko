@@ -11,7 +11,7 @@ missing. Each paper gets one file in `drafts/` (or the top level for the softwar
 | 1 | Exploring the keyboard layout landscape | [drafts/01-landscape.md](drafts/01-landscape.md) | tooling done; runs pending |
 | 2 | Designing a general cost function | [drafts/02-cost-function.md](drafts/02-cost-function.md) | needs sweeps, timing model, user study |
 | 3 | Finding the best keyboard layout | [drafts/03-best-layout.md](drafts/03-best-layout.md) | needs exact windows (#43), budget grid |
-| 4 | Software paper: how GECKO works | [software/software.tex](software/software.tex) (PDF: `software/software.pdf`; notes: [software-paper.md](software-paper.md)) | typeset draft, 8 pages, six use cases; some `TODO(run)` numbers |
+| 4 | Software paper: how GECKO works | [software/software.tex](software/software.tex) (PDF: `software/software.pdf`; notes: [software-paper.md](software-paper.md)) | typeset draft, 11 pages, eight use cases; written as the finished system; planned results are `TODO(run)` + template figures |
 
 Other files: [topics.md](topics.md) (all candidate topics; the four above are the focus),
 [drafts/later/](drafts/later/) (parked: geometry co-design), [templates/](templates/) (LaTeX/HTML
@@ -30,7 +30,9 @@ own folder (`software/`) with `<name>.tex`, `figures.py` (data from the repo, ne
 
 1. **No result without a run.** A number in a draft is either (a) copied from a run directory or
    `bench/` file and cited by run id, or (b) marked `TODO(run)` with the exact command that will
-   produce it. Planned figures are described, never faked. Expectations are written as
+   produce it. Planned figures are described, never faked: a figure for a result that does not
+   exist yet is a watermarked template (illustrative shapes, "Template." caption, `TODO(run)`
+   command), never a plot of invented numbers. Expectations are written as
    **hypotheses** and kept apart from **results**.
 2. **Reproduce from the repo.** Every table and figure lists its command, seed, corpus, profile,
    geometry and commit. `gecko verify run:<id>` must pass for runs cited.

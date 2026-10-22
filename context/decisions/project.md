@@ -25,3 +25,6 @@ Stack, process, CI, testing approach, papers and repository organization. Newest
 - 2026-10-21 — `CLAUDE.md` is just `@AGENTS.md`; `context/README.md` is the file index; decisions and web docs split by area. — Duplicated routing tables had drifted apart.
 - 2026-10-21 — Decision entries trimmed to one line; specs live in topic docs and code. — The log had grown into a second spec that agents had to read.
 - 2026-10-21 — The CLI layout image is `gecko layouts svg`, not a new `gecko export` group; it ports the web's `boardSvg` to `interop::svg` with the same sizes and colors, SVG only. — Layout output already lives under `layouts`; one picture in both front ends; PNG would add a rasterizer dependency for what `rsvg-convert` does.
+
+- 2026-10-22 — Keep the roadmap future-only; prioritize #43 and #47 before the remaining historical queue (supersedes strict issue-order selection). — Exact small-instance references and correct angle fingering strengthen GECKO’s core layout judgments before more visualization work.
+- 2026-10-22 — The software paper describes GECKO as the finished system (goals + roadmap) in the present tense; unbuilt results are `TODO(run)` plus watermarked template figures. — The user wants a draft of the complete software that only needs numbers filled in as features land.

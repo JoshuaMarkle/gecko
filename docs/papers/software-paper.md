@@ -1,7 +1,11 @@
 # GECKO: A Fast, Explainable System for Analyzing and Optimizing Keyboard Layouts
 
-*Superseded by [software/software.tex](software/software.tex) (the typeset version, 8 pages); this file keeps the figure plan and evidence map; the prose below is the older outline and lacks the use-case section.
-Software paper, working draft. Describes the system as built on 2026-10-21 (main branch).
+*Superseded by [software/software.tex](software/software.tex) (the typeset version, 11 pages); this file keeps the figure plan and evidence map; the prose below is the older outline and lacks the use-case section.
+Since 2026-10-22 the typeset paper describes GECKO as the finished system of `context/goals.md` and
+`context/roadmap.md` (finger-assignment search, top-K scoring, telemetry, LON views, robust hand
+sizes, free-form and thumb search, full STL), written in the present tense. Features without a
+result yet carry a `TODO(run)` number and a watermarked template figure; see "Planned results" below.
+The prose below describes the system as built on 2026-10-21 (main branch).
 `TODO(run)` marks numbers that still need a run; every other number is copied from the repo
 (source in brackets). Target: JOSS / SoftwareX / arXiv cs.SE + cs.HC.*
 
@@ -352,8 +356,34 @@ Typeset figures are `software/assets/*.pdf`, made by `software/figures.py` from 
 | 7 | Reference layouts, score vs SFB (`references`) | `gecko compare` | done |
 | 8 | Optimized vs Graphite, per metric (`tradeoff`) | `bench/software-paper-2026-10-21/runs/*sa-8b3885fd` | done |
 | 9 | MAP-Elites map (`qdmap`) | `bench/software-paper-2026-10-21/runs/*qd-af3fe56a` | done |
-| - | Local-optima network, fitness-distance plot | `gecko explore` + `atlas` | `TODO(run)` |
+| 10 | Certify time vs free symbols (`certify`) | `context/algorithms/bounds.md` §Certified sub-problems | done |
+| 11 | Board + layout search, start vs best (`geomsearch`) | `context/algorithms/geometry-search.md` §Results | done |
+| T1 | Time-to-target curves (`tpl-ttt`) | `gecko bench`, 30 seeds × budgets × boards × profiles (#45) | template |
+| T2 | Local-optima network (`tpl-lon`) | `gecko explore` + `atlas --network` (#100) | template |
+| T3 | Score across hand sizes, robust optimum (`tpl-handsizes`) | `optimize --hands … --robust mean` (#103) | template |
+| T4 | Top-K trigram scoring: speed and loss (`tpl-topk`) | `bench --topk` (#55) | template |
+| T5 | Free-form refinement, CMA-ES vs surrogate (`tpl-freeform`) | `geom optimize --free keys` (#70, #74) | template |
 | - | Screenshot of the web UI with 3D board | web UI | capture |
+
+Template figures (`tpl-*`, watermarked, illustrative shapes, no numbers) mark planned results.
+Replace each with a data figure, drop the "Template." caption prefix, and fill its `TODO(run)`.
+
+## Planned results (TODO(run) in `software.tex`)
+
+| Where | Needs | Issue |
+|---|---|---|
+| §4 top-K, 20-thread top-K rate | `gecko bench --topk 500,2000,8000,all --seeds 30` | #55 |
+| §5 time-to-target | `gecko bench`, 30 seeds, 3 budgets, ANSI-30 + Corne, 3 profiles | #45, #53 |
+| §6 LON figure | `gecko explore --time 5m`, `atlas --network` | #100 |
+| §7 hand sizes | robust optimization over hand sizes | #103 |
+| §7 finger table | `optimize --fingers search` vs ansi-30-angle | #97 |
+| §7 free-form | free-form 6-DoF search, surrogate refiner, thumb-count search | #70, #71, #74 |
+| §8 STL extras | stabilizers, screw bosses, controller/USB/TRRS openings (paper states them as shipped) | #75, #76 |
+| §9.6 walkthrough | measured hand → board → STL → print, timings, photo | #77 |
+| §10 coverage | coverage tool | — |
+
+Command flags in these sections (`--topk`, `--hands`, `--robust`, `--fingers search`, `--free keys`,
+`--refine`, `--hand <file>`, `atlas --network`) are proposed names; rename the paper when the feature lands.
 
 Name figures so they do not collide with `templates/assets/` (the build finds that directory first).
 
@@ -373,4 +403,8 @@ Name figures so they do not collide with `templates/assets/` (the build finds th
 | QD price of rolls (0.4 / 2.6 / 5.5 points) | `bench/software-paper-2026-10-21/runs/*qd-af3fe56a/qd.json` |
 | Random baseline, correlation length | `bench/software-paper-2026-10-21/landscape.json` |
 | Magic Sturdy 19.995 vs Sturdy 21.831 | `bench/software-paper-2026-10-21/magic-sturdy-compare.json` |
-| Code size, test counts (22.7k Rust lines, 197 + 69 tests) | `find crates -name '*.rs'`, `cargo test --release`, `npx vitest run`, 2026-10-21 |
+| Code size, test counts (28k Rust lines, 24k core; 9.3k TS; ≈ 250 `#[test]`, 22 web test files) | `find crates -name '*.rs'`, `grep '#[test]'`, 2026-10-22 |
+| Certify: SA optimum is exact for 10 free; k ≤ 20 full, ≤ 22 pair | `context/algorithms/bounds.md` §Certified sub-problems |
+| Board search −9 to −11 % (2D), −36 to −37 % (3D) | `context/algorithms/geometry-search.md` §Results |
+| Hand-size effect on ANSI-30 optima | `context/hand-model.md` §Results |
+| STL closed shells, manifold unions | `context/geometry.md` §Plate and case STL, `tests/case.rs` |

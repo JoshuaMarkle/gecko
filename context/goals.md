@@ -15,13 +15,11 @@ optimization on top.
 
 ## Phases
 
-Status 2026-10-21: phases 1 and 4 done (web UI with tabs per design step); phase 2's optimizers
-built (HC, SA, GA, tabu, memetic, NSGA-II, MAP-Elites, CMA-ES, Gilmore–Lawler bound), its
-"beats the best known layouts" check not yet written up; phase 3 mostly
-done (C1–C9: finger-pair table, P1/P2 metrics, learned profile weights, held-out corpora);
-phase 5 mostly done (combos/chords left); phase 6 started (parametric 2D boards, fast table
-rebuild, collision, geometric costs); phase 7 started (hand model, IK, reach, press angle, wrist
-posture). Next: bilevel geometry + layout search (#54), then 3D parameters and collision.
+Current implementation includes layout optimizers, symbol layers, the web workflow,
+2D/3D parametric bilevel search, hand IK, collision repair and manufacturability checks.
+The phase 2 “beats the best known layouts” check still needs a written evaluation.
+Remaining scheduled work and its priority live in [roadmap.md](roadmap.md); the phase
+list below describes the project's scope, not an execution queue.
 
 | # | Phase | Done when |
 |---|---|---|
@@ -29,11 +27,11 @@ posture). Next: bilevel geometry + layout search (#54), then 3D parameters and c
 | 2 | **Optimizers:** hill climb, SA, GA, tabu, memetic; algorithm leaderboard | Finds layouts that beat the best known layouts under our profile |
 | 3 | **Full metric set:** P1/P2 metrics, profiles, rank-sum and Pareto selection | |
 | 4 | **Web UI:** run browser, compare, interactive editor, 3D viewer | |
-| 5 | **Symbol layers:** symbols, layers, modifiers, code corpora | Thumb keys, hold/one-shot/toggle layers, Shift, paired brackets (Y03), HRM misfires (Y04), number/navigation layers, adaptive keys, `code` corpus. Left: combos and chords (#91) |
+| 5 | **Symbol layers:** symbols, layers, modifiers, code corpora | Thumb keys, hold/one-shot/toggle layers, Shift, paired brackets (Y03), HRM misfires (Y04), number/navigation layers, adaptive keys, `code` corpus. |
 | 6 | **2D geometry:** optimize key x, y, rotation on a plane, no overlaps | |
 | 7 | **3D geometry:** add z, tilt, tent; hand model | |
 | 8 | **Free-form 3D:** curved keyboards, full 6-DoF keys, thumb clusters, no intersections | |
-| 9 | **Learned costs:** timing models, personal data, learned weights | |
+| 9 | **Learned costs:** timing models, personal data, learned weights | Long-term direction; no scheduled timing-model or personal-calibration issue |
 
 Basic keyboards must be excellent before geometry work starts. Geometry phases
 must reuse the same scorer (the hand model only changes the precomputed cost tables).
