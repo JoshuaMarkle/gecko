@@ -1,11 +1,12 @@
 // Saved view: every saved run (with a mini keyboard of its best layout) on the left; the selected
 // run's convergence (hover: best layout at that time), ranked layouts and reproducibility details
-// on the right.
+// on the right. A board + layout run shows its board instead (`geom/GeomRunPanel`).
 
-import type { Geometry, Progress, RunDetail, RunSummary } from "../../api";
+import type { Geometry, GeomRunDetail, Progress, RunDetail, RunSummary } from "../../api";
 import { fitChars, fmt, fmtCount, fmtTime } from "../../format";
 import { Thumb } from "../Board2D";
 import { Convergence } from "../Charts";
+import { GeomRunPanel } from "../geom/GeomRunPanel";
 
 interface Props {
   runs: RunSummary[];
@@ -18,6 +19,9 @@ interface Props {
   onOpenRun: (id: string) => void;
   onPickRank: (i: number) => void;
   onShowHome: () => void;
+  /** The selected run when it is a board + layout run (then `run` is null). */
+  geomRun: GeomRunDetail | null;
+  onUseBoard: (id: string) => void;
 }
 
 export function SavedView(p: Props) {
@@ -37,10 +41,10 @@ export function SavedView(p: Props) {
                   const g = p.geometries.find((x) => x.name === r.geometry);
                   const best = r.best?.replace(/ /g, "");
                   return (
-                  <tr key={r.id} className={`click ${cfg?.id === r.id ? "sel" : ""}`} onClick={() => p.onOpenRun(r.id)} title={r.id}>
+                  <tr key={r.id} className={`click ${(cfg?.id ?? p.geomRun?.config.id) === r.id ? "sel" : ""}`} onClick={() => p.onOpenRun(r.id)} title={r.id}>
                     <td className="l">{r.created.replace("T", " ").replace("Z", "")}
                       <div>{g && best ? <Thumb geometry={g} chars={fitChars(best, g)} u={15} width={240} /> : <span className="hint mono">{r.best ?? r.status}</span>}</div></td>
-                    <td>{r.algo}</td>
+                    <td>{r.kind === "geometry" ? "board" : r.algo}</td>
                     <td>{r.profile}</td>
                     <td>{r.elapsed_ms !== null ? fmtTime(r.elapsed_ms) : "–"}</td>
                     <td>{r.status === "running" ? <span className="badge warn">running</span> : r.best_score !== null ? fmt(r.best_score, 3) : "–"}</td>
@@ -55,7 +59,10 @@ export function SavedView(p: Props) {
       </section>
 
       <section className="pane">
-        {!cfg ? <div className="empty">Select a run.</div> : (
+        {p.geomRun ? (
+          <GeomRunPanel run={p.geomRun} refScore={p.refScore} refName={p.refName} onUseBoard={() => p.onUseBoard(p.geomRun!.config.id)}
+            canUse={p.geometries.some((g) => g.run === p.geomRun!.config.id)} />
+        ) : !cfg ? <div className="empty">Select a run.</div> : (
           <>
             <div className="panehead">
               <b>{cfg.params.algo} run</b>

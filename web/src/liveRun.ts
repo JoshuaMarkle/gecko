@@ -3,11 +3,17 @@
 // bookkeeping mirrors the server: paused time does not use up the budget.
 
 import { useEffect, useRef, useState } from "react";
-import { api, type Progress, type RunRequest } from "./api";
+import { api, type GeomProgress, type GeomVar, type ParamGeometry, type Progress, type RunRequest } from "./api";
+import { asProgress } from "./geom";
+
+/** A geometry run's board: the parameter file and free parameters it searches, and its progress events. */
+export interface LiveGeom { param: ParamGeometry; vars: GeomVar[]; progress: GeomProgress[] }
 
 export interface Live {
+  /** `algo` is "geometry" for a board + layout search (`geom` set; `progress` holds its events as `asProgress`). */
   id: string; algo: string; progress: Progress[]; running: boolean;
   started: number; budgetMs: number | null; budgetEvals: number | null; pausedAt: number | null; pausedMs: number;
+  geom?: LiveGeom;
 }
 
 export interface LiveRunEvents {
@@ -27,12 +33,14 @@ export function useLiveRun(events: LiveRunEvents) {
 
   useEffect(() => () => esRef.current?.close(), []);
 
-  const start = async (req: RunRequest) => {
+  /** Start a run; `param` (the board's parameter file) with `req.geom` starts a board + layout search. */
+  const start = async (req: RunRequest, param?: ParamGeometry) => {
     const byEvals = req.evals !== undefined;
     const r = await api.startRun(req);
+    const geom = req.geom && param && "vars" in r.config ? { param, vars: r.config.vars, progress: [] } : undefined;
     setLive({
-      id: r.id, algo: req.algo, progress: [], running: true, started: Date.now(),
-      budgetMs: byEvals ? null : req.time_ms ?? null, budgetEvals: byEvals ? req.evals! : null, pausedAt: null, pausedMs: 0,
+      id: r.id, algo: geom ? "geometry" : req.algo, progress: [], running: true, started: Date.now(),
+      budgetMs: byEvals ? null : req.time_ms ?? null, budgetEvals: byEvals ? req.evals! : null, pausedAt: null, pausedMs: 0, geom,
     });
     on.current.onRunsChanged();
     esRef.current?.close();
@@ -40,10 +48,15 @@ export function useLiveRun(events: LiveRunEvents) {
     esRef.current = es;
     const end = () => { es.close(); setLive((l) => (l ? { ...l, running: false } : l)); };
     es.addEventListener("progress", (e) => {
-      const p = JSON.parse((e as MessageEvent).data) as Progress;
-      setLive((l) => (l && l.id === r.id ? { ...l, progress: [...l.progress, p] } : l));
+      const data = JSON.parse((e as MessageEvent).data);
+      setLive((l) => {
+        if (!l || l.id !== r.id) return l;
+        if (!l.geom) return { ...l, progress: [...l.progress, data as Progress] };
+        const g = data as GeomProgress;
+        return { ...l, progress: [...l.progress, asProgress(g)], geom: { ...l.geom, progress: [...l.geom.progress, g] } };
+      });
     });
-    es.addEventListener("done", () => { end(); on.current.onDone(r.id, req.algo); on.current.onRunsChanged(); });
+    es.addEventListener("done", () => { end(); on.current.onDone(r.id, geom ? "geometry" : req.algo); on.current.onRunsChanged(); });
     es.addEventListener("failed", (e) => { end(); on.current.onError(JSON.parse((e as MessageEvent).data).error); on.current.onRunsChanged(); });
     es.onerror = () => { if (es.readyState === EventSource.CLOSED) setLive((l) => (l ? { ...l, running: false } : l)); };
   };

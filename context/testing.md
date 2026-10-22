@@ -104,7 +104,10 @@ pairs as the 2D one; tilted keys meeting at their tops, a convex column's switch
 stacked key collide while a 15° keywell does not. Bilevel and alternate searches with `--evals`
 reproduce exactly, end collision-free, inside the bounds and no worse than the start board; the
 run directory's `geometry.toml` loads, equals `geometry.param.toml`, and scores the reported
-layout.
+layout. Progress
+events carry the reported board (values, layout) ending at the chosen board; paused time does
+not use the time budget; a run's board loads as `run:<id>` (keys and parameters) and is listed
+with `kind = "geometry"`.
 
 Holdout (`tests/verify.rs`): a run with `holdout: shai` records it in config.json; every ranked
 layout's holdout score equals a fresh shai scorer's; the report's start/best/retained match;
@@ -178,6 +181,8 @@ The web reimplements or consumes some Rust code; these keep the two sides equal.
   `web/contract/api-samples.generated.ts` (gitignored), each checked with
   `satisfies Response<"name">` against the return types of `web/src/api.ts`. A field renamed or
   retyped in Rust fails the type check. Optional fields the server omits are not caught.
+  It includes a short board + layout run (`geom`), its detail and free parameters, and checks the
+  run's board is listed as `run:<id>` and scores.
 
 ## CI
 

@@ -2,12 +2,12 @@
 // convergence, chance of optimal, score and main metrics.
 
 import { useMemo, useState } from "react";
-import type { Analysis, Geometry, PairKind, Progress, RunDetail, RunSummary } from "../../api";
+import type { Analysis, Geometry, Key, PairKind, Progress, RunDetail, RunSummary } from "../../api";
 import { fingerLegend, PAIR_KINDS } from "../../colors";
 import { rediscovery } from "../../estimate";
-import { fmt, fmtTime, scoredMetrics, undirected, verdict } from "../../format";
+import { fitChars, fmt, fmtTime, scoredMetrics, undirected, verdict } from "../../format";
 import type { InputTabName } from "../../tabs";
-import { Keyboard3D, type Arc, type Overlay, type ViewMode } from "../../three/Keyboard3D";
+import { Keyboard3D, type Arc, type Focus, type Overlay, type ViewMode } from "../../three/Keyboard3D";
 import { Convergence } from "../Charts";
 import { Frame } from "../Form";
 
@@ -30,6 +30,8 @@ interface Props {
   runs: RunSummary[];
   corpusName: string;
   profileName: string;
+  /** During a board + layout run: the live best board (start board outlined, colliding keys marked) and a status line. */
+  liveBoard?: { geometry: Geometry; ghost?: Key[]; colors?: (string | undefined)[]; focus?: Focus; caption: string; collisions: number };
 }
 
 const HIDDEN: PairKind[] = ["same_hand", "alternate"];
@@ -38,12 +40,14 @@ export function HomeView(p: Props) {
   const [mode, setMode] = useState<ViewMode>("3d");
   const [overlay, setOverlay] = useState<Overlay>("none");
   const a = p.a;
+  const lb = p.liveBoard;
   const arcs = useMemo((): Arc[] => {
     const shown = undirected(a?.bigrams ?? []).filter((x) => !HIDDEN.includes(x.kind));
     const max = Math.max(...shown.map((x) => x.freq), 1e-9);
     return shown.map((x) => ({ ngram: x.ngram, w: Math.sqrt(x.freq / max), color: PAIR_KINDS[x.kind][1] }));
   }, [a]);
-  const same = p.runs.filter((r) => r.geometry === p.geometry.name && r.corpus === p.corpusName && r.profile === p.profileName);
+  // Rediscovery is about layout runs; a board + layout run's board is new by construction.
+  const same = p.runs.filter((r) => r.kind !== "geometry" && r.geometry === p.geometry.name && r.corpus === p.corpusName && r.profile === p.profileName);
   const conf = rediscovery(same);
   const bound = p.run?.result?.bound?.total;
   const delta = a && p.refA ? a.breakdown.score - p.refA.breakdown.score : null;
@@ -66,10 +70,18 @@ export function HomeView(p: Props) {
       }
       main={
         <div className="viewport">
-          <Keyboard3D geometry={p.geometry} chars={p.view.chars} heat={p.view.heat} muted={p.view.muted} arcs={arcs} overlay={overlay} mode={mode} selected={null} onKey={() => {}} />
+          {lb
+            ? <Keyboard3D geometry={lb.geometry} chars={fitChars(p.view.chars, lb.geometry)} heat={p.view.heat} muted={p.view.muted} arcs={arcs} overlay={overlay} mode={mode} selected={null} onKey={() => {}}
+                colors={lb.colors} ghost={lb.ghost} focus={lb.focus} />
+            : <Keyboard3D geometry={p.geometry} chars={p.view.chars} heat={p.view.heat} muted={p.view.muted} arcs={arcs} overlay={overlay} mode={mode} selected={null} onKey={() => {}} />}
           <div className="viewlabel">
-            <span>{p.running ? "Live best" : p.hasModel ? p.label : `No model · showing ${p.label || "the start layout"}`}</span>
-            {a && <span className="muted">{fmt(a.breakdown.score, 3)}</span>}
+            {lb ? <>
+              <span>{lb.caption}</span>
+              <span className={lb.collisions ? "err" : "muted"}>{lb.collisions ? `${lb.collisions} collisions` : "no collisions"}</span>
+            </> : <>
+              <span>{p.running ? "Live best" : p.hasModel ? p.label : `No model · showing ${p.label || "the start layout"}`}</span>
+              {a && <span className="muted">{fmt(a.breakdown.score, 3)}</span>}
+            </>}
           </div>
           <div className="viewctl">
             <div className="seg inline"><button className={mode === "3d" ? "on" : ""} onClick={() => setMode(mode === "3d" ? "top" : "3d")} title="3D view (off: flat top-down)">3D</button></div>

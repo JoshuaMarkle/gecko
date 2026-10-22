@@ -5,6 +5,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { Geometry, Profile } from "./api";
 import { withFingerEffort } from "./fingerEffort";
+import type { GeomSettings } from "./geom";
 import { HAND_WEIGHTS, withHand, type HandSettings } from "./hand";
 
 export interface SearchSettings {
@@ -19,6 +20,10 @@ export interface SearchSettings {
   stopConf?: number | null;
   /** Corpus id the results are also scored on but never searched on (L06); "" = none. */
   holdout?: string;
+  /** What Play optimizes: the layout, or the (parametric) board together with its layout. */
+  target?: "layout" | "board";
+  /** Board + layout search settings (`geom.ts`); defaults `GEOM_DEFAULTS`. */
+  geom?: GeomSettings;
 }
 
 /** Physical constraints for building a board (Board tab, Custom on). Each group can be enabled
@@ -61,6 +66,12 @@ export function useInputs() {
     for (const [id, [w]] of Object.entries(HAND_WEIGHTS)) if (!(id in (cur?.weights ?? {})) && weights[id] === w) delete weights[id];
     return { ...rest, weights };
   });
+  /** A profile picked from the list (not edited in a view): its own G01 / G03 / G05 weights stay. */
+  const loadProfile = (p: Profile | null) => setProfileRaw(() => {
+    if (!p) return null;
+    const { hand: _h, ...rest } = withFingerEffort(p);
+    return rest;
+  });
   const [refId, setRefId] = usePref("reference", "");
   const [chars, setChars] = usePref("chars", "");
   const [label, setLabel] = usePref("label", "");
@@ -75,7 +86,7 @@ export function useInputs() {
   // What every score and run gets: the edited profile with the Hand tab's hand merged in.
   const scoring = useMemo(() => (profile ? withHand(profile, hand) : null), [profile, hand]);
   return {
-    geomId, setGeomId, corpusId, setCorpusId, profileId, setProfileId, profile: scoring, setProfile, refId, setRefId,
+    geomId, setGeomId, corpusId, setCorpusId, profileId, setProfileId, profile: scoring, setProfile, loadProfile, refId, setRefId,
     chars, setChars, label, setLabel, startChars, setStartChars, pins, setPins, search, setSearch,
     customBoards, setCustomBoards, constraints, setConstraints, hand, setHand, model, setModel,
   };

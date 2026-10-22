@@ -1,14 +1,18 @@
 // Search tab (web-screens.md "Search"): search settings | a small animation of the chosen
 // algorithm (or the 2D layout editor) | search-space size and time-to-optimum estimates.
+// With "Board + layout" (a parametric board): board shape groups and settings | a preview of
+// the board with one parameter swept | the free parameters and their bounds (`geom/GeomSearch`).
 
 import { useEffect, useRef, useState } from "react";
-import { api, type Analysis, type BoundGap, type CorpusInfo, type Geometry, type LayoutInfo, type Meta, type RunSummary } from "../../api";
+import { api, type Analysis, type BoundGap, type CorpusInfo, type Geometry, type GeomVar, type LayoutInfo, type Meta, type RunSummary } from "../../api";
 import { ACCENT, HAIR, INK, MUTED } from "../../colors";
 import { fmtPow10, rediscovery, searchSpace, timeToOptimum } from "../../estimate";
 import { fmt, fmtCount, fmtTime, slotCount } from "../../format";
+import { GEOM_DEFAULTS, type GeomSettings } from "../../geom";
 import type { SearchSettings } from "../../inputs";
 import { useSize } from "../Charts";
 import { Frame, Num, Sec, Seg, Slider, Toggle } from "../Form";
+import { GeomParams, GeomPreview, GeomSide } from "../geom/GeomSearch";
 import { LayoutEditor } from "../LayoutEditor";
 
 export const ALGOS: [string, string, string][] = [
@@ -46,6 +50,10 @@ interface Props {
   canUndo: boolean;
   onUndo: () => void;
   onLoad: (chars: string, label: string) => void;
+  /** Free parameters of the board for the selected groups (`useGeomVars`). */
+  geomVars: { vars: GeomVar[]; error: string | null };
+  /** The profile weights a hand-model metric (G01 / G03 / G05): without one, board shape barely matters. */
+  handWeighted: boolean;
 }
 
 // ---------- algorithm animation ----------
@@ -187,6 +195,15 @@ export function SearchView(p: Props) {
   const algos = ALGOS.filter(([a]) => p.meta.algos.includes(a));
   const start = s.start ?? "auto";
   const budget = s.budget ?? "time";
+  const board = s.target === "board";
+  const g = s.geom ?? GEOM_DEFAULTS;
+  const setGeom = (patch: Partial<GeomSettings>) => set({ geom: { ...g, ...patch } });
+  // Board preview: the selected free parameter and its shown value.
+  const [sel, setSel] = useState<number | null>(null);
+  const [pv, setPv] = useState(0);
+  const vars = p.geomVars.vars;
+  useEffect(() => { setSel(null); }, [p.geometry.id, vars.length]);
+  const pick = (i: number) => { setSel(i); setPv(vars[i].start); };
 
   const estimate = async () => {
     const same = p.runs.filter((r) => r.geometry === p.geometry.name && r.corpus === p.corpusName && r.profile === p.profileName && r.algo === s.algo && r.best_score !== null);
@@ -207,7 +224,17 @@ export function SearchView(p: Props) {
       control={<span className="hint">{p.running ? "locked while running" : ""}</span>}
       side={
         <fieldset className="plain" disabled={p.running}>
-          <Sec id="search-algo" title="Algorithm" note="how the search moves">
+          <Sec id="search-target" title="Optimize" note="what Play changes">
+            <div className="row">
+              <label title="Layout: search key assignments on the chosen board. Board + layout: also search the board's shape (stagger, splay, curvature, tenting…), each candidate board with its own layout search. Needs a parametric board.">Optimize</label>
+              <Seg value={board ? "board" : "layout"} onChange={(v) => set({ target: v, geom: g })} options={[["layout", "Layout"], ["board", "Board + layout"]]} />
+              <span />
+            </div>
+            {board && !p.geometry.param && <div className="hint">{p.geometry.name} has no parameter file: pick a parametric board to run.</div>}
+            {board && !p.handWeighted && <div className="hint">The profile weights no hand-model metric, so the board's shape only moves distance metrics. Turn on "Use hand in optimization" on the Hand tab.</div>}
+          </Sec>
+          {board && <GeomSide s={g} set={setGeom} />}
+          {!board && <Sec id="search-algo" title="Algorithm" note="how the search moves">
             <div className="row">
               <label title="Search algorithm. Its own settings appear below.">Algorithm</label>
               <select value={s.algo} onChange={(e) => set({ algo: e.target.value })}>
@@ -215,7 +242,7 @@ export function SearchView(p: Props) {
               </select>
               <span />
             </div>
-          </Sec>
+          </Sec>}
           <Sec id="search-start" title="Starting layout" note="where runs begin">
             <div className="row">
               <label title="Auto starts from whatever layout is loaded (the working model or your edits). Pick a named layout to always start from it.">Start from</label>
@@ -235,16 +262,19 @@ export function SearchView(p: Props) {
           </Sec>
           <Sec id="search" title="Budget" note="how long, how wide">
             <div className="row">
-              <label title="Stop after a wall-clock time or after a number of evaluations (exactly reproducible).">Budget</label>
-              <Seg value={budget} onChange={(b) => set({ budget: b })} options={[["time", "Time"], ["evals", "Evaluations"]]} />
+              <label title={board ? "Stop after a wall-clock time or after a number of candidate boards (exactly reproducible)." : "Stop after a wall-clock time or after a number of evaluations (exactly reproducible)."}>Budget</label>
+              <Seg value={budget} onChange={(b) => set({ budget: b })} options={[["time", "Time"], ["evals", board ? "Boards" : "Evaluations"]]} />
               <span />
             </div>
             {budget === "time"
-              ? <Num label="Time" help="Wall-clock budget for the run." value={s.timeS} min={1} step={1} unit="s" onChange={(v) => set({ timeS: Math.max(1, v) })} />
-              : <Num label="Evaluations" help="Total layout evaluations across threads." value={s.evals ?? 50_000_000} min={1000} step={1_000_000} unit={fmtCount(s.evals ?? 50_000_000)} onChange={(v) => set({ evals: Math.max(1000, Math.round(v)) })} />}
+              ? <Num label="Time" help={board ? "Wall-clock budget for the run, final layout polish of both boards included (a minute or more is useful)." : "Wall-clock budget for the run."} value={s.timeS} min={1} step={1} unit="s" onChange={(v) => set({ timeS: Math.max(1, v) })} />
+              : board
+                ? <Num label="Boards" help="Candidate boards to score; each gets its own layout search." value={g.evals} min={10} step={50} onChange={(v) => setGeom({ evals: Math.max(10, Math.round(v)) })} />
+                : <Num label="Evaluations" help="Total layout evaluations across threads." value={s.evals ?? 50_000_000} min={1000} step={1_000_000} unit={fmtCount(s.evals ?? 50_000_000)} onChange={(v) => set({ evals: Math.max(1000, Math.round(v)) })} />}
             <Num label="Threads" help="Independent workers (restarts / islands) in parallel." value={s.threads} min={1} max={p.meta.threads} unit={`/${p.meta.threads}`} onChange={(v) => set({ threads: Math.min(p.meta.threads, Math.max(1, Math.round(v))) })} />
             <Num label="Seed" help="Runs are reproducible from the seed (exactly so with an evaluation budget)." value={s.seed} min={0} onChange={(v) => set({ seed: Math.max(0, Math.round(v)) })} />
           </Sec>
+          {!board && <>
           <Sec id="search-holdout" title="Holdout corpus" note="check for overfitting">
             <div className="row">
               <label title="Also score the results on a corpus the search never sees. If they keep most of their gain there, they did not just fit the search corpus.">Holdout</label>
@@ -281,12 +311,15 @@ export function SearchView(p: Props) {
             </>}
             {!["sa", "ga", "memetic"].includes(s.algo) && <div className="hint">No extra settings; defaults from the core.</div>}
           </Sec>
+          </>}
         </fieldset>
       }
       main={
         editing ? (
           <LayoutEditor geometry={p.geometry} chars={p.chars} label={p.label} a={p.a} pins={p.pins} setPins={p.setPins}
             onSwap={(i, j) => { if (start !== "auto") set({ start: "auto" }); p.onSwap(i, j); }} canUndo={p.canUndo} onUndo={p.onUndo} onClose={() => setEditing(false)} />
+        ) : board ? (
+          <GeomPreview geometry={p.geometry} vars={vars} sel={sel} value={pv} setValue={setPv} chars={p.chars} />
         ) : (
           <div className="algoview">
             <div className="algoview-text"><h3>{algoName(s.algo)}</h3><p>{desc}</p></div>
@@ -294,7 +327,9 @@ export function SearchView(p: Props) {
           </div>
         )
       }
-      bottom={<div className="bottompad"><Estimates {...p} onEstimate={estimate} bound={bound} /></div>}
+      bottom={board
+        ? <GeomParams s={g} set={setGeom} board={p.geometry.id} vars={vars} error={p.geomVars.error} sel={sel} onSel={pick} />
+        : <div className="bottompad"><Estimates {...p} onEstimate={estimate} bound={bound} /></div>}
     />
   );
 }
