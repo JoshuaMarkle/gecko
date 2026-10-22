@@ -17,6 +17,7 @@ test:
 	cargo clippy --all-targets -- -D warnings
 	cd web && npm run test:parity
 	cd web && npm run typecheck && npm test
+	python3 -I research/scripts/research.py lint
 
 serve: all
 	./target/release/gecko serve

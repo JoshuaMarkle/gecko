@@ -1,5 +1,5 @@
 //! Metric definitions and their per-geometry cost tables. IDs follow
-//! `research/metrics-catalog.md`. Each linear metric is a table indexed by slot (mono),
+//! `context/metrics-catalog.md`. Each linear metric is a table indexed by slot (mono),
 //! slot pair (bi, skip) or slot triple (tri), in natural units (%, or a per-keystroke
 //! average). The scorer folds them with profile weights; see `context/objective.md`.
 //! Some tables depend on profile parameters (`Profile::sfb`, `Profile::row_offset`, `Profile::hand`), so they are built per profile.

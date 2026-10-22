@@ -3,7 +3,7 @@
 // parallel coordinates, funnels, weight stability, landscape, discovery. Right: picked layout.
 // Selection is shared: brushing any cloud focuses every panel; clicking picks one layout.
 // Re-ranking under edited weights is exact and instant (raw metric vectors, gecko-wasm).
-// research/search-space-visualization.md §3, §6.
+// research/studies/search-space-visualization.md §3, §6.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, FINGERS, type AtlasSummary, type CorpusInfo, type Geometry, type LayoutInfo, type Meta, type Profile, type RunConfig, type RunSummary } from "../../api";

@@ -20,7 +20,7 @@ optimization on top. Rust core + CLI + server + WASM; TypeScript web UI with a 3
 |---|---|
 | Orientation | `context/goals.md`, `context/architecture.md` |
 | Data formats (geometry, layout, corpus, runs) | `context/representation.md` |
-| Metrics, scoring, profiles | `context/objective.md`, `research/metrics-catalog.md` |
+| Metrics, scoring, profiles | `context/objective.md`, `context/metrics-catalog.md`, `context/parameters.md` |
 | Hand model, reach / press-angle / wrist-posture costs | `context/hand-model.md` |
 | An optimizer | `context/algorithms/README.md` + `context/algorithms/<name>.md` |
 | CLI | `context/cli.md` |
@@ -30,7 +30,8 @@ optimization on top. Rust core + CLI + server + WASM; TypeScript web UI with a 3
 | Past decisions | `context/decisions.md` |
 | What to work on next (timeline, GitHub issues #1–103) | `context/roadmap.md` |
 | Why those items (research synthesis) | `research/SYNTHESIS.md` |
-| Background (other tools, parameters, hand model, data, per-source summaries) | `research/README.md`, `research/sources/` |
+| Background evidence (per-source summaries, studies, experiments) | `research/README.md`, `research/sources/` |
+| Unverified claims, uncovered research topics | `research/OPEN-QUESTIONS.md` |
 
 ## Commands
 
@@ -46,6 +47,7 @@ cd web && npm install && npm run wasm && npm run build   # web UI (needs wasm-pa
 ./target/release/gecko serve                # http://127.0.0.1:7777
 cd web && npm run dev                       # UI dev server, proxies /api to gecko serve
 cd web && npm run typecheck && npm test
+python3 -I research/scripts/research.py lint   # research/ links, frontmatter, index (also in make test)
 ```
 
 Or `make` (build everything), `make test`, `make serve`.

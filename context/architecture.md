@@ -24,7 +24,8 @@ gecko/
 │   ├── profiles/           # metric weights (TOML)
 │   └── layouts/            # reference layouts
 ├── runs/                   # optimization outputs (gitignored except curated results)
-├── research/               # background research
+├── research/               # evidence: sources, studies, experiments, open questions
+├── docs/papers/            # paper templates (HTML/LaTeX)
 └── context/                # this folder
 ```
 

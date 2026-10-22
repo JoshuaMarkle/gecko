@@ -41,7 +41,7 @@ Three groups: what **describes** a keyboard, what **steers** optimization, and w
 | `lateral_multiplier` | Extra cost on horizontal movement |
 | `row_cost[row]` | Off-home penalty per row (often asymmetric: top easier than bottom for some fingers) |
 
-### Hand model (3D) — see `hand-model-and-geometry.md`
+### Hand model (3D) — see `hand-model.md`
 
 Segment lengths, joint ranges of motion, neutral posture, wrist position and posture,
 thumb CMC degrees of freedom, scale from hand length and breadth.

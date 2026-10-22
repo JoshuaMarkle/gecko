@@ -151,7 +151,7 @@ centre, working model right.
 
 ## Research paper template
 
-`research/papers/templates/journal.html` is the retained local HTML paper template;
+`docs/papers/templates/journal.html` is the retained local HTML paper template;
 `index.html` forwards to it. It has a centered title without corner labels or a divider
 above the abstract, generous abstract spacing, and a two-column body (one on mobile).
 It reuses the site palette and font stack with larger reading typography and A4 print

@@ -141,4 +141,4 @@ Its schema-1 JSON has `fit` (weights/scales, seed, input hashes, training/held-o
 names, pair counts, logistic loss, training/test accuracy and default/Engram baselines) and
 `profile`. Prediction ties count half, like ties are excluded; absent test pairs report null.
 `--out learned` writes an opt-in profile; defaults are unchanged. See
-`research/profile-ranking.md` for fitting rules, measured accuracy and limitations.
+`research/experiments/2026-10-21-profile-ranking.md` for fitting rules, measured accuracy and limitations.

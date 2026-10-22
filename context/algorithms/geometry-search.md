@@ -1,6 +1,6 @@
 # Geometry search (continuous, phases 6–8)
 
-Background: `research/hand-model-and-geometry.md`.
+Background: `research/sources/ergogen-dactyl.md`, `research/sources/search-methods-general.md`.
 
 **Problem:** choose key poses (2D: x, y, θ; 3D: full pose) so the best layout on that
 geometry scores as well as possible under the hand-model costs, with no intersecting keys.

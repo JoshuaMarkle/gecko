@@ -26,7 +26,7 @@ from a seeded standardized matrix; convergence and metric values are illustrativ
 Regenerate from the repository root (requires Python, NumPy, Matplotlib):
 
 ```sh
-MPLCONFIGDIR=/tmp/gecko-mpl python research/papers/templates/generate_figures.py
+MPLCONFIGDIR=/tmp/gecko-mpl python docs/papers/templates/generate_figures.py
 ```
 
 Replace sample data, captions, author metadata, and prose before publication.
@@ -39,7 +39,7 @@ download links. These links serve the last build; they do not compile in the bro
 Rebuild from the repository root:
 
 ```sh
-./research/papers/templates/build_pdf.sh
+./docs/papers/templates/build_pdf.sh
 ```
 
 Edit `journal.tex` for the PDF; keep its prose synchronized with `journal.html`.
