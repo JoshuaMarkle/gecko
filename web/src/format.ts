@@ -151,26 +151,6 @@ export function layoutText(g: Geometry, chars: string): string {
   return layerSlots(g, chars).map((slots) => rowsOf(slots.map((s) => (s === null ? EMPTY : a[s])).join(""), g).join("\n")).join("\n\n");
 }
 
-/** Inverse of `layoutText`: one block is a plain layout (whitespace ignored); several blocks
- *  are the base and its layers, one symbol per key each, flattened like `layerSlots`. */
-export function parseLayoutText(g: Geometry, text: string): { chars: string; error: string | null } {
-  const blocks = text.split(/\n\s*\n/).map((b) => [...b.replace(/\s/g, "")]).filter((b) => b.length);
-  if (blocks.length <= 1) return { chars: (blocks[0] ?? []).join(""), error: null };
-  const n = g.key.length;
-  const bad = blocks.findIndex((b) => b.length !== n);
-  if (bad >= 0) return { chars: "", error: `${bad === 0 ? "base" : `layer ${bad}`} has ${blocks[bad].length} symbols, the board has ${n} keys` };
-  let flat = blocks[0].join("");
-  for (let l = 1; l < blocks.length; l++) {
-    const lk = layerKey(blocks[0], l);
-    if (!lk) return { chars: "", error: `layer ${l} needs a ${LAYER_KEYS[l - 1]} (or ${ONESHOT_KEYS[l - 1]}, ${TOGGLE_KEYS[l - 1]}) key on the base` };
-    for (let k = 0; k < n; k++) {
-      if (onLayer(g, lk, k)) flat += blocks[l][k];
-      else if (blocks[l][k] !== EMPTY) return { chars: "", error: `layer ${l}: '${blocks[l][k]}' is on a key the layer cannot use` };
-    }
-  }
-  return { chars: flat, error: null };
-}
-
 /** Number of slots `chars` addresses on `g` (layer slots included). */
 export function slotCount(g: Geometry, chars: string): number {
   const s = layerSlots(g, chars);
