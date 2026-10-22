@@ -1,6 +1,6 @@
 // Loads the gecko-wasm scorer (same Rust code as the CLI). Built by `npm run wasm`.
 
-import init, { AtlasView, Engine, corpus_from_text, corpus_stats, flat2d as flat2dRaw, hand_costs } from "./wasm/pkg/gecko_wasm.js";
+import init, { AtlasView, Engine, corpus_from_text, corpus_stats, export_layout as exportLayoutRaw, flat2d as flat2dRaw, hand_costs } from "./wasm/pkg/gecko_wasm.js";
 import type { Analysis, Flat, Geometry, Profile } from "./api";
 import type { HandSpec } from "./hand";
 
@@ -49,6 +49,13 @@ export async function wasmReady(): Promise<void> {
 export function flat2d(g: Geometry): Flat[] {
   const { flat: _f, ...rest } = g;
   return JSON.parse(flat2dRaw(JSON.stringify(rest))) as Flat[];
+}
+
+/** Another analyzer's 30-key format (gecko-wasm `export_layout`, same as `gecko layouts export`).
+ *  Needs `wasmReady()` first; throws when the board has no 3 × 10 alpha block. */
+export function exportLayout(g: Geometry, name: string, chars: string, format: "oxeylyzer" | "genkey" | "cmini"): string {
+  const { flat: _f, ...rest } = g;
+  return exportLayoutRaw(JSON.stringify(rest), name, chars, format);
 }
 
 /** Summary statistics of a `.gkc` corpus (gecko-wasm `corpus_stats`). Percentages per table. */

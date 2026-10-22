@@ -1,14 +1,16 @@
 // App shell (context/web.md, frontend.md): navbar (input tabs | result tabs · play / pause /
 // stop centred, run % beside · working model) over one view. Inputs: Board, Hand, Language,
-// Profile, Search (three-panel layout). Results: Home, Explore, Analysis, Saved.
+// Profile, Search (three-panel layout). Results: Home, Explore, Analysis, Saved, Export.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { api, type Analysis, type CorpusInfo, type Geometry, type LayoutInfo, type Meta, type Profile, type Progress, type RunDetail, type RunSummary } from "./api";
 import { AnalysisView } from "./components/AnalysisView";
 import { ExploreView } from "./components/explore/ExploreView";
-import { IconBoard, IconExplore, IconHand, IconHome, IconLanguage, IconPause, IconPlay, IconProfile, IconRuns, IconSearch, IconStats, IconStop, IconSummary } from "./components/Icons";
+import type { ExportInfo } from "./export";
+import { IconBoard, IconExplore, IconExport, IconHand, IconHome, IconLanguage, IconPause, IconPlay, IconProfile, IconRuns, IconSearch, IconStats, IconStop, IconSummary } from "./components/Icons";
 import { ResultsView } from "./components/ResultsView";
 import { BoardView } from "./components/views/BoardView";
+import { ExportView } from "./components/views/ExportView";
 import { HandView } from "./components/views/HandView";
 import { HomeView, type Block } from "./components/views/HomeView";
 import { LanguageView } from "./components/views/LanguageView";
@@ -24,7 +26,7 @@ import { Scorer, wasmReady } from "./wasm";
 
 const ICONS: Record<View, () => ReactElement> = {
   board: IconBoard, hand: IconHand, language: IconLanguage, profile: IconProfile, search: IconSearch, summary: IconSummary,
-  home: IconHome, explore: IconExplore, analysis: IconStats, saved: IconRuns,
+  home: IconHome, explore: IconExplore, analysis: IconStats, saved: IconRuns, export: IconExport,
 };
 
 // Pause bookkeeping mirrors the server: paused time does not use up the budget.
@@ -285,6 +287,15 @@ export function App() {
       flags: [["Stop early", search.stopConf != null]] },
   ];
 
+  // Export describes the shown layout; run facts only when it is that run's adopted layout.
+  const modelRun = hasModel && model?.run && runDetail?.config.id === model.run ? runDetail : null;
+  const holdout = modelRun?.result?.holdout;
+  const exportInfo: ExportInfo = {
+    name: shownLabel, geometry, chars: viewChars, a: analysis, corpus: corpus?.name, profile: profile.name,
+    ref: refAnalysis && reference && reference.chars !== viewChars ? { name: refName, a: refAnalysis } : undefined,
+    run: modelRun ? { id: modelRun.config.id, algo: modelRun.config.params.algo, holdout: holdout && { corpus: holdout.corpus, retained: holdout.retained } } : undefined,
+  };
+
   const sel = langs.selected;
   const canSummarize = !!sel && sel.local && sel.status !== "Summarized" && !!sel.sources?.length && langs.busy === null;
 
@@ -373,6 +384,7 @@ export function App() {
           <ResultsView runs={runs} run={runDetail} progress={progress} rank={rank} refScore={refAnalysis?.breakdown.score} refName={refName} geometries={allBoards}
             onOpenRun={(id) => openRun(id, false)} onPickRank={pickRank} onShowHome={() => setView("home")} />
         )}
+        {view === "export" && <ExportView info={exportInfo} label={shownLabel} onError={setErr} />}
       </main>
     </div>
   );

@@ -1,0 +1,202 @@
+% Compile with: ./build_pdf.sh
+% Editable LaTeX counterpart to journal.html; keep prose synchronized when editing.
+% Bootstrap the default face when the optional Latin Modern fonts are missing.
+\IfFileExists{lmroman10-regular.otf}{}{%
+  \DeclareFontShape{TU}{lmr}{m}{n}{<->"Noto Sans"}{}%
+  \DeclareFontShape{TU}{lmr}{bx}{n}{<->"Noto Sans:B"}{}%
+  \DeclareFontShape{TU}{lmr}{m}{it}{<->"Noto Sans:I"}{}%
+  \DeclareFontShape{TU}{lmr}{bx}{it}{<->"Noto Sans:BI"}{}%
+}
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=19mm]{geometry}
+\usepackage[no-math]{fontspec}
+\setmainfont{Noto Sans}[BoldFont={Noto Sans Medium},BoldItalicFont={Noto Sans Medium Italic}]
+\setmonofont{DejaVu Sans Mono}
+\newfontfamily\headingfont{Noto Sans Medium}[FakeBold=1.5]
+\usepackage{xcolor,graphicx,multicol,caption,booktabs,titlesec,fancyhdr}
+\definecolor{ink}{HTML}{141414}
+\definecolor{muted}{HTML}{707070}
+\definecolor{accent}{HTML}{0066FF}
+\definecolor{hair}{HTML}{E0E0E0}
+% Compact reading sizes; medium (500) replaces bold (700) throughout.
+\renewcommand{\normalsize}{\fontsize{9}{12}\selectfont}
+\renewcommand{\small}{\fontsize{8}{10.5}\selectfont}
+\renewcommand{\footnotesize}{\fontsize{7}{9}\selectfont}
+\renewcommand{\scriptsize}{\fontsize{6.5}{8}\selectfont}
+\normalsize
+\color{ink}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlength{\columnsep}{8mm}
+\setlength{\multicolsep}{0pt}
+\setlength{\emergencystretch}{1.5em}
+\titleformat{\section}{\fontsize{9}{12}\selectfont\headingfont}{\thesection.}{0.45em}{}
+\titlespacing*{\section}{0pt}{13pt}{3pt}
+\titleformat{\subsection}{\fontsize{9}{12}\selectfont\headingfont}{\thesubsection}{0.45em}{}
+\titlespacing*{\subsection}{0pt}{9pt}{2pt}
+\captionsetup{font={small,color=muted},labelfont={bf,color=ink},justification=raggedright,singlelinecheck=false,skip=6pt}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0.3pt}
+\fancyfoot[L]{\scriptsize\color{muted}Joshua Markle · University of Virginia}
+\fancyfoot[R]{\scriptsize\color{muted}GECKO · \thepage}
+\newcommand{\paperfigure}[2]{%
+ \par\addvspace{9pt}\noindent\begin{minipage}{\linewidth}
+ \includegraphics[width=\linewidth]{assets/#1.pdf}
+ \captionof{figure}{#2}
+ \end{minipage}\par\addvspace{9pt}}
+% Clickable, compact citations without an extra PDF-link package.
+\newcommand{\papercite}[1]{%
+ \leavevmode\begingroup\scriptsize\color{accent}%
+ \special{pdf:bann << /Type /Annot /Subtype /Link /Border [0 0 0] /A << /S /GoTo /D (cite.#1) >> >>}%
+ \cite{#1}%
+ \special{pdf:eann}\endgroup}
+\newcommand{\citetarget}[1]{%
+ \special{pdf:dest (cite.#1) [@thispage /XYZ @xpos @ypos null]}}
+\begin{document}
+\special{pdf:docinfo << /Title (Reading the landscape of keyboard layouts) /Author (Joshua Markle) /Subject (GECKO design specimen; synthetic data) >>}
+\begin{center}
+{\fontsize{20}{24}\selectfont\bfseries Reading the landscape\\of keyboard layouts\par}
+\vspace{10pt}
+{\fontsize{10.5}{14}\selectfont A small study in search, structure, and the trade-offs\\behind a single score.\par}
+\vspace{12pt}
+{\normalsize Joshua Markle\par}
+{\small\color{muted} University of Virginia · October 2026\par}
+\vspace{8pt}
+{\footnotesize\color{muted} Design specimen · All figures and numerical results are synthetic examples,\\not experimental findings.\par}
+\end{center}
+\vspace{12pt}
+\begin{quote}
+\raggedright
+\noindent{\fontsize{9}{12}\selectfont\headingfont Abstract}\par\vspace{-3pt}
+A good score tells us which candidate to inspect. It does not tell us how that candidate differs from its neighbors. This illustrative paper pairs a two-dimensional map with search trajectories and a small metric comparison. The aim is to make the shape of an optimization problem readable without hiding the assumptions behind the pictures.
+\end{quote}
+\vspace{18pt}
+\begin{multicols}{2}
+\raggedright
+\section{A score is a starting point}
+Keyboard layout search compresses many decisions into one number. Two candidates may have similar scores while distributing effort very differently. One may reduce repeated use of a finger; another may favor shorter travel. A useful research view keeps those differences visible.
+
+We organize the example around three questions: where do candidates sit relative to one another, how does search progress, and which costs change in the selected candidate?
+
+\section{Related work and framing}
+
+A layout can be understood as an assignment problem, a sequence of movements, or an interface learned through practice. Each view emphasizes different evidence. An assignment model is useful for comparing many candidates quickly, while a study of actual use must also account for familiarity, adaptation, and individual differences.
+
+The sample references at the end of this paper demonstrate numbered citations and bibliography formatting. They are fictional placeholders, not sources for the claims in this specimen. The first entry represents a survey \papercite{sample1}; the second represents a methodological paper on comparing search procedures \papercite{sample2}. A real manuscript would replace both with verified sources and narrow its claims accordingly.
+
+The distinction between optimization and evaluation matters. Search asks which candidate performs best under a particular objective. Evaluation asks whether that objective captures the outcomes we care about. A successful search can expose weaknesses in a scoring model just as readily as it can identify a useful layout.
+
+\subsection{Scope of the example}
+
+This paper is a presentation exercise rather than an empirical study. It uses a fixed synthetic dataset to explore the relationship between text, figures, tables, and supporting material. No participants were recruited, and no measurements of typing speed or comfort were collected. The displayed candidates should therefore be read as illustrative observations rather than recommendations.
+
+\section{Constructing a readable map}
+For this specimen, we generate 180 observations with six synthetic features using seed 42. Each feature is centered and scaled before principal component analysis. Singular value decomposition produces the plotted coordinates and the explained-variance labels.
+
+The map is descriptive. A gap between groups can suggest a direction for inspection, but it cannot establish that a family is better or that all useful alternatives have been found. A real study would report the encoding, corpus, geometry, and scoring profile alongside the projection.
+
+\paperfigure{pca}{A map of 180 synthetic candidates. PCA is computed from six standardized synthetic features; blue marks one selected example. Proximity reflects this projection, not equivalent performance.}
+
+\section{Experimental setup}
+
+A complete experiment begins with an explicit record of its inputs. In a real layout comparison, that record would identify the physical geometry, the text corpus, the permitted symbols, and the profile used to combine individual costs. Keeping these choices fixed makes differences between search methods easier to interpret.
+
+\subsection{Inputs and preprocessing}
+
+For this specimen, the plotting script generates six correlated features from a seeded synthetic process. Standardizing each feature prevents a large numerical range from dominating the projection. The transformation is fitted once to the displayed sample; all points in the figure share the same coordinate system.
+
+A real corpus would need a separate preprocessing description. Decisions about capitalization, punctuation, whitespace, and unsupported characters can change the observed frequencies. These choices belong in the methods section rather than being left implicit in an implementation. An example data-documentation reference is included to show the citation style \papercite{sample3}.
+
+\subsection{Search budget and reporting}
+
+The illustrative convergence figure spans thirty seconds, but its curves are simulated rather than timed. For an actual benchmark, we would report both elapsed time and the number of objective evaluations. The former reflects practical waiting time; the latter helps separate search behavior from machine performance.
+
+Repeated trials should begin from recorded seeds, with the same constraints and stopping conditions. Summaries should describe the distribution across trials rather than selecting the most favorable run. A useful report would include a central estimate, a measure of spread, and the number of trials contributing to each result.
+
+\section{Reading progress and trade-offs}
+The simulated trajectories separate rapid early gains from slower later improvements. Best-so-far curves show what has been retained, not every candidate that was visited. Comparing real optimizers would also require repeated seeds and a shared evaluation budget.
+
+\paperfigure{convergence}{Illustrative best-so-far scores over 30 seconds. Line styles distinguish three simulated searches; these are not measurements of GECKO algorithms.}
+\paperfigure{metrics}{Illustrative metric costs relative to a reference of 100. Lower is better in this example.}
+
+\begin{minipage}{\linewidth}
+\captionof{table}{Synthetic costs used in Figure 3.}
+\small
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrr@{}}
+\toprule
+Metric & Reference & Selected\\
+\midrule
+Same-finger & 100 & 68\\
+Travel & 100 & 77\\
+Redirects & 100 & 91\\
+Load imbalance & 100 & 83\\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+
+\subsection{Interpreting the comparison}
+
+Table 1 deliberately uses a common reference value so that the comparison is easy to scan. The largest illustrative reduction appears in the same-finger cost, while redirects move less. These values do not establish that one component is more important than another: importance depends on the scoring profile and the purpose of the experiment.
+
+A normalized comparison also hides the original units. A reduction from 100 to 68 communicates relative change, but not the absolute frequency of an event or its practical effect. A publication should provide enough context for readers to recover that distinction, either in the table notes or in supplementary data.
+
+\subsection{Sensitivity to the scoring profile}
+
+One natural follow-up is to vary the weights assigned to individual costs. If a candidate remains competitive across several reasonable profiles, it may be a more useful starting point than a candidate that wins only under one narrow choice. This is a question for additional experiments, not a conclusion supported by the current figures.
+
+A sample sensitivity-analysis reference \papercite{sample4} illustrates how a citation can sit within a longer discussion. In a real study, the tested weight ranges would need an independent justification. Showing a stable ranking over an arbitrary range would not, by itself, establish that the ranking reflects human preferences.
+
+\section{Discussion}
+The selected example improves all four displayed costs by construction. This is a demonstration of presentation, not evidence for a particular layout. A substantive study should include unfavorable outcomes, sensitivity to metric weights, and variation across corpora.
+
+The next step is to replace these synthetic observations with a recorded run. Preserve its seed, input hashes, and evaluation budget so that the figures remain connected to an inspectable experiment.
+
+\section{Limitations and validity}
+
+The synthetic generator makes the geometry of the example unusually convenient: the projected candidates form visible groups, and the selected candidate improves every displayed cost. Real data may contain overlapping groups, noisy measurements, and conflicting objectives. The presentation should remain readable when the results are less orderly.
+
+A two-dimensional projection necessarily omits information. Nearby points can differ along features that are not well represented in the displayed axes. The percentage of variance explained helps characterize the projection, but it does not turn visual proximity into a guarantee of equivalent behavior. Inspecting original feature values remains necessary.
+
+The scoring model is another source of uncertainty. It may capture repeated finger use or travel while leaving out learning effort, fatigue, or individual preferences. Without observations from actual use, the paper cannot claim improvements in comfort or typing performance. These are boundaries of interpretation, not minor qualifications to a measured result.
+
+\section{Reproducibility and availability}
+
+The supplied plotting script generates the figures from seed 42. Its output includes scalable graphics for the webpage and vector PDFs for the typeset paper. The same numerical values appear in the metric chart and table, allowing a reader to compare the two presentations directly.
+
+For future experiments, each reported figure should be associated with a saved run and a manifest of its inputs. A useful manifest records the seed, algorithm parameters, evaluation budget, and hashes of the corpus, geometry, and profile. Environment details help explain timing differences even when the numerical outcome is reproducible \papercite{sample5}.
+
+\section{Conclusion}
+
+A readable account of layout search needs more than a winning score. A map provides context, a trajectory shows progress, and a component comparison explains which costs changed. Together, these views make it easier to ask whether a result is robust, interpretable, and worth investigating further.
+
+This specimen demonstrates that reporting structure using synthetic examples. The next substantive step is to replace the sample observations with recorded experiments, preserve the unfavorable cases, and connect every conclusion to evidence. The figures should support that argument rather than stand in for it.
+
+\section*{Declarations}
+This is a design specimen, not a report of a completed study. No participant data are included. Funding, competing interests, and acknowledgments are intentionally left unspecified until there is a real study to describe.
+
+\section*{Appendix A. Reading the sample artifacts}
+
+\subsection*{A.1 Suggested inspection sequence}
+
+Start with the abstract to identify the question and the limits of the evidence. Then read the map alongside its caption before comparing the convergence curves. Finally, check the component table against the selected candidate. This sequence moves from context to search behavior to individual costs without requiring the reader to infer the role of each graphic.
+
+When replacing the examples, check that every axis includes its units, every abbreviation is explained, and every normalized quantity identifies its reference. Keep figure numbers stable during editing so that nearby discussion continues to point to the correct evidence. Short captions can identify the pattern; longer qualifications belong in the body.
+
+\subsection*{A.2 Replacing placeholder material}
+
+The bibliography below is intentionally fictional. Its author labels, titles, venues, and page ranges exist only to exercise the visual design. Replace each entry and its in-text citation with a verified source before sharing the paper as research. The synthetic-data notice should remain until the numerical examples have also been replaced.
+
+\renewcommand{\refname}{Sample bibliography}
+\begin{thebibliography}{9}
+\small\raggedright
+\setlength{\itemsep}{6pt}
+\bibitem{sample1}\citetarget{sample1} Example Author A and Example Author B. A survey of keyboard layout evaluation. \textit{Example Journal of Interface Studies}, 2024, 12(2), 41–58. [Fictional placeholder.]
+\bibitem{sample2}\citetarget{sample2} Example Author C. Comparing stochastic search under a fixed budget. \textit{Proceedings of the Example Search Workshop}, 2023, 15–24. [Fictional placeholder.]
+\bibitem{sample3}\citetarget{sample3} Example Author D and Example Author E. Documenting text corpora for reproducible analysis. \textit{Example Data Methods}, 2025, 3(1), 1–12. [Fictional placeholder.]
+\bibitem{sample4}\citetarget{sample4} Example Author F. Sensitivity analysis for weighted objectives. \textit{Example Computational Reports}, 2024, 8, 101–116. [Fictional placeholder.]
+\bibitem{sample5}\citetarget{sample5} Example Author G. From experiment logs to inspectable research artifacts. \textit{Example Reproducibility Notes}, 2026, 2(1), 9–18. [Fictional placeholder.]
+\end{thebibliography}
+\end{multicols}
+\end{document}
