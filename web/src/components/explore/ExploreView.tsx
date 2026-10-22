@@ -11,7 +11,7 @@ import { heatColor } from "../../colors";
 import { logGrid, paretoFront, rankOrder, rowChars, sameTables, swapList, symIds, type Swap } from "../../explore";
 import { fmt, fmtCount, fmtTime } from "../../format";
 import { loadAtlasView, type AtlasView, type Scorer } from "../../wasm";
-import type { SearchSettings } from "../../inputs";
+import { usePref, type SearchSettings } from "../../inputs";
 import { ConsensusBoard } from "./Board";
 import { Correlogram, Discovery, Families, Funnels, Landscape, ParallelCoords, Stability, stabilityRows, type Axis, type Family, type Funnel } from "./Panels";
 import { Picked, type PickedInfo } from "./Picked";
@@ -31,14 +31,6 @@ const ENCODINGS: [Encoding, string, string][] = [
 ];
 const FACTORS = logGrid(0.25, 4, 25);
 const LIGHT = "#e2e2e2";
-
-function usePref<T>(key: string, init: T): [T, (v: T) => void] {
-  const [v, setV] = useState<T>(() => {
-    try { const s = localStorage.getItem(`gecko.explore.${key}`); return s ? (JSON.parse(s) as T) : init; } catch { return init; }
-  });
-  const set = useCallback((x: T) => { setV(x); try { localStorage.setItem(`gecko.explore.${key}`, JSON.stringify(x)); } catch { /* storage unavailable */ } }, [key]);
-  return [v, set];
-}
 
 interface Props {
   meta: Meta;
@@ -60,16 +52,16 @@ interface Props {
 
 export function ExploreView(p: Props) {
   const explores = p.runs.filter((r) => r.algo === "explore");
-  const [atlasId, setAtlasId] = usePref<string>("atlas", "");
+  const [atlasId, setAtlasId] = usePref<string>("explore.atlas", "");
   const [data, setData] = useState<Data | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [rankBy, setRankBy] = usePref<"current" | "atlas">("rankBy", "atlas");
-  const [topN, setTopN] = usePref("topN", 200);
-  const [cut, setCut] = usePref("cut", 8);
-  const [enc, setEnc] = usePref<Encoding>("encoding", "slots");
-  const [tx, setTx] = usePref("tradeX", "B01");
-  const [ty, setTy] = usePref("tradeY", "T03");
+  const [rankBy, setRankBy] = usePref<"current" | "atlas">("explore.rankBy", "atlas");
+  const [topN, setTopN] = usePref("explore.topN", 200);
+  const [cut, setCut] = usePref("explore.cut", 8);
+  const [enc, setEnc] = usePref<Encoding>("explore.encoding", "slots");
+  const [tx, setTx] = usePref("explore.tradeX", "B01");
+  const [ty, setTy] = usePref("explore.tradeY", "T03");
   const [brush, setBrush] = useState<number[] | null>(null);
   const [picked, setPicked] = useState<number | null>(null);
   const [swaps, setSwaps] = useState<Swap[] | null>(null);
