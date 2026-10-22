@@ -28,7 +28,14 @@ export interface Geometry {
   flat?: Flat[];
   /** Comfort metric id → table name, and the loaded N×N tables (passed through to WASM). */
   comfort?: Record<string, string>; comfort_tables?: Record<string, number[]>;
+  /** Parameter file of a parametric board: it can be geometry-searched (`geom.ts`). */
+  param?: ParamGeometry;
+  /** Set on the best board of a geometry run (id `run:<run>`). */
+  run?: string;
 }
+
+/** A parametric board (gecko-core `ParametricGeometry`); opaque here, passed to WASM `param_board`. */
+export type ParamGeometry = { name: string; zone: unknown[] } & Record<string, unknown>;
 
 export interface Profile {
   id?: string;
@@ -124,10 +131,46 @@ export interface RunConfig {
   holdout?: { name: string; hash: string };
 }
 export interface RunSummary {
-  id: string; created: string; algo: string; profile: string; corpus: string; geometry: string;
+  id: string; created: string; algo: string; profile: string; corpus: string;
+  /** Board name; for a geometry run, its best board's (the `run:<id>` board) once done. */
+  geometry: string;
   best_score: number | null; best: string | null; elapsed_ms: number | null; status: string;
+  kind: "layout" | "geometry";
 }
-export interface RunDetail { config: RunConfig; result: RunResult | null; progress: Progress[]; running: boolean; paused?: boolean }
+export interface RunDetail { kind?: undefined; config: RunConfig; result: RunResult | null; progress: Progress[]; running: boolean; paused?: boolean }
+
+// ---- geometry runs (board + layout search, gecko-core `geomsearch`) ----
+
+/** A free parameter (`split.<f>`, `<zone>.<f>`, `<zone>.<col>.<f>`), its bounds and file value. */
+export interface GeomVar { name: string; lo: number; hi: number; start: number }
+export interface GeomProgress {
+  elapsed_ms: number; phase: "search" | "layout" | "polish"; generation: number; candidates: number;
+  /** Best objective (score + collision penalty) so far, and the best of collision-free boards. */
+  best: number; best_feasible: number | null; generation_best: number;
+  /** The board reported so far: free-parameter values (aligned with the run's vars), its layout, collisions. */
+  values: number[]; chars: string; collisions: number;
+}
+export interface GeomPoint { values: number[]; score: number; f: number; collisions: number; depth: number; chars: string; rows: string[]; breakdown: Breakdown }
+export interface GeomSearchParams {
+  mode: "bilevel" | "alternate"; seed: number; threads: number; time_ms: number | null; evals: number | null;
+  inner_evals: number; inner_accept0: number; polish_frac: number; polish_evals: number; sigma0: number; popsize: number | null;
+  margin: number; penalty: number; hard_fail: number; rounds: number; keep_effort: boolean;
+}
+export interface GeomRunConfig {
+  kind: "geometry"; id: string; created: string; params: GeomSearchParams; free: string; vars: GeomVar[];
+  geometry: { name: string; hash: string }; corpus: { name: string; hash: string }; profile: Profile; start: string; pins: string;
+}
+export interface GeomResult {
+  schema: number; id: string; mode: string; vars: GeomVar[];
+  /** The start and the best board, each after an equal final layout polish. */
+  start: GeomPoint; best: GeomPoint;
+  search_start: number; search_best: number; candidates: number; generations: number; layout_evals: number; elapsed_ms: number;
+  cma_runs: { popsize: number; generations: number; evals: number; best: number; stop: string }[];
+  feasible: boolean;
+}
+export interface GeomRunDetail {
+  kind: "geometry"; config: GeomRunConfig; param: ParamGeometry; result: GeomResult | null; progress: GeomProgress[]; running: boolean; paused?: boolean;
+}
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(path, init);
@@ -151,10 +194,17 @@ export const api = {
   corpusBytes: async (id: string) => new Uint8Array(await (await fetch(`/api/corpora/${encodeURIComponent(id)}`)).arrayBuffer()),
   runs: () => req<RunSummary[]>("/api/runs"),
   run: (id: string) => req<RunDetail>(`/api/runs/${encodeURIComponent(id)}`),
+  /** A layout or a geometry run (same route as `run`; `kind` tells them apart). */
+  anyRun: (id: string) => req<RunDetail | GeomRunDetail>(`/api/runs/${encodeURIComponent(id)}`),
+  /** A geometry run's detail (same route as `run`). */
+  geomRun: (id: string) => req<GeomRunDetail>(`/api/runs/${encodeURIComponent(id)}`),
+  geometryFree: (id: string, spec: string) =>
+    req<{ vars: GeomVar[] }>(`/api/geometries/${encodeURIComponent(id)}/free?spec=${encodeURIComponent(spec)}`),
   cancel: (id: string) => post<unknown>(`/api/runs/${encodeURIComponent(id)}/cancel`, {}),
   pause: (id: string, on: boolean) => post<unknown>(`/api/runs/${encodeURIComponent(id)}/${on ? "pause" : "resume"}`, {}),
   score: (body: ScoreRequest) => post<ScoreResponse>("/api/score", body),
-  startRun: (body: RunRequest) => post<{ id: string; config: RunConfig }>("/api/runs", body),
+  startRun: (body: RunRequest) => post<{ id: string; config: RunConfig | GeomRunConfig }>("/api/runs", body),
+  startGeomRun: (body: RunRequest & { geom: GeomRequest }) => post<{ id: string; config: GeomRunConfig }>("/api/runs", body),
   swapMatrix: (body: ScoreRequest) => post<{ n: number; score: number; matrix: number[] }>("/api/swap-matrix", body),
   atlas: (id: string) => req<AtlasSummary>(`/api/runs/${encodeURIComponent(id)}/atlas`),
   atlasFile: async (id: string, file: "optima" | "edges" | "samples") => {
@@ -169,4 +219,8 @@ export interface RunRequest extends ScoreRequest {
   /** Corpus id to score results on without searching on it (L06). */
   holdout?: string;
   memetic?: { ga: { pop_size: number }; local_search: "hc" | "tabu"; local_steps: number; islands: number; migration_interval: number; migrants: number };
+  /** A board + layout search on the (parametric) geometry; `evals` then counts boards. */
+  geom?: GeomRequest;
 }
+/** `free` as `gecko geom optimize --free`; the rest override `GeomSearchParams`. */
+export interface GeomRequest { free: string; mode?: "bilevel" | "alternate"; inner_evals?: number; margin?: number; penalty?: number; keep_effort?: boolean }

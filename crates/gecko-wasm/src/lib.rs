@@ -64,6 +64,26 @@ pub fn flat2d(geometry_json: &str) -> Result<String, JsError> {
     serde_json::to_string(&geometry.flat2d()).map_err(js)
 }
 
+/// A parametric board (`param_json`, as `/api/geometries` serves it in `param`) with free
+/// parameters `names` (JSON array, `geomsearch` names such as `fingers.2.stagger`) set to
+/// `values`, as JSON `{geometry, flat, collisions: [{a, b, depth}]}`: the keys, their 2D drawing
+/// and the keycap collisions the geometry search penalizes (2D when flat, approximate 3D otherwise).
+#[wasm_bindgen]
+pub fn param_board(param_json: &str, names_json: &str, values: &[f64]) -> Result<String, JsError> {
+    let params: gecko_core::ParametricGeometry = serde_json::from_str(param_json).map_err(js)?;
+    let names: Vec<String> = serde_json::from_str(names_json).map_err(js)?;
+    if names.len() != values.len() {
+        return Err(JsError::new("one value per parameter name"));
+    }
+    let vars: Vec<gecko_core::geomsearch::Var> =
+        names.into_iter().map(|name| gecko_core::geomsearch::Var { name, lo: 0.0, hi: 0.0, start: 0.0 }).collect();
+    let g = gecko_core::geomsearch::best_params(&params, &vars, values, true).map_err(js)?.generate_unchecked().map_err(js)?;
+    let collisions = if g.is_flat() { g.collisions(0.0) } else { g.collisions_3d(0.0) };
+    let collisions: Vec<serde_json::Value> = collisions.iter().map(|c| serde_json::json!({"a": c.a, "b": c.b, "depth": c.depth})).collect();
+    let v = serde_json::json!({"geometry": g, "flat": g.flat2d(), "collisions": collisions});
+    Ok(v.to_string())
+}
+
 /// Slot-ordered `chars` on a geometry written for another analyzer (`gecko layouts export`):
 /// `format` is oxeylyzer, genkey or cmini; only the 30 alpha keys are written. Errors when the
 /// board has no 3 × 10 alpha block.

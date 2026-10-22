@@ -230,3 +230,103 @@ fn run_directory_holds_a_loadable_board() {
     assert!((fresh - res.best.score).abs() < 1e-5 * res.best.score.abs().max(1.0), "{fresh} vs {}", res.best.score);
     let _ = std::fs::remove_dir_all(&runs);
 }
+
+#[test]
+fn progress_carries_the_reported_board() {
+    let st = store();
+    let p = corne();
+    let board = st.geometry("corne-36.param").unwrap();
+    let corpus = st.corpus("english").unwrap();
+    let profile = st.profile("hand").unwrap();
+    let start = st.layout("qwerty", &board.name).unwrap().fit(&board).unwrap();
+    let vars = geomsearch::parse_free(&p, "fingers.stagger").unwrap();
+    let spec = GeomSpec {
+        params: &p,
+        board: &board,
+        corpus: &corpus,
+        profile: &profile,
+        start: &start,
+        pins: "",
+        vars: &vars,
+        search: GeomParams { evals: Some(20), threads: 1, inner_evals: 1_000, polish_evals: 5_000, ..Default::default() },
+    };
+    let mut seen = Vec::new();
+    let res = geomsearch::search(&spec, &Default::default(), |pg| seen.push(pg.clone())).unwrap();
+    assert!(!seen.is_empty());
+    for pg in &seen {
+        assert_eq!(pg.values.len(), vars.len());
+        assert_eq!(pg.chars.chars().count(), board.key.len());
+    }
+    // The last event reports the board the search chose (polished afterwards).
+    assert_eq!(seen.last().unwrap().values, res.best.values);
+    // Restarts left without budget are not reported (their best would be infinite).
+    assert!(res.cma_runs.iter().all(|r| r.evals > 0 && r.best.is_finite()));
+}
+
+#[test]
+fn paused_time_does_not_use_the_budget() {
+    let st = store();
+    let p = corne();
+    let board = st.geometry("corne-36.param").unwrap();
+    let corpus = st.corpus("english").unwrap();
+    let profile = st.profile("hand").unwrap();
+    let start = st.layout("qwerty", &board.name).unwrap().fit(&board).unwrap();
+    let vars = geomsearch::parse_free(&p, "fingers.stagger").unwrap();
+    let spec = GeomSpec {
+        params: &p,
+        board: &board,
+        corpus: &corpus,
+        profile: &profile,
+        start: &start,
+        pins: "",
+        vars: &vars,
+        search: GeomParams { time_ms: Some(600), threads: 1, inner_evals: 500, ..Default::default() },
+    };
+    let control = gecko_core::optimize::Control::default();
+    let t0 = std::time::Instant::now();
+    let res = std::thread::scope(|s| {
+        s.spawn(|| {
+            std::thread::sleep(std::time::Duration::from_millis(150));
+            control.set_paused(true);
+            std::thread::sleep(std::time::Duration::from_millis(800));
+            control.set_paused(false);
+        });
+        geomsearch::search(&spec, &control, |_| {}).unwrap()
+    });
+    let wall = t0.elapsed().as_millis() as u64;
+    assert!(wall >= 900, "the pause held the search ({wall} ms)");
+    assert!(res.elapsed_ms + 600 <= wall, "reported {} ms of {wall} ms wall time", res.elapsed_ms);
+}
+
+#[test]
+fn run_boards_load_by_id() {
+    let mut st = store();
+    st.runs = std::env::temp_dir().join(format!("gecko-geom-runboard-{}", std::process::id()));
+    let p = corne();
+    let board = st.geometry("corne-36.param").unwrap();
+    let corpus = st.corpus("english").unwrap();
+    let profile = st.profile("hand").unwrap();
+    let start = st.layout("qwerty", &board.name).unwrap().fit(&board).unwrap();
+    let vars = geomsearch::parse_free(&p, "fingers.splay").unwrap();
+    let spec = GeomSpec {
+        params: &p,
+        board: &board,
+        corpus: &corpus,
+        profile: &profile,
+        start: &start,
+        pins: "",
+        vars: &vars,
+        search: GeomParams { evals: Some(10), threads: 1, inner_evals: 500, polish_evals: 2_000, ..Default::default() },
+    };
+    let (res, _) = geomsearch::run(&st.runs, &spec, "fingers.splay", &Default::default(), |_| {}).unwrap();
+    let id = format!("run:{}", res.id);
+    let g = st.geometry(&id).unwrap();
+    assert_eq!(g.name, geomsearch::best_name(&p.name, &res.id));
+    let (params, keys) = st.param_board(&id).unwrap();
+    assert_eq!(keys.hash(), g.hash());
+    assert_eq!(params.name, g.name);
+    let listed = gecko_core::run::list(&st.runs);
+    assert_eq!((listed[0].kind.as_str(), listed[0].geometry.as_str()), ("geometry", g.name.as_str()));
+    assert!(st.geometry("run:../x").is_err() && st.param_geometry("run:").is_err());
+    let _ = std::fs::remove_dir_all(&st.runs);
+}
