@@ -1,5 +1,6 @@
-// Saved view: every saved run on the left; the selected run's convergence, ranked layouts
-// (2D thumbnails) and reproducibility details on the right.
+// Saved view: every saved run (with a mini keyboard of its best layout) on the left; the selected
+// run's convergence (hover: best layout at that time), ranked layouts and reproducibility details
+// on the right.
 
 import type { Geometry, Progress, RunDetail, RunSummary } from "../../api";
 import { fitChars, fmt, fmtCount, fmtTime } from "../../format";
@@ -32,15 +33,20 @@ export function SavedView(p: Props) {
             <table className="tbl">
               <thead><tr><th>created</th><th>algo</th><th>profile</th><th>time</th><th>score</th></tr></thead>
               <tbody>
-                {p.runs.map((r) => (
+                {p.runs.map((r) => {
+                  const g = p.geometries.find((x) => x.name === r.geometry);
+                  const best = r.best?.replace(/ /g, "");
+                  return (
                   <tr key={r.id} className={`click ${cfg?.id === r.id ? "sel" : ""}`} onClick={() => p.onOpenRun(r.id)} title={r.id}>
-                    <td className="l">{r.created.replace("T", " ").replace("Z", "")}<div className="hint mono">{r.best ?? r.status}</div></td>
+                    <td className="l">{r.created.replace("T", " ").replace("Z", "")}
+                      <div>{g && best ? <Thumb geometry={g} chars={fitChars(best, g)} u={15} width={240} /> : <span className="hint mono">{r.best ?? r.status}</span>}</div></td>
                     <td>{r.algo}</td>
                     <td>{r.profile}</td>
                     <td>{r.elapsed_ms !== null ? fmtTime(r.elapsed_ms) : "–"}</td>
                     <td>{r.status === "running" ? <span className="badge warn">running</span> : r.best_score !== null ? fmt(r.best_score, 3) : "–"}</td>
                   </tr>
-                ))}
+                  );
+                })}
                 {p.runs.length === 0 && <tr><td className="muted">No runs yet. Press play to start one.</td><td /><td /><td /><td /></tr>}
               </tbody>
             </table>
@@ -58,7 +64,7 @@ export function SavedView(p: Props) {
             </div>
             <div className="scroll">
               <div className="pad">
-                <div className="chartbox"><Convergence progress={p.progress} reference={p.refScore} refName={p.refName} /></div>
+                <div className="chartbox"><Convergence progress={p.progress} reference={p.refScore} refName={p.refName} geometry={geo} /></div>
               </div>
               {res && (
                 <details className="sec" open>

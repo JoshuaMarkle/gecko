@@ -72,9 +72,15 @@ export function FitBoard({ geometry, cells, onKey, arcs, max = 64, pad = 8 }: {
   );
 }
 
-/** A layout as a small key grid (symbols only); keys that differ from `diff` are shaded. */
-export function Thumb({ geometry, chars, diff, u = 17 }: { geometry: Geometry; chars: string; diff?: string; u?: number }) {
+/** The mini keyboard: a layout as a small key grid (symbols only), used wherever a layout is
+ *  referenced (run lists, families, chart tooltips). Keys that differ from `diff` are shaded;
+ *  `width` caps the drawing's width in px (u shrinks to fit). */
+export function Thumb({ geometry, chars, diff, u = 17, width }: { geometry: Geometry; chars: string; diff?: string; u?: number; width?: number }) {
   const a = [...chars], d = diff ? [...diff] : null;
+  if (width) {
+    const b = flatBounds(flatKeys(geometry));
+    u = Math.min(u, (width - 4) / (b.x1 - b.x0));
+  }
   return (
     <KeyGrid geometry={geometry} u={u} cells={(i) => ({
       fill: d && d[i] !== a[i] ? "#e8e8e8" : "#ffffff",

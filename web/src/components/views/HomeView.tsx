@@ -86,7 +86,7 @@ export function HomeView(p: Props) {
         <div className="homegrid">
           <div className="homeconv">
             <h4>Convergence <span className="hint">{p.run?.result ? `${p.run.config.params.algo} · ${fmtTime(p.run.result.elapsed_ms)}` : p.running ? "live" : ""}</span></h4>
-            <div className="chartfill"><Convergence progress={p.progress} reference={p.refA?.breakdown.score} refName={p.refName} /></div>
+            <div className="chartfill"><Convergence progress={p.progress} reference={p.refA?.breakdown.score} refName={p.refName} geometry={p.geometry} /></div>
           </div>
           <div>
             <h4>Chance we've found the optimal layout</h4>
