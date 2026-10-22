@@ -135,3 +135,21 @@ fn dactyl_scores_and_deltas_agree() {
         assert!((scorer.full(&state) - before - delta).abs() < 1e-5 * before.abs().max(1.0));
     }
 }
+
+#[test]
+fn height_off_the_hand_plane_counts_as_stretch() {
+    // Middle top row to index outer column: 2 u apart in x on the flat Corne. Lifting the index
+    // key off the plane must not hide the stretch (a 3D search sank and lifted columns for it).
+    let g = store().geometry("corne-36").unwrap();
+    let find =
+        |f: gecko_core::Finger, col: i8| (0..g.len()).find(|&i| g.key[i].finger == f && g.key[i].row == 0 && g.key[i].col == col).unwrap();
+    let (m, i) = (find(gecko_core::Finger::LM, 2), find(gecko_core::Finger::LI, 4));
+    let mut pts = g.metric_points();
+    let spread = gecko_core::metrics::SPREAD;
+    let flat = gecko_core::metrics::stretch_at(&g, &pts, spread, m, i);
+    pts[i][2] = 1.0;
+    let lifted = gecko_core::metrics::stretch_at(&g, &pts, spread, m, i);
+    let (dx, dy) = (pts[i][0] - pts[m][0], pts[i][1] + g.key[i].finger.length_offset() - pts[m][1] - g.key[m].finger.length_offset());
+    assert!(flat > 0.0 && lifted > flat);
+    assert!((lifted - flat - ((dx * dx + dy * dy + 1.0).sqrt() - dx.hypot(dy))).abs() < 1e-5);
+}

@@ -18,6 +18,15 @@ pub const CAP_TAPER: f64 = 0.15;
 /// (≈ 3 mm to the plate plus the 5.5 mm bottom housing).
 pub const SWITCH_HALF: f64 = 0.39;
 pub const SWITCH_DEPTH: f64 = 0.45;
+/// Finger access above each keycap: its top face extruded this far (u) along the key's normal
+/// must hold no other key's cap or switch. ≈ 19 mm, a fingertip's thickness plus approach, so a
+/// key buried under a neighbour (which no finger can press) counts as a collision.
+pub const ACCESS_HEIGHT: f64 = 1.0;
+/// A finger key's access also covers the finger lying back from the fingertip: the top face
+/// swept this far (u, ≈ 29 mm: distal phalanx and part of the middle one) toward the user, rising
+/// at 45° off the keycap. Keys may sit in front of a finger key (a Corne's thumbs, 1.3 u ahead),
+/// but not raised into the finger's path.
+pub const FINGER_LENGTH: f64 = 1.5;
 /// Overlaps of at most this depth (u) count as touching, as in 2D.
 const TOUCH: f64 = 1e-3;
 
@@ -253,8 +262,16 @@ pub struct Contact {
     pub normal: V3,
 }
 
-/// A key's two hulls (keycap, switch body), grown by `margin` u per side.
+/// A key's two solid hulls (keycap, switch body), grown by `margin` u per side.
 pub fn key_hulls(k: &crate::geometry::Key, margin: f64) -> [Hull; 2] {
+    let [cap, switch, _] = key_volumes(k, margin);
+    [cap, switch]
+}
+
+/// [`key_hulls`] plus the key's finger access volume: its cap top (with margin) extruded
+/// [`ACCESS_HEIGHT`] along the normal and, on finger keys, [`FINGER_LENGTH`] up and toward the
+/// user (key frame +y), one convex wedge.
+pub fn key_volumes(k: &crate::geometry::Key, margin: f64) -> [Hull; 3] {
     let h = CAP_HEIGHT / 2.0;
     let r = pose::rotation(k.rot);
     // Centre of the keycap box, as in `pose::contact`.
@@ -262,18 +279,35 @@ pub fn key_hulls(k: &crate::geometry::Key, margin: f64) -> [Hull; 2] {
     let half = [k.size[0] as f64 / 2.0 + margin, k.size[1] as f64 / 2.0 + margin];
     let top = [(half[0] - CAP_TAPER).max(0.05), (half[1] - CAP_TAPER).max(0.05)];
     let sw = [SWITCH_HALF + margin; 2];
-    [Hull::frustum(c, &r, half, top, [-h, h]), Hull::frustum(c, &r, sw, sw, [-h - SWITCH_DEPTH, -h])]
+    let mut access = Hull::frustum(c, &r, top, top, [h, h + ACCESS_HEIGHT]);
+    if !k.finger.is_thumb() {
+        let back = pose::apply(&r, [0.0, FINGER_LENGTH / 2f64.sqrt(), FINGER_LENGTH / 2f64.sqrt()]);
+        let swept: Vec<V3> = access.v[..4].iter().map(|&p| pose::add(p, back)).collect();
+        access.v.extend(swept);
+    }
+    [Hull::frustum(c, &r, half, top, [-h, h]), Hull::frustum(c, &r, sw, sw, [-h - SWITCH_DEPTH, -h]), access]
+}
+
+/// Deepest overlap between keys `a` and `b` (volumes from [`key_volumes`]): solid against solid,
+/// or one key's access volume against the other's solids. Two access volumes may overlap.
+fn deepest(a: &[Hull; 3], b: &[Hull; 3]) -> Option<(f64, V3)> {
+    const PAIRS: [(usize, usize); 6] = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)];
+    let ab = PAIRS.iter().filter_map(|&(x, y)| penetration(&a[x], &b[y]));
+    // b's access volume against a's solids: same pairs swapped, normal kept as "move b".
+    let ba = PAIRS[4..].iter().filter_map(|&(x, y)| penetration(&b[x], &a[y]).map(|(d, n)| (d, neg(n))));
+    ab.chain(ba).max_by(|x, y| x.0.total_cmp(&y.0))
 }
 
 impl Geometry {
     /// Overlapping keys in 3D (`a < b`, physical keys only) with their minimum translation
     /// vectors. Each key is its keycap (footprint grown by `margin`, top inset by
-    /// [`CAP_TAPER`], [`CAP_HEIGHT`] tall) and a switch body ([`SWITCH_HALF`] + `margin`,
-    /// [`SWITCH_DEPTH`] below the cap). Pairs come from a uniform grid over bounding spheres.
+    /// [`CAP_TAPER`], [`CAP_HEIGHT`] tall), a switch body ([`SWITCH_HALF`] + `margin`,
+    /// [`SWITCH_DEPTH`] below the cap) and the finger access above its top ([`ACCESS_HEIGHT`]),
+    /// which must be free of other keys. Pairs come from a uniform grid over bounding spheres.
     pub fn contacts_3d(&self, margin: f32) -> Vec<Contact> {
         let m = margin as f64;
         let keys: Vec<usize> = (0..self.len()).filter(|&i| self.key[i].phys.is_none()).collect();
-        let hulls: Vec<[Hull; 2]> = keys.iter().map(|&i| key_hulls(&self.key[i], m)).collect();
+        let hulls: Vec<[Hull; 3]> = keys.iter().map(|&i| key_volumes(&self.key[i], m)).collect();
         // Bounding sphere per key: centre of all its vertices, radius to the farthest one.
         let spheres: Vec<(V3, f64)> = hulls
             .iter()
@@ -305,11 +339,7 @@ impl Geometry {
                             if j <= i || dot(d, d) >= (ri + rj) * (ri + rj) {
                                 continue;
                             }
-                            let deepest = hulls[i]
-                                .iter()
-                                .flat_map(|x| hulls[j].iter().filter_map(move |y| penetration(x, y)))
-                                .max_by(|x, y| x.0.total_cmp(&y.0));
-                            if let Some((depth, normal)) = deepest {
+                            if let Some((depth, normal)) = deepest(&hulls[i], &hulls[j]) {
                                 out.push(Contact { a: keys[i], b: keys[j], depth, normal });
                             }
                         }
@@ -394,8 +424,8 @@ impl Geometry {
 
     /// Unit direction and depth that move key `b` clear of key `a` in 3D (deepest hull pair).
     fn mtv_3d(&self, a: usize, b: usize, margin: f32) -> Option<(V3, f64)> {
-        let (ha, hb) = (key_hulls(&self.key[a], margin as f64), key_hulls(&self.key[b], margin as f64));
-        ha.iter().flat_map(|x| hb.iter().filter_map(move |y| penetration(x, y))).max_by(|x, y| x.0.total_cmp(&y.0)).map(|(d, n)| (n, d))
+        let (ha, hb) = (key_volumes(&self.key[a], margin as f64), key_volumes(&self.key[b], margin as f64));
+        deepest(&ha, &hb).map(|(d, n)| (n, d))
     }
 
     /// As [`Geometry::mtv_3d`] for flat keycaps in the board plane.

@@ -55,12 +55,14 @@ moved keys, CMA-ES and the bilevel driver below.
   board's) is never changed: no warm-start SA, no inner layout search, no final polish; the whole
   budget goes to CMA-ES over the board, one rebuild + full score per candidate. The web UI's
   Board tab runs this; Both runs bilevel or alternate.
-- **Collisions**: 2D on flat candidates, 3D keycap + switch volumes (`collisions_3d`, GJK) otherwise, with `--margin` clearance.
+- **Collisions**: 2D on flat candidates, 3D keycap + switch + finger access volumes (`collisions_3d`,
+  GJK) otherwise, with `--margin` clearance.
   Objective = score + `penalty` · (|start board score| + 1) · total depth, the start board
   scored after its first layout search (not the raw start layout, e.g. QWERTY); past `hard_fail` (2 u) the
   layout search is skipped. The best collision-free board is reported. A profile `[build]`
   section (G07, [../geometry.md](../geometry.md#manufacturability-g07)) adds its violations to
-  `collisions` and their excess to the depth, so build limits share the penalty and hard fail.
+  `collisions` and their excess to the depth, so build limits share the penalty and hard fail;
+  without one, 3D candidates get the default limits (key angle ≤ 60°, height ≤ 4 u, …).
 - **Budget**: with `--time`, 10% for the first layout run, 70% for the search, 10% each for the
   final SA on the best board and on the start board, so the reported gain compares equal
   layout effort. With `--evals N`: N boards, `--polish-evals` swaps per layout run;
@@ -178,3 +180,24 @@ curve 30° at its bound). `gecko build stl run:<id>` gives a 215 × 114 × 77 mm
 switch cutout clear (12 connectors dropped) but 8 keycaps hitting webs within their travel;
 the H10 runs without `[build]` (tent to 104°) leave 2–24 cutouts blocked. A buildable board
 needs `[build]` during the search, and keycap clearance is not yet a search constraint.
+
+**Invalid 3D boards fixed (2026-10-22).** 3D runs gave insane tents, vertical thumb clusters and keys
+buried under neighbours, with any profile (`20261022-230957-geom-51902824`: board mode, `default`,
+`code`: B14 stretch 2.84 → 0.34 of a 3.2 gain; split tent 5°, thumbs tent 40° / tilt 34°, row and
+column curve at their bounds, index columns 1.5 u below the middle). Three causes:
+1. B14/S04/S05/T09 stretch measured only in-plane x, y in the hand frame, so sinking, lifting and
+   curving columns hid stretch for free (and derived effort measured 2D). Now 3D distance.
+2. 3D collision tested solids only: a key under a neighbour's cap with vertical room clears it,
+   though no finger can press it. Now each key has a finger access volume (see geometry.md).
+3. Without a profile `[build]` nothing bounded key angle or height. Defaults now apply to 3D
+   candidates.
+
+Same command after the fix (`20261022-232354-geom-f7fdd84b`, 60 s): 28.47 → 25.87 (−9.1%), no
+collisions, split tent 0°, row curve 0°, all keys accessible. Column curve still runs to its 15°
+bound and the index stretch column reaches the 60° key-angle limit: tilted caps nest closer
+(tops 0.88 u apart), which shortens true 3D fingertip distances. Nothing in a distance-only profile
+prices pressing a steep key (that is G05), so use `-p hand` or tighter `col_curve` bounds for
+3D shape. With `-p hand`, 3D bilevel 90 s (`20261022-232628-geom-0a6a57dd`): 11.63 → 7.70
+(−33.8%), split tent 28°, row curve 30° (bound), every key ≤ 50°, thumbs ≈ 26°. Earlier 3D
+results above predate the fix (3D boards now score their out-of-plane stretch), so their
+numbers are not comparable.

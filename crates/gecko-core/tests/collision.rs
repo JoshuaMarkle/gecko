@@ -214,3 +214,23 @@ fn repair_moves_layer_copies_with_their_key() {
         }
     }
 }
+
+#[test]
+fn finger_access_blocks_buried_and_raised_keys() {
+    // A key hovering over another's cap: solids clear (vertical room), but no finger reaches it.
+    let mut g = board(vec![key(0.0, 0.0, 0.0), key(0.3, 0.0, 0.0)]);
+    g.key[1].pos[2] = 1.0;
+    let c = g.contacts_3d(0.0);
+    assert_eq!(c.iter().map(|c| (c.a, c.b)).collect::<Vec<_>>(), vec![(0, 1)]);
+    assert!(g.validate().unwrap_err().to_string().contains("overlapping"));
+    // A key one row toward the user, raised into the finger lying back from key 0.
+    let mut g = board(vec![key(0.0, 0.0, 0.0), key(0.0, 1.0, 0.0)]);
+    g.key[1].pos[2] = 0.5;
+    assert_eq!(g.contacts_3d(0.0).len(), 1);
+    // A thumb key there has no finger behind it, so it blocks nothing.
+    g.key[0].finger = Finger::LT;
+    assert!(g.contacts_3d(0.0).is_empty());
+    // At the same height 1.3 u ahead (a Corne's thumbs) it is clear.
+    let g = board(vec![key(0.0, 0.0, 0.0), key(0.0, 1.3, 0.0)]);
+    assert!(g.contacts_3d(0.0).is_empty());
+}

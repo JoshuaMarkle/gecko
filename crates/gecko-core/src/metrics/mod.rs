@@ -603,8 +603,9 @@ pub fn hand_spread(p: &Profile) -> f32 {
     p.hand.as_ref().map_or(SPREAD, |h| SPREAD * h.dims().span / crate::hand::AVERAGE.span)
 }
 
-/// [`stretch`] with precomputed [`Geometry::metric_points`] (in-plane x and y; height ignored)
-/// and the relaxed per-finger `spread` (u).
+/// [`stretch`] with precomputed [`Geometry::metric_points`] and the relaxed per-finger `spread`
+/// (u). The distance is 3D: crossings and length offsets are in-plane, but height off the hand's
+/// plane counts as stretch too, or a 3D search sinks and lifts columns to hide it.
 pub fn stretch_at(g: &Geometry, pts: &[[f32; 3]], spread: f32, i: usize, j: usize) -> f32 {
     let (a, b) = (&g.key[i], &g.key[j]);
     if a.finger == b.finger || a.hand() != b.hand() {
@@ -618,9 +619,10 @@ pub fn stretch_at(g: &Geometry, pts: &[[f32; 3]], spread: f32, i: usize, j: usiz
     let xo = finger_overlap(a.finger.ord(), b.finger.ord());
     // Fingers are indexed left to right across both hands, so the higher index should sit to the right.
     let crossed = if fa > fb { xa < xb + xo } else { xa + xo > xb };
+    let dz = pts[i][2] - pts[j][2];
     let dx = if crossed { -dx } else { dx };
     let overlap = (xo - 1.3 * dx + dy / 3.0).max(0.0);
-    let s = dx.hypot(dy) + overlap - spread * fa.abs_diff(fb) as f32;
+    let s = (dx * dx + dy * dy + dz * dz).sqrt() + overlap - spread * fa.abs_diff(fb) as f32;
     if s > 0.001 {
         s
     } else {
