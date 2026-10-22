@@ -27,7 +27,7 @@ are shared with the single-population algorithms. All moves respect pins.
 | [map-elites.md](map-elites.md) | Quality diversity | Done | Grid over behaviour axes (roll ratio, index load, …), best layout per cell; `gecko qd` |
 | [magic-rules.md](magic-rules.md) | Greedy (lazy) | Done | Rules of an adaptive (magic) key on a fixed layout |
 | [bounds.md](bounds.md) | Lower bound | Done | Gilmore–Lawler + dual ascent; optimality gap in every `optimize` run |
-| [geometry-search.md](geometry-search.md) | Continuous | Phase 6+ | Key positions/rotations; bilevel with layout |
+| [geometry-search.md](geometry-search.md) | Continuous | CMA-ES done; bilevel next | Key positions/rotations; bilevel with layout |
 
 Shared neighborhoods (`optimize/moves.rs`): every `steepest_descent` runs swaps to a local
 optimum, then, if enabled in `Params.moves` (`--moves columns,cycle3,depth2|all`), tries the

@@ -93,7 +93,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 66. [ ] [#96](https://github.com/JoshuaMarkle/gecko/issues/96) `L12` Corpus tab: build a corpus from your own files · S · after [#88](https://github.com/JoshuaMarkle/gecko/issues/88)
 67. [ ] [#97](https://github.com/JoshuaMarkle/gecko/issues/97) `C11` Optimize finger assignment (alt fingering) · M
 68. [ ] [#98](https://github.com/JoshuaMarkle/gecko/issues/98) `F7` Layout diff view · S · after [#83](https://github.com/JoshuaMarkle/gecko/issues/83)
-69. [ ] [#48](https://github.com/JoshuaMarkle/gecko/issues/48) `G5` CMA-ES continuous optimizer · M
+69. [x] [#48](https://github.com/JoshuaMarkle/gecko/issues/48) `G5` CMA-ES continuous optimizer · M
 70. [ ] [#49](https://github.com/JoshuaMarkle/gecko/issues/49) `F3` Web: worst words with finger path animation · S · after [#23](https://github.com/JoshuaMarkle/gecko/issues/23)
 71. [ ] [#50](https://github.com/JoshuaMarkle/gecko/issues/50) `K3` Web: pairwise comfort study · M · after [#46](https://github.com/JoshuaMarkle/gecko/issues/46)
 72. [ ] [#99](https://github.com/JoshuaMarkle/gecko/issues/99) `L11` Runs tab: gallery and run comparison · M · after [#87](https://github.com/JoshuaMarkle/gecko/issues/87), [#98](https://github.com/JoshuaMarkle/gecko/issues/98)

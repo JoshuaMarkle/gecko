@@ -90,6 +90,12 @@ contact, a 45° key whose bounding box overlaps but whose box does not, the grid
 equal to brute force on random boards (sizes, rotations, margins), every bundled flat board
 clear, `validate` rejecting an overlap that `check_keys` allows, layer copies and 3D boards skipped.
 
+CMA-ES (`tests/cmaes.rs` + `eigh` unit test): sphere 10-D to 1e-10 in < 8k evaluations,
+Rosenbrock 10-D to 1e-8 at (1, …, 1), a bounded problem whose optimum lies outside the box ends
+on the corner and the objective never sees an out-of-box point, an interior bounded optimum,
+same seed → identical history, IPOP solves 5-D Rastrigin where one run does not (λ doubling),
+batch evaluator gets whole generations within the budget.
+
 Derived costs (`tests/derive.rs`): every bundled board with its `effort`/`stretch` lines removed
 derives the same stretch flags (one documented exception, ANSI `N`) and efforts with r > 0.8
 against the hand-entered ones, home keys at their home effort, cheapest thumb key 1.0, explicit
