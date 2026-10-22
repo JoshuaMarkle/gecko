@@ -24,7 +24,7 @@ placements unused for `5 m²` iterations (forced diversification). Restart from 
 layout after `100 m` iterations without improvement; each restart's best is polished by
 steepest descent. Params (`TabuParams`): `tenure_min`, `tenure_max`, `diversify`,
 `stagnation`, `refresh`. The Δ matrix holds the linear part of each swap delta; the finger-load
-part is added during the scan (see decisions.md 2026-10-21). One iteration on ansi-30 ≈ 0.26
+part is added during the scan (see [decisions](../decisions/search.md) 2026-10-21). One iteration on ansi-30 ≈ 0.26
 ms on one thread (≈ 3× cheaper than a full rescan); evals = swaps scanned.
 
 ## Results

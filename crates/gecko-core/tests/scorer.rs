@@ -618,7 +618,7 @@ fn ranking_sanity_on_english() {
     };
     let modern = ["graphite", "sturdy", "semimak"].map(score).into_iter().fold(f64::NEG_INFINITY, f64::max);
     // Colemak vs Dvorak is no longer pinned: B14 rates Colemak's D/H stretches about level with
-    // Dvorak, and measured comfort (E05) favours Dvorak's alternation; see context/decisions.md.
+    // Dvorak, and measured comfort (E05) favours Dvorak's alternation; see context/decisions/scoring.md.
     let (colemak, dvorak, qwerty) = (score("colemak-dh"), score("dvorak"), score("qwerty"));
     assert!(
         modern < colemak.min(dvorak) && colemak.max(dvorak) < qwerty,

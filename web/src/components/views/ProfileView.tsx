@@ -1,4 +1,4 @@
-// Profile tab (frontend.md "Profile"): every scoring parameter in sections with scroll-spy |
+// Profile tab (web-screens.md "Profile"): every scoring parameter in sections with scroll-spy |
 // a visual of what the focused section optimizes | what it measures and how weights move the score.
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";

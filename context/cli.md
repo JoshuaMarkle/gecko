@@ -1,6 +1,9 @@
 # CLI
 
 One binary, `gecko` (`crates/gecko-cli`). Built for agents first: deterministic, scriptable, JSON output.
+Code: `main.rs` (clap entry) dispatches to `cmd/<group>.rs` (score, optimize, bench, explore,
+magic, corpus, geometry, layouts, profile, list); `ctx.rs` holds the shared inputs, loading
+and output helpers, `fmt.rs` the text tables, `serve.rs` the HTTP server.
 
 ## Commands
 

@@ -8,7 +8,8 @@ optimization on top. Rust core + CLI + server + WASM; TypeScript web UI with a 3
 
 - **Work autonomously.** Development runs with little supervision. Don't ask for
   permission on implementation details. Make sound decisions, keep moving, and record
-  any non-obvious choice in `context/decisions.md` (date — decision — why).
+  any non-obvious choice in `context/decisions/<area>.md` (date — decision — why; index
+  `context/decisions.md`).
 - Ask the user only when a choice changes the project's goals or cannot be undone.
 - Prefer small, verifiable steps. A change is done when it builds, tests pass, and the
   relevant `context/` file is still accurate.
@@ -21,6 +22,8 @@ optimization on top. Rust core + CLI + server + WASM; TypeScript web UI with a 3
 | Orientation | `context/goals.md`, `context/architecture.md` |
 | Data formats (geometry, layout, corpus, runs) | `context/representation.md` |
 | Metrics, scoring, profiles | `context/objective.md`, `context/metrics-catalog.md`, `context/parameters.md` |
+| Hand model, reach / press-angle / wrist-posture costs | `context/hand-model.md` |
+| Parametric and 3D boards, collision, derived effort | `context/geometry.md` |
 | An optimizer | `context/algorithms/README.md` + `context/algorithms/<name>.md` |
 | CLI | `context/cli.md` |
 | Web UI / 3D | `context/web.md`, `context/design.md` (visual design) |
@@ -46,6 +49,8 @@ cd web && npm install && npm run wasm && npm run build   # web UI (needs wasm-pa
 ./target/release/gecko serve                # http://127.0.0.1:7777
 cd web && npm run dev                       # UI dev server, proxies /api to gecko serve
 cd web && npm run typecheck && npm test
+cd web && npm run test:contract           # web/src/api.ts types vs real server JSON
+python3 -I research/scripts/research.py lint   # research/ links, frontmatter, index (also in make test)
 ```
 
 Or `make` (build everything), `make test`, `make serve`.

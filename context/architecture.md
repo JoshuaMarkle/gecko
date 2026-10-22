@@ -11,21 +11,25 @@
 
 ```
 gecko/
-├── AGENTS.md / CLAUDE.md   # agent instructions (CLAUDE.md links to AGENTS.md)
-├── Cargo.toml              # workspace
+├── AGENTS.md / CLAUDE.md   # agent instructions (CLAUDE.md imports AGENTS.md)
+├── Cargo.toml · Makefile   # workspace; `make`, `make test`, `make serve`
 ├── crates/
 │   ├── gecko-core/         # library; no I/O beyond reading/writing data files
 │   ├── gecko-cli/          # `gecko` binary (incl. `gecko serve`)
 │   └── gecko-wasm/         # wasm-bindgen wrapper over gecko-core
-├── web/                    # TS UI
+├── web/                    # TS UI (src/), API contract check (contract/)
 ├── data/
-│   ├── geometries/         # boards (TOML, KLE import)
+│   ├── geometries/         # boards (TOML, parametric `.param.toml`, KLE import)
 │   ├── corpora/            # sources + compiled tables
 │   ├── profiles/           # metric weights (TOML)
-│   └── layouts/            # reference layouts
+│   ├── layouts/            # reference layouts
+│   ├── comfort/            # measured comfort tables
+│   └── community/          # cmini community layout bundle
 ├── runs/                   # optimization outputs (gitignored except curated results)
+├── bench/                  # benchmark history and curated benchmark runs
 ├── research/               # evidence: sources, studies, experiments, open questions
 ├── docs/papers/            # paper templates (HTML/LaTeX)
+├── .github/workflows/      # CI (Rust tests, clippy, rustdoc; web typecheck, tests, contract)
 └── context/                # this folder
 ```
 
@@ -33,24 +37,24 @@ gecko/
 
 | Module | Responsibility |
 |---|---|
-| `geometry` | Keys (pos, rot, size, finger, effort), fingers, hands; TOML parse and print |
-| `kle` | KLE JSON import (guessed fingers/rows/home/effort) and export |
+| `geometry` | Keys (pos, rot, size, finger, effort), fingers, hands; TOML parse and print. Submodules: `parametric` (zones/columns/rows → ordinary geometry), `derive` (G4 effort/stretch from positions), `pose` (3D key poses, per-hand measuring frames), `flat2d` (clean 2D drawing), `collision` (G04 keycap overlap, SAT) |
+| `hand` | Hand model: skeleton, placement over home keys, finger IK, 4-DoF thumb, per-key G01/G03/G05 costs ([hand-model.md](hand-model.md)) |
 | `layout` | Slot-ordered symbols; rows ↔ flat; TOML; hash |
+| `magic` | Adaptive (magic / repeat) keys |
 | `corpus` | Text → n-gram count tables; binary `.gkc` format; mixing |
 | `profile` | Metric weights, finger targets, trigram coverage |
 | `metrics` | Metric definitions + per-geometry cost tables (`metrics/mod.rs`; trigram classes in `metrics/trigram.rs`) |
-| `scorer` | Folds metrics × weights into flat tables; full + delta evaluation; `State`; geometry rebuild (`set_geometry`) |
+| `scorer` | Folded tables and evaluation: `build` (fold metrics × weights, re-weight, re-cost a moved geometry), `eval` (hot loop: full, delta, `apply`), `load` (finger-load costs), `qap` (QAP terms for bounds) |
+| `bound` | Gilmore–Lawler lower bound and optimality gap |
+| `calibrate` | Spread-normalized and judge-fitted profile weights; rank agreement |
 | `report` | Per-metric breakdown, finger loads, heat, worst n-grams, worst words |
-| `optimize` | `Optimizer` trait, threaded runner, top-K; `hill_climb`, `anneal`, `genetic`, `memetic`, `bls`, `tabu`, `map_elites` |
-| `explore` | Landscape probe, local-optima archive, atlas files, distances/symmetry, atlas statistics, MAP-Elites grid (`explore/`) |
+| `optimize` | `Optimizer` trait, threaded runner, top-K; `hill_climb`, `anneal`, `genetic`, `memetic`, `bls`, `tabu`, `map_elites`, `nsga2` |
+| `explore` | Landscape probe, local-optima archive, atlas files, distances/symmetry, atlas statistics, MAP-Elites grid |
+| `cmaes` | G5 CMA-ES with IPOP restarts and box bounds (continuous geometry parameters) |
+| `interop` | Other tools: `kle` (keyboard-layout-editor.com import/export), `import` (Oxeylyzer, genkey, cmini layout files), `community` (cmini bundle, duplicates, rank agreement) |
 | `run` | Run directories (config, progress, best), listing |
 | `store` | The data directory (`gecko.toml`, `data/`, `runs/`) and layout specs |
-| `cmaes` | G5 CMA-ES with IPOP restarts and box bounds (continuous geometry parameters) |
-| `collision` | G04 2D keycap collision: oriented boxes + margin, grid broad phase, SAT (`Geometry::collisions`) |
-| `derive` | G4: effort and stretch from key positions when a board file leaves them out |
-| `parametric` | 2D zones/columns/rows → ordinary geometry; stagger/splay, mirrored split and thumb arcs |
-| `rng` | Seeded xoshiro256++ (identical on native and WASM) |
-| `hand` (phase 7+) | Hand model, IK, reach costs → feeds `geometry` tables |
+| `rng` · `hash` · `error` | Seeded xoshiro256++ (identical on native and WASM); FNV-1a content hashes; error type |
 
 Dependency direction: `metrics → geometry, corpus`; `scorer → metrics`;
 `optimize → scorer, layout`; `explore → optimize` (via the `Observer` trait in `Ctx`); `run → optimize, explore`. No cycles. `gecko-core` has no CLI or HTTP code.
@@ -73,7 +77,9 @@ immutable and shared (`Arc`); each worker owns its layout and RNG
 
 ## Web/server split
 
-`gecko serve` (axum, `crates/gecko-cli/src/serve.rs`) serves `web/dist` and a JSON API
+The CLI is `crates/gecko-cli/src/`: `main.rs` (clap entry), `cmd/` (one module per command
+group), `ctx.rs` (shared inputs and loading), `fmt.rs` (text tables). `gecko serve` (axum,
+`serve.rs`; `web_assets.rs` embeds or locates `web/dist`) serves `web/dist` and a JSON API
 over `data/` and `runs/`; it starts runs on a background thread and streams progress (SSE).
 The browser loads `gecko-wasm` (built into `web/src/wasm/pkg`) for live re-scoring, so the
 editor's numbers always match the CLI; it falls back to `POST /api/score` if WASM fails.

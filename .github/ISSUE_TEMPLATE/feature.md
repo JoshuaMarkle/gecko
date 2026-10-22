@@ -17,7 +17,7 @@ assignees: ""
 **Done when**
 - [ ] <observable result: test, CLI output, doc, UI behaviour>
 - [ ] `cargo test --release` and `cargo clippy --all-targets -- -D warnings` pass (and web checks if `web/` changed).
-- [ ] Relevant `context/` docs updated; non-obvious choices in `context/decisions.md`.
+- [ ] Relevant `context/` docs updated; non-obvious choices in `context/decisions/`.
 
 **Depends on:** #<n>, … (or `none`; also add native blocked-by links)
 **Read first:** `<context/... files the task needs>`

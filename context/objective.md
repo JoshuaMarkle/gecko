@@ -152,7 +152,7 @@ placement on the home keys, elbow midline) and so recomputed on every rebuild.
 ## Calibration
 
 The default profile must rank known layouts sensibly (modern layouts > Colemak-DH and
-Dvorak > QWERTY; Colemak-DH vs Dvorak is left open, see decisions.md) and reproduce published SFB percentages within tolerance. A
+Dvorak > QWERTY; Colemak-DH vs Dvorak is left open, see [decisions](decisions/scoring.md)) and reproduce published SFB percentages within tolerance. A
 regression test pins these rankings (`ranking_sanity_on_english`). On the bundled corpus
 QWERTY SFB = 6.63% (published ≈ 6.6%). Cross-checks: `gecko compare -p engram` (measured
 comfort) and `gecko compare --corpora english,shai,mt-10k,mt-450k,reddit,french` (robustness, L05).

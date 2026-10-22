@@ -1,5 +1,5 @@
 // Form building blocks for the input sidebars (context/design.md "Section", rows) and the
-// three-panel frame every input tab and Home use (frontend.md "Input view layout").
+// three-panel frame every input tab and Home use (web-screens.md "Shell").
 
 import { useState, type ReactNode } from "react";
 
