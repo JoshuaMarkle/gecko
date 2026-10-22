@@ -1,6 +1,6 @@
 //! Breakout local search (Benlic & Hao): steepest descent, then kick the local optimum with an
 //! adaptive number of random swaps (or a column exchange) and descend again. Every kick is an
-//! edge between two local optima, so with an [`Observer`] this samples the local optima network.
+//! edge between two local optima, so with an [`Observer`](super::Observer) this samples the local optima network.
 //! In explore mode, some restarts first descend under a distance constraint that keeps them away
 //! from the best distinct layouts found so far. `context/algorithms/explore.md`.
 

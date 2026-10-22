@@ -23,6 +23,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --release
       - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo doc --no-deps -p gecko-core -p gecko-wasm
+        env:
+          RUSTDOCFLAGS: -D warnings
 
   web:
     runs-on: ubuntu-latest

@@ -593,7 +593,7 @@ fn posture(fwd: V3, up: V3, wrist: V3, mid: f64, body: &Body, split: bool) -> Po
 }
 
 /// Whether the board's halves are separate (≥ 1 u between the hands' finger keys): a split half's
-/// drawn position is illustrative, so G03 lets the user place it ([`posture`]).
+/// drawn position is illustrative, so G03 lets the user place it (`posture`).
 pub fn split(g: &Geometry) -> bool {
     let (mut l, mut r) = (f32::MIN, f32::MAX);
     for k in g.key.iter().filter(|k| k.phys.is_none() && !k.finger.is_thumb()) {

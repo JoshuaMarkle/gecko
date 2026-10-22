@@ -1,11 +1,13 @@
 //! Folded scorer: full evaluation and O(S)/O(S²) swap deltas. See `context/objective.md`.
 //!
+//! ```text
 //! score = Σ f1[x]·C1[p(x)] + Σ f2[x,y]·C2[p(x),p(y)] + Σ fk[x,z]·Ck[p(x),p(z)]
 //!       + Σ fkf[x,z]·Ckf[p(x),p(z)] + Σ f3[x,y,z]·C3[p(x),p(y),p(z)] + load terms (M02, M03, M04, M07, M09)
+//! ```
 //!
 //! `fk` is gap-1 skipgrams; `fkf` mixes gap-2 and gap-3 skipgrams with `sfb.skip_decay`;
 //! `fy` is bigrams of two code symbols (Y02), with its own cost table `Cy`. Y03 adds
-//! Σ w[o,c]·Cb[p(o),p(c)] over the few bracket pairs (o, c) on the layout (a sparse list).
+//! `Σ w[o,c]·Cb[p(o),p(c)]` over the few bracket pairs (o, c) on the layout (a sparse list).
 //!
 //! Shift (layout has `⇧` keys, corpus has case counts): `+ Σ fsh[y]·Csh[p(y)]` (presses
 //! before y, per keystroke: the Shift key's effort in M01 and one press in Y01) `+ Σ fsb[x,y]·

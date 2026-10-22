@@ -65,7 +65,7 @@ pub struct Zone {
     pub rotate: f64,
     #[serde(default)]
     pub mirror: bool,
-    /// Logical row labels, in top-to-bottom order (e.g. [0,1,2] or [3]).
+    /// Logical row labels, in top-to-bottom order (e.g. `[0,1,2]` or `[3]`).
     pub rows: Vec<i8>,
     #[serde(default = "one")]
     pub row_pitch: f64,
