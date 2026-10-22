@@ -92,7 +92,9 @@ clear, `validate` rejecting an overlap that `check_keys` allows (2D, and a tilte
 layer copies skipped, and the 3D grid equal to brute force (depths too) on random tilted, lifted
 boards. `collision3d` unit tests: GJK + EPA depth equals the separating axis depth on 4000 random
 frustum pairs, moving by the MTV clears every pair; symmetric, coincident, stacked and
-face-touching hulls.
+face-touching hulls. Repair (`Geometry::repair`): a flat pair moves a quarter key each and
+stays flat, a clear board is untouched, margins hold, random overlapping 3D boards end
+collision-free with rotations unchanged, layer copies follow their key.
 
 CMA-ES (`tests/cmaes.rs` + `eigh` unit test): sphere 10-D to 1e-10 in < 8k evaluations,
 Rosenbrock 10-D to 1e-8 at (1, …, 1), a bounded problem whose optimum lies outside the box ends

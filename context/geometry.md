@@ -171,6 +171,14 @@ less when lifting over the cap is shorter); every bundled board (Dactyl included
 `validate` uses it on non-flat boards, and the geometry search penalizes its depth whenever a
 candidate is not flat (z, tilt or tent free).
 
+**Repair (I3).** `Geometry::repair(margin, max_passes)` pushes overlapping keys apart instead of
+only penalizing them: each pass lists the overlapping pairs (3D contacts, or the 2D test on flat
+boards) and moves each pair half its minimum translation vector apart plus 0.001 u, recomputed
+from the keys' current positions; the step grows 5% per pass, since jammed clusters otherwise cycle. Keys only translate (rotations stay; flat boards stay flat),
+layer copies follow their key, and it reports passes, the largest shift and pairs left. It
+works on explicit key poses, so it is for free-form boards (I1); a parametric candidate cannot
+take it without leaving its parameter space.
+
 ## Manufacturability (G07)
 
 `Geometry::manufacture(&BuildLimits)` (`manufacture.rs`) lists the build limits a board breaks.
