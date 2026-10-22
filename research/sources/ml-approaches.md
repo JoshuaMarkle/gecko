@@ -1,3 +1,12 @@
+---
+group: optimization
+kind: paper
+read: 2026-10-20
+status: secondary
+feeds: [K-track, C7]
+take: Surrogates, preference learning, simulated typists; keep search classical
+---
+
 # Machine learning for keyboard design
 
 Where learning (not just search) helps. Ordered by how directly GECKO can use it.

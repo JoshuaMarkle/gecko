@@ -1,3 +1,12 @@
+---
+group: geometry
+kind: tool
+read: 2026-10-20
+status: read
+feeds: [G1, H6, J2]
+take: Parameter set for parametric geometry search
+---
+
 # ergogen and Dactyl / Dactyl-Manuform: parametric keyboard geometry
 
 - ergogen (Bán Dénes, MIT): https://github.com/ergogen/ergogen, docs https://docs.ergogen.xyz.

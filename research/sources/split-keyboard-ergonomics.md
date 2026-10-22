@@ -1,3 +1,12 @@
+---
+group: human
+kind: paper
+read: 2026-10-20
+status: secondary
+feeds: [G03, geometry priors]
+take: Slope 0 to −4°, opening ≈ 15°
+---
+
 # Split, tented, and sloped keyboards: posture studies
 
 - Rempel, Nathan-Roberts, Chen, Odell, "The effects of split keyboard geometry on upper body

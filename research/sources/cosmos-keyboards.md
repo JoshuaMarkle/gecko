@@ -1,3 +1,12 @@
+---
+group: geometry
+kind: tool
+read: 2026-10-20
+status: read
+feeds: [H3, J3]
+take: Closed-form finger IK; hand scans; hand-fit stagger
+---
+
 # Cosmos keyboard generator (rianadon)
 
 TypeScript/Svelte web app for curved split keyboards, AGPL-3.

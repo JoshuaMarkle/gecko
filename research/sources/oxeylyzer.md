@@ -1,3 +1,12 @@
+---
+group: analyzers
+kind: tool
+read: 2026-10-20
+status: read
+feeds: [B14, B03, T01-T07, search]
+take: Geometric stretch formula for any board; trigram weights; depth-N greedy
+---
+
 # Oxeylyzer 1 and 2 (O-X-E-Y)
 
 Rust analyzer + generator, the de facto reference of the AKL community.

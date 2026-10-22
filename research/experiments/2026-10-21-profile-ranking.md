@@ -1,5 +1,14 @@
 # Pairwise profile calibration (#35)
 
+| | |
+|---|---|
+| Date | 2026-10-21 |
+| Question | Does a profile learned from community likes rank held-out layouts better than the default? |
+| Answer | Slightly (53.8 % vs 52.0 % pairwise accuracy); not evidence of better comfort |
+| Command | `gecko profile fit --target likes --out learned --seed 1 --json` |
+| Data | `data/community/cmini.json`, ansi-30 / english / default |
+| Artifacts | `bench/profile-fit-2026-10-21/fit.json`, `data/profiles/learned.toml` |
+
 `gecko profile fit --target likes --out learned --seed 1 --json` learns a profile from
 `data/community/cmini.json`. The original `--target E05` judge regression remains available.
 The learned profile is opt-in and does not change the default objective.

@@ -1,3 +1,12 @@
+---
+group: optimization
+kind: paper
+read: 2026-10-20
+status: read
+feeds: [search]
+take: QAP form, delta formulas, empty slots, ant system wins
+---
+
 # Dell'Amico, Díaz Díaz, Iori, Montanari — "The single-finger keyboard layout problem" (C&OR 2009)
 
 doi:10.1016/j.cor.2009.01.018. Preprint: https://iris.unimo.it/retrieve/e31e124b-fcc2-987f-e053-3705fe0a095a/dellamico_r01.pdf

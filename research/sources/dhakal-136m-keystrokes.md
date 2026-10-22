@@ -1,3 +1,12 @@
+---
+group: human
+kind: paper
+read: 2026-10-20
+status: secondary
+feeds: [E01]
+take: IKI by hand/alternation; rollover ≈ 50 % for fast typists (data site unreachable)
+---
+
 # Dhakal, Feit, Kristensson, Oulasvirta — "Observations on Typing from 136 Million Keystrokes" (CHI 2018)
 
 doi:10.1145/3173574.3174220. PDF: https://www.pokristensson.com/pubs/DhakalEtAlCHI2018.pdf.
@@ -29,7 +38,7 @@ own keyboards. Logged: key-down/key-up timestamps per character, sentences, demo
 - Fit an **IKI model** (metric B12/E01): `IKI(i→j) = f(same hand, same finger, finger pair,
   dx, dy, row change)` by regression on QWERTY bigrams. Because the features are geometric,
   the fitted model transfers to any layout on the same board (this is the "fit geometry, not
-  letters" rule in `../data-sources.md`).
+  letters" rule in [corpora](corpora.md)).
 - Rollover makes **alternation and inward rolls fast**; a pure "time per bigram" model
   undervalues rolls if it ignores overlap. Use key-down to key-down intervals.
 - Weak signal for comfort: Engram found speed ≠ comfort (`engram-preference-study.md`). Use

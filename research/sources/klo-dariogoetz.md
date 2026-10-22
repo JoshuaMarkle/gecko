@@ -1,3 +1,12 @@
+---
+group: analyzers
+kind: tool
+read: 2026-10-20
+status: read
+feeds: [B11, Y01, geometry]
+take: Finger-pair movement table; finger-length scissor rule; modifier n-gram expansion; key cost matrices
+---
+
 # Keyboard Layout Optimizer (dariogoetz), ArneBab lineage
 
 Rust, GPL-3. https://github.com/dariogoetz/keyboard_layout_optimizer (web UI included).
@@ -42,6 +51,6 @@ Configs worth reading: `config/evaluation/default.yml`, `config/keyboard/*.yml`,
   geometry-light alternative to fixed scissor lists; implement as B11 tables.
 - Copy the YAML idea of `unbalancing_positions` into the geometry TOML (per-key 2D offset
   from home) for B13.
-- Modifier n-gram expansion is the plan for phase 5 (`metrics-catalog.md` Y01); KLO's
+- Modifier n-gram expansion is the plan for phase 5 (`context/metrics-catalog.md` Y01); KLO's
   `ngram_mapper.split_modifiers` is a working reference.
 - GPL: reimplement, do not copy code.

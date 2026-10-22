@@ -1,3 +1,12 @@
+---
+group: analyzers
+kind: tool
+read: 2026-10-20
+status: secondary
+feeds: [T11]
+take: Triad effort model with default parameters (values via a mirror)
+---
+
 # carpalx (Krzywinski)
 
 Perl optimizer, 2000s. The classic "typing effort" model. Site: https://mkweb.bcgsc.ca/carpalx/

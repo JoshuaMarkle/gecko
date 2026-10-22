@@ -1,3 +1,12 @@
+---
+group: community
+kind: community
+read: 2026-10-20
+status: read
+feeds: [L05, fingering]
+take: No single stat; corpus dependence; alt-fingering; thumb letters
+---
+
 # Community design notes: Hands Down, Gallium, Graphite, Semimak
 
 Short lessons from layout authors. Use as qualitative checks, not as numbers to optimize.
