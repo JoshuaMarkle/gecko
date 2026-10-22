@@ -258,7 +258,8 @@ enum Cmd {
         /// run:<id> (or just <id>).
         run: String,
     },
-    /// Single-thread scorer speed: full evaluations/s and swap deltas/s.
+    /// Single-thread scorer speed: full evaluations/s, swap deltas/s, scorer builds/s and
+    /// one-key-moved rebuilds/s (`Scorer::set_geometry`).
     Perf {
         #[arg(long, default_value = "qwerty")]
         layout: String,
@@ -1085,6 +1086,24 @@ fn real_main(cli: Cli) -> Result<()> {
                 k += 1000;
             }
             let delta = k as f64 / t.elapsed().as_secs_f64();
+            // Geometry search: a scorer built from scratch vs re-costed after one key moves.
+            let t = std::time::Instant::now();
+            let mut k = 0u64;
+            while t.elapsed().as_millis() < 500 {
+                sink += Scorer::new(&l.geometry, &l.corpus, &l.profile, &layout)?.n as f64;
+                k += 1;
+            }
+            let build = k as f64 / t.elapsed().as_secs_f64();
+            let (mut moved, mut g) = (sc.clone(), l.geometry.clone());
+            let t = std::time::Instant::now();
+            let mut k = 0u64;
+            while t.elapsed().as_millis() < 500 {
+                let i = k as usize % g.len();
+                g.key[i].pos[0] += if k.is_multiple_of(2) { 0.01 } else { -0.01 };
+                sink += moved.set_geometry(&g)? as f64;
+                k += 1;
+            }
+            let rebuild = k as f64 / t.elapsed().as_secs_f64();
             std::hint::black_box(sink);
             let recorded = if record {
                 let entry = json!({
@@ -1096,6 +1115,8 @@ fn real_main(cli: Cli) -> Result<()> {
                     "profile": l.profile.name,
                     "full_per_sec": full.round() as u64,
                     "delta_per_sec": delta.round() as u64,
+                    "build_per_sec": build.round() as u64,
+                    "rebuild_per_sec": rebuild.round() as u64,
                 });
                 let path = ctx.store.root.join("bench/history.jsonl");
                 std::fs::create_dir_all(path.parent().unwrap())?;
@@ -1108,10 +1129,13 @@ fn real_main(cli: Cli) -> Result<()> {
             };
             if ctx.json {
                 ctx.print(json!({"schema": SCHEMA, "full_per_sec": full, "delta_per_sec": delta,
+                    "build_per_sec": build, "rebuild_per_sec": rebuild,
                     "recorded": recorded.as_ref().map(|p| p.display().to_string())}));
             } else {
                 println!("full evaluation  {:>12.0} /s  ({:.2} µs)", full, 1e6 / full);
                 println!("swap delta       {:>12.0} /s  ({:.3} µs)", delta, 1e6 / delta);
+                println!("scorer build     {:>12.0} /s  ({:.2} ms)", build, 1e3 / build);
+                println!("1-key rebuild    {:>12.0} /s  ({:.2} ms)", rebuild, 1e3 / rebuild);
                 if let Some(p) = recorded {
                     println!("recorded in {}", p.display());
                 }

@@ -98,6 +98,36 @@ not shared across layout positions: frequencies are symbol-specific and costs sl
 Caching frequency-weighted contributions would change f32 rounding, so the cache retains
 the exact unweighted f32 cost and preserves the existing arithmetic. Future work: SIMD.
 
+## Geometry rebuild (G2)
+
+Geometry search needs a scorer per candidate board. `Scorer::set_geometry(board)` (or
+`with_geometry`) re-costs a scorer for a board with keys moved but the same slots, keeping
+everything that comes from the corpus (frequency tables, sparse trigram lists, brackets) and
+the weights. Per slot it keeps two masks: **logical** (any key field but `pos`/`rot`/`size`
+changed) and **moved** (the key or its `metric_points` entry changed). Pair/triple tables that
+read metric points (`metrics::reads_points`: B03 S03 B14 S04 S05 B10 Y03 T09) recompute the rows
+and columns of moved slots; every other pair/triple table only those of logical changes, so a
+pose-only move touches none of the trigram-class, SFB or scissor tables. Mono and place tables
+(O(N); the hand model and home-row lookups are board-wide) are rebuilt in full, sharing one
+`metrics::Prep` (metric points, hand model computed once, not per metric). Changed entries are
+refolded as `new` folds them (0, then `+ w·t` in `METRICS` order), so the result equals
+`Scorer::new` on the moved board bit for bit (`tests/rebuild.rs`). A changed layer key or
+comfort table marks every slot; a different slot structure is an error. On a 3D board moving one
+key re-fits its hand's plane, so all of that hand's keys are "moved" (geometric tables only).
+States must be `refresh`ed afterwards.
+
+Measured 2026-10-21 (i9-13900H, english / default, `gecko perf`, one key nudged per rebuild):
+
+| board | `Scorer::new` | one-key rebuild | speed-up |
+|---|---|---|---|
+| ansi-30 | 3.1 ms | 0.64 ms | 4.8× |
+| corne-36 | 4.6 ms | 0.78 ms | 5.9× |
+| dactyl-manuform-5x6 (3D) | 19.5 ms | 2.2 ms | 9× |
+
+Criterion (`tables/build`, `tables/rebuild_one_key`, ansi-30): 2.80 ms vs 0.66 ms. The floor on
+flat boards is the hand model (G01/G03/G05, ≈ 0.5 ms for 30 keys), which is board-wide (hand
+placement on the home keys, elbow midline) and so recomputed on every rebuild.
+
 ## Normalization and profiles
 
 - Frequencies are normalized over the symbols on the layout: values read as "% of the

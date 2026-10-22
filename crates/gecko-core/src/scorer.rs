@@ -100,8 +100,13 @@ pub struct Scorer {
     w_thumb: f64,
     thumb_target: f64,
     target: [f64; FINGERS],
-    /// Unfolded per-metric tables aligned with `METRICS` (reports only).
+    /// Unfolded per-metric tables aligned with `METRICS` (reports, and refolding after
+    /// [`Scorer::set_geometry`]).
     tables: Vec<Option<Vec<f32>>>,
+    /// Signed weight each linear metric was folded with (0 = not folded), aligned with `METRICS`.
+    fold_w: Vec<f32>,
+    /// Weights of the Shift channel's M01 and Y01 parts (`csh`, `csb`).
+    shift_w: (f32, f32),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -231,11 +236,15 @@ impl Scorer {
             bracket_all.into_iter().map(|(x, y, f)| PairEntry { x, y, f: (f / bracket_total) as f32 }).collect();
 
         let qwerty = metrics::qwerty_slots(board, &chars);
+        let prep = metrics::Prep::new(geometry);
         let tables: Vec<Option<Vec<f32>>> = METRICS
             .iter()
             .map(|d| match d.order {
                 Order::Place => Some(metrics::place_table(d.id, geometry, profile, &chars, &qwerty, &f1)),
-                _ => metrics::table(geometry, profile, d),
+                _ => {
+                    let mut t = Vec::new();
+                    metrics::update_table(geometry, profile, &prep, d, &mut t, None).then_some(t)
+                }
             })
             .collect();
         let mut c1 = vec![0f32; n];
@@ -255,7 +264,8 @@ impl Scorer {
         let has_shift_pair = has_shift && csb.iter().any(|&c| c != 0.0) && fsb.iter().any(|&f| f > 0.0);
         let (mut w_load, mut w_hand, mut w_rss, mut w_peak) = (0.0, 0.0, 0.0, 0.0);
         let mut w_thumb = 0.0;
-        for (d, t) in METRICS.iter().zip(&tables) {
+        let mut fold_w = vec![0f32; METRICS.len()];
+        for (mi, (d, t)) in METRICS.iter().zip(&tables).enumerate() {
             let w = profile.effective_weight(d.id);
             let signed = match d.dir {
                 Dir::Min => w,
@@ -303,6 +313,7 @@ impl Scorer {
                         Order::Place => &mut cp,
                         Order::Load => unreachable!(),
                     };
+                    fold_w[mi] = signed;
                     dst.iter_mut().zip(t).for_each(|(c, v)| *c += signed * v);
                 }
                 (_, None) => {}
@@ -357,30 +368,13 @@ impl Scorer {
         }
         let has_place = cp.iter().any(|&c| c != 0.0);
         let brackets = if cb.iter().any(|&c| c != 0.0) { bracket_all.clone() } else { Vec::new() };
-        let mut target = [0.0; FINGERS];
-        for (t, &v) in target.iter_mut().zip(&profile.finger_target) {
-            *t = v as f64;
-        }
         if let Some(h) = &profile.hand {
             h.validate()?;
         }
         if let Some(e) = &profile.finger_effort {
             e.validate()?;
-            let mut present = [false; FINGERS];
-            for k in &geometry.key {
-                present[k.finger.index()] = true;
-            }
-            for i in 0..FINGERS {
-                target[i] = if present[i] { 1.0 / e.typing[e.index(i)] as f64 } else { 0.0 };
-            }
-            let total: f64 = target.iter().sum();
-            if total > 0.0 {
-                for t in &mut target {
-                    *t *= 100.0 / total;
-                }
-            }
         }
-        let thumb_target = if profile.finger_effort.is_some() { target[4] + target[5] } else { profile.thumb_target as f64 };
+        let (target, thumb_target) = finger_targets(profile, geometry);
         Ok(Scorer {
             n,
             chars,
@@ -434,6 +428,8 @@ impl Scorer {
             thumb_target,
             target,
             tables,
+            fold_w,
+            shift_w: (w_effort, w_y01),
         })
     }
 
@@ -456,7 +452,8 @@ impl Scorer {
         }
         (out.w_load, out.w_hand, out.w_rss, out.w_peak, out.w_thumb) = (0.0, 0.0, 0.0, 0.0, 0.0);
         (out.has_pair, out.has_far, out.has_sym, out.has_tri) = (false, false, false, false);
-        for (d, table) in METRICS.iter().zip(&out.tables) {
+        out.fold_w.fill(0.0);
+        for (mi, (d, table)) in METRICS.iter().zip(&out.tables).enumerate() {
             let w = out.profile.weight(d.id);
             if w == 0.0 {
                 continue;
@@ -500,6 +497,7 @@ impl Scorer {
                         Order::Place => &mut out.cp,
                         Order::Load => unreachable!(),
                     };
+                    out.fold_w[mi] = signed;
                     for (target, value) in target.iter_mut().zip(table) {
                         *target += signed * value;
                     }
@@ -511,6 +509,7 @@ impl Scorer {
         out.has_load = [out.w_load, out.w_hand, out.w_rss, out.w_peak, out.w_thumb].iter().any(|&w| w != 0.0);
         out.brackets = if out.cb.iter().any(|&c| c != 0.0) { out.bracket_all.clone() } else { Vec::new() };
         let (effort, layer) = (out.profile.weight("M01"), out.profile.weight("Y01"));
+        out.shift_w = (effort, layer);
         for ((cost, e), p) in out.csh.iter_mut().zip(&out.shift_effort).zip(&out.shift_press) {
             *cost = effort * e + layer * p;
         }
@@ -525,6 +524,143 @@ impl Scorer {
     /// their nonlinear penalty). Raw report values may differ, e.g. M04 reports left share.
     pub fn objective(&self, id: &str) -> Result<Self> {
         self.with_weights(&[(id, 1.0)])
+    }
+
+    /// This scorer for a moved board: [`Scorer::set_geometry`] on a copy.
+    pub fn with_geometry(&self, board: &Geometry) -> Result<Self> {
+        let mut out = self.clone();
+        out.set_geometry(board)?;
+        Ok(out)
+    }
+
+    /// Re-cost the scorer for `board`, the physical board with keys moved (pose, size, effort,
+    /// any key field) but the same keys in the same slots. Corpus tables, symbol ids and
+    /// weights are kept. Only pair/triple table entries that touch a changed slot are
+    /// recomputed and refolded: O(k·N) pair and O(k·N²) trigram entries for k changed slots,
+    /// instead of every metric's N² and N³ table. A slot changes when its key or its
+    /// [`Geometry::metric_points`] entry does (on a 3D board, moving one key re-fits its hand's
+    /// plane, so every key of that hand changes); a changed layer key or comfort table changes
+    /// them all. The result equals [`Scorer::new`] on `board` bit for bit. Returns the number
+    /// of changed slots. Existing states hold stale costs: [`Scorer::refresh`] them.
+    pub fn set_geometry(&mut self, board: &Geometry) -> Result<usize> {
+        let n = self.n;
+        let vg = if self.geometry.layer_keys.is_empty() {
+            board.validate()?;
+            board.clone()
+        } else {
+            let holders: Vec<_> = self.geometry.layer_keys.iter().copied().zip(self.geometry.layer_modes.iter().copied()).collect();
+            board.layered(&holders)?
+        };
+        let same_slots = vg.len() == n && vg.key.iter().zip(&self.geometry.key).all(|(a, b)| a.layer == b.layer && a.phys == b.phys);
+        if !same_slots || !vg.comfort_tables.keys().eq(self.geometry.comfort_tables.keys()) {
+            return Err(Error::invalid("geometry", "keys or comfort tables differ from the scorer's board; build a new scorer"));
+        }
+        let prep = metrics::Prep::new(&vg);
+        let (old, old_pts, new_pts) = (&self.geometry.key, self.geometry.metric_points(), prep.points());
+        // Two masks: a slot's logical fields (finger, row, home, …) changed, or anything a
+        // geometric table reads (its key or metric point) did. A pose-only move leaves the
+        // logical tables (trigram classes, SFB, scissors, …) untouched.
+        let pose_free = |k: &crate::geometry::Key, o: &crate::geometry::Key| {
+            *k == crate::geometry::Key { pos: o.pos, rot: o.rot, size: o.size, ..k.clone() }
+        };
+        let mut logical: Vec<bool> = (0..n).map(|i| !pose_free(&vg.key[i], &old[i])).collect();
+        let mut moved: Vec<bool> = (0..n).map(|i| vg.key[i] != old[i] || old_pts[i] != new_pts[i]).collect();
+        if vg.layer_keys.iter().any(|&h| moved[h]) || vg.comfort_tables != self.geometry.comfort_tables {
+            logical.fill(true);
+            moved.fill(true);
+        }
+        self.geometry = vg;
+        let count = moved.iter().filter(|&&c| c).count();
+        if count == 0 {
+            return Ok(0);
+        }
+        let any_logical = logical.contains(&true);
+        let mask = |id: &str| if metrics::reads_points(id) { &moved } else { &logical };
+        let geometry = &self.geometry;
+        let qwerty = metrics::qwerty_slots(board, &self.chars);
+        for (d, t) in METRICS.iter().zip(&mut self.tables) {
+            match (d.order, t) {
+                (Order::Load, _) | (_, None) => {}
+                (Order::Place, Some(t)) => *t = metrics::place_table(d.id, geometry, &self.profile, &self.chars, &qwerty, &self.f1),
+                (Order::Mono, Some(t)) => {
+                    metrics::update_table(geometry, &self.profile, &prep, d, t, None);
+                }
+                (_, Some(t)) => {
+                    if any_logical || metrics::reads_points(d.id) {
+                        metrics::update_table(geometry, &self.profile, &prep, d, t, Some(mask(d.id)));
+                    }
+                }
+            }
+        }
+
+        // Refold exactly as `new` does (0, then + w·t in `METRICS` order), so results match.
+        // Per order, only entries a folded table may have changed in.
+        let (tables, fold_w) = (&self.tables, &self.fold_w);
+        let srcs = |order: Order| -> (Vec<(&[f32], f32)>, &Vec<bool>) {
+            let used: Vec<_> =
+                METRICS.iter().zip(tables).zip(fold_w).filter(|((d, t), &w)| d.order == order && w != 0.0 && t.is_some()).collect();
+            let mask = if used.iter().any(|((d, _), _)| metrics::reads_points(d.id)) { &moved } else { &logical };
+            (used.into_iter().map(|((_, t), &w)| (t.as_deref().unwrap(), w)).collect(), mask)
+        };
+        let fold = |dst: &mut [f32], srcs: &[(&[f32], f32)], e: usize| {
+            let mut c = 0.0f32;
+            for (t, w) in srcs {
+                c += w * t[e];
+            }
+            dst[e] = c;
+        };
+        for (dst, order) in [(&mut self.c1, Order::Mono), (&mut self.cp, Order::Place)] {
+            let (s, _) = srcs(order);
+            (0..dst.len()).for_each(|e| fold(dst, &s, e));
+        }
+        for (dst, order) in [
+            (&mut self.c2, Order::Bi),
+            (&mut self.ck, Order::Skip),
+            (&mut self.ckf, Order::SkipFar),
+            (&mut self.cy, Order::SymBi),
+            (&mut self.cb, Order::Brackets),
+        ] {
+            let (s, ch) = srcs(order);
+            let idx: Vec<usize> = (0..n).filter(|&i| ch[i]).collect();
+            for i in 0..n {
+                if ch[i] {
+                    (i * n..(i + 1) * n).for_each(|e| fold(dst, &s, e));
+                } else {
+                    idx.iter().for_each(|&j| fold(dst, &s, i * n + j));
+                }
+            }
+        }
+        let (s, ch) = srcs(Order::Tri);
+        let idx: Vec<usize> = (0..n).filter(|&i| ch[i]).collect();
+        if !idx.is_empty() {
+            for ij in 0..n * n {
+                let row = ij * n;
+                if ch[ij / n] || ch[ij % n] {
+                    (row..row + n).for_each(|e| fold(&mut self.c3, &s, e));
+                } else {
+                    idx.iter().for_each(|&l| fold(&mut self.c3, &s, row + l));
+                }
+            }
+        }
+
+        let geometry = &self.geometry;
+        self.finger = geometry.key.iter().map(|k| k.finger.index() as u8).collect();
+        self.hold = (0..n).map(|i| geometry.holder(i).map_or(NO_HOLD, |h| geometry.key[h].finger.index() as u8)).collect();
+        let shift_keys: Vec<usize> = (0..n).filter(|&i| self.chars[i] == crate::layout::SHIFT).collect();
+        (self.shift_effort, self.shift_press, self.shift_pair) = shift_tables(geometry, &shift_keys);
+        let (w_effort, w_y01) = self.shift_w;
+        self.csh = self.shift_effort.iter().zip(&self.shift_press).map(|(e, p)| w_effort * e + w_y01 * p).collect();
+        self.csb = self.shift_pair.iter().map(|p| w_y01 * p).collect();
+        self.has_shift_pair = self.has_shift && self.csb.iter().any(|&c| c != 0.0) && self.fsb.iter().any(|&f| f > 0.0);
+        self.has_place = self.cp.iter().any(|&c| c != 0.0);
+        self.brackets = if self.cb.iter().any(|&c| c != 0.0) { self.bracket_all.clone() } else { Vec::new() };
+        (self.target, self.thumb_target) = finger_targets(&self.profile, geometry);
+        Ok(count)
+    }
+
+    /// Recompute a state's cached loads, trigram costs and score (after [`Scorer::set_geometry`]).
+    pub fn refresh(&self, st: &mut State) {
+        *st = self.state_from_sym(std::mem::take(&mut st.sym));
     }
 
     /// Symbol ids for `layout` in this scorer's alphabet. Errors if the symbol sets differ.
@@ -1156,6 +1292,32 @@ fn shift_tables(g: &Geometry, keys: &[usize]) -> (Vec<f32>, Vec<f32>, Vec<f32>) 
         }
     }
     (effort, press, pair)
+}
+
+/// Target finger loads (%) and the thumb target: the profile's `finger_target`, or with
+/// `finger_effort` each finger present on `g` by inverse typing cost, normalized to 100.
+fn finger_targets(profile: &Profile, g: &Geometry) -> ([f64; FINGERS], f64) {
+    let mut target = [0.0; FINGERS];
+    for (t, &v) in target.iter_mut().zip(&profile.finger_target) {
+        *t = v as f64;
+    }
+    if let Some(e) = &profile.finger_effort {
+        let mut present = [false; FINGERS];
+        for k in &g.key {
+            present[k.finger.index()] = true;
+        }
+        for i in 0..FINGERS {
+            target[i] = if present[i] { 1.0 / e.typing[e.index(i)] as f64 } else { 0.0 };
+        }
+        let total: f64 = target.iter().sum();
+        if total > 0.0 {
+            for t in &mut target {
+                *t *= 100.0 / total;
+            }
+        }
+    }
+    let thumb_target = if profile.finger_effort.is_some() { target[4] + target[5] } else { profile.thumb_target as f64 };
+    (target, thumb_target)
 }
 
 /// Zero the least frequent entries so the rest cover `coverage` of the total.

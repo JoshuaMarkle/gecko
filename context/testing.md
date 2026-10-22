@@ -26,7 +26,7 @@ Implemented: `cargo bench -p gecko-core` (`crates/gecko-core/benches/scorer.rs`)
 `full_eval`, `swap_delta/single` and `swaps_all_cores/<n>_threads` (random swap deltas with
 improvements applied, one `State` per thread) on the `gecko.toml` defaults with QWERTY.
 `gecko perf --record` appends one JSON line to `bench/history.jsonl`:
-`{date, commit, layout, geometry, corpus, profile, full_per_sec, delta_per_sec}` (`commit` gets
+`{date, commit, layout, geometry, corpus, profile, full_per_sec, delta_per_sec, build_per_sec, rebuild_per_sec}` (`commit` gets
 `-dirty` when the tree has uncommitted changes). Record after any scorer change; compare
 entries from the same machine only.
 
@@ -84,6 +84,13 @@ using the same web-target package loaded by the browser.
 parametric keywell fixture (an independent formulation of the same math); 18.4 mm between
 neighbouring keycap tops in every column, tent direction, mirror symmetry; tenting Corne
 changes no metric; Dactyl delta == full. Web: tilted keys are pressed along their normal.
+
+Geometry rebuild (`tests/rebuild.rs`): chained random key moves (pose, 3D z/tilt/tent, effort)
+on ansi-30, corne-36 with Shift, the 3D Dactyl and a layered corne: after each
+`Scorer::set_geometry`, every unfolded table and the full score of random layouts equal a fresh
+`Scorer::new` bit for bit (also after `with_weights`); changed-slot counts (1 on a flat board,
+the hand on a 3D one); delta == full after `refresh`; a different key set is rejected.
+Bench group `tables` (`build`, `rebuild_one_key`); `gecko perf` prints both.
 
 Bundled splits (`tests/boards.rs`): every flat split's key (Corne/Sweep/Lily58/Kyria/ErgoDox)
 matches pinned QMK-derived KLE inputs (the 3D Dactyl keeps their slots only); counts, stagger, alpha fingers, fills, reference fits,
