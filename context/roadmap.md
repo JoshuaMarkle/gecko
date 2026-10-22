@@ -54,7 +54,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 27. [x] [#17](https://github.com/JoshuaMarkle/gecko/issues/17) `C4` Remaining P1/P2 metrics · M
 28. [x] [#85](https://github.com/JoshuaMarkle/gecko/issues/85) `E4` Import layouts from Oxeylyzer, genkey and cmini formats · S
 29. [x] [#19](https://github.com/JoshuaMarkle/gecko/issues/19) `D3` Y03 paired symbol placement · S
-30. [ ] [#86](https://github.com/JoshuaMarkle/gecko/issues/86) `E5` Export layout image (SVG/PNG) · S · after [#83](https://github.com/JoshuaMarkle/gecko/issues/83)
+30. [ ] [#86](https://github.com/JoshuaMarkle/gecko/issues/86) `E5` Export layout image (SVG/PNG) · S · after [#83](https://github.com/JoshuaMarkle/gecko/issues/83) · web done (Export tab); CLI left
 31. [ ] [#87](https://github.com/JoshuaMarkle/gecko/issues/87) `L10` Mini keyboards everywhere · M · after [#83](https://github.com/JoshuaMarkle/gecko/issues/83)
 32. [x] [#21](https://github.com/JoshuaMarkle/gecko/issues/21) `B4` NSGA-II Pareto fronts · M
 33. [x] [#22](https://github.com/JoshuaMarkle/gecko/issues/22) `D4` Y04 home-row-mod misfire risk · S
@@ -70,7 +70,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 43. [x] [#89](https://github.com/JoshuaMarkle/gecko/issues/89) `D8` Magic / repeat (adaptive) keys · M
 44. [x] [#32](https://github.com/JoshuaMarkle/gecko/issues/32) `G2` Fast cost-table rebuild when keys move · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
 45. [x] [#33](https://github.com/JoshuaMarkle/gecko/issues/33) `H2` Hand module: skeleton from measurements · M · after [#6](https://github.com/JoshuaMarkle/gecko/issues/6), [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
-46. [ ] [#34](https://github.com/JoshuaMarkle/gecko/issues/34) `J1` Export key poses (JSON/CSV) and KLE · S · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
+46. [ ] [#34](https://github.com/JoshuaMarkle/gecko/issues/34) `J1` Export key poses (JSON/CSV) and KLE · S · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25) · KLE in the web; CLI left
 47. [x] [#35](https://github.com/JoshuaMarkle/gecko/issues/35) `C7` Learning-to-rank profile weights · M · after [#26](https://github.com/JoshuaMarkle/gecko/issues/26)
 48. [ ] [#36](https://github.com/JoshuaMarkle/gecko/issues/36) `J2` Export to ergogen points · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
 49. [ ] [#90](https://github.com/JoshuaMarkle/gecko/issues/90) `L5` Profile tab: organized weights with live ranking · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82)
