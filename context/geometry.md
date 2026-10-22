@@ -168,6 +168,28 @@ theorem (face normals and edge × edge axes); depth is the deepest overlap. It f
 pairs as the 2D test on flat boards, and every bundled board (Dactyl included) is clear.
 `validate` still checks 2D only.
 
+## Manufacturability (G07)
+
+`Geometry::manufacture(&BuildLimits)` (`manufacture.rs`) lists the build limits a board breaks.
+Limits come from an optional profile `[build]` section (unknown fields fail; a limit of 0 is
+off; a profile without it keeps its hash). Physical keys only.
+
+| Field | Default | Check |
+|---|---|---|
+| `min_pitch` | 0.82 u (15.6 mm) | Distance between switch centres (keycap bottom centres): a 14 mm cutout + 1.6 mm web |
+| `max_key_angle` | 60° | Keycap normal vs vertical |
+| `max_height` | 4 u | Highest keycap top above the lowest keycap bottom |
+| `max_plate` | [12, 12] u | Each piece's keycap footprint fits the rectangle turned in 5° steps (a print bed, ≈ 229 mm) |
+| `piece_gap` | 1.25 u | The two hands are separate pieces when their nearest switches are at least this far apart |
+| `max_column_keys` | 6 | Finger keys sharing hand and `col` |
+| `max_columns` | 0 (off) | Distinct `col` of finger keys per hand; board files label columns loosely |
+
+Each violation (`kind`, `keys`, `value`, `limit`, `excess`) has an excess in u-equivalents
+(angles: 45° = 1 u; counts: 1 key = 1 u). The geometry search adds the violations to its
+collision count and the excess to its collision depth, so they share `penalty` and `hard_fail`
+([algorithms/geometry-search.md](algorithms/geometry-search.md)). Every bundled board passes
+the defaults (`tests/manufacture.rs`). STL generation (J4, #75) will read the same limits.
+
 ## Derived effort and stretch (G4)
 
 New boards need no hand-entered costs (`derive.rs`, `Geometry::derive_missing`). Distances are

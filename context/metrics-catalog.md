@@ -121,7 +121,7 @@ stats summing to 100% and makes reports easy to read.
 | G04 | Collision | hard | P2 | Keycaps/switches may not intersect (OBB in 2D, convex hull in 3D). |
 | G05 | Press direction alignment | − | P3 | Angle between key normal and fingertip flexion direction. Implemented: distal phalanx vs keycap normal within the finger plane, (angle / 45°)²; thumbs: the push along the CMC → tip line (`context/hand-model.md`). |
 | G06 | Thumb arc fit | − | P3 | Thumb keys along the thumb's natural arc. |
-| G07 | Manufacturability | hard/− | P3 | Min spacing, max angles, column counts, plate limits. |
+| G07 | Manufacturability | hard/− | P3 | Min spacing, max angles, column counts, plate limits. Implemented as a feasibility check, not a scored metric: profile `[build]` (switch pitch, key angle, height, plate per piece, keys per column, columns per hand); excess penalizes and hard-fails geometry search candidates (`context/geometry.md`). |
 
 ## 10. Aggregation methods
 

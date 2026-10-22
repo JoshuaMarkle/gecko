@@ -7,6 +7,7 @@
 pub mod collision;
 pub mod derive;
 pub mod flat2d;
+pub mod manufacture;
 pub mod parametric;
 pub mod pose;
 

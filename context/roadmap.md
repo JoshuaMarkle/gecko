@@ -103,7 +103,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 94. [ ] [#70](https://github.com/JoshuaMarkle/gecko/issues/70) `I1` Free-form per-key 6-DoF poses · L · after [#69](https://github.com/JoshuaMarkle/gecko/issues/69)
 95. [ ] [#71](https://github.com/JoshuaMarkle/gecko/issues/71) `I2` Thumb cluster optimization (G06) · M · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52)
 96. [ ] [#72](https://github.com/JoshuaMarkle/gecko/issues/72) `I3` Collision repair step · S · after [#66](https://github.com/JoshuaMarkle/gecko/issues/66)
-97. [ ] [#73](https://github.com/JoshuaMarkle/gecko/issues/73) `I4` G07 manufacturability constraints · M
+97. [x] [#73](https://github.com/JoshuaMarkle/gecko/issues/73) `I4` G07 manufacturability constraints · M
 98. [ ] [#74](https://github.com/JoshuaMarkle/gecko/issues/74) `I5` Differentiable reach-cost surrogate (optional) · L · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52)
 99. [ ] [#75](https://github.com/JoshuaMarkle/gecko/issues/75) `J4` Generate plate and case mesh (STL) · L · after [#66](https://github.com/JoshuaMarkle/gecko/issues/66), [#73](https://github.com/JoshuaMarkle/gecko/issues/73)
 100. [ ] [#76](https://github.com/JoshuaMarkle/gecko/issues/76) `J5` Web: export and printable preview · S · after [#75](https://github.com/JoshuaMarkle/gecko/issues/75)

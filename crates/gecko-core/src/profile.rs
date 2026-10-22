@@ -53,6 +53,10 @@ pub struct Profile {
     /// Unset: G01/G03/G05 use the average hand and arms and B14 its fixed spread.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hand: Option<HandSpec>,
+    /// G07 build limits (`geometry/manufacture.rs`). Set: the geometry search penalizes and
+    /// hard-fails boards past them like keycap collisions. Not a scoring metric.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub build: Option<crate::geometry::manufacture::BuildLimits>,
 }
 
 /// Costs in LP LR LM LI LT RT RI RM RR RP order. Higher means harder.
@@ -160,6 +164,9 @@ impl Profile {
         }
         if let Some(h) = &p.hand {
             h.validate()?;
+        }
+        if let Some(b) = &p.build {
+            b.validate()?;
         }
         let s = &p.sfb;
         let ok = s.lateral.is_finite() && s.lateral > 0.0 && s.finger_factor.iter().all(|f| f.is_finite() && *f >= 0.0);
