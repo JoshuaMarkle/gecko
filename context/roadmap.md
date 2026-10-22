@@ -100,7 +100,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 73. [ ] [#51](https://github.com/JoshuaMarkle/gecko/issues/51) `F4` Web: contribution waterfall vs a reference layout · S
 74. [x] [#52](https://github.com/JoshuaMarkle/gecko/issues/52) `H4` G01 reach cost and G05 press alignment · M · after [#40](https://github.com/JoshuaMarkle/gecko/issues/40), [#32](https://github.com/JoshuaMarkle/gecko/issues/32)
 75. [ ] [#53](https://github.com/JoshuaMarkle/gecko/issues/53) `F5` Web: process views (per-worker convergence, temperature/acceptance) · M
-76. [ ] [#54](https://github.com/JoshuaMarkle/gecko/issues/54) `G6` Bilevel geometry + layout search · L · after [#32](https://github.com/JoshuaMarkle/gecko/issues/32), [#39](https://github.com/JoshuaMarkle/gecko/issues/39), [#42](https://github.com/JoshuaMarkle/gecko/issues/42), [#48](https://github.com/JoshuaMarkle/gecko/issues/48)
+76. [x] [#54](https://github.com/JoshuaMarkle/gecko/issues/54) `G6` Bilevel geometry + layout search · L · after [#32](https://github.com/JoshuaMarkle/gecko/issues/32), [#39](https://github.com/JoshuaMarkle/gecko/issues/39), [#42](https://github.com/JoshuaMarkle/gecko/issues/42), [#48](https://github.com/JoshuaMarkle/gecko/issues/48)
 77. [ ] [#55](https://github.com/JoshuaMarkle/gecko/issues/55) `B8` Adaptive fidelity scoring · M
 78. [ ] [#56](https://github.com/JoshuaMarkle/gecko/issues/56) `K4` E02 personal keystroke logs · M · after [#31](https://github.com/JoshuaMarkle/gecko/issues/31)
 79. [x] [#57](https://github.com/JoshuaMarkle/gecko/issues/57) `H5` Hand model validation suite · S · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52)
@@ -108,14 +108,14 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 81. [ ] [#59](https://github.com/JoshuaMarkle/gecko/issues/59) `H6` 3D parametric params: z, tilt, tent, curvature · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
 82. [ ] [#60](https://github.com/JoshuaMarkle/gecko/issues/60) `B9` Rank-sum selection over many runs (`gecko select`) · S
 83. [ ] [#61](https://github.com/JoshuaMarkle/gecko/issues/61) `K5` E03 learned profile weights · M · after [#31](https://github.com/JoshuaMarkle/gecko/issues/31), [#35](https://github.com/JoshuaMarkle/gecko/issues/35)
-84. [ ] [#62](https://github.com/JoshuaMarkle/gecko/issues/62) `G7` `gecko geom` CLI · S · after [#54](https://github.com/JoshuaMarkle/gecko/issues/54)
+84. [x] [#62](https://github.com/JoshuaMarkle/gecko/issues/62) `G7` `gecko geom` CLI · S · after [#54](https://github.com/JoshuaMarkle/gecko/issues/54)
 85. [x] [#63](https://github.com/JoshuaMarkle/gecko/issues/63) `H7` G03 wrist posture cost · S · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52), [#59](https://github.com/JoshuaMarkle/gecko/issues/59)
 86. [ ] [#64](https://github.com/JoshuaMarkle/gecko/issues/64) `J3` Export to Cosmos expert config · M · after [#59](https://github.com/JoshuaMarkle/gecko/issues/59)
 87. [ ] [#67](https://github.com/JoshuaMarkle/gecko/issues/67) `G9` Web: geometry runs (before/after board overlay) · S · after [#54](https://github.com/JoshuaMarkle/gecko/issues/54)
 88. [ ] [#66](https://github.com/JoshuaMarkle/gecko/issues/66) `H8` 3D collision (keycap + switch, GJK) · M · after [#39](https://github.com/JoshuaMarkle/gecko/issues/39)
 89. [ ] [#101](https://github.com/JoshuaMarkle/gecko/issues/101) `G10` Switch type: MX vs Choc · S · after [#39](https://github.com/JoshuaMarkle/gecko/issues/39)
 90. [ ] [#68](https://github.com/JoshuaMarkle/gecko/issues/68) `H9` Web: posed hand in the 3D viewer · M · after [#40](https://github.com/JoshuaMarkle/gecko/issues/40)
-91. [ ] [#69](https://github.com/JoshuaMarkle/gecko/issues/69) `H10` 3D bilevel search · M · after [#59](https://github.com/JoshuaMarkle/gecko/issues/59), [#63](https://github.com/JoshuaMarkle/gecko/issues/63), [#66](https://github.com/JoshuaMarkle/gecko/issues/66), [#54](https://github.com/JoshuaMarkle/gecko/issues/54)
+91. [ ] [#69](https://github.com/JoshuaMarkle/gecko/issues/69) `H10` 3D bilevel search · M · after [#59](https://github.com/JoshuaMarkle/gecko/issues/59), [#63](https://github.com/JoshuaMarkle/gecko/issues/63), [#66](https://github.com/JoshuaMarkle/gecko/issues/66), [#54](https://github.com/JoshuaMarkle/gecko/issues/54) · `--free 3d` already searches the 3D parameters with approximate collision; left: H8 volumes, posture priors
 92. [x] [#102](https://github.com/JoshuaMarkle/gecko/issues/102) `L8` Typing simulation tab · L · after [#92](https://github.com/JoshuaMarkle/gecko/issues/92), [#40](https://github.com/JoshuaMarkle/gecko/issues/40), [#68](https://github.com/JoshuaMarkle/gecko/issues/68)
 93. [ ] [#103](https://github.com/JoshuaMarkle/gecko/issues/103) `H11` Optimize for a range of hand sizes · M · after [#69](https://github.com/JoshuaMarkle/gecko/issues/69)
 94. [ ] [#70](https://github.com/JoshuaMarkle/gecko/issues/70) `I1` Free-form per-key 6-DoF poses · L · after [#69](https://github.com/JoshuaMarkle/gecko/issues/69)

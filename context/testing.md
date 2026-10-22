@@ -94,7 +94,17 @@ CMA-ES (`tests/cmaes.rs` + `eigh` unit test): sphere 10-D to 1e-10 in < 8k evalu
 Rosenbrock 10-D to 1e-8 at (1, …, 1), a bounded problem whose optimum lies outside the box ends
 on the corner and the objective never sees an out-of-box point, an interior bounded optimum,
 same seed → identical history, IPOP solves 5-D Rastrigin where one run does not (λ doubling),
-batch evaluator gets whole generations within the budget.
+batch evaluator gets whole generations within the budget, an empty generation halts the search,
+restarts from the best point.
+
+Geometry search (`tests/geomsearch.rs`): `--free` groups expand to the expected parameters and
+bounds contain the start; bad names and bounds fail; every bundled board and the Dactyl well
+fixture are clear under the 3D collision test; on random flat boards the 3D test finds the same
+pairs as the 2D one; tilted keys meeting at their tops, a convex column's switch bodies and a
+stacked key collide while a 15° keywell does not. Bilevel and alternate searches with `--evals`
+reproduce exactly, end collision-free, inside the bounds and no worse than the start board; the
+run directory's `geometry.toml` loads, equals `geometry.param.toml`, and scores the reported
+layout.
 
 Holdout (`tests/verify.rs`): a run with `holdout: shai` records it in config.json; every ranked
 layout's holdout score equals a fresh shai scorer's; the report's start/best/retained match;

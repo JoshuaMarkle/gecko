@@ -25,3 +25,8 @@ Optimizers, runs and their reproducibility, exploration, quality-diversity and b
 - 2026-10-21 — The lower bound is Gilmore–Lawler plus 20 rounds of dual ascent, skipped above 48 movable symbols. — Plain GL is weak (77% gap); a fixed round count stays reproducible; memory is m⁴.
 - 2026-10-21 — CMA-ES is our own implementation (positive weights, box bounds by penalty, batch evaluator). — Our RNG on native and WASM; batches let geometry search run inner searches in parallel.
 - 2026-10-21 — Holdout reports kept gain (holdout improvement ÷ search improvement) plus Spearman ρ, not raw scores. — Raw scores aren't comparable across corpora.
+- 2026-10-21 — Bilevel geometry search runs a full SA on the start board before CMA-ES; candidates warm-start from the incumbent with one inner seed per generation. — Otherwise early generations measure the layout catching up from QWERTY, not the board.
+- 2026-10-21 — Geometry CMA-ES uses σ0 0.1 and IPOP restarts from the best point (`restart_from_best`). — On Corne's touching columns σ0 0.25 and uniform restarts sampled almost only colliding boards.
+- 2026-10-21 — A geometry run reports start and best board after equal final SA polishes. — The search phase gives the best board more layout effort; equal polish keeps the gain honest.
+- 2026-10-21 — Geometry runs write their own `config.json` (`kind: "geometry"`), not `RunConfig`. — Different parameters and outputs; `list runs` and `verify` skip them for now.
+

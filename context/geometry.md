@@ -138,8 +138,9 @@ a measured circular thumb arc. A physical thumb arc can be selected explicitly.
 The useful symmetric search vector is about 16 numbers: five column staggers, five splays,
 split spread/angle, thumb x/y/rotation/radius. Row/column pitches can also be freed. Finger
 assignments, efforts, logical rows, fills and footprints are metadata, not independent key
-poses. `ParametricGeometry` is serializable for future CMA-ES candidates; no optimizer is
-implemented here. 3D adds row/column curvature, column lifts and split tent/tilt. The resolved `Geometry::hash()` identifies generated
+poses. `ParametricGeometry` is serializable; `gecko geometry optimize` searches these parameters
+([algorithms/geometry-search.md](algorithms/geometry-search.md)).
+`generate_unchecked` skips the overlap check so colliding candidates can be scored. 3D adds row/column curvature, column lifts and split tent/tilt. The resolved `Geometry::hash()` identifies generated
 input content, so equivalent explicit and parametric boards remain interchangeable in runs.
 
 ## Collision (G04)
@@ -154,6 +155,14 @@ and `Scorer::set_geometry` use, so search candidates that collide can still be s
 penalized by depth. Layer copies share their physical key and are skipped. Non-flat boards
 return no collisions: tilted and tented keycaps need 3D volumes (H8, #66). Every bundled flat
 board is collision-free.
+
+`Geometry::collisions_3d(margin)` is the approximate 3D test the geometry search uses on
+non-flat candidates until H8: per key a keycap frustum (footprint + margin at the bottom, inset
+`CAP_TAPER` 0.15 u per side at the top, `CAP_HEIGHT` tall, like an SA/DSA cap) and an MX switch
+body below it (0.78 u square, 0.45 u deep), each pair tested with the full separating axis
+theorem (face normals and edge × edge axes); depth is the deepest overlap. It finds the same
+pairs as the 2D test on flat boards, and every bundled board (Dactyl included) is clear.
+`validate` still checks 2D only.
 
 ## Derived effort and stretch (G4)
 
