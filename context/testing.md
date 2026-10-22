@@ -85,6 +85,11 @@ parametric keywell fixture (an independent formulation of the same math); 18.4 m
 neighbouring keycap tops in every column, tent direction, mirror symmetry; tenting Corne
 changes no metric; Dactyl delta == full. Web: tilted keys are pressed along their normal.
 
+Collision (`tests/collision.rs`): touching vs 0.1 u overlap (depth exact), margins, corner
+contact, a 45° key whose bounding box overlaps but whose box does not, the grid broad phase
+equal to brute force on random boards (sizes, rotations, margins), every bundled flat board
+clear, `validate` rejecting an overlap that `check_keys` allows, layer copies and 3D boards skipped.
+
 Geometry rebuild (`tests/rebuild.rs`): chained random key moves (pose, 3D z/tilt/tent, effort)
 on ansi-30, corne-36 with Shift, the 3D Dactyl and a layered corne: after each
 `Scorer::set_geometry`, every unfolded table and the full score of random layouts equal a fresh

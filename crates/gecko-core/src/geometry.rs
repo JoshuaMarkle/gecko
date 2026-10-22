@@ -250,7 +250,34 @@ impl Geometry {
         out
     }
 
+    /// [`Geometry::check_keys`], and no two keycaps overlap ([`Geometry::collisions`]).
     pub fn validate(&self) -> Result<()> {
+        self.check_keys()?;
+        let hits = self.collisions(0.0);
+        if let Some(c) = hits.first() {
+            let (a, b) = (&self.key[c.a], &self.key[c.b]);
+            return Err(Error::invalid(
+                "geometry",
+                format!(
+                    "'{}': {} overlapping keycap pair(s), first keys {} (row {}, col {}) and {} (row {}, col {}) by {:.3} u",
+                    self.name,
+                    hits.len(),
+                    c.a,
+                    a.row,
+                    a.col,
+                    c.b,
+                    b.row,
+                    b.col,
+                    c.depth
+                ),
+            ));
+        }
+        Ok(())
+    }
+
+    /// Structural checks: key count, comfort table sizes, unique fills. Unlike
+    /// [`Geometry::validate`] it allows overlapping keys (search candidates, layer expansion).
+    pub fn check_keys(&self) -> Result<()> {
         if self.key.is_empty() {
             return Err(Error::invalid("geometry", "no keys"));
         }
@@ -379,7 +406,7 @@ impl Geometry {
                 .map(|ij| src[g.key[ij / n].phys.map_or(ij / n, |p| p as usize) * n0 + g.key[ij % n].phys.map_or(ij % n, |p| p as usize)])
                 .collect();
         }
-        g.validate()?;
+        g.check_keys()?;
         Ok(g)
     }
 

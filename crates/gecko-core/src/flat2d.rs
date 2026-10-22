@@ -122,12 +122,12 @@ pub(crate) fn plane_normal(pts: &[V3]) -> V3 {
     }
 }
 
-/// Oriented key rectangle in 2D.
+/// Oriented key rectangle in 2D: centre, half extents, rotation (degrees).
 #[derive(Clone, Copy)]
-struct Rect {
-    c: [f64; 2],
-    h: [f64; 2],
-    rot: f64,
+pub(crate) struct Rect {
+    pub c: [f64; 2],
+    pub h: [f64; 2],
+    pub rot: f64,
 }
 
 impl Rect {
@@ -144,7 +144,7 @@ impl Rect {
 
 /// Minimum translation vector that moves `b` off `a` (separating axis theorem), or `None`
 /// when they overlap by at most `EPS`. Points from `a` toward `b`.
-fn mtv(a: &Rect, b: &Rect) -> Option<[f64; 2]> {
+pub(crate) fn mtv(a: &Rect, b: &Rect) -> Option<[f64; 2]> {
     let d = [b.c[0] - a.c[0], b.c[1] - a.c[1]];
     let mut best: Option<(f64, [f64; 2])> = None;
     for ax in a.axes().into_iter().chain(b.axes()) {

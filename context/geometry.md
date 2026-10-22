@@ -141,3 +141,17 @@ assignments, efforts, logical rows, fills and footprints are metadata, not indep
 poses. `ParametricGeometry` is serializable for future CMA-ES candidates; no optimizer is
 implemented here. 3D adds row/column curvature, column lifts and split tent/tilt. The resolved `Geometry::hash()` identifies generated
 input content, so equivalent explicit and parametric boards remain interchangeable in runs.
+
+## Collision (G04)
+
+`Geometry::collisions(margin)` (`collision.rs`) lists overlapping keycap pairs on flat boards:
+each physical key's footprint as an oriented box (centre, size, z rotation) grown by `margin`
+u per side, candidate pairs from a uniform grid (cell = the largest box diagonal), and the
+separating axis test shared with `flat2d` for the penetration depth. Overlaps ≤ 0.001 u count
+as touching. `Geometry::validate` (TOML load, KLE import, parametric generation) rejects any
+overlap at margin 0; `check_keys` holds only the structural checks and is what layer expansion
+and `Scorer::set_geometry` use, so search candidates that collide can still be scored and
+penalized by depth. Layer copies share their physical key and are skipped. Non-flat boards
+return no collisions: tilted and tented keycaps need 3D volumes (H8, #66). Every bundled flat
+board is collision-free.
+

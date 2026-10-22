@@ -40,6 +40,8 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   unrotated top-left corner at the bottom of the keycap; rotation is about the keycap's
   centre (as the 3D viewer draws it). `rot` convention, keycap top / normal and the points
   metrics measure between on 3D boards: [geometry.md](geometry.md#3d-shape) (`gecko_core::pose`).
+- Keycaps may not overlap: loading a flat board fails on any overlapping pair
+  ([geometry.md](geometry.md#collision-g04), `Geometry::collisions`).
 - 2D drawing: `Geometry::flat2d()` (`flat2d.rs`) gives `{pos: [x, y], rot}` per key. Flat
   boards return their own x, y, rot z. Others: key centers projected onto the best-fit (PCA)
   plane — per hand when the halves' planes differ by > 5° (tented splits) — keeping each half's
