@@ -1,3 +1,12 @@
+---
+group: analyzers
+kind: tool
+read: 2026-10-20
+status: read
+feeds: [B03, S02, K2]
+take: Finger speed with per-finger KPS; skipgram decay 1/2^g; personal dexterity
+---
+
 # genkey and Semimak (semilin)
 
 Go analyzer/generator (GPL-3) that produced **Semimak** (2021). Repo:

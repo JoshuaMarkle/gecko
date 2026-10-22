@@ -2,9 +2,11 @@
 
 How GECKO can show the layout search space, show what its optimizers are doing, find what
 they miss, and switch from "optimize one layout" to "explore and explain the space".
-Written 2026-10-20. Builds on [SYNTHESIS.md](SYNTHESIS.md) §5 (search) and the sources in
-[`sources/`](sources/README.md), mainly [qap-metaheuristics](sources/qap-metaheuristics.md)
-and [search-methods-general](sources/search-methods-general.md).
+Written 2026-10-20. **Status 2026-10-21:** archive, BLS and MAP-Elites are built
+(`context/algorithms/explore.md`, `map-elites.md`); the remaining views are tracked in #100.
+Builds on [SYNTHESIS.md](../SYNTHESIS.md) §5 (search) and the sources in
+[`sources/`](../sources/README.md), mainly [qap-metaheuristics](../sources/qap-metaheuristics.md)
+and [search-methods-general](../sources/search-methods-general.md).
 
 ## 0. Summary
 
@@ -268,7 +270,7 @@ and measure how well we have covered the space. Methods, in order of value for G
 
 | Method | Idea | Why for GECKO |
 |---|---|---|
-| **Iterated local search / Breakout Local Search** | Descend; kick with k random (or tabu-directed) swaps; descend; accept if better or by rule. BLS adapts k: grow when it returns to the same optimum | Every kick produces an (optimum → optimum) edge: ILS *is* a LON sampler. Benlic & Hao matched best-known results on almost all QAPLIB instances ([qap-metaheuristics](sources/qap-metaheuristics.md)) |
+| **Iterated local search / Breakout Local Search** | Descend; kick with k random (or tabu-directed) swaps; descend; accept if better or by rule. BLS adapts k: grow when it returns to the same optimum | Every kick produces an (optimum → optimum) edge: ILS *is* a LON sampler. Benlic & Hao matched best-known results on almost all QAPLIB instances ([qap-metaheuristics](../sources/qap-metaheuristics.md)) |
 | **Structured kicks** | Swap two whole columns on the same finger, swap the hands (mirror), rotate a finger's keys, 3-cycles, swap two letters' fingers keeping rows | Large semantic moves cross barriers that 1-swap SA climbs slowly; and they map to ideas users understand |
 | **Robust tabu search** | Best non-tabu swap; random tenure; aspiration; long-term frequency memory forces unused moves | Deterministic-ish coverage; its frequency memory is itself a visualization (3.1 #9) |
 | **Parallel tempering (replica exchange)** | R replicas at a temperature ladder; neighbours swap states with Metropolis probability | Uses 20 cores well; robust to the T schedule; samples the Boltzmann distribution, which feeds the density of states and consensus views without bias |
@@ -291,7 +293,7 @@ and measure how well we have covered the space. Methods, in order of value for G
 | Method | Idea | Notes |
 |---|---|---|
 | **Large neighbourhood search with exact repair** | Free k slots (k = 8–10, 8! = 40k to 10! = 3.6M), fix the rest, enumerate the free slots exhaustively | Proves local optimality in a much larger neighbourhood than 1-swap. Choose free slots by finger, by row, or by high entropy in the consensus keyboard |
-| **Lower bounds** | Gilmore–Lawler / LP relaxation on the bigram part, MIP on sub-problems ([integer-programming](sources/integer-programming-bounds.md)) | The only way to show "within x % of optimal" on a chart (a dashed floor on the convergence chart) |
+| **Lower bounds** | Gilmore–Lawler / LP relaxation on the bigram part, MIP on sub-problems ([integer-programming](../sources/integer-programming-bounds.md)) | The only way to show "within x % of optimal" on a chart (a dashed floor on the convergence chart) |
 | **Capture–recapture of optima** | Estimate total optima below a threshold from hit counts | "We have seen 412 of an estimated ~460 optima within 1 % of best" is a coverage statement |
 | **Canonicalization** | Mirror (and any geometry symmetry) mapped to a canonical form before dedupe | Otherwise every funnel appears twice and the maps lie |
 | **Pin sweeps** | Re-run exploration with each user pin removed / added | Quantifies the cost of each constraint ("keeping `,./` costs 0.21") |
@@ -520,13 +522,13 @@ Landscape analysis
   states", *PRL* 86, 2001.
 
 Search
-- Benlic & Hao, Breakout Local Search for QAP, 2013 (see [qap-metaheuristics](sources/qap-metaheuristics.md)).
+- Benlic & Hao, Breakout Local Search for QAP, 2013 (see [qap-metaheuristics](../sources/qap-metaheuristics.md)).
 - Lehman & Stanley, "Abandoning Objectives: Evolution through the Search for Novelty Alone",
   *Evolutionary Computation* 19(2), 2011,
   https://www.cs.swarthmore.edu/~meeden/cs81/f17/papers/lehman_ecj11.pdf
 - Mouret & Clune, MAP-Elites, arXiv:1504.04909, 2015; Vassiliades, Chatzilygeroudis, Mouret,
   CVT-MAP-Elites, *IEEE TEC* 22(4), 2018 **(verify citation details)**.
-- Earl & Deem, parallel tempering review, 2005 (see [search-methods-general](sources/search-methods-general.md)).
+- Earl & Deem, parallel tempering review, 2005 (see [search-methods-general](../sources/search-methods-general.md)).
 
 Evaluation and visualization
 - Hoos & Stützle, *Stochastic Local Search: Foundations and Applications*, 2004 (run-time

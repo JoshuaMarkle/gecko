@@ -1,7 +1,16 @@
+---
+group: analyzers
+kind: tool
+read: 2026-10-20
+status: read
+feeds: [B-class, M03, B8, search]
+take: Full same-hand bigram classes; disjoint bigrams; threshold annealing with adaptive fidelity
+---
+
 # Kühlmak (Felix Kühling)
 
-Rust analyzer + optimizer, MIT. https://github.com/fxkuehl/kuehlmak. Already summarized in
-`../existing-optimizers.md`; this file adds what the code shows.
+Rust analyzer + optimizer, MIT. https://github.com/fxkuehl/kuehlmak. Compared with the other tools in
+[tool-comparison](../studies/tool-comparison.md); this file adds what the code shows.
 
 ## Key ideas (beyond the existing summary)
 

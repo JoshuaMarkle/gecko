@@ -1,3 +1,12 @@
+---
+group: analyzers
+kind: tool
+read: 2026-10-20
+status: read
+feeds: [validation]
+take: What a thin objective produces
+---
+
 # keyboard-genetics / Halmak (MadRabbit, 2016)
 
 JavaScript GA, MIT. https://github.com/MadRabbit/keyboard-genetics, result

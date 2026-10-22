@@ -1,3 +1,12 @@
+---
+group: human
+kind: paper
+read: 2026-10-21
+status: verified
+feeds: [G01, G03, G05]
+take: Segment ratios, joint ROM, DIP–PIP coupling; Buchholz, MediaPipe, MANO, MyoSuite
+---
+
 # Hand models: anthropometry, kinematics, landmarks
 
 ## Sources
@@ -129,17 +138,10 @@ cost, not as a hard ratio.
 - Neutral (relaxed) curl: Cosmos's 5° / 4° / 9° (MCP / PIP / DIP) is a design choice, not a
   measurement (`cosmos-keyboards.md`).
 
-## What GECKO needs (phase 7), simplest first
+## Used in GECKO
 
-1. **Kinematic chain per finger:** MCP (flex + abduct), PIP, DIP with a soft DIP–PIP coupling
-   (per-finger slope from the table above). Thumb: CMC 2 DoF + MCP + IP.
-2. **Segment lengths:** from a hand scan (MediaPipe) or from hand length with the Buchholz
-   ratios above (kinematic lengths; Melzner bone lengths as a lower bound).
-3. **Joint limits:** active ROM above as hard limits; functional range as the low-cost zone.
-4. **Reach cost:** IK to the key top (Cosmos's closed-form method), cost = weighted joint
-   deviation from neutral curl + press-direction misalignment + wrist offset if out of reach.
-5. **Coupling:** penalize postures where adjacent fingers must be far apart in flexion
-   (ring/middle), using the independence indices.
-
-Validation checks are in `../hand-model-and-geometry.md` (home row cheapest; col-stagger beats
-row-stagger; Corne/Dactyl beat flat ANSI).
+Implemented in `context/hand-model.md`: IK reach, press angle and wrist posture with joint
+limits from the ROM table above and DIP ≈ 0.7·PIP as a soft preference. Validation (home row
+cheapest, column stagger beats row stagger, Corne/Dactyl beat flat ANSI) is
+`crates/gecko-core/tests/hand.rs`. Finger independence ([hager-ross](hager-ross-finger-independence.md))
+scales the ring pairs of B11, not the hand model.

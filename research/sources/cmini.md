@@ -1,3 +1,12 @@
+---
+group: analyzers
+kind: tool
+read: 2026-10-20
+status: read
+feeds: [C6, T-classes, L05]
+take: ~4100 community layouts + many corpora; finger-combo trigram table
+---
+
 # cmini (AKL Discord bot) and its layout database
 
 Python Discord bot, GPL-3. https://github.com/Apsu/cmini (fork of Dainternetdude/amini).

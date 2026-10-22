@@ -1,3 +1,12 @@
+---
+group: optimization
+kind: paper
+read: 2026-10-20
+status: secondary
+feeds: [B4, B5, G5]
+take: CMA-ES, NSGA-II, MAP-Elites, parallel tempering
+---
+
 # General search methods for GECKO's later phases
 
 Canonical references for methods GECKO plans or should consider. Not keyboard-specific.

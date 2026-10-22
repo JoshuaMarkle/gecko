@@ -3,6 +3,7 @@
 What the sources say GECKO should build next, and why. Each claim links to a summary in
 [`sources/`](sources/README.md); each summary links to code, data, or the paper.
 Written 2026-10-20 from 16 repositories (cloned and read) and ~20 papers and community docs.
+Recommendations below are the evidence-based view; §8 tracks what was built from them.
 
 ## 1. Where GECKO stands
 
@@ -94,7 +95,7 @@ what the user gets:
    (re-weight without re-searching), sample a local optima network with BLS kicks, and show
    fitness–distance, consensus keyboard, embedding map and funnels in a web Explore view.
    Full catalog (50 views), escape strategies and implementation plan:
-   [search-space-visualization.md](search-space-visualization.md).
+   [search-space-visualization.md](studies/search-space-visualization.md).
 
 Not worth it now: RL / neural combinatorial search (n = 30 with fast deltas favours classic
 local search). ([ml-approaches](sources/ml-approaches.md))
@@ -126,33 +127,29 @@ local search). ([ml-approaches](sources/ml-approaches.md))
   geometry, which is the core design rule in `context/goals.md`.
 - Interop: export to ergogen points and Cosmos expert config to get a buildable board.
 
-## 8. Implementation backlog (suggested order)
+## 8. Backlog status
 
-| # | Item | Phase | Effort | Sources |
-|---|---|---|---|---|
-| 1 | Engram comfort profile as an independent judge | 3 | S | engram |
-| 2 | Geometric stretch metric B14; retire hand-listed LSB/scissor flags after comparison | 3 | M | oxeylyzer |
-| 3 | SFB/SFS distance transforms + per-finger factors + skipgram decay | 3 | S | genkey, oxeylyzer |
-| 4 | Extra corpora (shai, Monkeytype 10k/450k) + L05 robustness report + worst words | 3 | S | cmini, corpora |
-| 5 | cmini layout importer; ranking tests over many community layouts | 3 | M | cmini |
-| 6 | Spread-normalized weights; then fit weights to Engram data | 3 | M | engram, ml-approaches |
-| 7 | Tabu (RoTS) + BLS in `gecko bench` | 2 | M | qap-metaheuristics |
-| 8 | Result diversity: MAP-Elites or rank-sum over many runs; UI map | 3 | M | search-methods, kuehlmak |
-| 9 | Lower bound / MIP oracle for certification | 3 | M | integer-programming |
-| 10 | IKI model from 136M data (E01) | 9 | L | dhakal |
-| 11 | Personal calibration: tapping test + pairwise comfort study in UI | 9 | M | genkey, engram |
-| 12 | Parametric geometry + Cosmos-style IK reach cost | 6–7 | L | ergogen-dactyl, cosmos, hand-models |
-| 13 | Run telemetry + optima archive + swap-delta matrix (explore steps 1–4) | 2–3 | M | [search-space-visualization](search-space-visualization.md) |
-| 14 | `explore` engine (BLS + LON + exclusion search) and web Explore view | 3 | M | [search-space-visualization](search-space-visualization.md) |
+The order and schedule live in [`context/roadmap.md`](../context/roadmap.md) (GitHub issues);
+this table records what each synthesis recommendation became. Reviewed 2026-10-21.
 
-## 9. Open questions and things to verify
+| # | Recommendation | Status | Where |
+|---|---|---|---|
+| 1 | Engram comfort profile as an independent judge | Done | E04/E05, `data/comfort/`; [engram](sources/engram-preference-study.md) |
+| 2 | Geometric stretch B14 | Done | `context/objective.md` |
+| 3 | SFB/SFS distance transforms, finger factors, skipgram decay | Done | B03, S02, S03, profile `[sfb]` |
+| 4 | Extra corpora, robustness report, worst words | Done | #15, #23; `gecko compare --corpora` (L05) |
+| 5 | cmini importer and ranking tests | Done | #26 |
+| 6 | Spread-normalized weights, fit weights to data | Done | `gecko profile normalize`, `gecko profile fit` (#35); [experiment](experiments/2026-10-21-profile-ranking.md) |
+| 7 | Tabu and BLS in `gecko bench` | Done | #2; `context/algorithms/explore.md` |
+| 8 | Result diversity | MAP-Elites done (#29); web views open (#38); rank-sum open (#60) | |
+| 9 | Lower bound and MIP oracle | Gilmore–Lawler done (#37); MIP open (#43) | `context/algorithms/bounds.md` |
+| 10 | IKI model from 136M data | Open | #31 |
+| 11 | Personal calibration (tapping test, pairwise study) | Open | #46, #50 |
+| 12 | Parametric geometry and IK reach cost | Done (#25, #40, #52); bilevel (#54) and Cosmos export (#64) open | `context/geometry.md`, `context/hand-model.md` |
+| 13 | Run telemetry and optima archive | Archive done; process views open | #53 |
+| 14 | `explore` engine and web Explore view | Engine done; remaining views open | #100; [study](studies/search-space-visualization.md) |
+| 15 | Adaptive fidelity scoring | Open | #55 |
 
-- Engram study protocol details (which hands, which keyboards) before using its scores on
-  column-staggered boards.
-- ~~Exact Buchholz segment ratios and joint ROM values~~: checked in
-  [hand-models](sources/hand-models.md) (#6). Still open: finger-metacarpal lengths, MCP abduction ROM.
-- Whether 136M data is downloadable from the user's machine (blocked from the research env).
-- carpalx defaults are taken from a mirror's config files; matches the formulas on the archived
-  site but individual values are **(verify)**.
-- ~~Which skipgram definition GECKO reports~~ — resolved: any middle char (decisions.md
-  2026-10-21). Trigram classes and `rg`/`my`/`vt` distances are tested (`tests/validation.rs`).
+## 9. Open questions
+
+Collected in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md).

@@ -1,3 +1,12 @@
+---
+group: analyzers
+kind: paper
+read: 2026-10-20
+status: verified
+feeds: [E04, E05, C7]
+take: Crowdsourced comfort → Bradley–Terry → reusable pair-score CSV
+---
+
 # Engram and the bigram typing-preference study (Arno Klein)
 
 Paper: Klein, "Optimizing comfortable keyboard layouts using human typing preferences and

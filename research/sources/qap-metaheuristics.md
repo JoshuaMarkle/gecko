@@ -1,3 +1,12 @@
+---
+group: optimization
+kind: paper
+read: 2026-10-20
+status: read
+feeds: [B1, B3, search]
+take: Robust tabu, BLS, BMA memetic
+---
+
 # QAP metaheuristics: robust tabu, breakout local search, memetic, ILS
 
 Keyboard layout = QAP (+ cubic trigram terms). The QAP literature has well-tested methods.

@@ -1,3 +1,12 @@
+---
+group: human
+kind: paper
+read: 2026-10-20
+status: read
+feeds: [B11]
+take: Ring least independent, then middle
+---
+
 # Häger-Ross & Schieber — "Quantifying the Independence of Human Finger Movements" (J. Neurosci. 2000)
 
 doi:10.1523/JNEUROSCI.20-22-08542.2000. Open: https://pmc.ncbi.nlm.nih.gov/articles/PMC6773164/
@@ -22,6 +31,6 @@ middle 0.941, ring 0.908, little 0.943. Left hand similar.
 - Physical basis for: higher cost on ring-finger SFBs and on rolls *toward* the ring finger
   (Kühlmak's ring rule), the middle↔ring pair costs in KLO's movement table, and the community
   complaint about Semimak's ring load.
-- Turn into a per-finger **independence factor** in the finger model (`parameters.md`):
+- Turn into a per-finger **independence factor** in the finger model (`context/parameters.md`):
   e.g. scale same-hand adjacent-finger bigram costs by `(1 − individuation)` of the pair.
   Treat as a prior to be overridden by calibration data.

@@ -1,3 +1,12 @@
+---
+group: human
+kind: paper
+read: 2026-10-20
+status: secondary
+feeds: [B03]
+take: Fitts only for same-finger travel and thumbs
+---
+
 # Fitts-style movement models for key-to-key time
 
 - Zhai, Hunter, Smith, "Performance Optimization of Virtual Keyboards", *HCI* 17(2–3), 2002,

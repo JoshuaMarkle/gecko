@@ -1,3 +1,12 @@
+---
+group: optimization
+kind: paper
+read: 2026-10-20
+status: secondary
+feeds: [B6, B7]
+take: Exact bounds to certify optima; AZERTY standard (MPI pages unreachable)
+---
+
 # Exact methods and lower bounds: Karrenbauer, Oulasvirta, Feit, John
 
 - Karrenbauer & Oulasvirta, "Improvements to keyboard optimization with integer programming",

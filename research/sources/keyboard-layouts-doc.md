@@ -1,3 +1,12 @@
+---
+group: community
+kind: community
+read: 2026-10-20
+status: read
+feeds: [definitions, validation]
+take: Shared metric definitions; distance examples; design rules
+---
+
 # The Keyboard Layouts Doc (ec0vid, 2nd edition) and the AKL community
 
 Google Doc, community reference for metrics and layout theory:
