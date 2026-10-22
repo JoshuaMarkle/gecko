@@ -12,7 +12,7 @@ import { logGrid, paretoFront, rankOrder, rowChars, sameTables, swapList, symIds
 import { fmt, fmtCount, fmtTime } from "../../format";
 import { loadAtlasView, type AtlasView, type Scorer } from "../../wasm";
 import { usePref, type SearchSettings } from "../../inputs";
-import { ConsensusBoard } from "./Board";
+import { ConsensusBoard, Thumb } from "./Board";
 import { Correlogram, Discovery, Families, Funnels, Landscape, ParallelCoords, Stability, stabilityRows, type Axis, type Family, type Funnel } from "./Panels";
 import { Picked, type PickedInfo } from "./Picked";
 import { Scatter, type Mark } from "./Scatter";
@@ -312,7 +312,7 @@ export function ExploreView(p: Props) {
   const tip = (i: number) => data && ranked && (
     <>
       <div><b>#{ranked.rank[i] + 1}</b> · {fmt(ranked.scores[i], 3)} · {ranked.dBest[i]} keys from best · {data.hits[i]} hit{data.hits[i] === 1 ? "" : "s"}</div>
-      <div className="mono">{rowChars(data.syms, data.slots, i, data.alphabet).replace(/(.{10})/g, "$1 ").trim()}</div>
+      <Thumb geometry={data.geometry} chars={rowChars(data.syms, data.slots, i, data.alphabet)} diff={rowChars(data.syms, data.slots, ranked.best, data.alphabet)} u={14} width={212} />
     </>
   );
   const onPick = (i: number) => setPicked(i);

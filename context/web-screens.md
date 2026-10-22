@@ -137,12 +137,12 @@ stop-confidence controls. This describes the next Search run, not a saved run or
 ## Home (read-only)
 Sidebar: summary blocks for Board, Hand, Language, Profile, Search with on/off flags; each
 opens its tab. Main: 3D working model (3D toggle, Default / Heat / Fingers / N-grams).
-Bottom: convergence, "Chance we've found the optimal layout" (rediscovery; bound gap when
+Bottom: convergence (hover: mini keyboard of the best layout at that time), "Chance we've found the optimal layout" (rediscovery; bound gap when
 the run has one), score vs reference and the main metrics.
 
 ## Analysis · Saved
 Analysis: every chart for the current layout (click two heatmap keys to swap). Saved: all
-runs; the selected run's convergence, best layouts as 2D thumbnails (click one to make it
+runs, each with a mini keyboard of its best layout; the selected run's convergence (hover as on Home), best layouts as 2D thumbnails (click one to make it
 the working model) and reproducibility facts. With a holdout corpus, the best-layouts table adds
 each layout's score on it, and the Run facts show the holdout corpus, start → best on both
 corpora, the gain kept and the rank ρ.

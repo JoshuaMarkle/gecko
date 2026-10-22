@@ -38,6 +38,9 @@ web/contract/          API contract check (loose.ts; generated samples are gitig
 `Board2D` draws `geometry.flat` (gecko-core `Geometry::flat2d`, so curved boards get a clean
 projection) via `format.ts` `flatKeys` / `flatBounds`, with each key's in-plane rotation and
 optional arcs between keys. Custom boards get `flat` from WASM `flat2d`.
+`Board2D.Thumb` is the one **mini keyboard** for every place a layout is referenced: Saved run
+rows and best layouts, Explore families and point tooltips (map, FDC, trade-off; keys that
+differ from the best shaded), and convergence tooltips (Home, Saved). `width` caps its size.
 
 ## 3D rendering
 

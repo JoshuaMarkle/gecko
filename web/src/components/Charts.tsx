@@ -1,10 +1,11 @@
 // Hand-rolled SVG charts (no chart library): convergence, metric contributions, finger load,
 // a 2D heatmap of the layout, and the worst n-grams.
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, type MouseEvent } from "react";
 import type { Analysis, Geometry, MetricValue, Ngram, Progress } from "../api";
 import { ACCENT, fingerColor, heatColor, heatText, HAIR, INK, MUTED } from "../colors";
-import { flatBounds, flatKeys, fmt, fmtTime, scoredMetrics } from "../format";
+import { fitChars, flatBounds, flatKeys, fmt, fmtTime, scoredMetrics } from "../format";
+import { Thumb } from "./Board2D";
 
 export function useSize<T extends HTMLElement>() {
   const ref = useRef<T>(null);
@@ -29,8 +30,10 @@ export function niceTicks(lo: number, hi: number, n = 5): number[] {
   return out;
 }
 
-export function Convergence({ progress, reference, refName }: { progress: Progress[]; reference?: number; refName: string }) {
+/** Best score over time. With `geometry`, hovering shows the best layout at that moment. */
+export function Convergence({ progress, reference, refName, geometry }: { progress: Progress[]; reference?: number; refName: string; geometry?: Geometry }) {
   const [ref, { w, h }] = useSize<HTMLDivElement>();
+  const [hover, setHover] = useState<{ i: number; px: number; py: number } | null>(null);
   if (progress.length === 0) return <div className="empty">Run an optimization to see the best score over time.</div>;
   const m = { l: 48, r: 16, t: 10, b: 26 };
   const xs = progress.map((p) => p.elapsed_ms);
@@ -46,9 +49,17 @@ export function Convergence({ progress, reference, refName }: { progress: Progre
     d += i === 0 ? `M${sx(p.elapsed_ms)},${sy(p.best)}` : `H${sx(p.elapsed_ms)}V${sy(p.best)}`;
   });
   d += `H${sx(xMax)}`;
+  const onMove = (e: MouseEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = e.clientX - r.left, t = ((px - m.l) / Math.max(w - m.l - m.r, 1)) * xMax;
+    let i = 0;
+    while (i + 1 < progress.length && progress[i + 1].elapsed_ms <= t) i++;
+    setHover(px < m.l || !progress[i].best_chars ? null : { i, px, py: e.clientY - r.top });
+  };
+  const hp = hover && progress[hover.i];
   return (
-    <div ref={ref} style={{ height: "100%" }}>
-      <svg width={w} height={h}>
+    <div ref={ref} style={{ height: "100%", position: "relative" }}>
+      <svg width={w} height={h} onMouseMove={geometry ? onMove : undefined} onMouseLeave={() => setHover(null)}>
         {niceTicks(lo, yHi).map((t) => (
           <g key={t}>
             <line x1={m.l} x2={w - m.r} y1={sy(t)} y2={sy(t)} stroke={HAIR} />
@@ -67,7 +78,14 @@ export function Convergence({ progress, reference, refName }: { progress: Progre
         <path d={d} fill="none" stroke={INK} strokeWidth={1.5} />
         <circle cx={sx(xs[xs.length - 1])} cy={sy(ys[ys.length - 1])} r={3} fill={ACCENT} />
         <text className="ink" x={m.l + 6} y={m.t + 12}>best {fmt(ys[ys.length - 1], 3)} · {fmtTime(xs[xs.length - 1])}</text>
+        {hp && <circle cx={sx(hp.elapsed_ms)} cy={sy(hp.best)} r={3} fill="none" stroke={INK} />}
       </svg>
+      {hover && hp && geometry && (
+        <div className="tip" style={{ left: Math.max(0, Math.min(hover.px + 12, w - 230)), top: Math.max(0, Math.min(hover.py - 10, h - 110)) }}>
+          <div><b>{fmt(hp.best, 3)}</b> · {fmtTime(hp.elapsed_ms)}</div>
+          <Thumb geometry={geometry} chars={fitChars(hp.best_chars, geometry)} u={14} width={212} />
+        </div>
+      )}
     </div>
   );
 }

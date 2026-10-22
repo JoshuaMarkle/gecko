@@ -24,3 +24,4 @@ The web app: views, interaction, local data and visual design. Newest last. Form
 - 2026-10-21 — "Use hand in optimization" adds G01/G05 only where the profile has no weight, and drops them again unless edited. — Changes runs without rewriting a user's explicit weights.
 - 2026-10-21 — Export files are built in the browser, except analyzer formats, which go through WASM `export_layout`. — Custom boards export too, and analyzer formats match `gecko layouts export`.
 - 2026-10-21 — Export image is one SVG for preview and download; KLE export uses the flattened 2D drawing. — The preview is exactly the file; raw 3D positions overlap in KLE.
+- 2026-10-21 — L10 (#87) keeps `Board2D.Thumb` as the mini keyboard instead of a new `MiniKeyboard`, and drops the "Optimize result sidebar" step. — Thumb was already the shared component; the Optimize tab became Home, whose main view already shows the result keyboard in 3D.
