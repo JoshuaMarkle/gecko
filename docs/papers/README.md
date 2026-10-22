@@ -4,16 +4,27 @@ Drafts of papers that can come out of GECKO. Start with [topics.md](topics.md): 
 questions we want the software to answer, the experiment and figures for each, and what is still
 missing. Each paper gets one file in `drafts/` (or the top level for the software paper).
 
-| File | What | Status |
-|---|---|---|
-| [topics.md](topics.md) | Focus topics: question, hypothesis, experiment, figures, blockers, venue | living list |
-| [software-paper.md](software-paper.md) | **GECKO: a fast, explainable keyboard-layout analysis system** (how it works under the hood) | full draft; measured numbers from repo, `TODO` where a run is needed |
-| [drafts/P1-objective-sensitivity.md](drafts/P1-objective-sensitivity.md) | How much does the "best" layout depend on the weights? | skeleton |
-| [drafts/P2-certified-optimality.md](drafts/P2-certified-optimality.md) | How close to optimal are layout optimizers? Bounds + exact sub-problems | skeleton |
-| [drafts/P3-landscape.md](drafts/P3-landscape.md) | The keyboard-layout landscape: local-optima networks and quality diversity | skeleton |
-| [drafts/P4-geometry-codesign.md](drafts/P4-geometry-codesign.md) | Co-designing layout and board geometry with a hand model | skeleton |
-| [drafts/P5-learned-costs.md](drafts/P5-learned-costs.md) | Calibrating the objective with human data | skeleton |
-| [templates/](templates/) | Journal template (HTML + XeLaTeX build) | exists |
+## Focus (four papers)
+
+| # | Paper | File | Status |
+|---|---|---|---|
+| 1 | Exploring the keyboard layout landscape | [drafts/01-landscape.md](drafts/01-landscape.md) | tooling done; runs pending |
+| 2 | Designing a general cost function | [drafts/02-cost-function.md](drafts/02-cost-function.md) | needs sweeps, timing model, user study |
+| 3 | Finding the best keyboard layout | [drafts/03-best-layout.md](drafts/03-best-layout.md) | needs exact windows (#43), budget grid |
+| 4 | Software paper: how GECKO works | [software/software.tex](software/software.tex) (PDF: `software/software.pdf`; notes: [software-paper.md](software-paper.md)) | typeset draft, 8 pages, six use cases; some `TODO(run)` numbers |
+
+Other files: [topics.md](topics.md) (all candidate topics; the four above are the focus),
+[drafts/later/](drafts/later/) (parked: geometry co-design), [templates/](templates/) (LaTeX/HTML
+style, see below).
+
+## Writing and building PDFs
+
+Styling is in `templates/gecko-paper.cls`; a paper is content only (`templates/skeleton.tex`).
+Build: `docs/papers/templates/build_pdf.sh path/to/paper.tex`. Details: `templates/README.md`.
+Draft PDFs: `python3 -I docs/papers/drafts/build_drafts.py` turns each `drafts/*.md` into a `.tex` and `.pdf`
+beside it (needs pandoc and XeLaTeX); edit the `.md`, never the generated `.tex`.
+Drafts are Markdown first; convert a draft to `.tex` when its results exist. Each paper lives in its
+own folder (`software/`) with `<name>.tex`, `figures.py` (data from the repo, never synthetic), `assets/`.
 
 ## Rules for every draft
 
@@ -34,7 +45,7 @@ missing. Each paper gets one file in `drafts/` (or the top level for the softwar
 ## Suggested order
 
 1. **Software paper** (nothing blocks it; it describes what exists).
-2. **P2 and P3** (need only the current search code; bounds and the atlas already exist).
-3. **P1** (needs a weight-sweep driver; cheap with `gecko explore`'s re-weighting).
-4. **P5** (needs E01 timing model, #31, and ideally a small user study).
-5. **P4** (needs bilevel search #54, 3D params #59, 3D collision #66).
+2. **Landscape** (only needs `explore`, `atlas`, `qd`; runs are cheap).
+3. **Best layout** (budget grid now; exact windows after #43).
+4. **Cost function** (sweeps now; timing model #31 and a user study make it strong). It is also the
+   paper that sets how far the other two papers' claims can go.

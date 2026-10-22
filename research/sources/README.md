@@ -40,12 +40,14 @@ all files are collected in [`../OPEN-QUESTIONS.md`](../OPEN-QUESTIONS.md).
 
 | File | Take | Status |
 |---|---|---|
-| [dhakal-136m-keystrokes.md](dhakal-136m-keystrokes.md) | IKI by hand/alternation; rollover ≈ 50 % for fast typists (data site unreachable) | secondary |
+| [dhakal-136m-keystrokes.md](dhakal-136m-keystrokes.md) | IKI by hand/alternation; rollover ≈ 50 % for fast typists (Aalto site down; Kaggle mirror checked against the paper, within 3.5 %) | secondary |
 | [feit-how-we-type.md](feit-how-we-type.md) | Consistent finger mapping, preparation, low hand motion predict speed | read |
+| [finger-force-and-fatigue.md](finger-force-and-fatigue.md) | Typing is low-force (≈ 10 % MVC) and shows potentiation, not fatigue, over 6 h; key force and pace matter more than which finger | secondary |
 | [fitts-and-movement-models.md](fitts-and-movement-models.md) | Fitts only for same-finger travel and thumbs | secondary |
 | [hager-ross-finger-independence.md](hager-ross-finger-independence.md) | Ring least independent, then middle | read |
 | [hand-models.md](hand-models.md) | Segment ratios, joint ROM, DIP–PIP coupling; Buchholz, MediaPipe, MANO, MyoSuite | verified |
 | [split-keyboard-ergonomics.md](split-keyboard-ergonomics.md) | Slope 0 to −4°, opening ≈ 15° | secondary |
+| [thumb-biomechanics.md](thumb-biomechanics.md) | Thumb uses < 65 % of its joint range in normal use and performs best near rest; far-flexed keys near the thumb base are worst | secondary |
 | [wrist-posture-and-finger-load.md](wrist-posture-and-finger-load.md) | Carpal-tunnel limits ext 33° / flex 49° / radial 22° / ulnar 15°; typing sits at ext ~20°, ulnar ~15° | secondary |
 
 ### Optimization and ML

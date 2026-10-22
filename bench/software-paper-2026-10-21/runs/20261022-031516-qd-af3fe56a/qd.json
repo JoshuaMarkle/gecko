@@ -1,0 +1,1481 @@
+{
+  "schema": 1,
+  "id": "20261022-031516-qd-af3fe56a",
+  "done": true,
+  "elapsed_ms": 20023,
+  "evals": 107532713,
+  "chars": "qwertyuiopasdfghjkl;zxcvbnm,./",
+  "slots": 30,
+  "metrics": [
+    "B01",
+    "S01",
+    "B03",
+    "S02",
+    "S03",
+    "B04",
+    "B05",
+    "B06",
+    "B07",
+    "B09",
+    "B10",
+    "S05",
+    "B14",
+    "B11",
+    "S04",
+    "M01",
+    "M02",
+    "M03",
+    "M07",
+    "M04",
+    "M09",
+    "G01",
+    "G05",
+    "G03",
+    "M05",
+    "M06",
+    "B08",
+    "T01",
+    "T02",
+    "T03",
+    "T04",
+    "T05",
+    "T06",
+    "T07",
+    "T08",
+    "T12",
+    "T13",
+    "T09",
+    "T10",
+    "E04",
+    "E05",
+    "B02",
+    "Y01",
+    "Y02",
+    "Y03",
+    "Y04",
+    "L01",
+    "L02"
+  ],
+  "table_hash": "eda2fa834dd90a78",
+  "axes": [
+    {
+      "name": "roll_ratio",
+      "lo": 37.46357091565629,
+      "hi": 78.89164452619087,
+      "bins": 12,
+      "auto": true
+    },
+    {
+      "name": "index_load",
+      "lo": 16.348281656148515,
+      "hi": 42.179912574924515,
+      "bins": 12,
+      "auto": true
+    }
+  ],
+  "cells": 144,
+  "filled": 92,
+  "coverage": 0.6388888888888888,
+  "offspring": 34221,
+  "added": 92,
+  "improved": 439,
+  "random_mean": 99.92826639724517,
+  "qd_score": 7348.17063542577,
+  "best": {
+    "row": 0,
+    "cell": 53,
+    "bins": [
+      5,
+      4
+    ],
+    "desc": [
+      55.25383,
+      26.869104
+    ],
+    "score": 17.56122013057589,
+    "chars": "xvndqjguo.rshtkpceailfbmzyw/;,",
+    "updates": 5
+  },
+  "elites": [
+    {
+      "row": 0,
+      "cell": 53,
+      "bins": [
+        5,
+        4
+      ],
+      "desc": [
+        55.25383,
+        26.869104
+      ],
+      "score": 17.56122013057589,
+      "chars": "xvndqjguo.rshtkpceailfbmzyw/;,",
+      "updates": 5
+    },
+    {
+      "row": 1,
+      "cell": 40,
+      "bins": [
+        4,
+        3
+      ],
+      "desc": [
+        53.92606,
+        24.07013
+      ],
+      "score": 17.56539185021596,
+      "chars": "qkndfzjuo.rthcpxseailmbwvyg/;,",
+      "updates": 6
+    },
+    {
+      "row": 2,
+      "cell": 65,
+      "bins": [
+        5,
+        5
+      ],
+      "desc": [
+        55.341095,
+        27.622198
+      ],
+      "score": 17.604166943792855,
+      "chars": "jxndkzguo.rshtvpceailfbmqyw/;,",
+      "updates": 5
+    },
+    {
+      "row": 3,
+      "cell": 28,
+      "bins": [
+        4,
+        2
+      ],
+      "desc": [
+        53.829437,
+        22.025414
+      ],
+      "score": 17.848357609191826,
+      "chars": "jqmpbzguo.rhtcfxseailndwvyk/;,",
+      "updates": 4
+    },
+    {
+      "row": 4,
+      "cell": 32,
+      "bins": [
+        8,
+        2
+      ],
+      "desc": [
+        65.21028,
+        21.293
+      ],
+      "score": 17.928445168634973,
+      "chars": "bfmpwzquo.hstygjreaindkcvxl/;,",
+      "updates": 9
+    },
+    {
+      "row": 5,
+      "cell": 51,
+      "bins": [
+        3,
+        4
+      ],
+      "desc": [
+        48.521168,
+        25.948677
+      ],
+      "score": 17.95575402455983,
+      "chars": "xvhwfzquo.rsncpjteailymdbkg/;,",
+      "updates": 6
+    },
+    {
+      "row": 6,
+      "cell": 44,
+      "bins": [
+        8,
+        3
+      ],
+      "desc": [
+        65.29578,
+        23.538782
+      ],
+      "score": 17.96636980761796,
+      "chars": "bympwzquo.hstcgjreainfkdvxl/;,",
+      "updates": 6
+    },
+    {
+      "row": 7,
+      "cell": 52,
+      "bins": [
+        4,
+        4
+      ],
+      "desc": [
+        53.801174,
+        25.388464
+      ],
+      "score": 18.005889924250805,
+      "chars": "jqmwpzguo.rhtcfxseailnvdbyk/;,",
+      "updates": 7
+    },
+    {
+      "row": 8,
+      "cell": 16,
+      "bins": [
+        4,
+        1
+      ],
+      "desc": [
+        53.989426,
+        20.611631
+      ],
+      "score": 18.012124344279766,
+      "chars": "xhtczqguo.rndsvkpeailbmfjyw/;,",
+      "updates": 1
+    },
+    {
+      "row": 9,
+      "cell": 41,
+      "bins": [
+        5,
+        3
+      ],
+      "desc": [
+        55.101353,
+        23.506052
+      ],
+      "score": 18.041417378332426,
+      "chars": "xhsmqzguo.rndtvpceailbfkjyw/;,",
+      "updates": 4
+    },
+    {
+      "row": 10,
+      "cell": 29,
+      "bins": [
+        5,
+        2
+      ],
+      "desc": [
+        55.12947,
+        22.388718
+      ],
+      "score": 18.049264963327868,
+      "chars": "qhtfxjguo.rndsvpceailbkmzyw/;,",
+      "updates": 6
+    },
+    {
+      "row": 11,
+      "cell": 42,
+      "bins": [
+        6,
+        3
+      ],
+      "desc": [
+        58.726948,
+        23.84963
+      ],
+      "score": 18.095540994321702,
+      "chars": "zbmpfjquo.rstywxheainvdcgkl/;,",
+      "updates": 8
+    },
+    {
+      "row": 12,
+      "cell": 63,
+      "bins": [
+        3,
+        5
+      ],
+      "desc": [
+        48.234516,
+        27.81904
+      ],
+      "score": 18.136173273830472,
+      "chars": "jxhwfqguo.rsncpzteailvmdbky/;,",
+      "updates": 5
+    },
+    {
+      "row": 13,
+      "cell": 17,
+      "bins": [
+        5,
+        1
+      ],
+      "desc": [
+        55.14107,
+        20.630339
+      ],
+      "score": 18.13877393708819,
+      "chars": "qhtgwzjuo.rndcfxseailbmpvyk/;,",
+      "updates": 3
+    },
+    {
+      "row": 14,
+      "cell": 39,
+      "bins": [
+        3,
+        3
+      ],
+      "desc": [
+        48.74153,
+        24.521366
+      ],
+      "score": 18.146210764319644,
+      "chars": "xwhcfzquo.rsndbjteailympvkg/;,",
+      "updates": 8
+    },
+    {
+      "row": 15,
+      "cell": 76,
+      "bins": [
+        4,
+        6
+      ],
+      "desc": [
+        53.9811,
+        29.494598
+      ],
+      "score": 18.19219633856998,
+      "chars": "jwthfzquo.rcdnbxseailmkpvyg/;,",
+      "updates": 10
+    },
+    {
+      "row": 16,
+      "cell": 64,
+      "bins": [
+        4,
+        5
+      ],
+      "desc": [
+        51.5157,
+        27.770412
+      ],
+      "score": 18.206152321941612,
+      "chars": "qxhwfzguo.rsncpjteailybdvkm/;,",
+      "updates": 9
+    },
+    {
+      "row": 17,
+      "cell": 66,
+      "bins": [
+        6,
+        5
+      ],
+      "desc": [
+        59.474396,
+        29.19677
+      ],
+      "score": 18.27689047392285,
+      "chars": "jvmpbzquo.rstdgxneailfkcwyh/;,",
+      "updates": 5
+    },
+    {
+      "row": 18,
+      "cell": 54,
+      "bins": [
+        6,
+        4
+      ],
+      "desc": [
+        58.73603,
+        25.62882
+      ],
+      "score": 18.278122217198337,
+      "chars": "gvncwjquo.strdpxheaiymzfbkl/;,",
+      "updates": 11
+    },
+    {
+      "row": 19,
+      "cell": 50,
+      "bins": [
+        2,
+        4
+      ],
+      "desc": [
+        47.60201,
+        25.829445
+      ],
+      "score": 18.293565383429822,
+      "chars": "lfncbqguo.hsrdwjteaimvxpzky/;,",
+      "updates": 0
+    },
+    {
+      "row": 20,
+      "cell": 68,
+      "bins": [
+        8,
+        5
+      ],
+      "desc": [
+        65.61702,
+        27.359697
+      ],
+      "score": 18.32261141750795,
+      "chars": "bpymkzquo.hcstwjreaindfgvxl/;,",
+      "updates": 6
+    },
+    {
+      "row": 21,
+      "cell": 77,
+      "bins": [
+        5,
+        6
+      ],
+      "desc": [
+        55.03116,
+        29.494598
+      ],
+      "score": 18.361270491072943,
+      "chars": "wlthbzfuo.crdnvxseaimjkpqyg/;,",
+      "updates": 3
+    },
+    {
+      "row": 22,
+      "cell": 56,
+      "bins": [
+        8,
+        4
+      ],
+      "desc": [
+        65.298096,
+        25.651804
+      ],
+      "score": 18.422645540464746,
+      "chars": "bpmyfzquo.hwtsgjreaindkcvxl/;,",
+      "updates": 8
+    },
+    {
+      "row": 23,
+      "cell": 43,
+      "bins": [
+        7,
+        3
+      ],
+      "desc": [
+        64.931274,
+        23.462046
+      ],
+      "score": 18.445282302465223,
+      "chars": "bympwjquo.hstcgxreainfvdzkl/;,",
+      "updates": 4
+    },
+    {
+      "row": 24,
+      "cell": 88,
+      "bins": [
+        4,
+        7
+      ],
+      "desc": [
+        54.01822,
+        31.945986
+      ],
+      "score": 18.47014061036929,
+      "chars": "xkndfqougjrthcp;aesilmbwv.,/zy",
+      "updates": 4
+    },
+    {
+      "row": 25,
+      "cell": 30,
+      "bins": [
+        6,
+        2
+      ],
+      "desc": [
+        58.70984,
+        22.613129
+      ],
+      "score": 18.517305386773046,
+      "chars": "fdncwjquo.strgpxheaibmzyvkl/;,",
+      "updates": 4
+    },
+    {
+      "row": 26,
+      "cell": 62,
+      "bins": [
+        2,
+        5
+      ],
+      "desc": [
+        47.775383,
+        27.81904
+      ],
+      "score": 18.524484668940524,
+      "chars": ",uoyqfdnrmieatkpchls./;gzbwxjv",
+      "updates": 7
+    },
+    {
+      "row": 27,
+      "cell": 38,
+      "bins": [
+        2,
+        3
+      ],
+      "desc": [
+        47.58091,
+        24.531296
+      ],
+      "score": 18.565657853248055,
+      "chars": "lndfbqguo.hrscwjteaimzxpvky/;,",
+      "updates": 1
+    },
+    {
+      "row": 28,
+      "cell": 75,
+      "bins": [
+        3,
+        6
+      ],
+      "desc": [
+        48.281548,
+        29.877548
+      ],
+      "score": 18.594472651718704,
+      "chars": "mflpzjguo.dsrnbxteaicvwhqky/;,",
+      "updates": 8
+    },
+    {
+      "row": 29,
+      "cell": 90,
+      "bins": [
+        6,
+        7
+      ],
+      "desc": [
+        59.038967,
+        32.460037
+      ],
+      "score": 18.60410680512032,
+      "chars": "ujloqbpmfzieha.wdtsry/x,;gckvn",
+      "updates": 2
+    },
+    {
+      "row": 30,
+      "cell": 87,
+      "bins": [
+        3,
+        7
+      ],
+      "desc": [
+        47.937183,
+        31.877417
+      ],
+      "score": 18.625499326958355,
+      "chars": "xwchfqguo.rsdnbjteailvmpzky/;,",
+      "updates": 3
+    },
+    {
+      "row": 31,
+      "cell": 80,
+      "bins": [
+        8,
+        6
+      ],
+      "desc": [
+        66.730545,
+        29.614176
+      ],
+      "score": 18.683359858041452,
+      "chars": "gfndkjquo.cshtvxreaiybpmzwl/;,",
+      "updates": 5
+    },
+    {
+      "row": 32,
+      "cell": 31,
+      "bins": [
+        7,
+        2
+      ],
+      "desc": [
+        64.82238,
+        21.807594
+      ],
+      "score": 18.693176609180973,
+      "chars": "kdngfzquo.thscwjreaimpbyvxl/;,",
+      "updates": 5
+    },
+    {
+      "row": 33,
+      "cell": 78,
+      "bins": [
+        6,
+        6
+      ],
+      "desc": [
+        59.012222,
+        31.351465
+      ],
+      "score": 18.775115565744535,
+      "chars": "ujloqvwfmzieha.bpstry/x,;cdgkn",
+      "updates": 5
+    },
+    {
+      "row": 34,
+      "cell": 86,
+      "bins": [
+        2,
+        7
+      ],
+      "desc": [
+        47.730038,
+        31.877417
+      ],
+      "score": 18.86625348305182,
+      "chars": "mldpbqguo.crsnfjteaiwxvhzky/;,",
+      "updates": 2
+    },
+    {
+      "row": 35,
+      "cell": 89,
+      "bins": [
+        5,
+        7
+      ],
+      "desc": [
+        56.060146,
+        32.460037
+      ],
+      "score": 18.90051647001991,
+      "chars": "fjuoqbgnlksiea.wdrhtxy/,;pczvm",
+      "updates": 5
+    },
+    {
+      "row": 36,
+      "cell": 74,
+      "bins": [
+        2,
+        6
+      ],
+      "desc": [
+        47.81182,
+        29.485836
+      ],
+      "score": 18.900644952111207,
+      "chars": "wxcdfqguo.lnshbjteairmvpzky/;,",
+      "updates": 3
+    },
+    {
+      "row": 37,
+      "cell": 112,
+      "bins": [
+        4,
+        9
+      ],
+      "desc": [
+        54.243095,
+        37.399437
+      ],
+      "score": 19.111693224870297,
+      "chars": "xwthfqougjrcdnb;aesilmkpv.,/zy",
+      "updates": 7
+    },
+    {
+      "row": 38,
+      "cell": 67,
+      "bins": [
+        7,
+        5
+      ],
+      "desc": [
+        62.22416,
+        27.3872
+      ],
+      "score": 19.204801806246266,
+      "chars": "kgncwjquo.tsrdfxheaiyvzpbml/;,",
+      "updates": 6
+    },
+    {
+      "row": 39,
+      "cell": 55,
+      "bins": [
+        7,
+        4
+      ],
+      "desc": [
+        63.179047,
+        25.75629
+      ],
+      "score": 19.218935345477142,
+      "chars": "kgncwzquo.tsldfjreaiybmpvxh/;,",
+      "updates": 8
+    },
+    {
+      "row": 40,
+      "cell": 79,
+      "bins": [
+        7,
+        6
+      ],
+      "desc": [
+        62.489895,
+        30.882587
+      ],
+      "score": 19.246797244035765,
+      "chars": "wgndkzquo.csrtbjheaiyfxpvml/;,",
+      "updates": 5
+    },
+    {
+      "row": 41,
+      "cell": 101,
+      "bins": [
+        5,
+        8
+      ],
+      "desc": [
+        56.85585,
+        34.054634
+      ],
+      "score": 19.25436703015702,
+      "chars": "blckvqxfujprstm;oheinwgdz.a,/y",
+      "updates": 7
+    },
+    {
+      "row": 42,
+      "cell": 111,
+      "bins": [
+        3,
+        9
+      ],
+      "desc": [
+        50.189217,
+        36.571037
+      ],
+      "score": 19.390877472602117,
+      "chars": "wgchfqouyjrsdnb;aeitlvmpz.,/xk",
+      "updates": 6
+    },
+    {
+      "row": 43,
+      "cell": 114,
+      "bins": [
+        6,
+        9
+      ],
+      "desc": [
+        59.24376,
+        36.148388
+      ],
+      "score": 19.414095352079165,
+      "chars": "ujloqvpfmzieha.btscry/x,;kdgwn",
+      "updates": 4
+    },
+    {
+      "row": 44,
+      "cell": 92,
+      "bins": [
+        8,
+        7
+      ],
+      "desc": [
+        66.148796,
+        33.4539
+      ],
+      "score": 19.42209645212019,
+      "chars": "wgndkjquo.csptvxreaiyfbmzlh/;,",
+      "updates": 8
+    },
+    {
+      "row": 45,
+      "cell": 99,
+      "bins": [
+        3,
+        8
+      ],
+      "desc": [
+        50.354084,
+        35.334534
+      ],
+      "score": 19.444389970657838,
+      "chars": "mflpbqouyjdsrnv;aeitcgwhz.,/xk",
+      "updates": 8
+    },
+    {
+      "row": 46,
+      "cell": 100,
+      "bins": [
+        4,
+        8
+      ],
+      "desc": [
+        54.627117,
+        33.988434
+      ],
+      "score": 19.49534785408219,
+      "chars": "wgndk/qupjrshtv;oecilfbmx.az,y",
+      "updates": 4
+    },
+    {
+      "row": 47,
+      "cell": 113,
+      "bins": [
+        5,
+        9
+      ],
+      "desc": [
+        54.95628,
+        36.571037
+      ],
+      "score": 19.534638757075005,
+      "chars": "gjuoqzpkmxciea.fhtsrwy/,;bndvl",
+      "updates": 3
+    },
+    {
+      "row": 48,
+      "cell": 102,
+      "bins": [
+        6,
+        8
+      ],
+      "desc": [
+        59.63713,
+        35.637737
+      ],
+      "score": 19.561794470074666,
+      "chars": "bfckvqoulypsrtm;aehingwdz.,/xj",
+      "updates": 5
+    },
+    {
+      "row": 49,
+      "cell": 104,
+      "bins": [
+        8,
+        8
+      ],
+      "desc": [
+        66.77417,
+        34.56247
+      ],
+      "score": 19.736769245381716,
+      "chars": "byfmkzjuo.ncstgxreaipwvdqlh/;,",
+      "updates": 9
+    },
+    {
+      "row": 50,
+      "cell": 91,
+      "bins": [
+        7,
+        7
+      ],
+      "desc": [
+        63.212067,
+        31.985407
+      ],
+      "score": 19.791840351668647,
+      "chars": "mpdgv;quyxhntsf.oeirlbkcz,a/jw",
+      "updates": 5
+    },
+    {
+      "row": 51,
+      "cell": 27,
+      "bins": [
+        3,
+        2
+      ],
+      "desc": [
+        49.98867,
+        22.275583
+      ],
+      "score": 19.83597052070174,
+      "chars": "lwhcfzquo.nsdgbjteairxmpvky/;,",
+      "updates": 4
+    },
+    {
+      "row": 52,
+      "cell": 103,
+      "bins": [
+        7,
+        8
+      ],
+      "desc": [
+        62.156628,
+        33.6466
+      ],
+      "score": 19.893399233866838,
+      "chars": "mpdgb;quyjhntsw.oeirlfkcv,az/x",
+      "updates": 4
+    },
+    {
+      "row": 53,
+      "cell": 110,
+      "bins": [
+        2,
+        9
+      ],
+      "desc": [
+        47.711647,
+        36.571037
+      ],
+      "score": 19.971407374825482,
+      "chars": "wclhbqouigdsrnf;aeytmvxpz.,/jk",
+      "updates": 2
+    },
+    {
+      "row": 54,
+      "cell": 115,
+      "bins": [
+        7,
+        9
+      ],
+      "desc": [
+        62.22506,
+        37.399437
+      ],
+      "score": 19.990520924570443,
+      "chars": "gwthfqouyjsldnp;aeircmkbv.,z/x",
+      "updates": 6
+    },
+    {
+      "row": 55,
+      "cell": 98,
+      "bins": [
+        2,
+        8
+      ],
+      "desc": [
+        47.419136,
+        34.179455
+      ],
+      "score": 20.099100690523674,
+      "chars": "wcnhbqouiglsrdf;aeytmvxpz.,/jk",
+      "updates": 0
+    },
+    {
+      "row": 56,
+      "cell": 57,
+      "bins": [
+        9,
+        4
+      ],
+      "desc": [
+        69.43979,
+        27.047634
+      ],
+      "score": 20.196064909224756,
+      "chars": "dvmpgzquo.hstywxreaibfkcjln/;,",
+      "updates": 7
+    },
+    {
+      "row": 57,
+      "cell": 81,
+      "bins": [
+        9,
+        6
+      ],
+      "desc": [
+        69.53672,
+        31.169975
+      ],
+      "score": 20.304725522955923,
+      "chars": "wgmpbznea,ysthkxruoicfvdqjl/;.",
+      "updates": 7
+    },
+    {
+      "row": 58,
+      "cell": 116,
+      "bins": [
+        8,
+        9
+      ],
+      "desc": [
+        65.629234,
+        35.816334
+      ],
+      "score": 20.33745768180397,
+      "chars": "gwthf;.ilzscdnbxaureymkpvqo,j/",
+      "updates": 5
+    },
+    {
+      "row": 59,
+      "cell": 69,
+      "bins": [
+        9,
+        5
+      ],
+      "desc": [
+        69.43868,
+        27.325438
+      ],
+      "score": 20.37424513633481,
+      "chars": "mdygbzquo.thscpxreaikjfwvln/;,",
+      "updates": 10
+    },
+    {
+      "row": 60,
+      "cell": 26,
+      "bins": [
+        2,
+        2
+      ],
+      "desc": [
+        47.51683,
+        21.720238
+      ],
+      "score": 20.38802302650756,
+      "chars": "lndfbq,oughrscwjiaetmzxpv;y./k",
+      "updates": 2
+    },
+    {
+      "row": 61,
+      "cell": 15,
+      "bins": [
+        3,
+        1
+      ],
+      "desc": [
+        51.19491,
+        19.410177
+      ],
+      "score": 20.419703191442192,
+      "chars": "lzmpbjguo.hstcfxdeairnvwqyk/;,",
+      "updates": 1
+    },
+    {
+      "row": 62,
+      "cell": 123,
+      "bins": [
+        3,
+        10
+      ],
+      "desc": [
+        49.04042,
+        38.066372
+      ],
+      "score": 20.449626660335348,
+      "chars": "cfwhxqouigdsrnm;aeytpbvlz.,/jk",
+      "updates": 5
+    },
+    {
+      "row": 63,
+      "cell": 124,
+      "bins": [
+        4,
+        10
+      ],
+      "desc": [
+        54.467636,
+        38.066372
+      ],
+      "score": 20.48874223213907,
+      "chars": "fwthxqouigsrdnm;aeycbvklz.,/jp",
+      "updates": 7
+    },
+    {
+      "row": 64,
+      "cell": 125,
+      "bins": [
+        5,
+        10
+      ],
+      "desc": [
+        57.011593,
+        38.306286
+      ],
+      "score": 20.539509157388,
+      "chars": "bfldv/;ky,nsrtgzehiapcwmxqouj.",
+      "updates": 7
+    },
+    {
+      "row": 65,
+      "cell": 93,
+      "bins": [
+        9,
+        7
+      ],
+      "desc": [
+        69.57984,
+        31.68702
+      ],
+      "score": 20.728162145415013,
+      "chars": "wfhgvzquo.csdtkxreaiybpmjln/;,",
+      "updates": 4
+    },
+    {
+      "row": 66,
+      "cell": 19,
+      "bins": [
+        7,
+        1
+      ],
+      "desc": [
+        61.708614,
+        19.611639
+      ],
+      "score": 20.861267468762485,
+      "chars": "ujokqvgdfniearxwctsh./;,zpymbl",
+      "updates": 2
+    },
+    {
+      "row": 67,
+      "cell": 127,
+      "bins": [
+        7,
+        10
+      ],
+      "desc": [
+        64.744995,
+        38.829742
+      ],
+      "score": 20.92418238980493,
+      "chars": "gfthv;quyxpsdnm.oeircbklz,a/jw",
+      "updates": 6
+    },
+    {
+      "row": 68,
+      "cell": 126,
+      "bins": [
+        6,
+        10
+      ],
+      "desc": [
+        60.680927,
+        38.992916
+      ],
+      "score": 21.00817421715449,
+      "chars": "bwymv/qu.jprstg;oialncfdkze,xh",
+      "updates": 5
+    },
+    {
+      "row": 69,
+      "cell": 128,
+      "bins": [
+        8,
+        10
+      ],
+      "desc": [
+        65.77963,
+        39.078762
+      ],
+      "score": 21.31698343686668,
+      "chars": "kpcgm;,lizhnstwqarueybfdv.ox/j",
+      "updates": 4
+    },
+    {
+      "row": 70,
+      "cell": 4,
+      "bins": [
+        4,
+        0
+      ],
+      "desc": [
+        52.673096,
+        17.743807
+      ],
+      "score": 21.389532568805123,
+      "chars": ",joyzbgdnlieauxwctsh.q;k/fpmvr",
+      "updates": 0
+    },
+    {
+      "row": 71,
+      "cell": 140,
+      "bins": [
+        8,
+        11
+      ],
+      "desc": [
+        66.45875,
+        40.496964
+      ],
+      "score": 21.673881612661116,
+      "chars": "kpcgm/;li,hnstwzeruaybfdvqojx.",
+      "updates": 3
+    },
+    {
+      "row": 72,
+      "cell": 137,
+      "bins": [
+        5,
+        11
+      ],
+      "desc": [
+        55.298016,
+        41.083298
+      ],
+      "score": 21.715869460142823,
+      "chars": "bvmrzqouigdsthl;aeywcfknx.,/jp",
+      "updates": 8
+    },
+    {
+      "row": 73,
+      "cell": 105,
+      "bins": [
+        9,
+        8
+      ],
+      "desc": [
+        69.95373,
+        33.867424
+      ],
+      "score": 21.955570013256338,
+      "chars": "ydbmgqliouhcstkxn,aejpfwvzr.;/",
+      "updates": 10
+    },
+    {
+      "row": 74,
+      "cell": 136,
+      "bins": [
+        4,
+        11
+      ],
+      "desc": [
+        52.81112,
+        41.083298
+      ],
+      "score": 21.991234978884826,
+      "chars": "wfthxqouigdsmnl;aeypcbvrz.,/jk",
+      "updates": 6
+    },
+    {
+      "row": 75,
+      "cell": 18,
+      "bins": [
+        6,
+        1
+      ],
+      "desc": [
+        58.328217,
+        18.638409
+      ],
+      "score": 22.01552148302652,
+      "chars": "qjmpvzuio.rstcbxweahnldfgyk/;,",
+      "updates": 4
+    },
+    {
+      "row": 76,
+      "cell": 138,
+      "bins": [
+        6,
+        11
+      ],
+      "desc": [
+        60.073067,
+        40.306156
+      ],
+      "score": 22.074845588932515,
+      "chars": "bjymv/qu.kprstf;oialnwcdgze,xh",
+      "updates": 3
+    },
+    {
+      "row": 77,
+      "cell": 135,
+      "bins": [
+        3,
+        11
+      ],
+      "desc": [
+        50.8397,
+        41.083298
+      ],
+      "score": 22.275732580050448,
+      "chars": "cvwhxq.pujdsgnl;oteibfmrz,ak/y",
+      "updates": 4
+    },
+    {
+      "row": 78,
+      "cell": 45,
+      "bins": [
+        9,
+        3
+      ],
+      "desc": [
+        69.56083,
+        23.430202
+      ],
+      "score": 22.65278919419361,
+      "chars": "uonlqvgdfjeahrxpwtsi/.;,zmckby",
+      "updates": 3
+    },
+    {
+      "row": 79,
+      "cell": 6,
+      "bins": [
+        6,
+        0
+      ],
+      "desc": [
+        59.809048,
+        18.239151
+      ],
+      "score": 22.765768633745086,
+      "chars": "vbmpfqziourstywjleahncdgk.,/;x",
+      "updates": 2
+    },
+    {
+      "row": 80,
+      "cell": 5,
+      "bins": [
+        5,
+        0
+      ],
+      "desc": [
+        58.152954,
+        17.876602
+      ],
+      "score": 22.96363238706187,
+      "chars": "jvmpkq.iourstyfzceahnldwg,b/;x",
+      "updates": 1
+    },
+    {
+      "row": 81,
+      "cell": 7,
+      "bins": [
+        7,
+        0
+      ],
+      "desc": [
+        63.642124,
+        18.139826
+      ],
+      "score": 22.972883343255848,
+      "chars": "uoikqvwdfxhaerzgctsn,./j;pymbl",
+      "updates": 3
+    },
+    {
+      "row": 82,
+      "cell": 117,
+      "bins": [
+        9,
+        9
+      ],
+      "desc": [
+        71.61537,
+        36.823048
+      ],
+      "score": 23.035865254567785,
+      "chars": "jpcgv;qulkinstm.oehrybfdz,a/xw",
+      "updates": 5
+    },
+    {
+      "row": 83,
+      "cell": 118,
+      "bins": [
+        10,
+        9
+      ],
+      "desc": [
+        72.08397,
+        37.57471
+      ],
+      "score": 23.07713464476091,
+      "chars": "jpcgk;qulxinstm.oehrybfdv,a/zw",
+      "updates": 0
+    },
+    {
+      "row": 84,
+      "cell": 33,
+      "bins": [
+        9,
+        2
+      ],
+      "desc": [
+        69.50245,
+        22.390543
+      ],
+      "score": 23.140214024948506,
+      "chars": "uonlqvwdfjeahrxgctsi/.;,zbpmky",
+      "updates": 3
+    },
+    {
+      "row": 85,
+      "cell": 70,
+      "bins": [
+        10,
+        5
+      ],
+      "desc": [
+        71.99998,
+        29.129436
+      ],
+      "score": 23.99000618692632,
+      "chars": ".bymgqnrouitsdwjhlae,kfcvzpx;/",
+      "updates": 1
+    },
+    {
+      "row": 86,
+      "cell": 129,
+      "bins": [
+        9,
+        10
+      ],
+      "desc": [
+        69.09477,
+        38.526325
+      ],
+      "score": 24.051147139587755,
+      "chars": "ywfmb/;hl,icstkzenraupgdvqojx.",
+      "updates": 1
+    },
+    {
+      "row": 87,
+      "cell": 82,
+      "bins": [
+        10,
+        6
+      ],
+      "desc": [
+        72.9622,
+        30.365938
+      ],
+      "score": 24.170721617433145,
+      "chars": ".bywgqnrouitsdfjhlae,kvcpzmx;/",
+      "updates": 6
+    },
+    {
+      "row": 88,
+      "cell": 94,
+      "bins": [
+        10,
+        7
+      ],
+      "desc": [
+        72.45468,
+        33.459766
+      ],
+      "score": 24.38153157981058,
+      "chars": "wy,mvqnroucsitkzhlaegf.djbpx;/",
+      "updates": 2
+    },
+    {
+      "row": 89,
+      "cell": 106,
+      "bins": [
+        10,
+        8
+      ],
+      "desc": [
+        72.1333,
+        34.32172
+      ],
+      "score": 24.668019882153047,
+      "chars": "w,fdkqnroucistgjhlaep.bmvzyx;/",
+      "updates": 5
+    },
+    {
+      "row": 90,
+      "cell": 3,
+      "bins": [
+        3,
+        0
+      ],
+      "desc": [
+        50.911537,
+        17.434752
+      ],
+      "score": 24.677252961793997,
+      "chars": "mflyvzptiohsruk.cdeangjwxb,q/;",
+      "updates": 1
+    },
+    {
+      "row": 91,
+      "cell": 139,
+      "bins": [
+        7,
+        11
+      ],
+      "desc": [
+        63.43868,
+        40.490833
+      ],
+      "score": 27.06043564544193,
+      "chars": "xvkwp/ihm.nstcg;eularfydbqozj,",
+      "updates": 2
+    }
+  ]
+}

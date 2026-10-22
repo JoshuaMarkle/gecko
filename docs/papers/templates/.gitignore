@@ -1,4 +1,4 @@
-journal-build-error.log
+*-build-error.log
 *.aux
 *.log
 *.out

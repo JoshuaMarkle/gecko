@@ -1,0 +1,34 @@
+% Copy to docs/papers/<name>/<name>.tex, put figures in assets/*.pdf, then:
+%   docs/papers/templates/build_pdf.sh docs/papers/<name>/<name>.tex
+% Content only: all styling is in templates/gecko-paper.cls.
+\documentclass{gecko-paper}
+
+\paperfooter{Joshua Markle}{GECKO}
+\paperpdfinfo{Title}{Joshua Markle}{Subject}
+\papertitle{Title}
+\papersubtitle{}
+\paperauthor{Joshua Markle}
+\paperaffil{University of Virginia · Month Year}
+\papernotice{Working draft}
+
+\begin{document}
+\makepapertitle
+\begin{paperabstract}
+Abstract.
+\end{paperabstract}
+
+\begin{paperbody}
+\section{Introduction}
+Text, and a citation \papercite{key}.
+
+% \paperfigure{name}{Caption.}   % assets/name.pdf
+% \begin{papertable}{Caption.} \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lr@{}}
+% \toprule A & B\\ \midrule 1 & 2\\ \bottomrule \end{tabular*} \end{papertable}
+
+\renewcommand{\refname}{References}
+\begin{thebibliography}{9}
+\paperbibstyle
+\bibitem{key}\citetarget{key} Author. Title. \textit{Venue}, 2026.
+\end{thebibliography}
+\end{paperbody}
+\end{document}

@@ -33,7 +33,7 @@ corpus is Gutenberg novels; the community default is `shai`.
 
 | Source | Use | Notes |
 |---|---|---|
-| Aalto 136M keystrokes ([summary](dhakal-136m-keystrokes.md)) | Fit an inter-key-interval model (E01, #31) | 168k typists, mostly QWERTY; free for research |
+| Aalto 136M keystrokes ([summary](dhakal-136m-keystrokes.md)) | Fit an inter-key-interval model (E01, #31) | 168k typists, mostly QWERTY; free for research. Aalto host down; Kaggle mirror `noelsmathew/keystrokes` verified (bigram means within 3.5 % of the paper) |
 | How We Type motion capture ([summary](feit-how-we-type.md)) | Validate hand-model reach postures | 30 participants; Zenodo |
 | User keystroke logs | Personal timing model (E02, #56) | Needs a logger; keep local |
 

@@ -42,7 +42,27 @@ Rebuild from the repository root:
 ./docs/papers/templates/build_pdf.sh
 ```
 
-Edit `journal.tex` for the PDF; keep its prose synchronized with `journal.html`.
+### Split: style vs content
+
+- `gecko-paper.cls` holds all PDF styling: page, fonts (with the Latin Modern fallback),
+  colours, sizes, headings, captions, footer, and the macros below.
+- `journal.tex` (the specimen) and `skeleton.tex` (blank starter) hold content only.
+- `build_pdf.sh [paper.tex]` builds any paper, in any folder, using this folder's `.cls`;
+  it checks that every `\paperfigure{name}` has `assets/name.pdf` beside the paper.
+
+| Macro / environment | Use |
+|---|---|
+| `\paperfooter{left}{right}` `\paperpdfinfo{title}{author}{subject}` | footer, PDF metadata |
+| `\papertitle \papersubtitle \paperauthor \paperaffil \papernotice` then `\makepapertitle` | title block |
+| `paperabstract`, `paperbody` | full-width abstract; two-column body (put the bibliography inside) |
+| `\paperfigure{name}{caption}`, `papertable{caption}` | figure from `assets/name.pdf`; captioned table |
+| `papercode` | small monospaced verbatim block (short lines) |
+| `\papercite{key}`, `\citetarget{key}`, `\paperbibstyle` | linked citations and bibliography style |
+
+Standard LaTeX (`\section`, `\subsection`, `\textit`, `tabular*`, `booktabs`) works unchanged.
+Edit `journal.html` and `journal.tex` together while the specimen exists; the HTML view is not
+needed for new papers.
+
 The PDF preserves the journal's centered title, full-width abstract, two columns,
 blue figure accents, and author details. Typesetting and pagination are handled by
 LaTeX rather than screenshotting the webpage. Noto Sans is used for the PDF (Inter

@@ -1,80 +1,23 @@
-% Compile with: ./build_pdf.sh
+% Compile with: ./build_pdf.sh [file.tex]   (default journal.tex)
+% All styling lives in gecko-paper.sty; this file is content only.
 % Editable LaTeX counterpart to journal.html; keep prose synchronized when editing.
-% Bootstrap the default face when the optional Latin Modern fonts are missing.
-\IfFileExists{lmroman10-regular.otf}{}{%
-  \DeclareFontShape{TU}{lmr}{m}{n}{<->"Noto Sans"}{}%
-  \DeclareFontShape{TU}{lmr}{bx}{n}{<->"Noto Sans:B"}{}%
-  \DeclareFontShape{TU}{lmr}{m}{it}{<->"Noto Sans:I"}{}%
-  \DeclareFontShape{TU}{lmr}{bx}{it}{<->"Noto Sans:BI"}{}%
-}
-\documentclass[10pt,a4paper]{article}
-\usepackage[margin=19mm]{geometry}
-\usepackage[no-math]{fontspec}
-\setmainfont{Noto Sans}[BoldFont={Noto Sans Medium},BoldItalicFont={Noto Sans Medium Italic}]
-\setmonofont{DejaVu Sans Mono}
-\newfontfamily\headingfont{Noto Sans Medium}[FakeBold=1.5]
-\usepackage{xcolor,graphicx,multicol,caption,booktabs,titlesec,fancyhdr}
-\definecolor{ink}{HTML}{141414}
-\definecolor{muted}{HTML}{707070}
-\definecolor{accent}{HTML}{0066FF}
-\definecolor{hair}{HTML}{E0E0E0}
-% Compact reading sizes; medium (500) replaces bold (700) throughout.
-\renewcommand{\normalsize}{\fontsize{9}{12}\selectfont}
-\renewcommand{\small}{\fontsize{8}{10.5}\selectfont}
-\renewcommand{\footnotesize}{\fontsize{7}{9}\selectfont}
-\renewcommand{\scriptsize}{\fontsize{6.5}{8}\selectfont}
-\normalsize
-\color{ink}
-\setlength{\parindent}{0pt}
-\setlength{\parskip}{6pt}
-\setlength{\columnsep}{8mm}
-\setlength{\multicolsep}{0pt}
-\setlength{\emergencystretch}{1.5em}
-\titleformat{\section}{\fontsize{9}{12}\selectfont\headingfont}{\thesection.}{0.45em}{}
-\titlespacing*{\section}{0pt}{13pt}{3pt}
-\titleformat{\subsection}{\fontsize{9}{12}\selectfont\headingfont}{\thesubsection}{0.45em}{}
-\titlespacing*{\subsection}{0pt}{9pt}{2pt}
-\captionsetup{font={small,color=muted},labelfont={bf,color=ink},justification=raggedright,singlelinecheck=false,skip=6pt}
-\pagestyle{fancy}
-\fancyhf{}
-\renewcommand{\headrulewidth}{0pt}
-\renewcommand{\footrulewidth}{0.3pt}
-\fancyfoot[L]{\scriptsize\color{muted}Joshua Markle · University of Virginia}
-\fancyfoot[R]{\scriptsize\color{muted}GECKO · \thepage}
-\newcommand{\paperfigure}[2]{%
- \par\addvspace{9pt}\noindent\begin{minipage}{\linewidth}
- \includegraphics[width=\linewidth]{assets/#1.pdf}
- \captionof{figure}{#2}
- \end{minipage}\par\addvspace{9pt}}
-% Clickable, compact citations without an extra PDF-link package.
-\newcommand{\papercite}[1]{%
- \leavevmode\begingroup\scriptsize\color{accent}%
- \special{pdf:bann << /Type /Annot /Subtype /Link /Border [0 0 0] /A << /S /GoTo /D (cite.#1) >> >>}%
- \cite{#1}%
- \special{pdf:eann}\endgroup}
-\newcommand{\citetarget}[1]{%
- \special{pdf:dest (cite.#1) [@thispage /XYZ @xpos @ypos null]}}
+\documentclass{gecko-paper}
+
+\paperfooter{Joshua Markle · University of Virginia}{GECKO}
+\paperpdfinfo{Reading the landscape of keyboard layouts}{Joshua Markle}{GECKO design specimen; synthetic data}
+\papertitle{Reading the landscape\\of keyboard layouts}
+\papersubtitle{A small study in search, structure, and the trade-offs\\behind a single score.}
+\paperauthor{Joshua Markle}
+\paperaffil{University of Virginia · October 2026}
+\papernotice{Design specimen · All figures and numerical results are synthetic examples,\\not experimental findings.}
+
 \begin{document}
-\special{pdf:docinfo << /Title (Reading the landscape of keyboard layouts) /Author (Joshua Markle) /Subject (GECKO design specimen; synthetic data) >>}
-\begin{center}
-{\fontsize{20}{24}\selectfont\bfseries Reading the landscape\\of keyboard layouts\par}
-\vspace{10pt}
-{\fontsize{10.5}{14}\selectfont A small study in search, structure, and the trade-offs\\behind a single score.\par}
-\vspace{12pt}
-{\normalsize Joshua Markle\par}
-{\small\color{muted} University of Virginia · October 2026\par}
-\vspace{8pt}
-{\footnotesize\color{muted} Design specimen · All figures and numerical results are synthetic examples,\\not experimental findings.\par}
-\end{center}
-\vspace{12pt}
-\begin{quote}
-\raggedright
-\noindent{\fontsize{9}{12}\selectfont\headingfont Abstract}\par\vspace{-3pt}
+\makepapertitle
+\begin{paperabstract}
 A good score tells us which candidate to inspect. It does not tell us how that candidate differs from its neighbors. This illustrative paper pairs a two-dimensional map with search trajectories and a small metric comparison. The aim is to make the shape of an optimization problem readable without hiding the assumptions behind the pictures.
-\end{quote}
-\vspace{18pt}
-\begin{multicols}{2}
-\raggedright
+\end{paperabstract}
+
+\begin{paperbody}
 \section{A score is a starting point}
 Keyboard layout search compresses many decisions into one number. Two candidates may have similar scores while distributing effort very differently. One may reduce repeated use of a finger; another may favor shorter travel. A useful research view keeps those differences visible.
 
@@ -121,9 +64,7 @@ The simulated trajectories separate rapid early gains from slower later improvem
 \paperfigure{convergence}{Illustrative best-so-far scores over 30 seconds. Line styles distinguish three simulated searches; these are not measurements of GECKO algorithms.}
 \paperfigure{metrics}{Illustrative metric costs relative to a reference of 100. Lower is better in this example.}
 
-\begin{minipage}{\linewidth}
-\captionof{table}{Synthetic costs used in Figure 3.}
-\small
+\begin{papertable}{Synthetic costs used in Figure 3.}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrr@{}}
 \toprule
 Metric & Reference & Selected\\
@@ -134,7 +75,7 @@ Redirects & 100 & 91\\
 Load imbalance & 100 & 83\\
 \bottomrule
 \end{tabular*}
-\end{minipage}
+\end{papertable}
 
 \subsection{Interpreting the comparison}
 
@@ -190,13 +131,12 @@ The bibliography below is intentionally fictional. Its author labels, titles, ve
 
 \renewcommand{\refname}{Sample bibliography}
 \begin{thebibliography}{9}
-\small\raggedright
-\setlength{\itemsep}{6pt}
+\paperbibstyle
 \bibitem{sample1}\citetarget{sample1} Example Author A and Example Author B. A survey of keyboard layout evaluation. \textit{Example Journal of Interface Studies}, 2024, 12(2), 41–58. [Fictional placeholder.]
 \bibitem{sample2}\citetarget{sample2} Example Author C. Comparing stochastic search under a fixed budget. \textit{Proceedings of the Example Search Workshop}, 2023, 15–24. [Fictional placeholder.]
 \bibitem{sample3}\citetarget{sample3} Example Author D and Example Author E. Documenting text corpora for reproducible analysis. \textit{Example Data Methods}, 2025, 3(1), 1–12. [Fictional placeholder.]
 \bibitem{sample4}\citetarget{sample4} Example Author F. Sensitivity analysis for weighted objectives. \textit{Example Computational Reports}, 2024, 8, 101–116. [Fictional placeholder.]
 \bibitem{sample5}\citetarget{sample5} Example Author G. From experiment logs to inspectable research artifacts. \textit{Example Reproducibility Notes}, 2026, 2(1), 9–18. [Fictional placeholder.]
 \end{thebibliography}
-\end{multicols}
+\end{paperbody}
 \end{document}
