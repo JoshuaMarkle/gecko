@@ -93,7 +93,7 @@ impl BuildReport {
 }
 
 /// Centre of the keycap's bottom face, about where the switch meets the plate (board space).
-fn switch_centre(k: &Key) -> V3 {
+pub(crate) fn switch_centre(k: &Key) -> V3 {
     let h = CAP_HEIGHT / 2.0;
     let mid = [k.pos[0] as f64 + k.size[0] as f64 / 2.0, k.pos[1] as f64 + k.size[1] as f64 / 2.0, k.pos[2] as f64 + h];
     add(mid, apply(&rotation(k.rot), [0.0, 0.0, -h]))
@@ -222,7 +222,7 @@ impl Geometry {
 
     /// Plate pieces as indices into `keys`: one piece, or the two hands when every left switch
     /// is at least `gap` from every right one (a split board).
-    fn pieces(&self, keys: &[usize], sw: &[V3], gap: f64) -> Vec<Vec<usize>> {
+    pub(crate) fn pieces(&self, keys: &[usize], sw: &[V3], gap: f64) -> Vec<Vec<usize>> {
         let (l, r): (Vec<usize>, Vec<usize>) = (0..keys.len()).partition(|&p| self.key[keys[p]].hand() == Hand::L);
         let near = l.iter().any(|&a| r.iter().any(|&b| dist(sw[a], sw[b]) < gap));
         if l.is_empty() || r.is_empty() || near {

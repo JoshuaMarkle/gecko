@@ -52,6 +52,9 @@ gecko geometry optimize -g <name>.param [--free 2d|3d|<list>] [--mode bilevel|al
                [--hard-fail 2] [--rounds 4] [--keep-effort] [-p -c]
                                                                   # board + layout search (G6) → runs/<id>/;
                                                                   #   its best board loads as -g run:<id>
+gecko build stl [run:<id>|<geometry>] [--switch mx|choc] [--plate 3] [--wall 2.5] [--clearance 4]
+               [--bridge 15] [-p profile] [-o dir]                # plate.stl, case.stl, bottom.stl, build.json
+                                                                  #   → runs/<id>/stl or build/<name>/ (geometry.md, STL)
 gecko layouts import <file> [--from oxeylyzer|genkey|cmini|auto] [--out <name>] [--force]
                [--name N] [-g geometry]          # → layout TOML (stdout, or data/layouts/<out>.toml)
 gecko layouts export <layout> --to oxeylyzer|genkey|cmini [-g geometry]   # 30 alpha keys → stdout

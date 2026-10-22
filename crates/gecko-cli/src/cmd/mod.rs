@@ -2,6 +2,7 @@
 //! this file only lists the commands and dispatches them.
 
 mod bench;
+mod build;
 mod corpus;
 mod explore;
 mod geometry;
@@ -66,6 +67,11 @@ pub enum Cmd {
         #[command(subcommand)]
         cmd: geometry::GeometryCmd,
     },
+    /// Physical output: plate and case STL.
+    Build {
+        #[command(subcommand)]
+        cmd: build::BuildCmd,
+    },
     /// Import layouts from other analyzers, export them back.
     Layouts {
         #[command(subcommand)]
@@ -106,6 +112,7 @@ impl Cmd {
             Cmd::Magic(a) => magic::run(&ctx, a),
             Cmd::Corpus { cmd } => cmd.run(&ctx),
             Cmd::Geometry { cmd } => cmd.run(&ctx),
+            Cmd::Build { cmd } => cmd.run(&ctx),
             Cmd::Layouts { cmd } => cmd.run(&ctx),
             Cmd::Profile { cmd } => cmd.run(&ctx),
             Cmd::List { what } => list::run(&ctx, &what),

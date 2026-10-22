@@ -199,7 +199,39 @@ Each violation (`kind`, `keys`, `value`, `limit`, `excess`) has an excess in u-e
 (angles: 45° = 1 u; counts: 1 key = 1 u). The geometry search adds the violations to its
 collision count and the excess to its collision depth, so they share `penalty` and `hard_fail`
 ([algorithms/geometry-search.md](algorithms/geometry-search.md)). Every bundled board passes
-the defaults (`tests/manufacture.rs`). STL generation (J4, #75) will read the same limits.
+the defaults (`tests/manufacture.rs`). `gecko build stl` reports the same violations beside the STL.
+
+## Plate and case STL (J4)
+
+`Geometry::case(&CaseParams, piece_gap)` (`case.rs`, mesh primitives in `mesh.rs`) builds a
+printable board from the key poses; `gecko build stl run:<id>` writes `plate.stl` (switch plate
+alone), `case.stl` (plate + walls), `bottom.stl` and `build.json` (params, geometry hash,
+report, G07 violations) to `runs/<id>/stl/` (or `build/<name>/`). Dactyl-style, every part is a
+list of closed convex shells (own incremental hull, no CSG crate):
+
+- **Tile** per physical key at the plate pose: plate top `cap_gap` below the keycap bottom
+  along the key normal; outer `hole + 2·rim` (17.4 mm) or the key size − 1.65 mm; a square
+  cutout through the clip layer (MX 14 mm / 1.5 mm, Choc 13.8 / 1.3) and below it a pocket
+  `clip_pocket` longer along key y for the clips. One genus-1 mesh per key.
+- **Web** between facing edges (opposite outward directions within 45°, side by side, gap ≤
+  `bridge` 15 mm), else between the nearest edges of keys < 1.3 u apart (turned thumbs).
+  **Junction** = hull of corners of ≥ 3 keys within `bridge`.
+- **Wall** from every edge without a web straight down to z = 0, its foot `wall_offset` out
+  (more, in 1 mm steps, until it clears the piece's switches) and `wall` thick; **corner walls**
+  join each wall end to its nearest end on another edge. **Bottom** = convex hull of the feet.
+- The board is lifted so its lowest switch bottom (`switch_depth` below the plate top) sits
+  `clearance` above the floor. Pieces are G07's (split halves ≥ `piece_gap` apart).
+- Checks: webs, junctions and corner walls that enter a switch cutout or body are dropped
+  (`dropped`); keys whose cutout anything else still enters are `blocked`, keys whose cap hits
+  a shell within its travel are `cap_hits` (warnings). STL is mm, right-handed: y = −board y.
+
+Overlapping shells are unioned by the slicer. No two shells share a vertex (connectors sit a
+distinct 0.2–0.9 mm inside the tiles), so stitching by exact coordinates leaves every shell
+closed; `tests/case.rs` checks that on the raw STL for every bundled board, MX and Choc.
+Blender's Manifold boolean unions Corne, Kyria, Dactyl and a 3D-optimized Corne into single
+manifold solids (0 non-manifold edges). Not done: stabilizer cutouts for ≥ 2u keys, screw
+bosses, controller/USB/TRRS openings, a concave bottom plate, filling gaps wider than `bridge`
+(ergodox's thumb cluster stays a separate island in its half), keycap clearance repair.
 
 ## Derived effort and stretch (G4)
 

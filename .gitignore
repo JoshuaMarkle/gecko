@@ -9,3 +9,4 @@
 /data/corpora/src/
 *.snap.new
 *.pending-snap
+/build/
