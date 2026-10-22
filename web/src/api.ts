@@ -119,7 +119,23 @@ export interface HoldoutReport { corpus: string; start: number; best: number; st
 /** A lower bound and the optimality gap of a run's best layout (gecko-core `bound::Gap`). */
 export interface BoundGap { lower: number; gilmore_lawler: number; value: number; gap_pct: number }
 export interface BoundReport { method: string; symbols: number; iters: number; total: BoundGap; pair: BoundGap; elapsed_ms: number }
-export interface RunResult { schema: number; id: string; geometry: string; evals: number; elapsed_ms: number; evals_per_sec: number; best: Ranked[]; bound?: BoundReport; holdout?: HoldoutReport }
+/** An NSGA-II / RWSA objective (gecko-core `optimize::nsga2::Objective`). */
+export interface Objective { id: string; unit: string; dir: string; cost: string }
+/** A Pareto-front layout: `raw` values and minimized `costs` align with the run's `objectives`. */
+export interface ParetoRanked extends Ranked { raw: number[]; costs: number[] }
+export interface RunResult {
+  schema: number; id: string; geometry: string; evals: number; elapsed_ms: number; evals_per_sec: number; best: Ranked[]; bound?: BoundReport; holdout?: HoldoutReport;
+  /** Multi-objective runs (nsga2, rwsa) only. */
+  objectives?: Objective[]; front?: ParetoRanked[];
+}
+/** `qd.json` of a MAP-Elites run (gecko-core `explore::qd::QdSummary`). */
+export interface QdAxis { name: string; lo: number; hi: number; bins: number; auto: boolean }
+export interface QdElite { row: number; cell: number; bins: number[]; desc: number[]; score: number; chars: string; updates: number }
+export interface QdSummary {
+  schema: number; id: string; done: boolean; elapsed_ms: number; evals: number; chars: string; slots: number; metrics: string[]; table_hash: string;
+  axes: QdAxis[]; cells: number; filled: number; coverage: number; offspring: number; added: number; improved: number;
+  random_mean: number; qd_score: number; best: QdElite | null; elites: QdElite[];
+}
 export interface RunParams { algo: string; seed: number; threads: number; time_ms: number | null; evals: number | null; top: number }
 export interface RunConfig {
   id: string;
@@ -210,6 +226,7 @@ export const api = {
   startRun: (body: RunRequest) => post<{ id: string; config: RunConfig | GeomRunConfig }>("/api/runs", body),
   startGeomRun: (body: RunRequest & { geom: GeomRequest }) => post<{ id: string; config: GeomRunConfig }>("/api/runs", body),
   swapMatrix: (body: ScoreRequest) => post<{ n: number; score: number; matrix: number[] }>("/api/swap-matrix", body),
+  qd: (id: string) => req<QdSummary>(`/api/runs/${encodeURIComponent(id)}/qd`),
   atlas: (id: string) => req<AtlasSummary>(`/api/runs/${encodeURIComponent(id)}/atlas`),
   atlasFile: async (id: string, file: "optima" | "edges" | "samples") => {
     const r = await fetch(`/api/runs/${encodeURIComponent(id)}/atlas/${file}`);

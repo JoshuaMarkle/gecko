@@ -400,6 +400,7 @@ export function App() {
         {view === "runs" && (
           <SavedView runs={runs} run={runDetail} progress={progress} rank={rank} refScore={refAnalysis?.breakdown.score} refName={refName} geometries={allBoards}
             onOpenRun={(id) => openRun(id, false)} onPickRank={pickRank} onShowLayout={() => setView("layout")}
+            current={chars} onAdopt={(c, l, s) => { adopt(c, l, s, runDetail?.config.id); setRank(null); }}
             geomRun={geomDetail} onUseBoard={(id) => adoptBoard(id, geomDetail?.config.id === id ? geomDetail : undefined)} />
         )}
         {view === "export" && <ExportView info={exportInfo} label={shownLabel} onError={setErr} />}

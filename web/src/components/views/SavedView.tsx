@@ -1,12 +1,15 @@
 // Saved view: every saved run (with a mini keyboard of its best layout) on the left; the selected
 // run's convergence (hover: best layout at that time), ranked layouts and reproducibility details
-// on the right. A board + layout run shows its board instead (`geom/GeomRunPanel`).
+// on the right. A board + layout run shows its board instead (`geom/GeomRunPanel`). NSGA-II /
+// RWSA runs add their Pareto front, qd runs their MAP-Elites grid (`runs/`).
 
 import type { Geometry, GeomRunDetail, Progress, RunDetail, RunSummary } from "../../api";
 import { fitChars, fmt, fmtCount, fmtTime } from "../../format";
 import { Thumb } from "../Board2D";
 import { Convergence } from "../Charts";
 import { GeomRunPanel } from "../geom/GeomRunPanel";
+import { EliteGrid } from "../runs/EliteGrid";
+import { ParetoPanel } from "../runs/ParetoPanel";
 
 interface Props {
   runs: RunSummary[];
@@ -22,6 +25,10 @@ interface Props {
   /** The selected run when it is a board + layout run (then `run` is null). */
   geomRun: GeomRunDetail | null;
   onUseBoard: (id: string) => void;
+  /** Chars of the working model. */
+  current: string;
+  /** Make a Pareto-front layout or MAP-Elites elite the working model. */
+  onAdopt: (chars: string, label: string, score: number) => void;
 }
 
 export function SavedView(p: Props) {
@@ -73,6 +80,15 @@ export function SavedView(p: Props) {
               <div className="pad">
                 <div className="chartbox"><Convergence progress={p.progress} reference={p.refScore} refName={p.refName} geometry={geo} /></div>
               </div>
+              {res?.front && res.front.length > 0 && (
+                <ParetoPanel front={res.front} objectives={res.objectives ?? []} geometry={geo}
+                  picked={res.front.some((f) => f.chars === p.current) ? res.front.findIndex((f) => f.chars === p.current) : null}
+                  onPick={(i) => p.onAdopt(res.front![i].chars, `${cfg.params.algo} front #${res.front![i].rank}`, res.front![i].score)} />
+              )}
+              {cfg.params.algo === "qd" && (
+                <EliteGrid runId={cfg.id} geometry={geo} current={p.current}
+                  onPick={(e) => p.onAdopt(e.chars, `qd elite ${e.bins.join("·")}`, e.score)} />
+              )}
               {res && (
                 <details className="sec" open>
                   <summary>Best layouts<span className="note">click one to make it the working model</span></summary>
