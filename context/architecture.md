@@ -45,6 +45,7 @@ gecko/
 | `run` | Run directories (config, progress, best), listing |
 | `store` | The data directory (`gecko.toml`, `data/`, `runs/`) and layout specs |
 | `collision` | G04 2D keycap collision: oriented boxes + margin, grid broad phase, SAT (`Geometry::collisions`) |
+| `derive` | G4: effort and stretch from key positions when a board file leaves them out |
 | `parametric` | 2D zones/columns/rows → ordinary geometry; stagger/splay, mirrored split and thumb arcs |
 | `rng` | Seeded xoshiro256++ (identical on native and WASM) |
 | `hand` (phase 7+) | Hand model, IK, reach costs → feeds `geometry` tables |

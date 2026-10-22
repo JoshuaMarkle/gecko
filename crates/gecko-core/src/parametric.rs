@@ -132,7 +132,9 @@ pub struct Column {
     pub size: [f64; 2],
     #[serde(default)]
     pub stretch: bool,
-    /// One base effort per row, in the order of `Zone::rows`.
+    /// One base effort per row, in the order of `Zone::rows`; empty (omitted) derives them
+    /// from key positions on every generation (`derive.rs`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub effort: Vec<f32>,
     pub fill: Option<String>,
     pub mirror_fill: Option<String>,
@@ -260,8 +262,10 @@ impl ParametricGeometry {
                 if column.size.iter().any(|v| !v.is_finite() || (*v as f32) <= 0.0 || *v > f32::MAX as f64) {
                     return Err(bad("key sizes must be positive finite f32 values"));
                 }
-                if column.effort.len() != zone.rows.len() || column.effort.iter().any(|v| !v.is_finite() || *v < 0.0) {
-                    return Err(bad("need one finite nonnegative effort per row in each column"));
+                if !column.effort.is_empty() && column.effort.len() != zone.rows.len()
+                    || column.effort.iter().any(|v| !v.is_finite() || *v < 0.0)
+                {
+                    return Err(bad("need one finite nonnegative effort per row in each column, or none"));
                 }
                 if zone.mirror && column.finger.hand() != Hand::L {
                     return Err(bad("mirrored columns must specify left-hand fingers"));
@@ -362,7 +366,7 @@ impl ParametricGeometry {
                             home: row == zone.home_row && (!column.stretch || zone.home_stretch),
                             stretch: column.stretch,
                             hrm: None,
-                            effort: column.effort[ri],
+                            effort: column.effort.get(ri).copied().unwrap_or(f32::NAN),
                             fill: if right { column.mirror_fill.clone() } else { column.fill.clone() },
                             layer: 0,
                             phys: None,
@@ -375,7 +379,7 @@ impl ParametricGeometry {
         if keys.windows(2).any(|pair| (pair[0].row, pair[0].col) == (pair[1].row, pair[1].col)) {
             return Err(invalid("zones overlap logical (row, col) labels; assign distinct col_start values"));
         }
-        let geometry = Geometry {
+        let mut geometry = Geometry {
             name: self.name.clone(),
             description: self.description.clone(),
             key: keys,
@@ -384,6 +388,7 @@ impl ParametricGeometry {
             layer_keys: Vec::new(),
             layer_modes: Vec::new(),
         };
+        geometry.derive_missing(false);
         geometry.validate()?;
         Ok(geometry)
     }

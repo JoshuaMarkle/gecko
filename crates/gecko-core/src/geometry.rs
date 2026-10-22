@@ -114,6 +114,9 @@ pub struct Key {
     /// on a finger (not thumb, not stretch column). See [`Geometry::hrm`].
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hrm: Option<bool>,
+    /// Base effort. Optional in board files: missing (NaN) is derived from the key's distance
+    /// to its finger's home key on load ([`Geometry::derive_missing`]).
+    #[serde(default = "missing_effort")]
     pub effort: f32,
     /// Symbol this key gets when a layout lists only the keys without a fill (a 30-key layout
     /// on a board with thumb keys): a token name (`space`, `enter`, `bspc`, `tab`, `esc`,
@@ -126,6 +129,10 @@ pub struct Key {
     /// Physical key (index into the base keys) of a virtual layer key.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub phys: Option<u16>,
+}
+
+fn missing_effort() -> f32 {
+    f32::NAN
 }
 
 fn is_zero(v: &u8) -> bool {
@@ -198,8 +205,14 @@ impl LayerMode {
 }
 
 impl Geometry {
+    /// Parse a board file. Keys without `effort` get a derived one; a board that marks no key
+    /// `stretch` (true or false) gets derived stretch flags (`derive.rs`).
     pub fn from_toml(s: &str) -> Result<Self> {
-        let g: Geometry = toml::from_str(s).map_err(|e| Error::parse("geometry", e))?;
+        let mut g: Geometry = toml::from_str(s).map_err(|e| Error::parse("geometry", e))?;
+        let raw: toml::Table = toml::from_str(s).map_err(|e| Error::parse("geometry", e))?;
+        let keys = raw.get("key").and_then(|k| k.as_array());
+        let stretch_given = keys.is_some_and(|ks| ks.iter().any(|k| k.get("stretch").is_some()));
+        g.derive_missing(!stretch_given);
         g.validate()?;
         Ok(g)
     }
@@ -286,6 +299,9 @@ impl Geometry {
                 "geometry",
                 format!("more than {} keys (layers included) is not supported", crate::scorer::MAX_KEYS),
             ));
+        }
+        if let Some(i) = self.key.iter().position(|k| !k.effort.is_finite()) {
+            return Err(Error::invalid("geometry", format!("'{}': key {i} has no finite effort", self.name)));
         }
         if self.comfort_tables.values().any(|t| t.len() != self.len() * self.len()) {
             return Err(Error::invalid("geometry", "comfort tables must have N×N entries"));

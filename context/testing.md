@@ -90,6 +90,12 @@ contact, a 45° key whose bounding box overlaps but whose box does not, the grid
 equal to brute force on random boards (sizes, rotations, margins), every bundled flat board
 clear, `validate` rejecting an overlap that `check_keys` allows, layer copies and 3D boards skipped.
 
+Derived costs (`tests/derive.rs`): every bundled board with its `effort`/`stretch` lines removed
+derives the same stretch flags (one documented exception, ANSI `N`) and efforts with r > 0.8
+against the hand-entered ones, home keys at their home effort, cheapest thumb key 1.0, explicit
+efforts kept; parametric efforts follow a moved column; column stagger beats ANSI row stagger
+for five non-QWERTY layouts.
+
 Geometry rebuild (`tests/rebuild.rs`): chained random key moves (pose, 3D z/tilt/tent, effort)
 on ansi-30, corne-36 with Shift, the 3D Dactyl and a layered corne: after each
 `Scorer::set_geometry`, every unfolded table and the full score of random layouts equal a fresh

@@ -11,7 +11,10 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   `name.param` select the generated version. Listing de-duplicates the base name.
 - TOML in `data/geometries/`. One `[[key]]` per slot, listed row by row, with
   `pos[3], rot[3], size[2], finger, row, col, home, stretch, effort` (hand comes from finger;
-  `role` comes with symbol layers). Optional `hrm` (bool) marks home-row mod keys for Y04;
+  `role` comes with symbol layers). `effort` and `stretch` are optional: a key without
+  `effort`, or a board that marks no key `stretch`, gets them derived from key positions on
+  load ([geometry.md](geometry.md#derived-effort-and-stretch-g4)); parametric columns may omit
+  `effort` too. Optional `hrm` (bool) marks home-row mod keys for Y04;
   unset = `home` keys on a finger outside the stretch columns (`Geometry::hrm`). Boards: `ansi-30`, `ortho-30`, `corne-36` (3x5+3),
   `sweep-34` (3x5+2), `lily58` (58), `kyria` (50), `ergodox` (76), and
   `dactyl-manuform-5x6` (64). Split boards use pinned QMK flat configurator projections;
