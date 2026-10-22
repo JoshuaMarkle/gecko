@@ -44,6 +44,7 @@ gecko/
 | `explore` | Landscape probe, local-optima archive, atlas files, distances/symmetry, atlas statistics, MAP-Elites grid (`explore/`) |
 | `run` | Run directories (config, progress, best), listing |
 | `store` | The data directory (`gecko.toml`, `data/`, `runs/`) and layout specs |
+| `collision` | G04 2D keycap collision: oriented boxes + margin, grid broad phase, SAT (`Geometry::collisions`) |
 | `parametric` | 2D zones/columns/rows → ordinary geometry; stagger/splay, mirrored split and thumb arcs |
 | `rng` | Seeded xoshiro256++ (identical on native and WASM) |
 | `hand` (phase 7+) | Hand model, IK, reach costs → feeds `geometry` tables |

@@ -6,6 +6,7 @@
 
 pub mod bound;
 pub mod calibrate;
+pub mod collision;
 pub mod community;
 pub mod corpus;
 pub mod error;

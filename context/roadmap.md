@@ -77,7 +77,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 50. [x] [#37](https://github.com/JoshuaMarkle/gecko/issues/37) `B6` Lower bound (Gilmore–Lawler) and optimality gap · M
 51. [ ] [#38](https://github.com/JoshuaMarkle/gecko/issues/38) `F1` Web: Pareto front and MAP-Elites views · M · after [#21](https://github.com/JoshuaMarkle/gecko/issues/21), [#29](https://github.com/JoshuaMarkle/gecko/issues/29)
 52. [ ] [#91](https://github.com/JoshuaMarkle/gecko/issues/91) `D9` Combos and chords · M · after [#10](https://github.com/JoshuaMarkle/gecko/issues/10)
-53. [ ] [#39](https://github.com/JoshuaMarkle/gecko/issues/39) `G3` G04 2D collision (OBB, SAT) · S
+53. [x] [#39](https://github.com/JoshuaMarkle/gecko/issues/39) `G3` G04 2D collision (OBB, SAT) · S
 54. [x] [#40](https://github.com/JoshuaMarkle/gecko/issues/40) `H3` Finger IK with joint limits · L · after [#33](https://github.com/JoshuaMarkle/gecko/issues/33)
 55. [x] [#92](https://github.com/JoshuaMarkle/gecko/issues/92) `L7` Hand tab: hand parameters with live skeleton · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82), [#33](https://github.com/JoshuaMarkle/gecko/issues/33)
 56. [x] [#41](https://github.com/JoshuaMarkle/gecko/issues/41) `C8` L01 shortcut placement and L02 familiarity · S

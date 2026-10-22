@@ -534,7 +534,8 @@ impl Scorer {
     }
 
     /// Re-cost the scorer for `board`, the physical board with keys moved (pose, size, effort,
-    /// any key field) but the same keys in the same slots. Corpus tables, symbol ids and
+    /// any key field) but the same keys in the same slots. Overlapping keys are allowed (a
+    /// search scores them and penalizes [`Geometry::collisions`] itself). Corpus tables, symbol ids and
     /// weights are kept. Only pair/triple table entries that touch a changed slot are
     /// recomputed and refolded: O(k·N) pair and O(k·N²) trigram entries for k changed slots,
     /// instead of every metric's N² and N³ table. A slot changes when its key or its
@@ -545,7 +546,7 @@ impl Scorer {
     pub fn set_geometry(&mut self, board: &Geometry) -> Result<usize> {
         let n = self.n;
         let vg = if self.geometry.layer_keys.is_empty() {
-            board.validate()?;
+            board.check_keys()?;
             board.clone()
         } else {
             let holders: Vec<_> = self.geometry.layer_keys.iter().copied().zip(self.geometry.layer_modes.iter().copied()).collect();
