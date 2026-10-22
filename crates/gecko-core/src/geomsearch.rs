@@ -339,8 +339,18 @@ pub struct GeomProgress {
     pub best_feasible: Option<f64>,
     /// Best objective of this generation.
     pub generation_best: f64,
+    /// The board reported so far (best collision-free, else best): free-parameter values aligned
+    /// with `vars`, its layout (slot order) and keycap collisions.
+    #[serde(default)]
+    pub values: Vec<f64>,
+    #[serde(default)]
+    pub chars: String,
+    #[serde(default)]
+    pub collisions: usize,
 }
 
+/// One CMA-ES (re)start; restarts left without budget are not listed (their best would be
+/// infinite, which JSON cannot hold).
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CmaRun {
     pub popsize: usize,
@@ -557,6 +567,29 @@ impl Track {
     }
 }
 
+/// Active time since a start: pauses after the start do not count.
+struct Clock<'a> {
+    t0: Instant,
+    paused0: Duration,
+    control: &'a Control,
+}
+
+impl<'a> Clock<'a> {
+    fn new(control: &'a Control) -> Self {
+        Clock { t0: Instant::now(), paused0: control.paused_for(), control }
+    }
+    fn ms(&self) -> u64 {
+        self.t0.elapsed().saturating_sub(self.control.paused_for().saturating_sub(self.paused0)).as_millis() as u64
+    }
+}
+
+/// Block while the run is paused (and not cancelled).
+fn wait_while_paused(control: &Control) {
+    while control.paused() && !control.cancelled() {
+        std::thread::sleep(Duration::from_millis(50));
+    }
+}
+
 /// Run the search (no files written).
 pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&GeomProgress)) -> Result<GeomResult> {
     let p = &spec.search;
@@ -566,7 +599,7 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
     if !(0.0..1.0).contains(&p.polish_frac) || p.sigma0 <= 0.0 || p.hard_fail <= 0.0 || p.penalty < 0.0 {
         return Err(Error::invalid("geometry search", "need 0 ≤ polish_frac < 1, sigma0 > 0, hard_fail > 0, penalty ≥ 0"));
     }
-    let t0 = Instant::now();
+    let clock = Clock::new(control);
     let mut base = spec.params.clone();
     if !p.keep_effort {
         base.zone.iter_mut().flat_map(|z| z.column.iter_mut()).for_each(|c| c.effort.clear());
@@ -606,7 +639,10 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
         (Some(_), _) | (None, None) => Budget::Evals(p.polish_evals),
         (None, Some(ms)) => Budget::Time((ms as f64 * p.polish_frac / 2.0) as u64),
     };
-    let over = |t0: Instant, limit: Option<u64>| control.cancelled() || limit.is_some_and(|ms| t0.elapsed().as_millis() as u64 >= ms);
+    let over = |clk: &Clock, limit: Option<u64>| {
+        wait_while_paused(control);
+        control.cancelled() || limit.is_some_and(|ms| clk.ms() >= ms)
+    };
 
     // The start board with a full layout search, so candidates warm-start from a good layout
     // and the search measures boards rather than the layout catching up.
@@ -624,15 +660,20 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
         restart_from_best: true,
         ..Default::default()
     };
+    let chars = pr.scorer.chars.clone();
     let emit = |tr: &Track, phase: &str, gen_best: f64, on_progress: &mut dyn FnMut(&GeomProgress)| {
+        let (x, c) = tr.chosen();
         on_progress(&GeomProgress {
-            elapsed_ms: t0.elapsed().as_millis() as u64,
+            elapsed_ms: clock.ms(),
             phase: phase.into(),
             generation: tr.generations,
             candidates: tr.candidates,
             best: tr.best.1.f,
             best_feasible: tr.feasible.as_ref().map(|f| f.1.f),
             generation_best: gen_best,
+            values: x.clone(),
+            chars: c.sym.iter().map(|&s| chars[s as usize]).collect(),
+            collisions: c.collisions,
         })
     };
 
@@ -641,7 +682,7 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
             let limit = p.evals.unwrap_or(u64::MAX).saturating_sub(1);
             let out = cmaes::minimize_batch(
                 |xs| {
-                    if over(t0, search_ms.filter(|_| p.evals.is_none())) {
+                    if over(&clock, search_ms.filter(|_| p.evals.is_none())) {
                         return Vec::new();
                     }
                     tr.generations += 1;
@@ -663,19 +704,19 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
                 &cma(limit),
                 &mut rng,
             );
-            cma_runs.extend(out.runs.iter().map(cma_run));
+            cma_runs.extend(out.runs.iter().filter(|r| r.evals > 0).map(cma_run));
         }
         Mode::Alternate => {
             let rounds = p.rounds.max(1) as u64;
             let round_ms = search_ms.map(|ms| ms / rounds);
             let mut x = x0.clone();
             for round in 0..rounds {
-                if over(t0, search_ms.filter(|_| p.evals.is_none())) {
+                if over(&clock, search_ms.filter(|_| p.evals.is_none())) {
                     break;
                 }
                 let before = tr.best.1.f;
                 // Layout step: board fixed.
-                let t_round = Instant::now();
+                let t_round = Clock::new(control);
                 let budget = match (p.evals, round_ms) {
                     (None, Some(ms)) => Budget::Time((ms / 2).max(1)),
                     _ => Budget::Evals(p.polish_evals),
@@ -686,12 +727,12 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
                 tr.offer(&x, &c);
                 emit(&tr, "layout", c.f, &mut on_progress);
                 // Board step: layout fixed.
-                let board_ms = round_ms.map(|ms| ms.saturating_sub(t_round.elapsed().as_millis() as u64).max(1));
+                let board_ms = round_ms.map(|ms| ms.saturating_sub(t_round.ms()).max(1));
                 let limit = p.evals.map_or(u64::MAX, |e| (e / rounds).max(1));
-                let t_board = Instant::now();
+                let t_board = Clock::new(control);
                 let out = cmaes::minimize_batch(
                     |xs| {
-                        if over(t_board, board_ms.filter(|_| p.evals.is_none())) {
+                        if over(&t_board, board_ms.filter(|_| p.evals.is_none())) {
                             return Vec::new();
                         }
                         tr.generations += 1;
@@ -709,7 +750,7 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
                     &cma(limit),
                     &mut rng,
                 );
-                cma_runs.extend(out.runs.iter().map(cma_run));
+                cma_runs.extend(out.runs.iter().filter(|r| r.evals > 0).map(cma_run));
                 x = tr.chosen().0.clone();
                 incumbent = tr.chosen().1.sym.clone();
                 if round > 0 && before - tr.best.1.f < 1e-9 * before.abs().max(1.0) {
@@ -756,7 +797,7 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
         candidates: tr.candidates,
         generations: tr.generations,
         layout_evals: tr.layout_evals,
-        elapsed_ms: t0.elapsed().as_millis() as u64,
+        elapsed_ms: clock.ms(),
         cma_runs,
         feasible: best.depth == 0.0,
     })
@@ -799,16 +840,15 @@ pub struct GeomRunConfig {
     pub pins: String,
 }
 
-/// Run a geometry search into `runs/<stamp>-geom-<hash>/`: `config.json`, `start.param.toml`,
-/// `progress.jsonl`, `best.json`, and the best board as `geometry.param.toml` (parameters)
-/// and `geometry.toml` (keys; usable with `-g` anywhere).
-pub fn run(
-    runs: &Path,
-    spec: &GeomSpec,
-    free: &str,
-    control: &Control,
-    mut on_progress: impl FnMut(&GeomProgress),
-) -> Result<(GeomResult, PathBuf)> {
+/// A geometry run's directory, created with its config before the search starts.
+pub struct GeomPrep {
+    pub id: String,
+    pub dir: PathBuf,
+    pub config: GeomRunConfig,
+}
+
+/// Create `runs/<stamp>-geom-<hash>/` with `config.json` and `start.param.toml`.
+pub fn prepare(runs: &Path, spec: &GeomSpec, free: &str) -> Result<GeomPrep> {
     let start_toml = toml::to_string(spec.params).map_err(|e| Error::invalid("parametric geometry", e.to_string()))?;
     let (stamp, iso) = now_stamp();
     let key = format!(
@@ -847,15 +887,29 @@ pub fn run(
     };
     std::fs::write(dir.join("config.json"), serde_json::to_string_pretty(&config).unwrap())?;
     std::fs::write(dir.join("start.param.toml"), &start_toml)?;
+    Ok(GeomPrep { id, dir, config })
+}
+
+/// Name of a run's best board: `<start board>-opt-<run hash>`, so boards of different runs
+/// can be told apart (and found by name) when loaded as `run:<id>`.
+pub fn best_name(params_name: &str, id: &str) -> String {
+    let short = id.split_once("-geom-").map_or(id, |(_, s)| s);
+    format!("{params_name}-opt-{short}")
+}
+
+/// Search into a prepared directory: `progress.jsonl`, `best.json`, and the best board as
+/// `geometry.param.toml` (parameters) and `geometry.toml` (keys).
+pub fn execute(prep: &GeomPrep, spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&GeomProgress)) -> Result<GeomResult> {
+    let dir = &prep.dir;
     let mut log = std::io::BufWriter::new(std::fs::File::create(dir.join("progress.jsonl"))?);
     let mut res = search(spec, control, |pg| {
         let _ = writeln!(log, "{}", serde_json::to_string(pg).unwrap());
         on_progress(pg);
     })?;
     log.flush()?;
-    res.id = id;
+    res.id = prep.id.clone();
     let mut best = best_params(spec.params, spec.vars, &res.best.values, spec.search.keep_effort)?;
-    best.name = format!("{}-opt", spec.params.name);
+    best.name = best_name(&spec.params.name, &res.id);
     best.description = format!("{} (geometry run {})", spec.params.name, res.id);
     std::fs::write(
         dir.join("geometry.param.toml"),
@@ -865,5 +919,52 @@ pub fn run(
     keys.comfort_tables = spec.board.comfort_tables.clone();
     std::fs::write(dir.join("geometry.toml"), keys.to_toml())?;
     std::fs::write(dir.join("best.json"), serde_json::to_string_pretty(&res).unwrap())?;
-    Ok((res, dir))
+    Ok(res)
+}
+
+/// Run a geometry search into `runs/<stamp>-geom-<hash>/` ([`prepare`] then [`execute`]).
+pub fn run(
+    runs: &Path,
+    spec: &GeomSpec,
+    free: &str,
+    control: &Control,
+    on_progress: impl FnMut(&GeomProgress),
+) -> Result<(GeomResult, PathBuf)> {
+    let prep = prepare(runs, spec, free)?;
+    let res = execute(&prep, spec, control, on_progress)?;
+    Ok((res, prep.dir))
+}
+
+/// The directory holds a geometry run (`config.json` with `kind = "geometry"`).
+pub fn is_run(dir: &Path) -> bool {
+    #[derive(Deserialize)]
+    struct Kind {
+        #[serde(default)]
+        kind: String,
+    }
+    std::fs::read_to_string(dir.join("config.json"))
+        .ok()
+        .and_then(|s| serde_json::from_str::<Kind>(&s).ok())
+        .is_some_and(|k| k.kind == "geometry")
+}
+
+pub fn load_config(dir: &Path) -> Result<GeomRunConfig> {
+    let s = std::fs::read_to_string(dir.join("config.json")).map_err(|e| Error::invalid("run", format!("{}: {e}", dir.display())))?;
+    serde_json::from_str(&s).map_err(|e| Error::parse("config.json", e))
+}
+
+pub fn load_result(dir: &Path) -> Result<GeomResult> {
+    let s = std::fs::read_to_string(dir.join("best.json"))
+        .map_err(|e| Error::invalid("run", format!("{}: {e} (run not finished?)", dir.display())))?;
+    serde_json::from_str(&s).map_err(|e| Error::parse("best.json", e))
+}
+
+pub fn load_progress(dir: &Path) -> Vec<GeomProgress> {
+    std::fs::read_to_string(dir.join("progress.jsonl")).unwrap_or_default().lines().filter_map(|l| serde_json::from_str(l).ok()).collect()
+}
+
+/// The start parameter file of a geometry run (`start.param.toml`).
+pub fn load_start(dir: &Path) -> Result<ParametricGeometry> {
+    let s = std::fs::read_to_string(dir.join("start.param.toml")).map_err(|e| Error::invalid("run", format!("{}: {e}", dir.display())))?;
+    ParametricGeometry::from_toml(&s)
 }

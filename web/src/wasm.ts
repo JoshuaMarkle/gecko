@@ -1,7 +1,7 @@
 // Loads the gecko-wasm scorer (same Rust code as the CLI). Built by `npm run wasm`.
 
-import init, { AtlasView, Engine, corpus_from_text, corpus_stats, export_layout as exportLayoutRaw, flat2d as flat2dRaw, hand_costs } from "./wasm/pkg/gecko_wasm.js";
-import type { Analysis, Flat, Geometry, Profile } from "./api";
+import init, { AtlasView, Engine, corpus_from_text, corpus_stats, export_layout as exportLayoutRaw, flat2d as flat2dRaw, hand_costs, param_board } from "./wasm/pkg/gecko_wasm.js";
+import type { Analysis, Flat, Geometry, ParamGeometry, Profile } from "./api";
 import type { HandSpec } from "./hand";
 
 let ready: Promise<unknown> | null = null;
@@ -88,4 +88,17 @@ export async function handCosts(g: Geometry, spec: HandSpec): Promise<HandCosts>
   await wasmReady();
   const { flat: _f, ...rest } = g;
   return JSON.parse(hand_costs(JSON.stringify(rest), JSON.stringify(spec))) as HandCosts;
+}
+
+/** A keycap collision: keys `a`, `b` and the overlap depth (u). */
+export interface Collision { a: number; b: number; depth: number }
+
+/**
+ * A parametric board with free parameters `names` set to `values` (gecko-wasm `param_board`, the
+ * same generator and collision test as the geometry search). The board gets `id`. Needs
+ * `wasmReady()` first; throws on parameters the generator rejects.
+ */
+export function paramBoard(param: ParamGeometry, names: string[], values: number[], id: string): { geometry: Geometry; collisions: Collision[] } {
+  const r = JSON.parse(param_board(JSON.stringify(param), JSON.stringify(names), Float64Array.from(values))) as { geometry: Geometry; flat: Flat[]; collisions: Collision[] };
+  return { geometry: { ...r.geometry, id, flat: r.flat }, collisions: r.collisions };
 }

@@ -8,13 +8,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::{header, StatusCode};
 use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{any, get, post};
 use axum::{Json, Router};
 use futures_util::stream::{self, Stream, StreamExt};
+use gecko_core::geomsearch::{self, GeomParams, GeomSpec};
 use gecko_core::optimize::{Algo, Control, Params};
 use gecko_core::report::analyze;
 use gecko_core::run::{self, RunSpec};
@@ -81,6 +82,7 @@ fn router(store: Store, web: Option<PathBuf>) -> Router {
         .route("/meta", get(meta))
         .route("/layouts", get(layouts))
         .route("/geometries", get(geometries))
+        .route("/geometries/{id}/free", get(geometry_free))
         .route("/profiles", get(profiles))
         .route("/corpora", get(corpora))
         .route("/corpora/{name}", get(corpus_bin))
@@ -148,16 +150,42 @@ async fn layouts(State(app): State<AppState>) -> ApiResult {
     Ok(Json(json!(out)))
 }
 
+/// Every board in `data/geometries/`, then the best board of each finished geometry run
+/// (`run:<id>`, with `run`). Boards with a parameter file (`<id>.param.toml`, or a run's
+/// `geometry.param.toml`) carry it as `param`: they can be geometry-searched.
 async fn geometries(State(app): State<AppState>) -> ApiResult {
     let mut out = Vec::new();
-    for id in app.store.list("geometries") {
-        let g = app.store.geometry(&id)?;
+    let runs =
+        run::list(&app.store.runs).into_iter().filter(|r| r.kind == "geometry" && r.status == "done").map(|r| format!("run:{}", r.id));
+    for id in app.store.list("geometries").into_iter().chain(runs) {
+        let Ok(g) = app.store.geometry(&id) else { continue };
         let mut v = serde_json::to_value(&g)?;
         v["id"] = json!(id);
         v["flat"] = serde_json::to_value(g.flat2d())?;
+        if let Ok(p) = app.store.param_geometry(&id) {
+            v["param"] = serde_json::to_value(p)?;
+        }
+        if let Some(run) = id.strip_prefix("run:") {
+            v["run"] = json!(run);
+        }
         out.push(v);
     }
     Ok(Json(json!(out)))
+}
+
+#[derive(Deserialize)]
+struct FreeReq {
+    #[serde(default = "two_d")]
+    spec: String,
+}
+fn two_d() -> String {
+    "2d".into()
+}
+
+/// Free parameters (`geomsearch::parse_free`) of a parametric board: names, bounds, start values.
+async fn geometry_free(State(app): State<AppState>, Path(id): Path<String>, Query(q): Query<FreeReq>) -> ApiResult {
+    let p = app.store.param_geometry(&id)?;
+    Ok(Json(json!({"schema": SCHEMA, "vars": geomsearch::parse_free(&p, &q.spec)?})))
 }
 
 async fn profiles(State(app): State<AppState>) -> ApiResult {
@@ -318,9 +346,24 @@ struct RunReq {
     /// Corpus to score the results on without searching on it (L06).
     #[serde(default)]
     holdout: Option<String>,
+    /// A board + layout search (G6) on the parametric `geometry` instead of a layout search.
+    #[serde(default)]
+    geom: Option<GeomReq>,
 }
 
-async fn start_run(State(app): State<AppState>, Json(req): Json<RunReq>) -> ApiResult {
+/// Geometry search settings: `free` as `gecko geom optimize --free`, plus any `GeomParams`
+/// field (budget, seed and threads come from the run request).
+#[derive(Deserialize)]
+struct GeomReq {
+    free: String,
+    #[serde(flatten)]
+    search: GeomParams,
+}
+
+async fn start_run(State(app): State<AppState>, Json(mut req): Json<RunReq>) -> ApiResult {
+    if let Some(g) = req.geom.take() {
+        return start_geom_run(app, req, g);
+    }
     let r = resolve(&app.store, &req.inputs)?;
     let algo_name = req.algo.as_deref().unwrap_or("sa");
     let algo = Algo::parse(algo_name).ok_or_else(|| ApiError(StatusCode::BAD_REQUEST, format!("unknown algo '{algo_name}'")))?;
@@ -387,6 +430,60 @@ async fn start_run(State(app): State<AppState>, Json(req): Json<RunReq>) -> ApiR
     Ok(Json(json!({"schema": SCHEMA, "id": id, "config": spec_config(&app, &id)})))
 }
 
+fn start_geom_run(app: AppState, req: RunReq, g: GeomReq) -> ApiResult {
+    let r = resolve(&app.store, &req.inputs)?;
+    let name = req.inputs.geometry.clone().unwrap_or_else(|| app.store.defaults.geometry.clone());
+    let (params, board) = app.store.param_board(&name)?;
+    let start = r.layout.fit(&board)?;
+    let vars = geomsearch::parse_free(&params, &g.free)?;
+    let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
+    let mut s = g.search;
+    s.seed = req.seed.unwrap_or(1);
+    s.threads = req.threads.unwrap_or(cores).clamp(1, cores.max(1));
+    s.evals = req.evals.map(|e| e.clamp(1, 1_000_000));
+    s.time_ms = if s.evals.is_some() { None } else { Some(req.time_ms.unwrap_or(60_000).clamp(1000, 3_600_000)) };
+    s.inner_evals = s.inner_evals.min(10_000_000);
+    s.polish_evals = s.polish_evals.min(1_000_000_000);
+    s.popsize = s.popsize.map(|p| p.clamp(2, 1000));
+    s.rounds = s.rounds.clamp(1, 100);
+    let spec = GeomSpec {
+        params: &params,
+        board: &board,
+        corpus: &r.corpus,
+        profile: &r.profile,
+        start: &start,
+        pins: &req.pins,
+        vars: &vars,
+        search: s.clone(),
+    };
+    let prep = geomsearch::prepare(&app.store.runs, &spec, &g.free)?;
+    let id = prep.id.clone();
+    let config = json!(prep.config);
+    let (tx, _) = broadcast::channel(256);
+    let live = Arc::new(LiveRun { tx, history: Mutex::new(Vec::new()), done: AtomicBool::new(false), control: Control::default() });
+    app.live.lock().unwrap().insert(id.clone(), live.clone());
+    let pins = req.pins;
+    std::thread::spawn(move || {
+        let spec = GeomSpec {
+            params: &params,
+            board: &board,
+            corpus: &r.corpus,
+            profile: &r.profile,
+            start: &start,
+            pins: &pins,
+            vars: &vars,
+            search: s,
+        };
+        let res = geomsearch::execute(&prep, &spec, &live.control, |p| live.send("progress", serde_json::to_string(p).unwrap()));
+        match res {
+            Ok(res) => live.send("done", serde_json::to_string(&res).unwrap()),
+            Err(e) => live.send("failed", json!({"error": e.to_string()}).to_string()),
+        }
+        live.done.store(true, Ordering::SeqCst);
+    });
+    Ok(Json(json!({"schema": SCHEMA, "id": id, "config": config})))
+}
+
 fn spec_config(app: &App, id: &str) -> Value {
     run::load_config(&app.store.runs.join(id)).ok().map(|c| json!(c)).unwrap_or(Value::Null)
 }
@@ -418,12 +515,18 @@ async fn list_runs(State(app): State<AppState>) -> ApiResult {
 async fn get_run(State(app): State<AppState>, Path(id): Path<String>) -> ApiResult {
     check_id(&id)?;
     let dir = app.store.runs.join(&id);
-    let config = run::load_config(&dir).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
-    let result = run::load_result(&dir).ok();
     let (running, paused) = match app.live.lock().unwrap().get(&id) {
         Some(l) if !l.done.load(Ordering::SeqCst) => (true, l.control.paused()),
         _ => (false, false),
     };
+    if geomsearch::is_run(&dir) {
+        let config = geomsearch::load_config(&dir).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
+        let param = geomsearch::load_start(&dir)?;
+        return Ok(Json(json!({"schema": SCHEMA, "kind": "geometry", "config": config, "param": param,
+            "result": geomsearch::load_result(&dir).ok(), "progress": geomsearch::load_progress(&dir), "running": running, "paused": paused})));
+    }
+    let config = run::load_config(&dir).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
+    let result = run::load_result(&dir).ok();
     Ok(Json(
         json!({"schema": SCHEMA, "config": config, "result": result, "progress": run::load_progress(&dir), "running": running, "paused": paused}),
     ))
@@ -503,8 +606,14 @@ async fn run_events(
             (h.clone(), Some(l.tx.subscribe()))
         }
         None => {
-            let res = run::load_result(&app.store.runs.join(&id)).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
-            (vec![Msg { event: "done", data: serde_json::to_string(&res).unwrap() }], None)
+            let dir = app.store.runs.join(&id);
+            let data = if geomsearch::is_run(&dir) {
+                geomsearch::load_result(&dir).map(|r| serde_json::to_string(&r).unwrap())
+            } else {
+                run::load_result(&dir).map(|r| serde_json::to_string(&r).unwrap())
+            };
+            let data = data.map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
+            (vec![Msg { event: "done", data }], None)
         }
     };
     let finished = history.iter().any(|m| m.event != "progress");
@@ -616,6 +725,20 @@ mod tests {
         samples.push(("run", detail));
         let (_, _, explore) = finished(json!({"algo": "explore", "evals": 20000, "threads": 1})).await;
         samples.push(("atlas", call("GET", &format!("/api/runs/{explore}/atlas"), None).await));
+        samples.push(("geometryFree", call("GET", "/api/geometries/corne-36/free?spec=3d", None).await));
+        let geom = json!({"geometry": "corne-36", "profile": "hand", "evals": 12, "threads": 1,
+            "geom": {"free": "fingers.stagger", "inner_evals": 500, "polish_evals": 2000}});
+        let (started, detail, geom_id) = finished(geom).await;
+        assert_eq!(detail["kind"], "geometry");
+        assert!(detail["progress"].as_array().is_some_and(|p| !p.is_empty() && p[0]["values"].as_array().unwrap().len() == 5));
+        let boards = call("GET", "/api/geometries", None).await;
+        let board =
+            boards.as_array().unwrap().iter().find(|g| g["id"] == format!("run:{geom_id}")).expect("the run's board is listed").clone();
+        assert!(board["param"].is_object() && board["run"] == geom_id.as_str());
+        // The run's board scores like any other.
+        call("POST", "/api/score", Some(json!({"geometry": format!("run:{geom_id}"), "top": 1}))).await;
+        samples.push(("startGeomRun", started));
+        samples.push(("geomRun", detail));
         samples.push(("runs", call("GET", "/api/runs", None).await));
         std::fs::remove_dir_all(&runs_dir).ok();
 

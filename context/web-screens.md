@@ -33,7 +33,8 @@ to a stop on any interaction and does not resume until another card is picked. C
 key opens a popup (x, y, z, rx, ry, rz, finger); the first edit forks the board to
 `<name> (custom)` (browser storage, WASM-scored, cannot be run yet). Bottom: quick stats
 (keys, split, rows × columns, thumbs, stagger, size) and a rough geometry-only estimate
-(`board.ts`) ranked against the other boards.
+(`board.ts`) ranked against the other boards. Below the bundled boards, **From board + layout
+runs** lists each finished geometry run's best board (`run:<id>`, newest first).
 
 ## Hand
 Sidebar tabs: **Hand** (default) and **Simulation**. Hand contains **Use hand in optimization** (default off; off greys out the settings, the views
@@ -113,6 +114,18 @@ same inputs (rediscovery rate, chance optimal, time-to-optimum guess, `estimate.
 **Estimate** button (bottom-right) that loads the Gilmore–Lawler bound of the best matching
 run.
 
+**Optimize** (top of the sidebar): Layout, or **Board + layout** (a board + layout search, G6;
+only on parametric boards, otherwise a note says why; a note also warns when the profile weights
+no hand-model metric). Board + layout replaces Algorithm, Holdout, Stop confidence and the
+algorithm settings with **Board shape** (2D / 3D / Custom presets and one switch per group:
+stagger, splay, spread, thumb cluster, row and column curvature, column height, tenting, tilt,
+thumb 3D) and **Board search settings** (mode bilevel / alternate, layout swaps per board,
+clearance, collision penalty, keep key efforts); the budget counts time or boards. Main: the 3D
+board with the picked parameter set to a previewed value (slider across its bounds, Sweep,
+Reset), the start board outlined, colliding keys red. Bottom: every free parameter (from
+`/api/geometries/{id}/free`) with editable lower / upper bounds (kept per board; Default bounds
+resets) and a range bar; click a row to preview it.
+
 Search includes memetic islands: population per island, HC/tabu refinement and its step
 cap, island count (0 = threads), migration interval (0 disables), and migrant count.
 `POST /api/runs` accepts optional `memetic` using the core `MemeticParams` shape; omitted
@@ -137,8 +150,11 @@ stop-confidence controls. This describes the next Search run, not a saved run or
 ## Home (read-only)
 Sidebar: summary blocks for Board, Hand, Language, Profile, Search with on/off flags; each
 opens its tab. Main: 3D working model (3D toggle, Default / Heat / Fingers / N-grams).
-Bottom: convergence (hover: mini keyboard of the best layout at that time), "Chance we've found the optimal layout" (rediscovery; bound gap when
-the run has one), score vs reference and the main metrics.
+Bottom: convergence (hover: mini keyboard of the best layout at that time), "Chance we've found the optimal layout" (rediscovery over layout runs; bound gap when
+the run has one), score vs reference and the main metrics. During a board + layout run the main
+view shows the live best board (start board outlined, colliding keys red) and the navbar status
+counts generations and boards; when it finishes, its best board becomes the board (`run:<id>`)
+and its layout the working model.
 
 ## Analysis · Saved
 Analysis: every chart for the current layout (click two heatmap keys to swap). Saved: all
@@ -146,6 +162,13 @@ runs, each with a mini keyboard of its best layout; the selected run's convergen
 the working model) and reproducibility facts. With a holdout corpus, the best-layouts table adds
 each layout's score on it, and the Run facts show the holdout corpus, start → best on both
 corpora, the gain kept and the rank ρ.
+
+A board + layout run (algo "board") opens its own panel: the board at any point of the run over
+the start board's dashed outline (2D top-down or 3D; a scrubber and Play step through every
+generation to the polished best board), convergence, result (start vs best board after equal
+layout polish, collisions, the weighted metrics that moved most), every free parameter (start,
+best, bounds bar) and the run facts. **Use this board** makes its best board the board and its
+layout the working model.
 
 ## Export
 Last tab: the shown layout (working model, or the live best during a run) as files.

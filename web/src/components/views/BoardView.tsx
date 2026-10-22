@@ -79,11 +79,23 @@ function ConstraintForm({ c, set }: { c: Constraints; set: (c: Constraints) => v
   );
 }
 
+/** Board cards: bundled and custom boards, then the best boards of board + layout runs. */
 function Cards({ boards, sel, onPick }: { boards: Geometry[]; sel: string; onPick: (id: string) => void }) {
+  const runs = boards.filter((g) => g.run);
+  return <>
+    <CardGrid boards={boards.filter((g) => !g.run)} sel={sel} onPick={onPick} />
+    {runs.length > 0 && <>
+      <div className="panehead"><b>From board + layout runs</b><span className="hint">{runs.length} · newest first</span></div>
+      <CardGrid boards={runs} sel={sel} onPick={onPick} />
+    </>}
+  </>;
+}
+
+function CardGrid({ boards, sel, onPick }: { boards: Geometry[]; sel: string; onPick: (id: string) => void }) {
   return (
     <div className="boardcards">
       {boards.map((g) => (
-        <button key={g.id} className={`boardcard ${g.id === sel ? "sel" : ""}`} onClick={() => onPick(g.id)} title={g.description}>
+        <button key={g.id} className={`boardcard ${g.id === sel ? "sel" : ""}`} onClick={() => onPick(g.id)} title={g.run ? `${g.description}\nrun ${g.run}` : g.description}>
           <div className="boardcard-img">
             <FitBoard geometry={g} max={14} pad={2} cells={(i) => ({ fill: g.key[i].home ? "#e8e8e8" : "#ffffff", text: INK, main: "" })} />
           </div>

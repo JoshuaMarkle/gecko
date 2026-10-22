@@ -3,7 +3,7 @@ import type { RunSummary } from "./api";
 import { fmtPow10, log10Factorial, rediscovery, searchSpace } from "./estimate";
 
 const run = (best_score: number | null, elapsed_ms = 1000): RunSummary =>
-  ({ id: "x", created: "", algo: "sa", profile: "p", corpus: "c", geometry: "g", best_score, best: null, elapsed_ms, status: "done" });
+  ({ id: "x", created: "", algo: "sa", profile: "p", corpus: "c", geometry: "g", best_score, best: null, elapsed_ms, status: "done", kind: "layout" });
 
 describe("search space", () => {
   it("log10 n! matches exact values", () => {

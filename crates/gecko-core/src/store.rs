@@ -101,10 +101,17 @@ impl Store {
         v
     }
 
+    /// A board by name: `data/geometries/<name>.toml` or `<name>.param.toml`, `run:<id>` (the
+    /// best board of a geometry run, `runs/<id>/geometry.toml`), or a path.
     pub fn geometry(&self, name: &str) -> Result<Geometry> {
         let p = self.dir("geometries").join(format!("{name}.toml"));
         let param = self.dir("geometries").join(format!("{name}.param.toml"));
-        let p = if p.is_file() {
+        let p = if let Some(id) = name.strip_prefix("run:") {
+            if id.is_empty() || id.contains('/') || id.contains('\\') || id.contains("..") {
+                return Err(Error::invalid("geometry", format!("bad run id '{id}'")));
+            }
+            self.runs.join(id).join("geometry.toml")
+        } else if p.is_file() {
             p
         } else if param.is_file() {
             param
@@ -124,7 +131,14 @@ impl Store {
 
     /// The parameter file behind a parametric board: `name.param.toml` in the store, or a
     /// `.param.toml` path (also accepted with or without the `.param` suffix on `name`).
+    /// `run:<id>`: the best board of a geometry run (`runs/<id>/geometry.param.toml`).
     pub fn param_geometry(&self, name: &str) -> Result<crate::ParametricGeometry> {
+        if let Some(id) = name.strip_prefix("run:") {
+            if id.is_empty() || id.contains('/') || id.contains('\\') || id.contains("..") {
+                return Err(Error::invalid("geometry", format!("bad run id '{id}'")));
+            }
+            return crate::ParametricGeometry::from_toml(&read(&self.runs.join(id).join("geometry.param.toml"))?);
+        }
         let base = name.strip_suffix(".param").unwrap_or(name);
         let p = self.dir("geometries").join(format!("{base}.param.toml"));
         let p = if p.is_file() { p } else { PathBuf::from(name) };
@@ -135,6 +149,17 @@ impl Store {
             ));
         }
         crate::ParametricGeometry::from_toml(&read(&p)?)
+    }
+
+    /// A parametric board and its generated keys with comfort tables loaded (what a geometry
+    /// search starts from).
+    pub fn param_board(&self, name: &str) -> Result<(crate::ParametricGeometry, Geometry)> {
+        let params = self.param_geometry(name)?;
+        let mut g = params.generate()?;
+        for (metric, table) in g.comfort.clone() {
+            g.load_comfort(&metric, &read(&self.dir("comfort").join(format!("{table}.csv")))?)?;
+        }
+        Ok((params, g))
     }
 
     pub fn profile(&self, name: &str) -> Result<Profile> {
