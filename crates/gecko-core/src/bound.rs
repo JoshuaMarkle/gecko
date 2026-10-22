@@ -89,6 +89,24 @@ pub(crate) struct Bounds {
 /// objective exactly as `K + Σ lin[x, p(x)] + Σ R[x, p(x), y, p(y)]` with `lin, R ≥ 0`, so `K`
 /// is a lower bound; it then spreads `lin` back into `R` and re-solves, which raises `K`.
 pub(crate) fn lower_bound(t: &QapTerms, movable: &[usize], pos: &[u8], iters: usize) -> Bounds {
+    let a = ascent(t, movable, pos, iters);
+    Bounds { gl: a.gl, lower: a.lower }
+}
+
+/// The objective over permutations of `m` movable symbols among their slots, rewritten
+/// exactly as `k + Σ_a lin[a, s_a] + Σ_{a≠b} r[a, s_a, b, s_b]` (`r` indexed
+/// `((a·m + s)·m + b)·m + u`, both orders counted) with `lin, r ≥ 0` up to rounding, so any
+/// layout's value is `k` plus non-negative terms. `crate::certify` branches on this form.
+pub(crate) struct Ascent {
+    pub gl: f64,
+    pub lower: f64,
+    pub k: f64,
+    pub lin: Vec<f64>,
+    pub r: Vec<f64>,
+}
+
+/// Gilmore–Lawler plus dual ascent; see [`lower_bound`]. Also returns the final exact rewrite.
+pub(crate) fn ascent(t: &QapTerms, movable: &[usize], pos: &[u8], iters: usize) -> Ascent {
     let n = t.n;
     let q =
         |x: usize, y: usize, i: usize, j: usize| -> f64 { t.chans.iter().map(|(f, c)| f[x * n + y] as f64 * c[i * n + j] as f64).sum() };
@@ -124,7 +142,7 @@ pub(crate) fn lower_bound(t: &QapTerms, movable: &[usize], pos: &[u8], iters: us
     let mut lap = Lap::new(m.max(1));
     if m <= 1 {
         let v = k + lin.first().copied().unwrap_or(0.0);
-        return Bounds { gl: v, lower: v };
+        return Ascent { gl: v, lower: v, k, lin, r: vec![0.0; m] };
     }
     // Pair costs R[(a, s), (b, u)] = ½(Q(x, y, i, j) + Q(y, x, j, i)) for a ≠ b, s ≠ u.
     let idx = |a: usize, s: usize, b: usize, u: usize| ((a * m + s) * m + b) * m + u;
@@ -205,12 +223,12 @@ pub(crate) fn lower_bound(t: &QapTerms, movable: &[usize], pos: &[u8], iters: us
             }
         }
     }
-    Bounds { gl, lower: best }
+    Ascent { gl, lower: best, k, lin, r }
 }
 
 /// Hungarian algorithm (shortest augmenting paths with potentials), O(n³). Buffers are
 /// reused across calls up to the size given to `new`.
-struct Lap {
+pub(crate) struct Lap {
     u: Vec<f64>,
     v: Vec<f64>,
     p: Vec<usize>,
@@ -220,7 +238,7 @@ struct Lap {
 }
 
 impl Lap {
-    fn new(max: usize) -> Self {
+    pub(crate) fn new(max: usize) -> Self {
         Lap {
             u: vec![0.0; max + 1],
             v: vec![0.0; max + 1],
@@ -232,7 +250,7 @@ impl Lap {
     }
 
     /// Minimum-cost perfect assignment of the `k × k` row-major matrix `a`.
-    fn solve(&mut self, k: usize, a: &[f64]) -> f64 {
+    pub(crate) fn solve(&mut self, k: usize, a: &[f64]) -> f64 {
         let (u, v, p, way, minv, used) = (&mut self.u, &mut self.v, &mut self.p, &mut self.way, &mut self.minv, &mut self.used);
         u[..=k].fill(0.0);
         v[..=k].fill(0.0);

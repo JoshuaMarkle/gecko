@@ -2,7 +2,7 @@
 
 One binary, `gecko` (`crates/gecko-cli`). Built for agents first: deterministic, scriptable, JSON output.
 Code: `main.rs` (clap entry) dispatches to `cmd/<group>.rs` (score, optimize, bench, explore,
-magic, corpus, geometry, layouts, profile, list); `ctx.rs` holds the shared inputs, loading
+magic, certify, corpus, geometry, layouts, profile, list); `ctx.rs` holds the shared inputs, loading
 and output helpers, `fmt.rs` the text tables, `serve.rs` the HTTP server.
 
 ## Commands
@@ -38,6 +38,9 @@ gecko select   <run>... [--metrics B01,T03,M01] [--top 10] [--pool 300] [-g -p -
                                                                   # rank-sum pick over optimize / pareto / atlas / qd runs
 gecko magic    <layout> [--key 1] [--on <symbol>] [--keep] [--max-rules 32] [--min-gain 0.01] [--out name|path.toml]
                                                                   # greedy rule search for an adaptive key
+gecko certify  run:<id> [--free 10] [--symbols nsrhtceaio] [--kind full|pair] [--time 60s] [--nodes N]
+                                                                  # exact optimum over k free symbols of the run's best
+                                                                  #   layout (branch and bound) → runs/<id>/certify-<kind>.json
 gecko verify   run:<id>                                           # re-run an --evals run from config.json;
                                                                   #   check input hashes, evals and best.json (layout and geometry runs)
 gecko perf     [--layout qwerty] [--record]                       # full evals/s, swap deltas/s, scorer builds/s, 1-key rebuilds/s (1 thread); --record appends to bench/history.jsonl
@@ -147,6 +150,36 @@ every metric the profile weights. Informational metrics are refused.
 `ranks` and `values` align with `metrics`; `ranked` holds the best `--top`. Sources name where a
 layout was found: `#<rank>` (optimize), `#p<rank>` (Pareto front), `#o<row>` (`optima.bin` row),
 `#e<row>` (`elites.bin` row).
+
+### `certify`
+
+Exact sub-problem (B7, `gecko_core::certify`; method in [bounds.md](algorithms/bounds.md)).
+Takes the run's best layout, keeps every symbol but the free ones on its slot, and searches
+every placement of the free symbols with branch and bound. Free symbols: `--symbols`, else
+the `--free` k most frequent unpinned symbols (unigram frequency, ties by slot order); the run's
+pins can't be freed. The run's geometry, corpus and profile must still hash as recorded.
+
+- `--kind full` certifies the real objective (`Scorer::full`), so the run's score.
+- `--kind pair` certifies only the mono + bigram/skipgram part (`Scorer::parts().0`). It is
+  never a certificate of the score; the text and JSON say so (`kind`, `covers`).
+- Outcomes: `OPTIMAL` (no placement beats the run by more than `tol`, 1e-9 relative),
+  `IMPROVED` (the exact optimum is better; its rows are printed), or `NOT CERTIFIED` when
+  `--time` (default 60 s, `0` = none) or `--nodes` stops it: then `optimum` is the best found
+  and `lower` a bound below every unexplored placement.
+
+The result is written to `runs/<id>/certify-<kind>.json` and printed with `--json`:
+
+```
+{ "schema": 1, "run": "…", "created": "…", "gecko_version": "0.1.0", "seed": 1,
+  "geometry": {"name": "ansi-30", "hash": "…"}, "corpus": {"name": "english", "hash": "…"},
+  "profile": "default", "profile_hash": "…", "pins": "", "layout": "<run's best, slot order>",
+  "covers": "the real objective (Scorer::full)", "limits": {"time_ms": 60000, "nodes": null},
+  "kind": "full|pair", "free": "etaoinshrd", "start": 17.561, "optimum": 17.561, "lower": 17.561,
+  "certified": true, "improved": false, "tol": 1.8e-8, "sym": [ids by slot],
+  "root_bound": 15.21, "space": 3628800, "nodes": 490, "leaves": 40, "pruned": 450,
+  "pruned_pct": 100.0, "elapsed_ms": 4, "stopped": "time|nodes (absent when finished)",
+  "chars": "<best layout, slot order>", "rows": ["…"] }
+```
 
 ### Multi-objective optimization (NSGA-II / RWSA)
 

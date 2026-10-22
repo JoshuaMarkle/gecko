@@ -3,6 +3,7 @@
 
 mod bench;
 mod build;
+mod certify;
 mod corpus;
 mod explore;
 mod geometry;
@@ -46,6 +47,9 @@ pub enum Cmd {
     /// Rank-sum selection over many runs (Kühlmak): rank every layout of the runs per metric
     /// and sort by the sum of its ranks, a trade-off pick that needs no weights.
     Select(select::SelectArgs),
+    /// Exact optimum over a few free symbols of a run's best layout (branch and bound): proves
+    /// no better placement exists, or finds it. `--kind full` (the score) or `pair` (pair part).
+    Certify(certify::CertifyArgs),
     /// Algorithm leaderboard: each algorithm over several seeds with the same budget.
     Bench(bench::BenchArgs),
     /// Re-run a saved --evals run from its config and check it reproduces best.json.
@@ -106,6 +110,7 @@ impl Cmd {
             Cmd::Landscape(a) => explore::landscape(&ctx, a),
             Cmd::Atlas(a) => explore::atlas(&ctx, a),
             Cmd::Select(a) => select::run(&ctx, a),
+            Cmd::Certify(a) => certify::run(&ctx, a),
             Cmd::Bench(a) => bench::bench(&ctx, a),
             Cmd::Verify(a) => bench::verify(&ctx, a),
             Cmd::Perf(a) => bench::perf(&ctx, a),
