@@ -160,12 +160,12 @@ impl Store {
         self.dir("community").join("cmini.json")
     }
 
-    pub fn community(&self) -> Result<crate::community::Bundle> {
+    pub fn community(&self) -> Result<crate::interop::community::Bundle> {
         let p = self.community_path();
         if !p.is_file() {
             return Err(Error::invalid("cmini", format!("{} not found (run `gecko layouts import-cmini <cmini checkout>`)", p.display())));
         }
-        crate::community::Bundle::from_json(&read(&p)?)
+        crate::interop::community::Bundle::from_json(&read(&p)?)
     }
 
     /// Resolve a layout spec: a reference name, a `.toml` path, `run:<id>[#rank]`, `cmini:<name>`

@@ -1,7 +1,7 @@
 //! Layout import from Oxeylyzer, genkey and cmini files: real-world samples parse to the
 //! reference layouts, and export → import round-trips. See `context/cli.md`.
 
-use gecko_core::import::{self, Board, Format};
+use gecko_core::interop::import::{self, Board, Format};
 use gecko_core::layout::EMPTY;
 use gecko_core::{Geometry, Layout};
 

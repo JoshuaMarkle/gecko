@@ -3,8 +3,9 @@
 use std::collections::BTreeSet;
 use std::path::Path;
 
+use gecko_core::interop::kle;
 use gecko_core::store::Store;
-use gecko_core::{kle, Finger, Geometry, Layout, Scorer};
+use gecko_core::{Finger, Geometry, Layout, Scorer};
 
 const ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
 const BOARDS: [(&str, usize, usize); 6] =

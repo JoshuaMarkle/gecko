@@ -1,7 +1,7 @@
 //! `Geometry::flat2d`: flat boards unchanged, a rigidly tilted board recovered, and a curved,
 //! tented split board drawn without overlaps and with row/column order kept.
 
-use gecko_core::flat2d::overlaps;
+use gecko_core::geometry::flat2d::overlaps;
 use gecko_core::{Finger, Flat, Geometry, Key};
 
 const ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");

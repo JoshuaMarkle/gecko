@@ -5,7 +5,7 @@
 
 use serde::Serialize;
 
-use crate::flat2d::{mtv, Rect};
+use crate::geometry::flat2d::{mtv, Rect};
 use crate::Geometry;
 
 /// Two physical keys whose keycaps overlap.

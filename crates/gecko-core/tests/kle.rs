@@ -1,6 +1,7 @@
 //! KLE import/export round-trips the bundled boards. See `context/representation.md#geometry`.
 
-use gecko_core::{kle, Geometry};
+use gecko_core::interop::kle;
+use gecko_core::Geometry;
 
 const ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
 

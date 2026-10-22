@@ -1,5 +1,14 @@
 //! Physical boards: keys with 3D position/rotation, finger assignment and base effort.
 //! Format: `context/representation.md`.
+//!
+//! Submodules: `parametric` (zones/columns/rows → keys), `derive` (effort and stretch from
+//! positions), `flat2d` (2D drawing), `collision` (keycap overlap), `pose` (key frames in 3D).
+
+pub mod collision;
+pub mod derive;
+pub mod flat2d;
+pub mod parametric;
+pub mod pose;
 
 use std::collections::BTreeMap;
 

@@ -2,8 +2,8 @@
 
 use std::path::Path;
 
-use gecko_core::parametric::ParametricGeometry;
-use gecko_core::pose::{self, contact, euler, normal, rotation};
+use gecko_core::geometry::parametric::ParametricGeometry;
+use gecko_core::geometry::pose::{self, contact, euler, normal, rotation};
 use gecko_core::report::breakdown;
 use gecko_core::store::Store;
 use gecko_core::{Geometry, Hand, Scorer};

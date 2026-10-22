@@ -916,11 +916,11 @@ fn hrm_slots_and_misfire_table() {
 #[test]
 fn cmini_likes_ranking() {
     let Some(c) = real_corpus() else { return };
-    let b = gecko_core::community::Bundle::from_json(&read("data/community/cmini.json")).unwrap();
+    let b = gecko_core::interop::community::Bundle::from_json(&read("data/community/cmini.json")).unwrap();
     assert!(b.unique().count() > 1500, "{} unique cmini layouts", b.unique().count());
     let g = ansi();
     let p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
-    let r = gecko_core::community::likes_report(&g, &c, &p, b.unique().filter(|l| l.likes > 0)).unwrap();
+    let r = gecko_core::interop::community::likes_report(&g, &c, &p, b.unique().filter(|l| l.likes > 0)).unwrap();
     assert!(r.all.rho > 0.05, "ρ over liked layouts {}", r.all.rho);
     let n = r.layouts.len();
     for name in ["graphite", "gallium"] {

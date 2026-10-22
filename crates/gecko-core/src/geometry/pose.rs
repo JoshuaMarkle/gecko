@@ -7,7 +7,7 @@
 //! turns the keycap top toward the user, positive `ry` raises the key's +x side, positive
 //! `rz` turns it clockwise seen from above. See `context/geometry.md`.
 
-use crate::flat2d::{cross, dot, norm, plane_normal, sub, V3};
+use crate::geometry::flat2d::{cross, dot, norm, plane_normal, sub, V3};
 use crate::geometry::{Geometry, Hand, Key};
 
 pub type M3 = [[f64; 3]; 3];

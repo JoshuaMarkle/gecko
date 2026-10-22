@@ -2,7 +2,7 @@
 
 use std::path::{Path, PathBuf};
 
-use gecko_core::parametric::{Column, ParametricGeometry, Split, Zone};
+use gecko_core::geometry::parametric::{Column, ParametricGeometry, Split, Zone};
 use gecko_core::report::breakdown;
 use gecko_core::store::Store;
 use gecko_core::{Finger, Geometry, Scorer};
