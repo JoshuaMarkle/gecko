@@ -96,6 +96,7 @@ fn router(store: Store, web: Option<PathBuf>) -> Router {
         .route("/runs/{id}/pause", post(pause_run))
         .route("/runs/{id}/resume", post(resume_run))
         .route("/runs/{id}/atlas", get(atlas_summary))
+        .route("/runs/{id}/qd", get(qd_summary))
         .route("/runs/{id}/atlas/{file}", get(atlas_file))
         .route("/swap-matrix", post(swap_matrix))
         .route("/", any(|| async { ApiError(StatusCode::NOT_FOUND, "unknown API route".into()) }))
@@ -566,6 +567,13 @@ async fn atlas_summary(State(app): State<AppState>, Path(id): Path<String>) -> s
     Ok(([(header::CONTENT_TYPE, "application/json"), (header::CACHE_CONTROL, "no-store")], bytes).into_response())
 }
 
+/// `qd.json` of a MAP-Elites run (the grid and every elite).
+async fn qd_summary(State(app): State<AppState>, Path(id): Path<String>) -> std::result::Result<Response, ApiError> {
+    check_id(&id)?;
+    let bytes = std::fs::read(app.store.runs.join(&id).join("qd.json")).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
+    Ok(([(header::CONTENT_TYPE, "application/json"), (header::CACHE_CONTROL, "no-store")], bytes).into_response())
+}
+
 /// Atlas binaries (`optima`, `edges`, `samples`); parsed in the browser by gecko-wasm.
 async fn atlas_file(State(app): State<AppState>, Path((id, file)): Path<(String, String)>) -> std::result::Result<Response, ApiError> {
     check_id(&id)?;
@@ -726,6 +734,8 @@ mod tests {
         samples.push(("run", detail));
         let (_, _, explore) = finished(json!({"algo": "explore", "evals": 20000, "threads": 1})).await;
         samples.push(("atlas", call("GET", &format!("/api/runs/{explore}/atlas"), None).await));
+        let (_, _, qd) = finished(json!({"algo": "qd", "evals": 20000, "threads": 1})).await;
+        samples.push(("qd", call("GET", &format!("/api/runs/{qd}/qd"), None).await));
         samples.push(("geometryFree", call("GET", "/api/geometries/corne-36/free?spec=3d", None).await));
         let geom = json!({"geometry": "corne-36", "profile": "hand", "evals": 12, "threads": 1,
             "geom": {"free": "fingers.stagger", "inner_evals": 500, "polish_evals": 2000}});

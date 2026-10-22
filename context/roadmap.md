@@ -71,7 +71,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 45. [x] [#33](https://github.com/JoshuaMarkle/gecko/issues/33) `H2` Hand module: skeleton from measurements · M · after [#6](https://github.com/JoshuaMarkle/gecko/issues/6), [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
 47. [x] [#35](https://github.com/JoshuaMarkle/gecko/issues/35) `C7` Learning-to-rank profile weights · M · after [#26](https://github.com/JoshuaMarkle/gecko/issues/26)
 50. [x] [#37](https://github.com/JoshuaMarkle/gecko/issues/37) `B6` Lower bound (Gilmore–Lawler) and optimality gap · M
-51. [ ] [#38](https://github.com/JoshuaMarkle/gecko/issues/38) `F1` Web: Pareto front and MAP-Elites views · M · after [#21](https://github.com/JoshuaMarkle/gecko/issues/21), [#29](https://github.com/JoshuaMarkle/gecko/issues/29)
+51. [x] [#38](https://github.com/JoshuaMarkle/gecko/issues/38) `F1` Web: Pareto front and MAP-Elites views · M · after [#21](https://github.com/JoshuaMarkle/gecko/issues/21), [#29](https://github.com/JoshuaMarkle/gecko/issues/29)
 53. [x] [#39](https://github.com/JoshuaMarkle/gecko/issues/39) `G3` G04 2D collision (OBB, SAT) · S
 54. [x] [#40](https://github.com/JoshuaMarkle/gecko/issues/40) `H3` Finger IK with joint limits · L · after [#33](https://github.com/JoshuaMarkle/gecko/issues/33)
 55. [x] [#92](https://github.com/JoshuaMarkle/gecko/issues/92) `L7` Hand tab: hand parameters with live skeleton · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82), [#33](https://github.com/JoshuaMarkle/gecko/issues/33)

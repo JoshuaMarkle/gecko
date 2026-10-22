@@ -76,7 +76,7 @@ Adaptive keys (`magic.rs` unit tests + `scorer.rs`): the count rewrite equals th
 text exactly for mono/bigrams and beats no rewrite for trigrams/skipgrams; delta == full with
 a magic key (proptest); `[[magic]]` TOML round-trip; Magic Sturdy's rules halve its SFBs on
 `english` and the rule search matches or beats them.
-Web: `web/src/format.test.ts`, `web/src/explore.test.ts`, `web/src/export.test.ts` (layout TOML, KLE, stats, standalone SVG).
+Web: `web/src/format.test.ts`, `web/src/explore.test.ts`, `web/src/export.test.ts` (layout TOML, KLE, stats, standalone SVG), `web/src/runViews.test.ts` (metric columns, qd grid projection: best elite per cell, one-axis rows).
 WASM == CLI: `web/scripts/wasm-parity.mjs` tests all 10 references × all 4 profiles
 using the same web-target package loaded by the browser.
 

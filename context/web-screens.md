@@ -155,6 +155,15 @@ the working model) and reproducibility facts. With a holdout corpus, the best-la
 each layout's score on it, and the Run facts show the holdout corpus, start → best on both
 corpora, the gain kept and the rank ρ.
 
+NSGA-II / RWSA runs add **Pareto front** (`components/runs/ParetoPanel`): the front as a scatter
+over any two metrics (objectives starred, the run's first two by default; the line joins the
+layouts non-dominated in that plane); hover shows a mini keyboard, click makes the layout the
+working model and shows its keyboard and objective values below. qd runs add **MAP-Elites grid**
+(`runs/EliteGrid`, from `/api/runs/{id}/qd`): cells over two chosen behaviour axes (or one
+row), shaded white → ink by elite score (darker = better), empty cells outlined; with more
+than two axes a cell shows the best elite projecting onto it. Hover shows the elite's
+descriptors and keyboard; click makes it the working model (outlined in blue).
+
 A board or board + layout run (algo "board") opens its own panel: the board at any point of the run over
 the start board's dashed outline (2D top-down or 3D; a scrubber and Play step through every
 generation to the polished best board), convergence, result (start vs best board after equal
