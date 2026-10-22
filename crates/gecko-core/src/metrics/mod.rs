@@ -291,20 +291,46 @@ pub fn index_of(id: &str) -> Option<usize> {
 /// Per-metric cost table for a geometry and profile, aligned with [`METRICS`]. `None` for
 /// `Order::Load`, and for E04/E05 when the geometry has no comfort table for them.
 pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
+    let mut t = Vec::new();
+    update_table(g, p, &Prep::new(g), d, &mut t, None).then_some(t)
+}
+
+/// Board-wide inputs shared by the tables of one geometry and profile, computed once per
+/// build instead of once per metric: metric points and (on first use) the hand model.
+pub struct Prep {
+    pts: Vec<[f32; 3]>,
+    hand: std::cell::OnceCell<crate::hand::HandCosts>,
+}
+
+impl Prep {
+    pub fn new(g: &Geometry) -> Self {
+        Prep { pts: g.metric_points(), hand: std::cell::OnceCell::new() }
+    }
+
+    /// The geometry's [`Geometry::metric_points`].
+    pub fn points(&self) -> &[[f32; 3]] {
+        &self.pts
+    }
+}
+
+/// Fill `t` with metric `d`'s table for `g`; `false` when it has none (see [`table`]).
+///
+/// With `changed`, `t` already holds the table of a geometry that differs from `g` only in
+/// the marked slots (their keys or [`Geometry::metric_points`]), and only pair and triple
+/// entries touching a marked slot are recomputed: every pair/triple entry reads nothing but
+/// its own slots, the profile and board-wide fields (layer keys, comfort tables) that the
+/// caller must mark as all-changed. Mono tables are always rebuilt (O(N); the hand model and
+/// home-row lookups are board-wide).
+/// `prep` must be [`Prep::new`] of `g`, used with this profile only.
+pub fn update_table(g: &Geometry, p: &Profile, prep: &Prep, d: &MetricDef, t: &mut Vec<f32>, changed: Option<&[bool]>) -> bool {
     let n = g.len();
-    let mono = |f: &dyn Fn(usize) -> f32| Some((0..n).map(f).collect());
-    let pair = |f: &dyn Fn(usize, usize) -> f32| {
-        let mut t = vec![0.0; n * n];
-        for i in 0..n {
-            for j in 0..n {
-                t[i * n + j] = f(i, j);
-            }
-        }
-        Some(t)
-    };
+    let all = vec![true; n];
+    let ch = changed.unwrap_or(&all);
+    let idx: Vec<usize> = (0..n).filter(|&i| ch[i]).collect();
+    let fresh = changed.is_none();
     let k = &g.key;
     // Fingertip targets (3D boards: keycap tops in each hand's frame; flat boards: `pos`).
-    let pts = g.metric_points();
+    let pts = &prep.pts;
     let spread = hand_spread(p);
     // Layer copies of a key are the same physical key: no finger movement between them.
     let same_finger = |i: usize, j: usize| !g.same_key(i, j) && k[i].finger == k[j].finger;
@@ -318,37 +344,45 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
     };
     let pct = |b: bool| if b { 100.0 } else { 0.0 };
     match d.id {
-        "M01" => mono(&|i| key_effort(g, p, i) + g.holder(i).map_or(0.0, |h| key_effort(g, p, h))),
+        "M01" => mono(t, n, &|i| key_effort(g, p, i) + g.holder(i).map_or(0.0, |h| key_effort(g, p, h))),
         "G01" | "G03" | "G05" => {
-            let h = p.hand.clone().unwrap_or_default();
-            let c = crate::hand::costs_with(g, &h.dims(), &h.body());
+            let c = prep.hand.get_or_init(|| {
+                let h = p.hand.clone().unwrap_or_default();
+                crate::hand::costs_with(g, &h.dims(), &h.body())
+            });
             let v = match d.id {
-                "G01" => c.reach,
-                "G03" => c.wrist,
-                _ => c.align,
+                "G01" => &c.reach,
+                "G03" => &c.wrist,
+                _ => &c.align,
             };
-            mono(&|i| v[i] + g.holder(i).map_or(0.0, |h| v[h]))
+            mono(t, n, &|i| v[i] + g.holder(i).map_or(0.0, |h| v[h]))
         }
-        "M05" => mono(&|i| pct(k[i].home || k[i].row == home_row(g))),
-        "M06" => mono(&|i| pct(k[i].stretch)),
-        "B01" | "S01" | "S02" => pair(&|i, j| pct(same_finger(i, j))),
-        "B02" => pair(&|i, j| pct(g.same_key(i, j))),
-        "B03" | "S03" => pair(&|i, j| if same_finger(i, j) { 100.0 * finger_speed_at(g, &pts, &p.sfb, i, j) } else { 0.0 }),
-        "B14" | "S04" => pair(&|i, j| 100.0 * stretch_at(g, &pts, spread, i, j)),
-        "B11" => pair(&|i, j| 100.0 * movement(g, i, j)),
+        "M05" => mono(t, n, &|i| pct(k[i].home || k[i].row == home_row(g))),
+        "M06" => mono(t, n, &|i| pct(k[i].stretch)),
+        "B01" | "S01" | "S02" => pair(t, n, fresh, ch, &idx, &|i, j| pct(same_finger(i, j))),
+        "B02" => pair(t, n, fresh, ch, &idx, &|i, j| pct(g.same_key(i, j))),
+        "B03" | "S03" => pair(t, n, fresh, ch, &idx, &|i, j| {
+            if same_finger(i, j) {
+                100.0 * finger_speed_at(g, pts, &p.sfb, i, j)
+            } else {
+                0.0
+            }
+        }),
+        "B14" | "S04" | "S05" => pair(t, n, fresh, ch, &idx, &|i, j| 100.0 * stretch_at(g, pts, spread, i, j)),
+        "B11" => pair(t, n, fresh, ch, &idx, &|i, j| 100.0 * movement(g, i, j)),
         "E04" | "E05" => {
-            let c = g.comfort_tables.get(d.id)?;
-            pair(&|i, j| 100.0 * (1.0 - c[i * n + j]))
+            let Some(c) = g.comfort_tables.get(d.id) else { return false };
+            pair(t, n, fresh, ch, &idx, &|i, j| 100.0 * (1.0 - c[i * n + j]))
         }
-        "B04" => pair(&|i, j| {
+        "B04" => pair(t, n, fresh, ch, &idx, &|i, j| {
             let lsb = |a: usize, b: usize| k[a].stretch && k[a].finger.ord() == 3 && k[b].finger.ord() == 2;
             pct(same_hand(i, j) && (lsb(i, j) || lsb(j, i)))
         }),
-        "B05" => pair(&|i, j| pct(adjacent(i, j) && (k[i].row - k[j].row).abs() >= 2)),
-        "B06" => pair(&|i, j| pct(half_scissor(g, i, j))),
-        "B07" => pair(&|i, j| pct(rolls(g, i, j) && k[j].finger.ord() > k[i].finger.ord())),
-        "B09" => pair(&|i, j| pct(rolls(g, i, j) && k[i].finger.ord() + k[j].finger.ord() == 1)),
-        "B10" => pair(&|i, j| {
+        "B05" => pair(t, n, fresh, ch, &idx, &|i, j| pct(adjacent(i, j) && (k[i].row - k[j].row).abs() >= 2)),
+        "B06" => pair(t, n, fresh, ch, &idx, &|i, j| pct(half_scissor(g, i, j))),
+        "B07" => pair(t, n, fresh, ch, &idx, &|i, j| pct(rolls(g, i, j) && k[j].finger.ord() > k[i].finger.ord())),
+        "B09" => pair(t, n, fresh, ch, &idx, &|i, j| pct(rolls(g, i, j) && k[i].finger.ord() + k[j].finger.ord() == 1)),
+        "B10" => pair(t, n, fresh, ch, &idx, &|i, j| {
             let sh = same_hand(i, j) && !g.same_key(i, j) && !k[i].finger.is_thumb() && !k[j].finger.is_thumb();
             if sh {
                 100.0 * (pts[i][1] - pts[j][1]).abs()
@@ -356,10 +390,9 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
                 0.0
             }
         }),
-        "S05" => pair(&|i, j| 100.0 * stretch_at(g, &pts, spread, i, j)),
         "T09" => {
-            let st: Vec<f32> = (0..n * n).map(|ij| stretch_at(g, &pts, spread, ij / n, ij % n)).collect();
-            tri(g, &|i, j, l| {
+            let st: Vec<f32> = (0..n * n).map(|ij| stretch_at(g, pts, spread, ij / n, ij % n)).collect();
+            tri(t, n, fresh, ch, &idx, &|i, j, l| {
                 let (s1, s2) = (st[i * n + j], st[j * n + l]);
                 if s1 > 0.0 && s2 > 0.0 {
                     100.0 * (s1 + s2)
@@ -370,21 +403,79 @@ pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
         }
         "T10" => {
             let bad: Vec<bool> = (0..n * n).map(|ij| bad_bigram(g, ij / n, ij % n)).collect();
-            tri(g, &|i, j, l| pct(bad[i * n + j] && bad[j * n + l]))
+            tri(t, n, fresh, ch, &idx, &|i, j, l| pct(bad[i * n + j] && bad[j * n + l]))
         }
-        "B08" => pair(&|i, j| pct(!same_hand(i, j))),
-        "Y01" => pair(&|i, j| layer_presses(g, i, j)),
-        "Y02" => pair(&|i, j| {
+        "B08" => pair(t, n, fresh, ch, &idx, &|i, j| pct(!same_hand(i, j))),
+        "Y01" => pair(t, n, fresh, ch, &idx, &|i, j| layer_presses(g, i, j)),
+        "Y02" => pair(t, n, fresh, ch, &idx, &|i, j| {
             let oneshot = k[i].layer != 0 && layer_mode(g, k[i].layer as usize) == LayerMode::Oneshot;
             pct(same_finger(i, j) || k[i].layer != k[j].layer || oneshot)
         }),
-        "Y03" => pair(&|i, j| bracket_cost_at(g, &pts, i, j)),
+        "Y03" => pair(t, n, fresh, ch, &idx, &|i, j| bracket_cost_at(g, pts, i, j)),
         // The mod key is still down when another finger of its hand presses: a fast roll that
         // a tap-hold resolver can read as a hold. Same-finger pairs release first.
-        "Y04" => pair(&|i, j| pct(g.hrm(i) && same_hand(i, j) && k[i].finger != k[j].finger)),
-        id if id.starts_with('T') => Some(trigram::table(g, trigram::class_for(id)?)),
-        _ => None,
+        "Y04" => pair(t, n, fresh, ch, &idx, &|i, j| pct(g.hrm(i) && same_hand(i, j) && k[i].finger != k[j].finger)),
+        id if id.starts_with('T') => {
+            let Some(cls) = trigram::class_for(id) else { return false };
+            tri(t, n, fresh, ch, &idx, &|i, j, l| pct(trigram::classify(g, i, j, l) == cls))
+        }
+        _ => false,
     }
+}
+
+/// The pair/triple tables of [`update_table`] that read [`Geometry::metric_points`]; every
+/// other pair/triple table reads only logical key fields (finger, row, column, flags), so a
+/// pose-only move leaves it unchanged.
+pub fn reads_points(id: &str) -> bool {
+    matches!(id, "B03" | "S03" | "B14" | "S04" | "S05" | "B10" | "Y03" | "T09")
+}
+
+/// Fill the `[N]` table `t` from `f(i)` (always every entry).
+fn mono(t: &mut Vec<f32>, n: usize, f: &dyn Fn(usize) -> f32) -> bool {
+    *t = (0..n).map(f).collect();
+    true
+}
+
+/// Fill the `[N×N]` table `t` from `f(i, j)`: every entry when `fresh`, else only rows and
+/// columns of the changed slots (`ch[i]`, listed in `idx`).
+fn pair(t: &mut Vec<f32>, n: usize, fresh: bool, ch: &[bool], idx: &[usize], f: &dyn Fn(usize, usize) -> f32) -> bool {
+    if fresh {
+        *t = vec![0.0; n * n];
+    }
+    for i in 0..n {
+        if ch[i] {
+            for j in 0..n {
+                t[i * n + j] = f(i, j);
+            }
+        } else {
+            for &j in idx {
+                t[i * n + j] = f(i, j);
+            }
+        }
+    }
+    true
+}
+
+/// [`pair`] for `[N×N×N]` tables from `f(i, j, l)`: entries touching a changed slot.
+fn tri(t: &mut Vec<f32>, n: usize, fresh: bool, ch: &[bool], idx: &[usize], f: &dyn Fn(usize, usize, usize) -> f32) -> bool {
+    if fresh {
+        *t = vec![0.0; n * n * n];
+    }
+    for i in 0..n {
+        for j in 0..n {
+            let row = (i * n + j) * n;
+            if ch[i] || ch[j] {
+                for l in 0..n {
+                    t[row + l] = f(i, j, l);
+                }
+            } else {
+                for &l in idx {
+                    t[row + l] = f(i, j, l);
+                }
+            }
+        }
+    }
+    true
 }
 
 fn layer_mode(g: &Geometry, l: usize) -> LayerMode {
@@ -412,20 +503,6 @@ fn layer_presses(g: &Geometry, i: usize, j: usize) -> f32 {
     } else {
         100.0 * (presses + sf) as f32
     }
-}
-
-/// `[N×N×N]` table from `f(i, j, k)`.
-fn tri(g: &Geometry, f: &dyn Fn(usize, usize, usize) -> f32) -> Option<Vec<f32>> {
-    let n = g.len();
-    let mut t = vec![0.0; n * n * n];
-    for i in 0..n {
-        for j in 0..n {
-            for l in 0..n {
-                t[(i * n + j) * n + l] = f(i, j, l);
-            }
-        }
-    }
-    Some(t)
 }
 
 /// Same hand, two different non-thumb fingers (a bigram roll in either direction).

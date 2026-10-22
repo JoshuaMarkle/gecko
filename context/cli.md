@@ -34,7 +34,7 @@ gecko magic    <layout> [--key 1] [--on <symbol>] [--keep] [--max-rules 32] [--m
                                                                   # greedy rule search for an adaptive key
 gecko verify   run:<id>                                           # re-run an --evals run from config.json;
                                                                   #   check input hashes, evals and best.json
-gecko perf     [--layout qwerty] [--record]                       # full evals/s and swap deltas/s (1 thread); --record appends to bench/history.jsonl
+gecko perf     [--layout qwerty] [--record]                       # full evals/s, swap deltas/s, scorer builds/s, 1-key rebuilds/s (1 thread); --record appends to bench/history.jsonl
 gecko corpus build <files or dirs...> [--out english] [--charset default|code|nav|<symbols>] [--ext txt] [--fold]
 gecko corpus mix <corpus>[:weight]... --out <name>                     # weighted mix, same charset
 gecko corpus import <cmini corpus dir> --out <name> [--charset ...] [--fold]   # words.json or n-gram JSON; --fold: é→e; also writes <name>.words.tsv

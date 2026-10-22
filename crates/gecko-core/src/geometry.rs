@@ -93,7 +93,7 @@ fn unit_size() -> [f32; 2] {
     [1.0, 1.0]
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Key {
     /// x, y, z in key units (1u = 19.05 mm). y grows toward the user; z up.
     pub pos: [f32; 3],

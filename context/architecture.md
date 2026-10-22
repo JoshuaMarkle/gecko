@@ -38,7 +38,7 @@ gecko/
 | `corpus` | Text → n-gram count tables; binary `.gkc` format; mixing |
 | `profile` | Metric weights, finger targets, trigram coverage |
 | `metrics` | Metric definitions + per-geometry cost tables (`metrics/mod.rs`; trigram classes in `metrics/trigram.rs`) |
-| `scorer` | Folds metrics × weights into flat tables; full + delta evaluation; `State` |
+| `scorer` | Folds metrics × weights into flat tables; full + delta evaluation; `State`; geometry rebuild (`set_geometry`) |
 | `report` | Per-metric breakdown, finger loads, heat, worst n-grams, worst words |
 | `optimize` | `Optimizer` trait, threaded runner, top-K; `hill_climb`, `anneal`, `genetic`, `memetic`, `bls`, `tabu`, `map_elites` |
 | `explore` | Landscape probe, local-optima archive, atlas files, distances/symmetry, atlas statistics, MAP-Elites grid (`explore/`) |

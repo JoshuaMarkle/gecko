@@ -1,5 +1,5 @@
-//! Scorer benchmarks (`cargo bench -p gecko-core`): full evaluation, one swap delta, and swap
-//! deltas/s across all cores. Uses the repo defaults (`gecko.toml`) with QWERTY. See
+//! Scorer benchmarks (`cargo bench -p gecko-core`): full evaluation, one swap delta, swap
+//! deltas/s across all cores, and scorer build vs one-key rebuild (`Scorer::set_geometry`). Uses the repo defaults (`gecko.toml`) with QWERTY. See
 //! `context/testing.md`; `gecko perf --record` keeps the long-term history.
 
 use std::hint::black_box;
@@ -8,18 +8,18 @@ use std::path::Path;
 use criterion::{criterion_group, criterion_main, Criterion, Throughput};
 use gecko_core::rng::Rng;
 use gecko_core::store::Store;
-use gecko_core::Scorer;
+use gecko_core::{Corpus, Geometry, Layout, Profile, Scorer};
 
 const ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
 
-fn scorer() -> Scorer {
+fn inputs() -> (Geometry, Corpus, Profile, Layout) {
     let store = Store::open(Path::new(ROOT)).unwrap();
     let d = &store.defaults;
     let g = store.geometry(&d.geometry).unwrap();
     let c = store.corpus(&d.corpus).unwrap();
     let p = store.profile(&d.profile).unwrap();
     let l = store.layout("qwerty", &g.name).unwrap().fit(&g).unwrap();
-    Scorer::new(&g, &c, &p, &l).unwrap()
+    (g, c, p, l)
 }
 
 /// `count` random swap deltas, applying improvements (the hill-climbing access pattern).
@@ -40,7 +40,8 @@ fn swaps(sc: &Scorer, seed: u64, count: u64) -> f64 {
 }
 
 fn benches(c: &mut Criterion) {
-    let sc = scorer();
+    let (geo, corpus, profile, layout) = inputs();
+    let sc = Scorer::new(&geo, &corpus, &profile, &layout).unwrap();
     let st = sc.identity();
 
     c.bench_function("full_eval", |b| b.iter(|| sc.full(black_box(&st))));
@@ -75,6 +76,20 @@ fn benches(c: &mut Criterion) {
                     .collect();
                 hs.into_iter().map(|h| h.join().unwrap()).sum::<f64>()
             })
+        })
+    });
+    g.finish();
+
+    let mut g = c.benchmark_group("tables");
+    g.sample_size(20);
+    g.bench_function("build", |b| b.iter(|| Scorer::new(&geo, &corpus, &profile, black_box(&layout)).unwrap()));
+    g.bench_function("rebuild_one_key", |b| {
+        let (mut moved, mut board, mut k) = (sc.clone(), geo.clone(), 0usize);
+        b.iter(|| {
+            let i = k % board.len();
+            board.key[i].pos[0] += if k.is_multiple_of(2) { 0.01 } else { -0.01 };
+            k += 1;
+            moved.set_geometry(black_box(&board)).unwrap()
         })
     });
     g.finish();

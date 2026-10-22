@@ -193,7 +193,13 @@ async fn corpus_bin(State(app): State<AppState>, Path(name): Path<String>) -> st
 fn source_files(app: &App, name: &str) -> Vec<PathBuf> {
     let src = app.store.corpus_path(name).with_file_name("src");
     let dir = src.join(name);
-    let dir = if dir.is_dir() { dir } else if name == "english" { src } else { return Vec::new() };
+    let dir = if dir.is_dir() {
+        dir
+    } else if name == "english" {
+        src
+    } else {
+        return Vec::new();
+    };
     let mut out: Vec<PathBuf> = std::fs::read_dir(dir).into_iter().flatten().flatten().map(|e| e.path()).filter(|p| p.is_file()).collect();
     out.sort();
     out
