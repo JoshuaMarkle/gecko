@@ -13,12 +13,20 @@
 - One algorithm per module. Metric table builders live in `metrics/` keyed by catalog ID
   (trigram classes in their own file); split a metric into its own file once it needs more
   than a few lines. Each has a doc comment linking its catalog ID or algorithm file.
+- Group a module into a directory (`geometry/`, `scorer/`, `interop/`) once it has distinct
+  parts; keep its public paths stable with `pub use` in `mod.rs`.
+- CLI: one module per command group in `gecko-cli/src/cmd/`, each a clap `Subcommand`/`Args`
+  with a `run(self, &Ctx)`; shared loading lives in `ctx.rs`, text tables in `fmt.rs`.
 
 ## TypeScript
 
-- Strict mode. Types for API responses generated from (or kept identical to) the
-  Rust `serde` types.
-- Keep components small; 3D code under `web/src/three/`.
+- Strict mode. API types in `web/src/api.ts` are hand-written subsets of the Rust `serde`
+  types; `npm run test:contract` checks them against real responses.
+- Code ported from Rust (the hand model) is checked by a parity fixture written by Rust.
+- Keep components small: one file per tab in `components/views/`, its parts in a folder named
+  after it (`components/hand/`, `components/explore/`); 3D code under `web/src/three/`.
+- Pure logic goes in `web/src/*.ts` with a `*.test.ts`; components hold UI state only.
+- Persisted UI preferences use `usePref` (`inputs.ts`); wrap storage access in try/catch.
 
 ## Data
 

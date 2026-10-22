@@ -22,7 +22,7 @@ export interface SearchSettings {
 }
 
 /** Physical constraints for building a board (Board tab, Custom on). Each group can be enabled
- *  on its own; nothing consumes them yet (board generation is planned, see frontend.md). */
+ *  on its own; nothing consumes them yet (board generation is planned, see roadmap.md). */
 export interface Constraint { on: boolean; [field: string]: number | boolean }
 export type Constraints = Record<string, Constraint>;
 

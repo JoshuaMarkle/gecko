@@ -1,4 +1,4 @@
-// Language tab (frontend.md "Language"): languages with their sources | text viewer |
+// Language tab (web-screens.md "Language"): languages with their sources | text viewer |
 // language statistics. Summarize lives in the navbar (App).
 
 import { useEffect, useRef, useState } from "react";

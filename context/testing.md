@@ -53,7 +53,7 @@ HC/SA/GA/memetic, determinism with an eval budget, pins respected, ranking sanit
 corpus counting (incl. skip-2/3, word imports) + binary round-trip + `GKCORP1` compatibility,
 imported corpora reproduce QWERTY SFB computed independently from their source tables,
 layout TOML round-trip, word lists (fold/merge/TSV round-trip), worst words sum to B01 and Semimak shows `you're` on shai. Reference snapshots (`tests/snapshots.rs`): score + weighted
-metrics of the 10 `data/layouts/*.toml` × default/sfb/engram/code on `english`, 4 decimals. KLE (`tests/kle.rs` + unit tests in `kle.rs`): bundled boards round-trip
+metrics of the 10 `data/layouts/*.toml` × default/sfb/engram/code on `english`, 4 decimals. KLE (`tests/kle.rs` + unit tests in `interop/kle.rs`): bundled boards round-trip
 export → import (physical keys exact, fingers/rows/columns re-guessed), geometry TOML
 round-trip, raw-data parsing, rotation origins, ANSI 60% traditional fingering. Explore (`tests/explore.rs` + unit tests in `explore/`): raw-vector
 re-scoring == full score (proptest); on a mirror-symmetric 6-key board the archive equals the
@@ -131,37 +131,6 @@ splay, split reflection/angle/spread, circular thumb arcs and zone pose; invalid
 and duplicate logical slots fail. Store tests cover parameter-only discovery, direct paths,
 explicit-file precedence, de-duplication and comfort-table resolution.
 
-## CI
-
-`.github/workflows/ci.yml` runs the `make test` checks on every push and PR, in two jobs:
-`rust` (`cargo test --release`, `cargo clippy --all-targets -- -D warnings`) and `web`
-(`npm ci`, `npm run test:parity`, `npm run typecheck`, `npm test`). Cargo and npm caches are kept
-between runs. The WASM package is built before the type check because `web/src/wasm/pkg`
-is generated and not committed. The parity command builds it first; failures upload the
-generated CLI fixture as a CI artifact for inspection. `make test` also runs parity.
-
-`.github/workflows/claude.yml` runs `anthropics/claude-code-action` when the repo owner writes
-`@claude` in an issue, issue/PR comment or review. It needs the secret `ANTHROPIC_API_KEY` (or
-`CLAUDE_CODE_OAUTH_TOKEN`) and the Claude GitHub app; the agent follows `AGENTS.md`.
-
-
-## Snapshots (`insta`)
-
-A changed score or metric fails `cargo test` (snapshots in `crates/gecko-core/tests/snapshots/`).
-If the change is intended: `cargo install cargo-insta` once, then `cargo insta test --release`
-and `cargo insta review` (accept/reject each diff), and commit the updated `.snap` files with
-the change. Without cargo-insta: `INSTA_UPDATE=always cargo test --release --test snapshots`
-overwrites them, then review with `git diff`. With `CI` set, insta never writes files, so
-unreviewed changes just fail.
-
-## Rule
-
-`cargo test` and `cargo clippy -- -D warnings` pass before any change is considered done.
-
-## Overnight harness
-
-`scripts/overnight.sh` (`make overnight`, `make overnight-dry`) works through open issues in `context/roadmap.md` order, skipping any with open GitHub blockers, an open PR, or an existing `fix/issue-<n>` branch. Each issue gets a headless `claude -p` run in the worktree `../gecko-overnight` (your checkout is never touched). The run resumes its session after usage limits. Then comes the gate: release build, `cargo test`, clippy, wasm, web typecheck and tests, with one repair round. If the gate passes, the harness commits, pushes `fix/issue-<n>` and opens a PR. Failed work is saved as a patch. Logs and `summary.tsv` go in `~/.local/state/gecko-overnight/<stamp>/`; `touch ~/.local/state/gecko-overnight/STOP` stops it after the current issue. Agents see only what is on `origin/main`.
-
 Profile ranking (`tests/ranking.rs`, `calibrate/rank.rs`): preference orientation, stable
 logistic loss and nonnegative weights; duplicate/mirror representatives stay in one group;
 changing held-out labels leaves fitted weights, scales and training loss exactly unchanged.
@@ -183,3 +152,50 @@ invariance and that tenting lowers G03. Web: `hand.test.ts` covers `withHand` / 
 `bodyOf`, the TS thumb (rest, reach, segment lengths) and `toLocal`. The Tabu `delta_shift`
 check allows 3e-5 relative: f32 pair tables valued 0–100 can leave a few ULP after cancelling
 (seen on Y02 when the per-metric test weights shift).
+
+## Cross-language checks
+
+The web reimplements or consumes some Rust code; these keep the two sides equal.
+
+- **WASM == CLI** (`npm run test:parity`): see Web above.
+- **Hand model** (`web/src/hand.parity.test.ts`): `gecko_core::hand` writes
+  `web/src/fixtures/hand-parity.json` (skeleton, natural curl, finger IK, placement, thumb IK for
+  three hand sizes); `cargo test` fails if the committed fixture is stale and `npm test` fails if
+  `hand.ts` disagrees (1e-6 relative). After an intended hand-model change:
+  `GECKO_BLESS=1 cargo test --release -p gecko-core hand_parity`, then port it to `hand.ts`.
+- **API contract** (`npm run test:contract`): `serve::tests::api_samples` calls every JSON
+  endpoint on a temporary data dir and writes the responses to
+  `web/contract/api-samples.generated.ts` (gitignored), each checked with
+  `satisfies Response<"name">` against the return types of `web/src/api.ts`. A field renamed or
+  retyped in Rust fails the type check. Optional fields the server omits are not caught.
+
+## CI
+
+`.github/workflows/ci.yml` runs the `make test` checks on every push and PR, in two jobs:
+`rust` (`cargo test --release`, `cargo clippy --all-targets -- -D warnings`,
+`cargo doc --no-deps -p gecko-core -p gecko-wasm` with warnings denied) and `web` (`npm ci`,
+`npm run test:parity`, `npm run typecheck`, `npm run test:contract`, `npm test`). Cargo and npm caches are kept
+between runs. The WASM package is built before the type check because `web/src/wasm/pkg`
+is generated and not committed. The parity command builds it first; failures upload the
+generated CLI fixture as a CI artifact for inspection. `make test` also runs parity, the contract check and `research.py lint`.
+
+`.github/workflows/claude.yml` runs `anthropics/claude-code-action` when the repo owner writes
+`@claude` in an issue, issue/PR comment or review. It needs the secret `ANTHROPIC_API_KEY` (or
+`CLAUDE_CODE_OAUTH_TOKEN`) and the Claude GitHub app; the agent follows `AGENTS.md`.
+
+## Snapshots (`insta`)
+
+A changed score or metric fails `cargo test` (snapshots in `crates/gecko-core/tests/snapshots/`).
+If the change is intended: `cargo install cargo-insta` once, then `cargo insta test --release`
+and `cargo insta review` (accept/reject each diff), and commit the updated `.snap` files with
+the change. Without cargo-insta: `INSTA_UPDATE=always cargo test --release --test snapshots`
+overwrites them, then review with `git diff`. With `CI` set, insta never writes files, so
+unreviewed changes just fail.
+
+## Rule
+
+`cargo test` and `cargo clippy -- -D warnings` pass before any change is considered done.
+
+## Overnight harness
+
+`scripts/overnight.sh` (`make overnight`, `make overnight-dry`) works through open issues in `context/roadmap.md` order, skipping any with open GitHub blockers, an open PR, or an existing `fix/issue-<n>` branch. Each issue gets a headless `claude -p` run in the worktree `../gecko-overnight` (your checkout is never touched). The run resumes its session after usage limits. Then comes the gate: release build, `cargo test`, clippy, wasm, web typecheck and tests, with one repair round. If the gate passes, the harness commits, pushes `fix/issue-<n>` and opens a PR. Failed work is saved as a patch. Logs and `summary.tsv` go in `~/.local/state/gecko-overnight/<stamp>/`; `touch ~/.local/state/gecko-overnight/STOP` stops it after the current issue. Agents see only what is on `origin/main`.

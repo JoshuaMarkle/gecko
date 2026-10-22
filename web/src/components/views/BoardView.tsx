@@ -1,4 +1,4 @@
-// Board tab (frontend.md "Board"): board cards or custom constraints | 3D model with
+// Board tab (web-screens.md "Board"): board cards or custom constraints | 3D model with
 // auto-rotate and per-key editing | quick stats and a rough goodness estimate.
 
 import { useMemo, useState } from "react";

@@ -1,4 +1,4 @@
-// Navbar tabs (frontend.md "Navbar"): inputs, then results. Old stored tab names map to new ones.
+// Navbar tabs (web-screens.md "Shell"): inputs, then results. Old stored tab names map to new ones.
 
 export type InputTabName = "board" | "hand" | "language" | "profile" | "search" | "summary";
 export type ResultTabName = "home" | "explore" | "analysis" | "saved" | "export";

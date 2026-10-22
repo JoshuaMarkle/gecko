@@ -1,4 +1,4 @@
-// 2D layout editor (frontend.md "2D and 3D board representations"): click two keys to swap
+// 2D layout editor (web-screens.md "Search"): click two keys to swap
 // them, Pin mode locks a key's symbol, and a layer picker shows each layer of a layered layout.
 // Opened from Search (Edit layout) as an overlay on the main area.
 

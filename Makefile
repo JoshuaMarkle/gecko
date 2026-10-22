@@ -16,7 +16,7 @@ test:
 	cargo test --release
 	cargo clippy --all-targets -- -D warnings
 	cd web && npm run test:parity
-	cd web && npm run typecheck && npm test
+	cd web && npm run typecheck && npm run test:contract && npm test
 	python3 -I research/scripts/research.py lint
 
 serve: all

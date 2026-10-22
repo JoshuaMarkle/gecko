@@ -1,4 +1,4 @@
-// Hand tab (frontend.md "Hand"): hand settings | 3D hands placed over the board's home keys
+// Hand tab (web-screens.md "Hand"): hand settings | 3D hands placed over the board's home keys
 // (mirrored skeletons, finger IK), with a typing simulation whose fingers move in parallel |
 // reach (the scorer's per-key hand costs), measurements, typing timeline and stats, size
 // distribution, similarity. "Use hand in optimization" sends this hand to the scorer (G01, G03, G05,

@@ -11,5 +11,5 @@ Closes #<issue>
 
 ## Docs updated
 - [ ] Relevant `context/` files still accurate
-- [ ] Non-obvious choices in `context/decisions.md`
+- [ ] Non-obvious choices in `context/decisions/`
 - [ ] Issue ticked in `context/roadmap.md`

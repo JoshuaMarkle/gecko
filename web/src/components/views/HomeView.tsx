@@ -1,4 +1,4 @@
-// Home (frontend.md "Home"): read-only summary of the inputs | 3D working model |
+// Home (web-screens.md "Home"): read-only summary of the inputs | 3D working model |
 // convergence, chance of optimal, score and main metrics.
 
 import { useMemo, useState } from "react";

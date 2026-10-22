@@ -1,4 +1,4 @@
-// Languages (frontend.md "Language"): the bundled corpora (built, read-only) plus languages
+// Languages (web-screens.md "Language"): the bundled corpora (built, read-only) plus languages
 // created in this browser. A local language's sources live in IndexedDB; Summarize builds its
 // `.gkc` statistics in WASM (`corpus_from_text`). Local languages can be viewed but not yet
 // optimized on: runs need the corpus on the server (an upload route is planned).

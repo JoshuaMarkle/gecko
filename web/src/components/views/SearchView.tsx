@@ -1,4 +1,4 @@
-// Search tab (frontend.md "Search"): search settings | a small animation of the chosen
+// Search tab (web-screens.md "Search"): search settings | a small animation of the chosen
 // algorithm (or the 2D layout editor) | search-space size and time-to-optimum estimates.
 
 import { useEffect, useRef, useState } from "react";

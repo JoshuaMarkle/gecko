@@ -1,4 +1,4 @@
-// 2D boards (frontend.md "2D and 3D board representations"): the flat drawing of a geometry
+// 2D boards (web.md "2D boards"): the flat drawing of a geometry
 // (`geometry.flat` via `flatKeys`) with each key's rotation. Used for board cards, thumbnails,
 // the layout editor, heatmaps and per-key overlays.
 
