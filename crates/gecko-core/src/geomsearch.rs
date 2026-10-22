@@ -161,8 +161,20 @@ fn is_finger_zone(z: &crate::geometry::parametric::Zone) -> bool {
     z.rows.contains(&z.home_row)
 }
 
+/// Posture priors (H6, `research/sources/split-keyboard-ergonomics.md`): a gabled split types
+/// with the least wrist extension and pronation at a slope of 0 to −4° and an opening of ≈ 15°.
+/// Unlike the other defaults these bounds are absolute: a start value outside them is left to
+/// the start board, and CMA-ES starts from it clamped into the prior.
+pub const POSTURE_TILT: (f64, f64) = (-4.0, 0.0);
+pub const POSTURE_ANGLE: (f64, f64) = (10.0, 20.0);
+
 /// Default search range of a parameter around its start value `s`.
 fn default_bounds(name: &str, thumb: bool, s: f64) -> (f64, f64) {
+    match name {
+        "split.tilt" => return POSTURE_TILT,
+        "split.angle" => return POSTURE_ANGLE,
+        _ => {}
+    }
     let f = name.rsplit('.').next().unwrap_or("");
     let split = name.starts_with("split.");
     let column = name.split('.').count() == 3;
@@ -183,10 +195,8 @@ fn default_bounds(name: &str, thumb: bool, s: f64) -> (f64, f64) {
         "center_col" => (0.0, 5.0),
         "lift" if column => (s - 0.5, s + 1.0),
         "lift" => (s - 1.0, s + 1.0),
-        "angle" => (0.0, 60.0),
         // Beyond ~45° a board stops being a desk keyboard; the wrist model is uncalibrated there.
         "tent" if split => (0.0, 45.0),
-        "tilt" if split => (-15.0, 10.0),
         "tent" | "tilt" => (s - 40.0, s + 40.0),
         _ => (s - 1.0, s + 1.0),
     };
@@ -196,8 +206,8 @@ fn default_bounds(name: &str, thumb: bool, s: f64) -> (f64, f64) {
 /// Expand a `--free` list into variables. Terms (comma separated, each optionally
 /// `=lo:hi` to set absolute bounds on everything it expands to):
 ///
-/// - presets `2d` (stagger, splay, spread, thumb) and `3d` (2d + row_curve, col_curve, lift, tent,
-///   tilt, thumb3d);
+/// - presets `2d` (stagger, splay, spread, thumb) and `3d` (2d + row_curve, col_curve, lift, angle,
+///   tent, tilt, thumb3d; split tilt and angle default to the posture priors);
 /// - `stagger`, `splay`, `spread`, `lift`: every column of the finger zones;
 /// - `row_pitch`, `row_curve`, `col_curve`: the finger zones;
 /// - `angle`, `tent`, `tilt`: the split (both halves, mirrored);
@@ -264,7 +274,7 @@ pub fn parse_free(p: &ParametricGeometry, spec: &str) -> Result<Vec<Var>> {
         };
         let terms: Vec<&str> = match term {
             "2d" => vec!["stagger", "splay", "spread", "thumb"],
-            "3d" => vec!["stagger", "splay", "spread", "thumb", "row_curve", "col_curve", "lift", "tent", "tilt", "thumb3d"],
+            "3d" => vec!["stagger", "splay", "spread", "thumb", "row_curve", "col_curve", "lift", "angle", "tent", "tilt", "thumb3d"],
             t => vec![t],
         };
         for t in terms {

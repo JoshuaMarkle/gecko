@@ -128,14 +128,19 @@ fn free_parameter_groups_expand() {
     for n in ["fingers.row_curve", "fingers.col_curve", "fingers.3.lift", "split.tent", "split.tilt", "thumbs.tent", "thumbs.col_curve"] {
         assert!(three.contains(&n.to_string()), "{n} in {three:?}");
     }
-    assert_eq!(three.len(), two.len() + 2 + 5 + 2 + 4);
+    assert_eq!(three.len(), two.len() + 2 + 5 + 3 + 4);
     // Explicit names, bounds, and a zone's column field expanding to its columns.
     let v = geomsearch::parse_free(&p, "split.tent=5:25,fingers.splay").unwrap();
     assert_eq!(v.len(), 6);
     assert_eq!((v[0].lo, v[0].hi, v[0].start), (5.0, 25.0, 0.0));
-    // Default bounds contain the start value.
+    // Default bounds contain the start value, except the posture priors (H6): slope 0 to −4°,
+    // opening 10–20° whatever the file says (Corne's flat halves have no opening).
     for v in geomsearch::parse_free(&p, "3d").unwrap() {
-        assert!(v.lo < v.hi && v.lo <= v.start && v.start <= v.hi, "{v:?}");
+        match v.name.as_str() {
+            "split.tilt" => assert_eq!((v.lo, v.hi), geomsearch::POSTURE_TILT),
+            "split.angle" => assert_eq!((v.lo, v.hi, v.start), (10.0, 20.0, 0.0)),
+            _ => assert!(v.lo < v.hi && v.lo <= v.start && v.start <= v.hi, "{v:?}"),
+        }
     }
     for bad in ["", "wiggle", "fingers.9.stagger", "nozone.rotate", "tent=3:1", "split.nope"] {
         assert!(geomsearch::parse_free(&p, bad).is_err(), "{bad}");
