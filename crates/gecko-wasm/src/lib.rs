@@ -64,6 +64,17 @@ pub fn flat2d(geometry_json: &str) -> Result<String, JsError> {
     serde_json::to_string(&geometry.flat2d()).map_err(js)
 }
 
+/// Slot-ordered `chars` on a geometry written for another analyzer (`gecko layouts export`):
+/// `format` is oxeylyzer, genkey or cmini; only the 30 alpha keys are written. Errors when the
+/// board has no 3 × 10 alpha block.
+#[wasm_bindgen]
+pub fn export_layout(geometry_json: &str, name: &str, chars: &str, format: &str) -> Result<String, JsError> {
+    let geometry: Geometry = serde_json::from_str(geometry_json).map_err(js)?;
+    let f = gecko_core::import::Format::parse(format).map_err(js)?;
+    let layout = Layout::from_str_flat(name, &geometry.name, chars).and_then(|l| l.fit(&geometry)).map_err(js)?;
+    gecko_core::import::export(f, &layout, &geometry).map_err(js)
+}
+
 /// Top `top` entries of an n-gram table as `[[ngram, % of the table], …]`, most frequent first.
 fn top_grams(cs: &[char], table: &[u64], n: usize, top: usize) -> Vec<(String, f64)> {
     let total: u64 = table.iter().sum();

@@ -1,0 +1,5 @@
+journal-build-error.log
+*.aux
+*.log
+*.out
+*.synctex.gz

@@ -148,3 +148,39 @@ centre, working model right.
 - No accent on primary buttons; primary is always ink.
 - No borders on inputs at rest; no letter-spacing or all-caps.
 - No semantic colors as decoration; no warning-yellow text on white.
+
+## Research paper template
+
+`research/papers/templates/journal.html` is the retained local HTML paper template;
+`index.html` forwards to it. It has a centered title without corner labels or a divider
+above the abstract, generous abstract spacing, and a two-column body (one on mobile).
+It reuses the site palette and font stack with larger reading typography and A4 print
+styles. Blue highlights selected data. Figures and sample results are synthetic;
+the folder includes their generator.
+
+On screen, the paper is a white sheet with thin edges and generous margins on the
+neutral soft background. It flows with content, shrinks to mobile gutters, and omits
+the surrounding background when printed. No shadows are used.
+
+The journal includes `journal.tex` and a compiled `journal.pdf`; `build_pdf.sh` runs
+XeLaTeX twice with a private-format fallback for incomplete local TeX setups. PDF
+figures are vector exports sized for a paper column. The PDF uses installed Noto Sans
+and retains the centered title, roomy full-width abstract, and two-column body. Small
+PDF/source download links sit outside the HTML paper and are hidden when printing.
+HTML and LaTeX prose are maintained together; downloads serve the last compiled PDF.
+
+PDF typography is compact: 9pt body, 8pt captions/table text, 9pt section headings,
+and a 20pt title. Section, subsection, and abstract headings use lightly strengthened Noto Sans Medium at 9pt (matching body text);
+the title and caption labels use Noto Sans Medium (500);
+figure labels use 6.5–7pt at their designed column size.
+
+The four-page specimen exercises numbered sections/subsections, in-text citations,
+declarations, an appendix, and a five-entry bibliography. References are explicitly
+fictional placeholders; LaTeX resolves citations in the existing two-pass build.
+
+In-text citations are smaller blue links (6.5pt in PDF, 0.72em in HTML) to their
+bibliography entries. Headings keep their prior space above with tighter space below
+(3pt sections / 2pt subsections in PDF). HTML section headings share 14px semibold styling.
+
+Heading weight is currently 900 in HTML and Noto Sans Medium with `FakeBold=1.5`
+in the PDF, retaining body-sized headings and the compact spacing below.

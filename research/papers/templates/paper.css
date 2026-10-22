@@ -1,0 +1,110 @@
+/* Site token snapshot from web/src/styles.css; paper-specific scales below. */
+:root {
+  --ink: #141414; --ink-soft: #262626; --muted: #707070; --faint: #adadad;
+  --canvas: #ffffff; --soft: #f3f3f3; --field: #f0f0f0; --hair-soft: #f0f0f0; --hair: #e0e0e0;
+  --accent: #0066ff; --success: #24a148; --warning: #f1c21b; --error: #da1e28;
+  --r-xs: 4px; --r-sm: 6px; --r-md: 8px; --r-full: 999px;
+  --font: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px;
+  --ctl-h: 26px; --label-w: 132px; --unit-w: 28px;
+  --side: 380px; --bottom: 38%; --top: 40px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--canvas); color: var(--ink); font: 450 16px/1.7 var(--font); font-variant-numeric: tabular-nums; }
+a { color: inherit; text-underline-offset: 4px; }
+a:hover { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--ink); outline-offset: 5px; }
+.skip { position: absolute; top: -80px; background: var(--canvas); padding: 8px; }
+.skip:focus { top: 0; }
+main { margin: 64px auto 80px; padding: 0 32px; max-width: 900px; }
+h1, h2, h3 { font-weight: 650; line-height: 1.2; }
+h1 { font-size: clamp(36px, 5vw, 56px); margin: 20px 0 24px; max-width: 20ch; }
+h2 { font-size: 23px; margin: 44px 0 16px; }
+h3 { font-size: 17px; }
+p { margin: 0 0 18px; }
+.meta, .note, figcaption, footer, aside, .references { color: var(--muted); font-size: 12px; line-height: 1.6; }
+.author { font-size: 14px; margin-bottom: 4px; }
+.subtitle { font-size: 22px; font-weight: 300; line-height: 1.5; max-width: 52ch; margin-bottom: 28px; }
+.abstract { margin: 36px 0; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); padding: 24px 0; }
+.abstract h2 { margin: 0 0 12px; font-size: 14px; }
+.abstract p { margin: 0; }
+.notice { font-size: 12px; color: var(--muted); margin-top: 16px; }
+figure { margin: 32px 0; break-inside: avoid; }
+figure img { width: 100%; height: auto; display: block; }
+figcaption { margin-top: 12px; }
+figcaption strong { color: var(--ink); font-weight: 600; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 24px 0; }
+caption { text-align: left; font-size: 12px; color: var(--muted); padding-bottom: 12px; }
+th { color: var(--muted); font-weight: 450; border-bottom: 1px solid var(--hair); }
+th, td { text-align: right; padding: 10px 8px; border-bottom: 1px solid var(--hair-soft); }
+th:first-child, td:first-child { text-align: left; padding-left: 0; }
+footer { border-top: 1px solid var(--hair); margin-top: 48px; padding-top: 16px; display: flex; justify-content: space-between; gap: 16px; }
+.references { padding-left: 20px; }
+.references li { margin-bottom: 8px; }
+
+
+.journal { max-width: 1120px; }
+.journal header { text-align: center; padding-bottom: 24px; }
+.journal h1 { font-size: clamp(32px, 4vw, 44px); max-width: 26ch; margin: 24px auto; }
+.journal .subtitle { margin: 0 auto 24px; font-size: 18px; }
+.journal .abstract { max-width: 800px; margin: 40px auto 72px; border: 0; padding: 8px 0; font-size: 14px; }
+.columns { columns: 2; column-gap: 48px; column-rule: 1px solid var(--hair-soft); font-size: 14px; line-height: 1.7; }
+.columns h2 { font-size: 19px; margin-top: 28px; break-after: avoid; }
+.columns h2:first-child { margin-top: 0; }
+.columns figure { margin: 24px 0; }
+.columns table { font-size: 12px; }
+
+/* A white sheet on a neutral desk; keep the site's shadow-free geometry. */
+@media screen {
+ body { background: var(--soft); }
+ main {
+  width: calc(100% - 64px);
+  max-width: 1000px;
+  min-height: 1414px;
+  margin: 24px auto 64px;
+  padding: 72px 80px 48px;
+  background: var(--canvas);
+  border: 1px solid var(--hair);
+ }
+ main.journal { max-width: 1120px; min-height: 1584px; padding: 64px 72px 48px; }
+}
+@media screen and (max-width: 900px) {
+ main { padding: 48px 40px 32px; }
+
+}
+@media (max-width: 720px) {
+ main { margin-top: 36px; padding: 0 20px; } h1 { font-size: 36px; }
+ .columns { columns: 1; }
+}
+@media screen and (max-width: 720px) {
+ main { width: calc(100% - 24px); min-height: 0; margin: 12px auto 24px; padding: 32px 24px; }
+}
+@media print {
+ @page { size: A4; margin: 17mm; }
+ body { font-size: 10pt; line-height: 1.55; } .skip { display: none; }
+ main { margin: 0; padding: 0; max-width: none; } h1 { font-size: 30pt; }
+ h2 { break-after: avoid; font-size: 15pt; } p { orphans: 3; widows: 3; }
+ a { text-decoration: none; } .subtitle { font-size: 14pt; }
+ .columns { columns: 2; column-gap: 8mm; font-size: 9pt; }
+ .columns h2 { font-size: 12pt; } figcaption, aside, .meta, .note, .references, footer { font-size: 8pt; }
+
+
+ table { break-inside: avoid; } footer { margin-top: 24px; }
+}
+
+
+.export-actions { max-width: 1120px; margin: 20px auto 0; padding: 0 24px; display: flex; justify-content: flex-end; gap: 24px; font-size: 12px; color: var(--muted); }
+@media print { .export-actions { display: none; } }
+
+/* Consistent paper headings; preserve their existing space above. */
+.journal .abstract h2, .journal .columns h2, .journal .columns h3 {
+ font-size: 14px; font-weight: 900; margin-bottom: 6px;
+}
+.journal .citation { font-size: .72em; color: var(--accent); text-decoration: none; }
+.journal .citation:hover { text-decoration: underline; }
+.journal .references li { scroll-margin-top: 24px; }
+@media print {
+ .journal .abstract h2, .journal .columns h2, .journal .columns h3 { font-size: 9pt; margin-bottom: 3pt; }
+}

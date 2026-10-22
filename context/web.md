@@ -15,8 +15,9 @@ web/src/
   inputs.ts            the one input store (board, custom boards, constraints, hand, language,
                        profile, layout, pins, search, working model)
   api.ts               API client + types mirroring the Rust serde shapes
-  wasm.ts              gecko-wasm loader (Scorer, flat2d, corpus stats / build)
+  wasm.ts              gecko-wasm loader (Scorer, flat2d, export_layout, corpus stats / build)
   format.ts            pure helpers (rows, swaps, layers, verdicts, validation)
+  export.ts            Export tab file builders (image SVG, layout TOML/text/JSON, KLE, stats)
   board.ts hand.ts estimate.ts languages.ts   per-view logic (board stats, hand model + IK,
                        estimators, local languages); pure parts unit-tested (*.test.ts)
   colors.ts            data colors (finger palette, heat ramp)
@@ -28,7 +29,7 @@ web/src/
 ## Screen
 
 Navbar (see design.md "App shell"): Inputs tabs (Board, Hand, Language, Profile, Search, Summary) |
-Results tabs (Home, Explore, Analysis, Saved) · play / pause / stop centred with run % beside
+Results tabs (Home, Explore, Analysis, Saved, Export) · play / pause / stop centred with run % beside
 (on Results tabs only) ·
 working model right. The tab is remembered in `localStorage`; old names map (Corpus →
 Language, Stats → Analysis, Runs → Saved, Optimize → Home).
@@ -150,6 +151,20 @@ runs; the selected run's convergence, best layouts as 2D thumbnails (click one t
 the working model) and reproducibility facts. With a holdout corpus, the best-layouts table adds
 each layout's score on it, and the Run facts show the holdout corpus, start → best on both
 corpora, the gain kept and the rank ρ.
+
+### Export
+Last tab: the shown layout (working model, or the live best during a run) as files.
+Sidebar: name (defaults to the model's label), image options (key color Plain / Fingers /
+Heat, all layers, title and score, PNG scale) with Download PNG / SVG, then every file with
+Copy and Download: GECKO layout `.toml` (the `data/layouts` format; `{token}` names, one
+`[[layer]]` per layer), text, JSON (layout, layers, score, every metric, finger load, run and
+holdout facts), KLE (the board's 2D drawing with legends, layers as extra legends, the
+image's key colors), Oxeylyzer / Genkey / cmini (30 alpha keys, through WASM
+`export_layout` = `gecko layouts export`; disabled with the reason on boards without a
+3 × 10 alpha block), metrics CSV and a Markdown summary. Main: the image exactly as exported
+(`boardSvg`, a standalone SVG; layers two per row). Bottom: score vs the reference, board /
+language / profile / run / holdout, weighted metrics and finger load; "No stats" when the
+layout is not scored (stats-only files are disabled, the rest still export).
 
 ## Explore view (`components/explore/`)
 

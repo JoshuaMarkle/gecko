@@ -401,3 +401,13 @@ fieldset.plain:disabled { opacity: .45; }
 .metrics-summary td:nth-child(2) { min-width: 140px; text-align: left; }
 .metrics-summary td:last-child { width: 42%; }
 @media (max-width: 1100px) { .input-summary-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- export ---------- */
+.exportview img { position: absolute; left: var(--s4); top: 48px; width: calc(100% - 2 * var(--s4)); height: calc(100% - 48px - var(--s4)); object-fit: contain; }
+.exportimg { margin-top: var(--s1); }
+.fmtrow { display: flex; align-items: center; gap: var(--s2); min-height: var(--ctl-h); }
+.fmtrow > div:first-child { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: var(--s2); }
+.fmtrow > div:first-child b { font-weight: 600; white-space: nowrap; }
+.fmtrow .hint { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fmtrow .btns { flex: none; flex-wrap: nowrap; }
+.exportgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr); gap: var(--s4) 24px; padding: var(--s3) var(--s4); }

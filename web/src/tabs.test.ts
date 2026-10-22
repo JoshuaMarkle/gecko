@@ -10,6 +10,7 @@ describe("asView", () => {
   });
   it("keeps current tabs and defaults unknown ones to home", () => {
     expect(asView("hand")).toBe("hand");
+    expect(asView("export")).toBe("export");
     expect(asView("nope")).toBe("home");
   });
 });
