@@ -70,7 +70,9 @@ moved keys, CMA-ES and the bilevel driver below.
   free variables, input hashes), `start.param.toml`, `progress.jsonl` (one line per generation),
   `best.json` (start and best board: values, score, collisions, layout, breakdown) and the best
   board as `geometry.param.toml` and `geometry.toml` (keys, loads with `-g` anywhere, or by name
-  as `-g run:<id>`). The best board is named `<start>-opt-<run hash>`. Each progress line carries
+  as `-g run:<id>`). The best board is named `<start>-opt-<run hash>`. If no collision-free board
+  was found, `geometry-repaired.toml` holds its keys pushed apart (`Geometry::repair`, I3); it is
+  no longer a parametric board. Each progress line carries
   the reported board (`values`, its layout `chars`, `collisions`), so the web UI can replay the
   run. `gecko list runs` lists geometry runs (algo `geometry`); `gecko verify` re-runs an
   `--evals` run from `start.param.toml` and checks input hashes, candidates, and start and best
@@ -137,3 +139,34 @@ Board + layout search (`gecko geom optimize -g corne-36.param -p hand -c english
 - Caveat: the hand model has no finger-vs-neighbouring-keycap clearance and G03's optimum
   (≈ 58° effective pronation relief) is uncalibrated, so 3D shapes are model-optimal, not
   validated. Use bounds as priors (H6 #59, H10 #69).
+
+**3D bilevel search (H10, 2026-10-22)**: same command, `--free 3d` (34 parameters, with the split
+opening), H8 GJK volumes and the H6 posture priors (tilt −4–0°, opening 10–20°), 120 s.
+
+| run | seed | boards | start → best | G01 / G03 / G05 (start → best) | shape |
+|---|---|---|---|---|---|
+| `20261022-174027-geom-10c6ce3e` | 1 | 5.9k | 11.66 → 7.48 (−35.9%) | 1.26 → 0.59 / 1.67 → 0.02 / 1.84 → 0.40 | row curve 30° (bound), col 0°, tent 38°, tilt −4° (bound), opening 13.5° |
+| `20261022-174228-geom-2239a9cb` | 2 | 5.8k | 11.66 → 7.41 (−36.4%) | 1.17 → 0.61 / 1.67 → 0.02 / 2.10 → 0.33 | row curve 30°, col 15° (both bounds), tent 32°, tilt −4°, opening 13.8° |
+
+Comparison, each board with the same 12 s SA from QWERTY (`gecko optimize -p hand -c english`):
+
+| board | score | G01 | G03 | G05 | run |
+|---|---|---|---|---|---|
+| Corne, flat (search start, derived efforts) | 11.66 | 1.2 | 1.67 | 1.8–2.1 | above |
+| Corne keys, Dactyl shape (α 15°, β 5°, row pitch 18.4 mm, tent 15°, derived efforts) | 10.16 | 1.11 | 0.75 | 1.53 | `…174520-sa-0d99155b` |
+| `dactyl-manuform-5x6` (its own efforts, more keys) | 9.90 | 1.00 | 1.04 | 1.07 | `…174537-sa-dfd7ec48` |
+| H10 best (seed 2) | 7.52 | 0.60 | 0.02 | 0.33 | `…174550-sa-e7c7a720` |
+
+- The posture priors cost little: 7.41–7.48 against 7.24–7.29 with tilt free to −15° (G6 runs
+  above, with 2.4× the boards). G03 is ≈ 0 either way, so the extra tilt was not needed for the
+  wrist; the difference is in G01/G05.
+- The search beats a Dactyl shape on the same 36 keys by 26%, mostly hand model: deeper row
+  curvature (30° vs 15°) cuts G05 press angle by ~4/5, more tent (32–38° vs 15°) clears G03.
+  Both are far past what the Dactyl builds, and row curvature still sits on its bound, so this
+  is the uncalibrated hand model talking (no finger-vs-keycap clearance, G03 optimum), not a
+  validated design.
+- Seeds again agree on the score (0.9%) but not on the shape: row vs column curvature and the
+  thumb tent (39° vs 15°) trade off on a plateau.
+- Throughput fell from ~14k to ~5.9k boards per 120 s while another agent shared the machine;
+  3D collision costs 0.24 ms per 36-key board against ~0.3 s of layout search per candidate,
+  so it is not the bottleneck.

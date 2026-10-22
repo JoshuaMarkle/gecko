@@ -936,6 +936,9 @@ pub fn prepare(runs: &Path, spec: &GeomSpec, free: &str) -> Result<GeomPrep> {
     Ok(GeomPrep { id, dir, config })
 }
 
+/// Passes of [`Geometry::repair`] for an infeasible best board.
+const REPAIR_PASSES: usize = 500;
+
 /// Name of a run's best board: `<start board>-opt-<run hash>`, so boards of different runs
 /// can be told apart (and found by name) when loaded as `run:<id>`.
 pub fn best_name(params_name: &str, id: &str) -> String {
@@ -944,7 +947,8 @@ pub fn best_name(params_name: &str, id: &str) -> String {
 }
 
 /// Search into a prepared directory: `progress.jsonl`, `best.json`, and the best board as
-/// `geometry.param.toml` (parameters) and `geometry.toml` (keys).
+/// `geometry.param.toml` (parameters) and `geometry.toml` (keys). When no collision-free board
+/// was found, `geometry-repaired.toml` holds the best board's keys pushed apart (I3).
 pub fn execute(prep: &GeomPrep, spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&GeomProgress)) -> Result<GeomResult> {
     let dir = &prep.dir;
     let mut log = std::io::BufWriter::new(std::fs::File::create(dir.join("progress.jsonl"))?);
@@ -964,6 +968,15 @@ pub fn execute(prep: &GeomPrep, spec: &GeomSpec, control: &Control, mut on_progr
     let mut keys = best.generate_unchecked()?;
     keys.comfort_tables = spec.board.comfort_tables.clone();
     std::fs::write(dir.join("geometry.toml"), keys.to_toml())?;
+    if !res.feasible {
+        let mut fixed = keys.clone();
+        // Infeasible may also mean build-limit excess (G07), which repair does not address.
+        let r = fixed.repair(spec.search.margin, REPAIR_PASSES);
+        if r.passes > 0 && r.remaining == 0 {
+            fixed.name = format!("{}-repaired", keys.name);
+            std::fs::write(dir.join("geometry-repaired.toml"), fixed.to_toml())?;
+        }
+    }
     std::fs::write(dir.join("best.json"), serde_json::to_string_pretty(&res).unwrap())?;
     Ok(res)
 }

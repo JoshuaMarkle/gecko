@@ -2,9 +2,10 @@
 //! is two convex hulls, its tapered keycap and the MX switch body below it. Candidate pairs
 //! come from a uniform 3D grid over bounding spheres; GJK decides whether two hulls intersect
 //! and EPA gives the penetration depth and the direction that separates them (the minimum
-//! translation vector the repair step uses). See `context/geometry.md`.
+//! translation vector). `Geometry::repair` (I3) pushes overlapping keys apart along those
+//! vectors. See `context/geometry.md`.
 
-use crate::geometry::flat2d::{cross, dot, sub, V3};
+use crate::geometry::flat2d::{cross, dot, mtv, sub, Rect, V3};
 use crate::geometry::pose::{self, CAP_HEIGHT};
 use crate::Geometry;
 
@@ -324,6 +325,89 @@ impl Geometry {
     /// non-flat boards. On flat boards it finds the pairs [`Geometry::collisions`] finds.
     pub fn collisions_3d(&self, margin: f32) -> Vec<Collision> {
         self.contacts_3d(margin).into_iter().map(|c| Collision { a: c.a, b: c.b, depth: c.depth as f32 }).collect()
+    }
+}
+
+/// What [`Geometry::repair`] did.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Repair {
+    /// Passes that moved keys.
+    pub passes: usize,
+    /// Largest distance any key moved, u.
+    pub max_shift: f64,
+    /// Overlapping pairs left after the last pass (0 unless `max_passes` ran out).
+    pub remaining: usize,
+}
+
+impl Geometry {
+    /// Push overlapping keys apart until none overlap (at `margin`) or `max_passes` run out
+    /// (I3). Each pass takes the overlapping pairs (grid + GJK/EPA in 3D, the 2D test on flat
+    /// boards) and moves each pair half its minimum translation vector apart (growing 5% per
+    /// pass, which breaks jams that cycle), plus the touching tolerance, recomputing a pair's vector from the keys' current positions (Gauss–Seidel).
+    /// Keys only translate: rotations stay, and a flat board stays flat (its keys move in x, y).
+    /// Layer copies follow their physical key.
+    pub fn repair(&mut self, margin: f32, max_passes: usize) -> Repair {
+        let flat = self.is_flat();
+        let start: Vec<[f32; 3]> = self.key.iter().map(|k| k.pos).collect();
+        let mut pos: Vec<V3> = start.iter().map(|p| [p[0] as f64, p[1] as f64, p[2] as f64]).collect();
+        let mut passes = 0;
+        let mut remaining = 0;
+        for pass in 0..=max_passes {
+            let pairs: Vec<(usize, usize)> = if flat {
+                self.collisions(margin).iter().map(|c| (c.a, c.b)).collect()
+            } else {
+                self.contacts_3d(margin).iter().map(|c| (c.a, c.b)).collect()
+            };
+            remaining = pairs.len();
+            if pairs.is_empty() || pass == max_passes {
+                break;
+            }
+            passes += 1;
+            for (a, b) in pairs {
+                let t = if flat { self.mtv_2d(a, b, margin) } else { self.mtv_3d(a, b, margin) };
+                let Some((n, depth)) = t else { continue };
+                // Jammed clusters can cycle (three keys pushing each other back); a step that
+                // grows by 5% per pass breaks the cycle.
+                let k = depth / 2.0 * (1.0 + 0.05 * pass as f64) + TOUCH;
+                for (i, s) in [(a, -k), (b, k)] {
+                    pos[i] = pose::add(pos[i], scale(n, s));
+                    self.key[i].pos = [pos[i][0] as f32, pos[i][1] as f32, pos[i][2] as f32];
+                }
+            }
+        }
+        for i in 0..self.len() {
+            if let Some(p) = self.key[i].phys {
+                self.key[i].pos = self.key[p as usize].pos;
+            }
+        }
+        let max_shift = self
+            .key
+            .iter()
+            .zip(&start)
+            .map(|(k, s)| {
+                let d = [(k.pos[0] - s[0]) as f64, (k.pos[1] - s[1]) as f64, (k.pos[2] - s[2]) as f64];
+                dot(d, d).sqrt()
+            })
+            .fold(0.0, f64::max);
+        Repair { passes, max_shift, remaining }
+    }
+
+    /// Unit direction and depth that move key `b` clear of key `a` in 3D (deepest hull pair).
+    fn mtv_3d(&self, a: usize, b: usize, margin: f32) -> Option<(V3, f64)> {
+        let (ha, hb) = (key_hulls(&self.key[a], margin as f64), key_hulls(&self.key[b], margin as f64));
+        ha.iter().flat_map(|x| hb.iter().filter_map(move |y| penetration(x, y))).max_by(|x, y| x.0.total_cmp(&y.0)).map(|(d, n)| (n, d))
+    }
+
+    /// As [`Geometry::mtv_3d`] for flat keycaps in the board plane.
+    fn mtv_2d(&self, a: usize, b: usize, margin: f32) -> Option<(V3, f64)> {
+        let m = margin as f64;
+        let rect = |k: &crate::geometry::Key| {
+            let h = [k.size[0] as f64 / 2.0, k.size[1] as f64 / 2.0];
+            Rect { c: [k.pos[0] as f64 + h[0], k.pos[1] as f64 + h[1]], h: [h[0] + m, h[1] + m], rot: k.rot[2] as f64 }
+        };
+        let t = mtv(&rect(&self.key[a]), &rect(&self.key[b]))?;
+        let d = t[0].hypot(t[1]);
+        Some(([t[0] / d, t[1] / d, 0.0], d))
     }
 }
 

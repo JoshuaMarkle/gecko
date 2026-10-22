@@ -227,7 +227,7 @@ fn print_result(res: &GeomResult, dir: &std::path::Path) {
         println!("collisions: none");
     } else {
         println!(
-            "collisions: {} pairs, {:.3} u total; no collision-free board found (widen bounds or raise --penalty)",
+            "collisions: {} pairs, {:.3} u total; no collision-free board found (widen bounds or raise --penalty; geometry-repaired.toml, when written, has its keys pushed apart)",
             res.best.collisions, res.best.depth
         );
     }
