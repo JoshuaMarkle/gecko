@@ -281,6 +281,14 @@ impl ParametricGeometry {
     /// Generate an ordinary, flat `Geometry`; the existing scorer and run hashes need no
     /// special path for parametric boards. `Store` subsequently resolves comfort tables.
     pub fn generate(&self) -> Result<Geometry> {
+        let geometry = self.generate_unchecked()?;
+        geometry.validate()?;
+        Ok(geometry)
+    }
+
+    /// [`ParametricGeometry::generate`] without the keycap collision check (structural checks
+    /// still apply): geometry search scores colliding candidates and penalizes them by depth.
+    pub fn generate_unchecked(&self) -> Result<Geometry> {
         self.validate()?;
         let mut keys = Vec::new();
         for zone in &self.zone {
@@ -389,7 +397,7 @@ impl ParametricGeometry {
             layer_modes: Vec::new(),
         };
         geometry.derive_missing(false);
-        geometry.validate()?;
+        geometry.check_keys()?;
         Ok(geometry)
     }
 }
