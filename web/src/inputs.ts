@@ -17,6 +17,8 @@ export interface SearchSettings {
   evals?: number;
   /** Stop once the estimated chance of having the optimum passes this (0..1); null = off. */
   stopConf?: number | null;
+  /** Corpus id the results are also scored on but never searched on (L06); "" = none. */
+  holdout?: string;
 }
 
 /** Physical constraints for building a board (Board tab, Custom on). Each group can be enabled

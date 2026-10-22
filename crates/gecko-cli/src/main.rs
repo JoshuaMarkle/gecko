@@ -135,6 +135,9 @@ enum Cmd {
         /// Depth-2 moves: first swaps tried per optimum (0 = all).
         #[arg(long)]
         depth2_width: Option<usize>,
+        /// Also score the results on this corpus, which the search never sees (L06).
+        #[arg(long)]
+        holdout: Option<String>,
         #[command(flatten)]
         inputs: Inputs,
     },
@@ -861,9 +864,11 @@ fn real_main(cli: Cli) -> Result<()> {
             front_size,
             moves,
             depth2_width,
+            holdout,
             inputs,
         } => {
             let l = ctx.load(&inputs)?;
+            let holdout = holdout.map(|h| ctx.store.corpus(&h)).transpose()?;
             let algo = Algo::parse(&algo)
                 .with_context(|| format!("unknown algo '{algo}' (hc, sa, ga, memetic, bls, explore, tabu, qd, nsga2, rwsa)"))?;
             let start = ctx.layout(from.as_deref().unwrap_or(&ctx.store.defaults.reference), &l)?;
@@ -920,7 +925,15 @@ fn real_main(cli: Cli) -> Result<()> {
             if let Some(w) = depth2_width {
                 params.moves.depth2_width = w;
             }
-            let spec = RunSpec { geometry: &l.geometry, corpus: &l.corpus, profile: &l.profile, start: &start, pins: &pin, params };
+            let spec = RunSpec {
+                geometry: &l.geometry,
+                corpus: &l.corpus,
+                profile: &l.profile,
+                start: &start,
+                pins: &pin,
+                params,
+                holdout: holdout.as_ref(),
+            };
             let prep = run::prepare(&ctx.store.runs, &spec)?;
             eprintln!("run {}  ({} · {} threads · {})", prep.config.id, algo.name(), spec.params.threads, l.profile.name);
             let control = Control::default();
@@ -951,7 +964,20 @@ fn real_main(cli: Cli) -> Result<()> {
                     );
                 }
                 for r in res.best.iter().take(5) {
-                    println!("#{:<2} {:>8.3}  {}", r.rank, r.score, r.rows.join(" "));
+                    let held = r.holdout.map_or(String::new(), |h| format!("  (holdout {h:.3})"));
+                    println!("#{:<2} {:>8.3}  {}{held}", r.rank, r.score, r.rows.join(" "));
+                }
+                if let Some(h) = &res.holdout {
+                    println!(
+                        "holdout {}: start {:.3} → best {:.3} (search {:.3} → {:.3}); keeps {:.1}% of the gain{}",
+                        h.corpus,
+                        h.start,
+                        h.best,
+                        h.start_search,
+                        h.best_search,
+                        100.0 * h.retained,
+                        h.rank_corr.map_or(String::new(), |r| format!(", rank ρ {r:.2} over the top {}", res.best.len()))
+                    );
                 }
                 if let Some(b) = res.best.first() {
                     let layout = Layout::from_flat("best", &l.geometry, b.chars.chars().collect())?;

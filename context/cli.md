@@ -16,6 +16,7 @@ gecko optimize [--algo sa|hc|ga|memetic|bls|tabu|explore|qd|nsga2|rwsa] [--time 
                [--migration-interval 5] [--migrants 2]
                [--objectives B01,T03,M01] [--nsga-generations N] [--front-size N]
                [--moves swap|columns,cycle3,depth2|all] [--depth2-width 32]
+               [--holdout shai]                                   # also score results on a corpus the search never sees (L06)
 gecko bench    [--algos hc,sa,ga,bls,tabu] [--seeds 3] [--time 5s]         # algorithm leaderboard
                [--moves "swap/cycle3/depth2"] [--depth2-width N]      # one row per algo × variant
 gecko explore  [--time 60s | --evals N] [--seed 1] [--threads N] [--pin ...] [--from <layout>]
@@ -119,6 +120,14 @@ When `--algo nsga2` or `--algo rwsa` is selected, `best.json` contains the non-d
 - Exit code 0 on success, non-zero with a one-line `error:` on failure.
 - `optimize` always writes `runs/<timestamp>-<algo>-<hash>/` and prints its id. It then prints
   a lower bound and the best layout's optimality gap (`bound` in `best.json`, `algorithms/bounds.md`).
+- `optimize --holdout <corpus>` (L06) scores every ranked layout on a second corpus that the
+  search never sees, with the same board and profile, and prints how much of the gain carries
+  over: `holdout shai: start 70.155 → best 18.593 (search 69.584 → 17.809); keeps 99.6% of the
+  gain, rank ρ 0.66 over the top 10`. Kept gain = (start − best) on the holdout ÷ the same on
+  the search corpus. Near 100% means the result is not fitted to the search corpus. Rank ρ is
+  the Spearman correlation of the top-K scores on the two corpora. Each ranked layout's
+  `holdout` score is in `best.json`, with the summary under `holdout`. `config.json` records the
+  corpus (name + hash) and `verify` checks it. Holding out the search corpus itself is an error.
 - `--evals` budgets are deterministic for a given seed and thread count; `--time` is not.
 - `verify` loads geometry and corpus by their recorded names (the profile is stored in
   `config.json`). If a hash differs it fails without re-running. Otherwise it re-runs with the

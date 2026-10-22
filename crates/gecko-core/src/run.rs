@@ -34,6 +34,9 @@ pub struct RunConfig {
     /// Adaptive keys of the start layout (they hold for every result).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub magic: Vec<crate::magic::Magic>,
+    /// Corpus the results are also scored on but the search never sees (L06).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub holdout: Option<Input>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -45,6 +48,9 @@ pub struct Ranked {
     pub rows: Vec<String>,
     pub hash: String,
     pub breakdown: serde_json::Value,
+    /// Score on the run's holdout corpus (same profile and board).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub holdout: Option<f64>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -75,6 +81,27 @@ pub struct RunResult {
     /// when skipped (too many symbols, negative load weights).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bound: Option<crate::bound::BoundReport>,
+    /// How the results do on the holdout corpus (L06); absent without `--holdout`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub holdout: Option<HoldoutReport>,
+}
+
+/// L06 held-out corpus generalization: the start layout and the best result scored on the
+/// search corpus and on a corpus the search never saw.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct HoldoutReport {
+    pub corpus: String,
+    pub start: f64,
+    pub best: f64,
+    pub start_search: f64,
+    pub best_search: f64,
+    /// Share of the search corpus's gain over the start that holds on the holdout corpus:
+    /// (start − best) / (start_search − best_search). 1 = fully generalizes; below 1 the
+    /// search fitted the search corpus; 0 when the search gained nothing.
+    pub retained: f64,
+    /// Spearman rank correlation of the ranked results' scores on the two corpora (≥ 3 results).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rank_corr: Option<f64>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -118,6 +145,8 @@ pub struct RunSpec<'a> {
     pub start: &'a Layout,
     pub pins: &'a str,
     pub params: Params,
+    /// Corpus to score the results on without searching on it (L06).
+    pub holdout: Option<&'a Corpus>,
 }
 
 pub struct Prepared {
@@ -129,6 +158,9 @@ pub struct Prepared {
 pub fn prepare(runs: &Path, spec: &RunSpec) -> Result<Prepared> {
     if matches!(spec.params.algo, optimize::Algo::Nsga2 | optimize::Algo::Rwsa) {
         optimize::nsga2::validate(&spec.params.nsga2)?;
+    }
+    if spec.holdout.is_some_and(|h| h.hash() == spec.corpus.hash()) {
+        return Err(Error::invalid("holdout", "the holdout corpus must differ from the search corpus"));
     }
     let (stamp, iso) = now_stamp();
     let key = format!(
@@ -163,6 +195,7 @@ pub fn prepare(runs: &Path, spec: &RunSpec) -> Result<Prepared> {
         start: spec.start.chars.iter().collect(),
         pins: spec.pins.to_string(),
         magic: spec.start.magic.clone(),
+        holdout: spec.holdout.map(|h| Input { name: h.name.clone(), hash: hash::hex(h.hash()) }),
     };
     std::fs::write(dir.join("config.json"), serde_json::to_string_pretty(&config).unwrap())?;
     Ok(Prepared { config, dir })
@@ -171,6 +204,8 @@ pub fn prepare(runs: &Path, spec: &RunSpec) -> Result<Prepared> {
 /// Build the scorer/context, run the optimizer, and write `progress.jsonl` + `best.json`.
 pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progress: impl FnMut(&Progress)) -> Result<RunResult> {
     let scorer = Scorer::new(spec.geometry, spec.corpus, spec.profile, spec.start)?;
+    // Same start layout, so the same symbol ids: states carry over between the two scorers.
+    let held = spec.holdout.map(|h| Scorer::new(spec.geometry, h, spec.profile, spec.start)).transpose()?;
     let start = scorer.identity();
     let pinned: Vec<char> = crate::layout::parse_symbols(spec.pins)?;
     for c in &pinned {
@@ -210,9 +245,25 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
                 rows: l.all_rows(spec.geometry),
                 hash: hash::short(l.hash()),
                 breakdown: serde_json::to_value(breakdown(&scorer, &st)).unwrap(),
+                holdout: held.as_ref().map(|h| h.state_from_sym(s.sym.clone()).score),
             })
         })
         .collect::<Result<Vec<_>>>()?;
+    let holdout = held.as_ref().zip(spec.holdout).zip(best.first()).map(|((h, corpus), first)| {
+        let (start_search, start) = (scorer.identity().score, h.identity().score);
+        let (best_search, best_held) = (first.score, first.holdout.unwrap_or(f64::NAN));
+        let gain = start_search - best_search;
+        let scores = |f: &dyn Fn(&Ranked) -> f64| best.iter().map(f).collect::<Vec<f64>>();
+        HoldoutReport {
+            corpus: corpus.name.clone(),
+            start,
+            best: best_held,
+            start_search,
+            best_search,
+            retained: if gain > 0.0 { (start - best_held) / gain } else { 0.0 },
+            rank_corr: (best.len() >= 3).then(|| spearman(&scores(&|r| r.score), &scores(&|r| r.holdout.unwrap_or(f64::NAN)))),
+        }
+    });
     let front = out
         .front
         .iter()
@@ -229,6 +280,7 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
                     rows: layout.all_rows(spec.geometry),
                     hash: hash::short(layout.hash()),
                     breakdown: serde_json::to_value(breakdown(&scorer, &st)).unwrap(),
+                    holdout: None,
                 },
                 raw: point.raw.clone(),
                 costs: point.costs.clone(),
@@ -251,9 +303,42 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
         objectives: out.objectives.clone(),
         front,
         bound,
+        holdout,
     };
     std::fs::write(prep.dir.join("best.json"), serde_json::to_string_pretty(&res).unwrap())?;
     Ok(res)
+}
+
+/// Spearman rank correlation (ties get their average rank).
+fn spearman(a: &[f64], b: &[f64]) -> f64 {
+    let ranks = |v: &[f64]| {
+        let mut idx: Vec<usize> = (0..v.len()).collect();
+        idx.sort_by(|&i, &j| v[i].total_cmp(&v[j]));
+        let mut r = vec![0.0; v.len()];
+        let mut i = 0;
+        while i < idx.len() {
+            let mut j = i;
+            while j + 1 < idx.len() && v[idx[j + 1]] == v[idx[i]] {
+                j += 1;
+            }
+            for &k in &idx[i..=j] {
+                r[k] = (i + j) as f64 / 2.0;
+            }
+            i = j + 1;
+        }
+        r
+    };
+    let (ra, rb) = (ranks(a), ranks(b));
+    let n = a.len() as f64;
+    let (ma, mb) = (ra.iter().sum::<f64>() / n, rb.iter().sum::<f64>() / n);
+    let cov: f64 = ra.iter().zip(&rb).map(|(x, y)| (x - ma) * (y - mb)).sum();
+    let va: f64 = ra.iter().map(|x| (x - ma).powi(2)).sum();
+    let vb: f64 = rb.iter().map(|y| (y - mb).powi(2)).sum();
+    if va == 0.0 || vb == 0.0 {
+        0.0
+    } else {
+        cov / (va * vb).sqrt()
+    }
 }
 
 pub fn load_config(dir: &Path) -> Result<RunConfig> {
@@ -336,11 +421,15 @@ pub fn verify(store: &crate::store::Store, dir: &Path) -> Result<Verification> {
     }
     let geometry = store.geometry(&config.geometry.name)?;
     let corpus = store.corpus(&config.corpus.name)?;
+    let holdout = config.holdout.as_ref().map(|h| store.corpus(&h.name)).transpose()?;
     let mut checks = vec![
         check("geometry", &config.geometry.hash, hash::hex(geometry.hash())),
         check("corpus", &config.corpus.hash, hash::hex(corpus.hash())),
         check("profile", &config.profile_hash, hash::hex(config.profile.hash())),
     ];
+    if let (Some(h), Some(c)) = (&config.holdout, &holdout) {
+        checks.push(check("holdout", &h.hash, hash::hex(c.hash())));
+    }
     if checks.iter().any(|c| !c.ok) {
         return Ok(Verification { schema: SCHEMA, id: config.id, ok: false, checks, rerun: None });
     }
@@ -352,6 +441,7 @@ pub fn verify(store: &crate::store::Store, dir: &Path) -> Result<Verification> {
         start: &start,
         pins: &config.pins,
         params: config.params.clone(),
+        holdout: holdout.as_ref(),
     };
     let tmp = std::env::temp_dir().join(format!("gecko-verify-{}-{}", std::process::id(), config.id));
     std::fs::create_dir_all(&tmp)?;
@@ -363,7 +453,8 @@ pub fn verify(store: &crate::store::Store, dir: &Path) -> Result<Verification> {
     checks.push(check("ranked", recorded.best.len(), res.best.len()));
     for (a, b) in recorded.best.iter().zip(&res.best) {
         // Same chars and score to 1e-9 relative (the score is recomputed from the layout).
-        let same = a.chars == b.chars && (a.score - b.score).abs() <= 1e-9 * a.score.abs().max(1.0);
+        let close = |x: f64, y: f64| (x - y).abs() <= 1e-9 * x.abs().max(1.0);
+        let same = a.chars == b.chars && close(a.score, b.score) && a.holdout.zip(b.holdout).is_none_or(|(x, y)| close(x, y));
         checks.push(Check {
             name: format!("best#{}", a.rank),
             expected: format!("{:.6} {}", a.score, a.chars),

@@ -96,6 +96,11 @@ on the corner and the objective never sees an out-of-box point, an interior boun
 same seed → identical history, IPOP solves 5-D Rastrigin where one run does not (λ doubling),
 batch evaluator gets whole generations within the budget.
 
+Holdout (`tests/verify.rs`): a run with `holdout: shai` records it in config.json; every ranked
+layout's holdout score equals a fresh shai scorer's; the report's start/best/retained match;
+rank ρ in [−1, 1]; the run verifies with a `holdout` hash check; holding out the search corpus
+is refused.
+
 Derived costs (`tests/derive.rs`): every bundled board with its `effort`/`stretch` lines removed
 derives the same stretch flags (one documented exception, ANSI `N`) and efforts with r > 0.8
 against the hand-entered ones, home keys at their home effort, cheapest thumb key 1.0, explicit

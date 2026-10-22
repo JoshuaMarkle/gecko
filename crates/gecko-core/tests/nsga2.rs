@@ -217,7 +217,7 @@ fn saved_front_replays_and_tampering_is_rejected() {
         params.nsga2.pop_size = 12;
         params.nsga2.archive_size = 24;
         params.sa.steps = 400;
-        let spec = RunSpec { geometry: &g, corpus: &c, profile: &p, start: &start, pins: ",./;", params };
+        let spec = RunSpec { geometry: &g, corpus: &c, profile: &p, start: &start, pins: ",./;", params, holdout: None };
         let prep = run::prepare(&store.runs, &spec).unwrap();
         let result = run::execute(&prep, &spec, &Control::default(), |_| {}).unwrap();
         assert!(!result.front.is_empty());

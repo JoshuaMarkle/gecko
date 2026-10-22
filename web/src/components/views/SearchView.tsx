@@ -2,7 +2,7 @@
 // algorithm (or the 2D layout editor) | search-space size and time-to-optimum estimates.
 
 import { useEffect, useRef, useState } from "react";
-import { api, type Analysis, type BoundGap, type Geometry, type LayoutInfo, type Meta, type RunSummary } from "../../api";
+import { api, type Analysis, type BoundGap, type CorpusInfo, type Geometry, type LayoutInfo, type Meta, type RunSummary } from "../../api";
 import { ACCENT, HAIR, INK, MUTED } from "../../colors";
 import { fmtPow10, rediscovery, searchSpace, timeToOptimum } from "../../estimate";
 import { fmt, fmtCount, fmtTime, slotCount } from "../../format";
@@ -28,6 +28,8 @@ interface Props {
   meta: Meta;
   layouts: LayoutInfo[];
   geometry: Geometry;
+  corpora: CorpusInfo[];
+  corpusId: string;
   corpusName: string;
   profileName: string;
   search: SearchSettings;
@@ -242,6 +244,16 @@ export function SearchView(p: Props) {
               : <Num label="Evaluations" help="Total layout evaluations across threads." value={s.evals ?? 50_000_000} min={1000} step={1_000_000} unit={fmtCount(s.evals ?? 50_000_000)} onChange={(v) => set({ evals: Math.max(1000, Math.round(v)) })} />}
             <Num label="Threads" help="Independent workers (restarts / islands) in parallel." value={s.threads} min={1} max={p.meta.threads} unit={`/${p.meta.threads}`} onChange={(v) => set({ threads: Math.min(p.meta.threads, Math.max(1, Math.round(v))) })} />
             <Num label="Seed" help="Runs are reproducible from the seed (exactly so with an evaluation budget)." value={s.seed} min={0} onChange={(v) => set({ seed: Math.max(0, Math.round(v)) })} />
+          </Sec>
+          <Sec id="search-holdout" title="Holdout corpus" note="check for overfitting">
+            <div className="row">
+              <label title="Also score the results on a corpus the search never sees. If they keep most of their gain there, they did not just fit the search corpus.">Holdout</label>
+              <select value={s.holdout && s.holdout !== p.corpusId ? s.holdout : ""} onChange={(e) => set({ holdout: e.target.value })}>
+                <option value="">None</option>
+                {p.corpora.filter((c) => c.id !== p.corpusId).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <span />
+            </div>
           </Sec>
           <Sec id="search-stop" title="Stop confidence" note="stop early">
             <Toggle label="Stop early" help="Stop once the estimated chance of having found the optimum passes the threshold (estimator planned; saved but not applied yet)." value={s.stopConf != null} onChange={(on) => set({ stopConf: on ? 0.95 : null })} />
