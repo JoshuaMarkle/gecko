@@ -31,11 +31,15 @@ moved keys, CMA-ES and the bilevel driver below.
 
 - **Free parameters** (`--free`, comma list; `name=lo:hi` sets bounds): presets `2d` (column
   stagger, splay and spread, thumb cluster anchor/rotation/staggers) and `3d` (2d + row and column
-  curvature, column lift, split tent and tilt, thumb tent/tilt/lift/curve), groups of those, or
+  curvature, column lift, split opening angle, tent and tilt, thumb tent/tilt/lift/curve), groups of those, or
   single fields `split.<f>`, `<zone>.<f>`, `<zone>.<col>.<f>`. Finger zones are zones containing
   their home row; the others are thumb zones. Mirrored zones move both halves. Default bounds
   sit around the start value (stagger ±0.75 u, splay ±15°, spread and row pitch 1–1.6 u, i.e. not
-  below MX pitch, row curve 0–30°, column curve 0–15°, split tent 0–45°, tilt −15–10°).
+  below MX pitch, row curve 0–30°, column curve 0–15°, split tent 0–45°).
+- **Posture priors** (H6, `research/sources/split-keyboard-ergonomics.md`): split `tilt` −4–0°
+  (slope 0 to −4°) and `angle` 10–20° (opening ≈ 15°) by default, absolute rather than around
+  the file's value; the start board keeps its own values and CMA-ES starts from them clamped.
+  Pass `split.tilt=lo:hi` / `split.angle=lo:hi` to search outside them.
 - **Efforts** are dropped and derived from key positions per candidate (`--keep-effort` keeps
   the file's), so M01 follows moved keys.
 - **Bilevel** (default): one full SA on the start board first, so candidates warm-start from a
