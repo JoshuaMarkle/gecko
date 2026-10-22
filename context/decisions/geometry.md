@@ -27,5 +27,9 @@ Boards (2D, parametric, 3D), KLE import, collision, derived costs and the hand m
 - 2026-10-21 — G03 treats ≥ 1 u between the hands as split, with each half aligned to the forearm. — QMK split spacing is illustrative; scoring it would penalize a gap nobody types at.
 - 2026-10-21 — G03 weighs 1.0 in natural units, not spread units. — Its spread over layouts is ~0.004; spread units would amplify it ~250×.
 - 2026-10-21 — `Scorer::set_geometry` refolds touched entries in build order instead of folding deltas. — Bit-identical to a fresh build, so runs stay reproducible.
-- 2026-10-21 — `Geometry::validate` rejects overlapping keycaps; `check_keys` keeps only structural checks; 2D flat boards only. — Search candidates that collide must stay scorable; 3D collision waits for H8.
+- 2026-10-21 — `Geometry::validate` rejects overlapping keycaps; `check_keys` keeps only structural checks; 2D flat boards only. — Search candidates that collide must stay scorable; 3D collision waits for H8. (3D partly superseded: `collisions_3d` below.)
 - 2026-10-21 — Missing `effort` is a NaN sentinel resolved on load; derived effort is linear in distance to home. — Every consumer sees plain numbers; linear fits the bundled efforts as well as quadratic.
+- 2026-10-21 — `collisions_3d` = SAT on a tapered keycap frustum + MX switch box per key, used by geometry search only. — Exact for convex polytopes without a new crate; `validate` stays 2D until H8 refines the shapes.
+- 2026-10-21 — Geometry search drops hand-entered efforts and derives them per candidate (`--keep-effort` opts out). — Fixed efforts would make M01 blind to moved keys.
+- 2026-10-21 — Spread and row pitch default to ≥ 1 u (MX pitch) in geometry search; margin 0. — With 18 mm caps the search packs keys to 18.1 mm pitch, which shortens every distance but fails `validate` and needs Choc-style caps.
+- 2026-10-21 — Default bounds: split tent 0–45°, tilt −15–10°, row curve 0–30°. — The hand model has no finger-vs-keycap clearance term, so the search runs to whatever bound it is given.

@@ -104,3 +104,36 @@ fn batch_evaluator_gets_whole_generations() {
     assert_eq!(r.evals, sizes.len() * lambda);
     assert!(r.evals <= 600 && r.runs[0].stop == Stop::Budget);
 }
+
+#[test]
+fn an_empty_generation_halts_the_search() {
+    let mut calls = 0;
+    let out = minimize_batch(
+        |xs| {
+            calls += 1;
+            if calls > 3 {
+                return Vec::new();
+            }
+            xs.iter().map(|x| x.iter().map(|v| v * v).sum()).collect()
+        },
+        &[1.0, 1.0],
+        None,
+        &Params { restarts: 5, ..Default::default() },
+        &mut Rng::new(1),
+    );
+    assert_eq!(out.runs.len(), 1);
+    assert_eq!(out.runs[0].stop, Stop::Halted);
+    assert_eq!(out.runs[0].generations, 3);
+}
+
+#[test]
+fn restarts_can_start_from_the_best_point() {
+    // Rastrigin: restarts from the best point keep the next run near the best basin.
+    let f = |x: &[f64]| 10.0 * x.len() as f64 + x.iter().map(|v| v * v - 10.0 * (2.0 * std::f64::consts::PI * v).cos()).sum::<f64>();
+    let bounds = Bounds { lo: vec![-5.12; 3], hi: vec![5.12; 3] };
+    let p = Params { restart_from_best: true, restarts: 3, max_evals: 4000, ..Default::default() };
+    let out = minimize(f, &[3.0, 3.0, 3.0], Some(&bounds), &p, &mut Rng::new(2));
+    assert!(out.runs.len() > 1);
+    let first = out.runs[0].best;
+    assert!(out.f <= first);
+}

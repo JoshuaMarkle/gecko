@@ -122,6 +122,21 @@ impl Store {
         Ok(g)
     }
 
+    /// The parameter file behind a parametric board: `name.param.toml` in the store, or a
+    /// `.param.toml` path (also accepted with or without the `.param` suffix on `name`).
+    pub fn param_geometry(&self, name: &str) -> Result<crate::ParametricGeometry> {
+        let base = name.strip_suffix(".param").unwrap_or(name);
+        let p = self.dir("geometries").join(format!("{base}.param.toml"));
+        let p = if p.is_file() { p } else { PathBuf::from(name) };
+        if !p.file_name().is_some_and(|n| n.to_string_lossy().ends_with(".param.toml")) || !p.is_file() {
+            return Err(Error::invalid(
+                "geometry",
+                format!("'{name}' is not a parametric board (need data/geometries/{base}.param.toml or a .param.toml path)"),
+            ));
+        }
+        crate::ParametricGeometry::from_toml(&read(&p)?)
+    }
+
     pub fn profile(&self, name: &str) -> Result<Profile> {
         let p = self.dir("profiles").join(format!("{name}.toml"));
         let p = if p.is_file() { p } else { PathBuf::from(name) };
