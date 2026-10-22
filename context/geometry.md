@@ -123,8 +123,10 @@ clockwise from above. Mirroring negates `ry` and `rz`.
 **Metrics on 3D boards** (`Geometry::metric_points`): geometric metrics (B03/S03 distance,
 B14/S04/S05/T09 stretch, B10 row jump, Y03 order) measure between keycap tops expressed in
 each hand's frame (best-fit plane of its finger keys; x = board x and y = toward the user
-within the plane, z = the normal). Distances are true 3D fingertip distances; "sideways" and
-"forward" are what the hand sees on a tented half. A rigid tent changes no metric
+within the plane, z = the normal). Distances are true 3D fingertip distances, B14 stretch
+included (its crossing and length-offset terms stay in-plane; height off the plane counts, or a
+search hides stretch by sinking and lifting columns); "sideways" and "forward" are what the hand
+sees on a tented half. A rigid tent changes no metric
 (`tests/three_d.rs`). Flat boards use `pos` exactly, so their scores are unchanged.
 
 `tests/fixtures/dactyl-well.param.toml` is the Dactyl-Manuform 5x6 finger keywell in this
@@ -160,12 +162,17 @@ penalized by depth. Layer copies share their physical key and are skipped. Non-f
 return no 2D collisions; they use the 3D test below. Every bundled flat board is collision-free.
 
 **3D (H8, `collision3d.rs`).** `Geometry::contacts_3d(margin)` gives each physical key two
-convex hulls: a keycap frustum (footprint + margin at the bottom, inset `CAP_TAPER` 0.15 u per
+convex solids: a keycap frustum (footprint + margin at the bottom, inset `CAP_TAPER` 0.15 u per
 side at the top, `CAP_HEIGHT` tall, like an SA/DSA cap) and an MX switch body below it (0.78 u
-square + margin, 0.45 u deep). Candidate pairs come from a uniform 3D grid over each key's
+square + margin, 0.45 u deep), plus a **finger access** volume: the cap top extruded
+`ACCESS_HEIGHT` 1 u along the normal and, on finger keys, swept `FINGER_LENGTH` 1.5 u toward the
+user at 45° (the finger lying back from its tip), one convex wedge. Another key's solid inside a
+key's access is a contact (two access volumes may overlap), so a key buried under a neighbour,
+or a thumb cluster raised into the index finger's path, is invalid. A Corne's thumbs 1.3 u in
+front of the bottom row at the same height stay clear. Candidate pairs come from a uniform 3D grid over each key's
 bounding sphere (cell = the largest diameter); GJK tests each hull pair and EPA returns the
 penetration depth and unit direction (`b` moves by `depth · normal` to clear it). A contact is
-the deepest of the four hull pairs; overlaps ≤ 0.001 u count as touching. `collisions_3d` is
+the deepest of the solid pairs and access-vs-solid pairs; overlaps ≤ 0.001 u count as touching. `collisions_3d` is
 the same list without directions. On flat boards it finds the 2D pairs (depth the 2D one, or
 less when lifting over the cap is shorter); every bundled board (Dactyl included) is clear.
 `validate` uses it on non-flat boards, and the geometry search penalizes its depth whenever a
@@ -198,7 +205,8 @@ off; a profile without it keeps its hash). Physical keys only.
 Each violation (`kind`, `keys`, `value`, `limit`, `excess`) has an excess in u-equivalents
 (angles: 45° = 1 u; counts: 1 key = 1 u). The geometry search adds the violations to its
 collision count and the excess to its collision depth, so they share `penalty` and `hard_fail`
-([algorithms/geometry-search.md](algorithms/geometry-search.md)). Every bundled board passes
+([algorithms/geometry-search.md](algorithms/geometry-search.md)). A profile without `[build]`
+still gets the default limits on 3D candidates (flat ones are unchanged). Every bundled board passes
 the defaults (`tests/manufacture.rs`). `gecko build stl` reports the same violations beside the STL.
 
 ## Plate and case STL (J4)
@@ -237,8 +245,8 @@ bosses, controller/USB/TRRS openings, a concave bottom plate, filling gaps wider
 ## Derived effort and stretch (G4)
 
 New boards need no hand-entered costs (`derive.rs`, `Geometry::derive_missing`). Distances are
-between key centres in each hand's measuring frame (`metric_points` + half the key size), so
-3D boards measure along their surface.
+between key centres in each hand's measuring frame (`metric_points` + half the key size), in
+3D, so a key lifted or sunk away from its home key costs its full distance.
 
 - **Effort** (a reach proxy until the hand model replaces M01's base effort):
   `HOME_EFFORT[finger] + TRAVEL[finger] · d`, d = distance (u) to the finger's non-stretch home

@@ -47,14 +47,14 @@ impl Geometry {
     }
 
     /// Key centres in each hand's measuring frame ([`Geometry::metric_points`] plus half the
-    /// key size), so 3D boards measure along their curved surface.
-    fn centres(&self) -> Vec<[f32; 2]> {
-        self.metric_points().iter().zip(&self.key).map(|(p, k)| [p[0] + k.size[0] / 2.0, p[1] + k.size[1] / 2.0]).collect()
+    /// key size), so 3D boards measure true 3D distances (height off the hand's plane included).
+    fn centres(&self) -> Vec<[f32; 3]> {
+        self.metric_points().iter().zip(&self.key).map(|(p, k)| [p[0] + k.size[0] / 2.0, p[1] + k.size[1] / 2.0, p[2]]).collect()
     }
 
     /// The home key a finger's distances are measured from: its home key that is not a
     /// stretch key, else any of its home keys (the outermost for the index).
-    fn home_of(&self, finger: crate::Finger, c: &[[f32; 2]]) -> Option<usize> {
+    fn home_of(&self, finger: crate::Finger, c: &[[f32; 3]]) -> Option<usize> {
         let homes: Vec<usize> =
             (0..self.len()).filter(|&i| self.key[i].phys.is_none() && self.key[i].finger == finger && self.key[i].home).collect();
         let pick = |v: &[usize]| v.iter().copied().min_by(|&a, &b| inward(self, a, c).total_cmp(&inward(self, b, c)));
@@ -68,7 +68,7 @@ impl Geometry {
     /// thumb key nearest that point at 1.0. Layer copies take their physical key's value.
     pub fn derived_efforts(&self) -> Vec<f32> {
         let c = self.centres();
-        let dist = |a: [f32; 2], b: [f32; 2]| (a[0] - b[0]).hypot(a[1] - b[1]);
+        let dist = |a: [f32; 3], b: [f32; 3]| ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2)).sqrt();
         let mut out = vec![0.0f32; self.len()];
         for i in 0..self.len() {
             let k = &self.key[self.phys(i)];
@@ -92,11 +92,11 @@ impl Geometry {
         out
     }
 
-    fn thumb_rest(&self, hand: Hand, c: &[[f32; 2]]) -> Option<[f32; 2]> {
+    fn thumb_rest(&self, hand: Hand, c: &[[f32; 3]]) -> Option<[f32; 3]> {
         let index = if hand == Hand::L { crate::Finger::LI } else { crate::Finger::RI };
         let h = c[self.home_of(index, c)?];
         let s = if hand == Hand::L { 1.0 } else { -1.0 };
-        Some([h[0] + s * THUMB_REST[0], h[1] + THUMB_REST[1]])
+        Some([h[0] + s * THUMB_REST[0], h[1] + THUMB_REST[1], h[2]])
     }
 
     /// Stretch flags from position: index keys more than [`STRETCH_OFFSET`] inward of the
@@ -118,7 +118,7 @@ impl Geometry {
 }
 
 /// How far key `i` sits toward the other hand (x for the left hand, −x for the right).
-fn inward(g: &Geometry, i: usize, c: &[[f32; 2]]) -> f32 {
+fn inward(g: &Geometry, i: usize, c: &[[f32; 3]]) -> f32 {
     if g.key[i].hand() == Hand::L {
         c[i][0]
     } else {

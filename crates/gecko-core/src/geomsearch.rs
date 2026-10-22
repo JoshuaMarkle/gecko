@@ -10,9 +10,10 @@
 //! - **Board:** the board for a fixed layout: CMA-ES with the start layout fixed for the whole
 //!   budget, no layout search and no polish (the reported layout is the start layout).
 //!
-//! Collisions (2D on flat candidates, 3D keycap + switch volumes otherwise) add a penalty per unit of depth;
-//! past `hard_fail` the layout search is skipped. A profile `[build]` section (G07,
-//! `geometry/manufacture.rs`) adds its violations and their excess (u) to the collisions.
+//! Collisions (2D on flat candidates, 3D keycap + switch + finger access volumes otherwise) add a
+//! penalty per unit of depth; past `hard_fail` the layout search is skipped. A profile `[build]`
+//! section (G07, `geometry/manufacture.rs`), or its defaults on a 3D candidate, adds its
+//! violations and their excess (u) to the collisions.
 //! Both modes end with an equal SA polish of the best and the start board, so the reported
 //! gain compares like with like.
 
@@ -417,6 +418,8 @@ struct Problem<'a> {
     unit: f64,
     start_score: f64,
     build: Option<crate::geometry::manufacture::BuildLimits>,
+    /// Limits for non-flat candidates when the profile has no `[build]`.
+    default_build: crate::geometry::manufacture::BuildLimits,
 }
 
 impl Problem<'_> {
@@ -435,8 +438,12 @@ impl Problem<'_> {
     }
 
     fn collisions(&self, g: &Geometry) -> (usize, f64) {
-        let c = if g.is_flat() { g.collisions(self.p.margin) } else { g.collisions_3d(self.p.margin) };
-        let b = self.build.as_ref().map(|l| g.manufacture(l)).unwrap_or_default();
+        let flat = g.is_flat();
+        let c = if flat { g.collisions(self.p.margin) } else { g.collisions_3d(self.p.margin) };
+        // A 3D candidate without a profile `[build]` still gets the default limits: otherwise the
+        // search tilts keys toward vertical and stacks them as high as it likes.
+        let limits = self.build.as_ref().or((!flat).then_some(&self.default_build));
+        let b = limits.map(|l| g.manufacture(l)).unwrap_or_default();
         (c.len() + b.violations.len(), c.iter().map(|c| c.depth as f64).sum::<f64>() + b.excess)
     }
 
@@ -640,6 +647,7 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
         unit: start_score.abs() + 1.0,
         start_score,
         build: spec.profile.build.clone(),
+        default_build: Default::default(),
     };
     pr.movable = Ctx::new(&pr.scorer, pr.movable.clone(), pr.scorer.identity()).movable;
     let threads = p.threads.max(1);
