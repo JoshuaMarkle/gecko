@@ -65,6 +65,12 @@ fixed/pinned layouts, cancellation and identical results across worker counts wi
 islands; `tests/verify.rs` replays a migrating memetic run. Tabu's incremental Δ
 matrix: `delta_shift` == recomputed `delta_linear` for every disjoint pair after a swap
 (proptest, including Shift and brackets), and delta == linear + load.
+Exact sub-problems (`tests/certify.rs`): `certify` equals exhaustive enumeration for both kinds
+(`full`, `pair`) on the 6-key board (all, 4 and 2 free) and on ansi-30 with 5–7 free symbols
+from random layouts (where it must also report an improvement); non-free symbols never move;
+a re-certified optimum is "already optimal" and no swap of free symbols improves it; results
+are deterministic; a node limit gives a best-so-far and a lower bound that bracket the optimum.
+`--ignored` adds the bounds.md instance (english, 10 free, 3.6 M placements, threaded brute force).
 External validation (`tests/validation.rs`): every non-thumb finger triple in cmini's
 `table.json` (pinned in `tests/fixtures/cmini-table.json`) gets the matching trigram class;
 ansi-30 distances `rg` 1.6 u, `my` 2.66 u, `vt` 2.02 u match the Layouts Doc.

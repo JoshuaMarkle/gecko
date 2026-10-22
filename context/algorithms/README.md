@@ -26,7 +26,7 @@ are shared with the single-population algorithms. All moves respect pins.
 | [explore.md](explore.md) | Local search + archive | Done | BLS; explore = probe + BLS with exclusion restarts, writes an atlas of local optima |
 | [map-elites.md](map-elites.md) | Quality diversity | Done | Grid over behaviour axes (roll ratio, index load, …), best layout per cell; `gecko qd` |
 | [magic-rules.md](magic-rules.md) | Greedy (lazy) | Done | Rules of an adaptive (magic) key on a fixed layout |
-| [bounds.md](bounds.md) | Lower bound | Done | Gilmore–Lawler + dual ascent; optimality gap in every `optimize` run |
+| [bounds.md](bounds.md) | Lower bound, exact | Done | Gilmore–Lawler + dual ascent; optimality gap in every `optimize` run; `gecko certify` proves sub-problem optima |
 | [geometry-search.md](geometry-search.md) | Continuous | CMA-ES done; bilevel next | Key positions/rotations; bilevel with layout |
 
 Shared neighborhoods (`optimize/moves.rs`): every `steepest_descent` runs swaps to a local

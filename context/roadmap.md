@@ -78,7 +78,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 56. [x] [#41](https://github.com/JoshuaMarkle/gecko/issues/41) `C8` L01 shortcut placement and L02 familiarity · S
 57. [x] [#42](https://github.com/JoshuaMarkle/gecko/issues/42) `G4` Geometry-driven costs: G02 travel + 2D reach proxy · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
 59. [x] [#94](https://github.com/JoshuaMarkle/gecko/issues/94) `L6` Search tab: algorithm and budget settings · S · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82)
-60. [ ] [#43](https://github.com/JoshuaMarkle/gecko/issues/43) `B7` MIP oracle for sub-problems (HiGHS / CP-SAT) · L · after [#37](https://github.com/JoshuaMarkle/gecko/issues/37)
+60. [x] [#43](https://github.com/JoshuaMarkle/gecko/issues/43) `B7` MIP oracle for sub-problems (HiGHS / CP-SAT) · L · after [#37](https://github.com/JoshuaMarkle/gecko/issues/37)
 61. [x] [#44](https://github.com/JoshuaMarkle/gecko/issues/44) `C9` L06 held-out corpus generalization · S
 62. [ ] [#45](https://github.com/JoshuaMarkle/gecko/issues/45) `F2` Web: bench views · M
 65. [ ] [#47](https://github.com/JoshuaMarkle/gecko/issues/47) `C10` Alternate fingering: angle mod geometry · S
