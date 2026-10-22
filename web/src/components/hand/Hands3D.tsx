@@ -1,0 +1,125 @@
+// The Hand tab's 3D hands: skeletons drawn as segments over the board, animated through the
+// typing plan, and the camera region that frames them.
+
+import { useFrame } from "@react-three/fiber";
+import { Html } from "@react-three/drei";
+import { useLayoutEffect, useMemo, useRef, type MutableRefObject } from "react";
+import * as THREE from "three";
+import type { Geometry } from "../../api";
+import { ACCENT } from "../../colors";
+import { FINGER_NAMES, keysDown, handLayout, type FingerState, type HandDims, type Plan, type V3 } from "../../hand";
+import { boardBounds, type Focus, type ViewMode } from "../../three/Keyboard3D";
+import { framesAt, LOOP_GAP, type Frame3, type Rig } from "./rigs";
+
+// ---------- 3D ----------
+
+const BONE = "#3a3a3a";
+const MOVE = "#5b8def";
+const STATE_COLOR: Record<FingerState, string> = { rest: BONE, move: MOVE, ready: MOVE, press: ACCENT };
+
+/** Hands as line segments with square joints, colored per finger state; the palm as a translucent outline. */
+export function Hands({ rigs, dims, plan, clock, keys, playing, loop, onEnd, labels }: {
+  rigs: Rig[]; dims: HandDims; plan: Plan | null; clock: MutableRefObject<number>; keys: MutableRefObject<Float32Array>;
+  playing: boolean; loop: boolean; onEnd: () => void; labels: boolean;
+}) {
+  const nh = rigs.length;
+  const outlineN = handLayout(dims).outline.length;
+  const segN = nh * (15 + outlineN) * 2, jointN = nh * 20;
+  const lines = useRef<THREE.LineSegments>(null);
+  const points = useRef<THREE.Points>(null);
+  const palmFill = useRef<THREE.Mesh>(null);
+  const color = useMemo(() => new THREE.Color(), []);
+  const rest = useMemo(() => framesAt(rigs, null, dims, -1), [rigs, dims]);
+
+  const draw = (frames: Frame3[]) => {
+    const [ls, ps, pf] = [lines.current, points.current, palmFill.current];
+    if (!ls || !ps || !pf) return;
+    const lp = ls.geometry.attributes.position as THREE.BufferAttribute, lc = ls.geometry.attributes.color as THREE.BufferAttribute;
+    const pp = ps.geometry.attributes.position as THREE.BufferAttribute, pc = ps.geometry.attributes.color as THREE.BufferAttribute;
+    const fill = pf.geometry.attributes.position as THREE.BufferAttribute;
+    let li = 0, ji = 0, fi = 0;
+    const seg = (p: V3, q: V3) => {
+      lp.setXYZ(li, p[0], p[1], p[2]); lc.setXYZ(li++, color.r, color.g, color.b);
+      lp.setXYZ(li, q[0], q[1], q[2]); lc.setXYZ(li++, color.r, color.g, color.b);
+    };
+    for (const { pose, states } of frames) {
+      pose.fingers.forEach((ch, f) => {
+        color.set(STATE_COLOR[states[FINGER_NAMES[f]]]);
+        ch.forEach((p, s) => {
+          pp.setXYZ(ji, p[0], p[1], p[2]); pc.setXYZ(ji++, color.r, color.g, color.b);
+          if (s < ch.length - 1) seg(p, ch[s + 1]);
+        });
+      });
+      color.set(BONE);
+      const ring = pose.palm;
+      const cx = ring.reduce((t, p) => t + p[0], 0) / ring.length, cy = ring.reduce((t, p) => t + p[1], 0) / ring.length, cz = ring.reduce((t, p) => t + p[2], 0) / ring.length;
+      ring.forEach((p, i) => {
+        const q = ring[(i + 1) % ring.length];
+        seg(p, q);
+        fill.setXYZ(fi++, cx, cy, cz);
+        fill.setXYZ(fi++, p[0], p[1], p[2]);
+        fill.setXYZ(fi++, q[0], q[1], q[2]);
+      });
+    }
+    for (const a of [lp, lc, pp, pc, fill]) a.needsUpdate = true;
+    pf.geometry.computeVertexNormals();
+  };
+
+  // Rest pose whenever the inputs change or typing stops; the clock restarts from the top.
+  useLayoutEffect(() => {
+    if (playing) return;
+    clock.current = -1;
+    keys.current.fill(0);
+    draw(rest);
+  });
+  useFrame((_, dt) => {
+    if (!playing || !plan) return;
+    const next = clock.current < 0 ? 0 : clock.current + Math.min(dt, 0.1);
+    if (!loop && next > plan.end) { onEnd(); return; }
+    clock.current = loop ? next % (plan.end + LOOP_GAP) : next;
+    keysDown(plan, clock.current, keys.current);
+    draw(framesAt(rigs, plan, dims, clock.current));
+  });
+
+  return (
+    <group key={`${nh}|${outlineN}`}>
+      <lineSegments ref={lines} renderOrder={10}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[new Float32Array(segN * 3), 3]} />
+          <bufferAttribute attach="attributes-color" args={[new Float32Array(segN * 3), 3]} />
+        </bufferGeometry>
+        <lineBasicMaterial vertexColors depthTest={false} transparent />
+      </lineSegments>
+      <points ref={points} renderOrder={11}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[new Float32Array(jointN * 3), 3]} />
+          <bufferAttribute attach="attributes-color" args={[new Float32Array(jointN * 3), 3]} />
+        </bufferGeometry>
+        <pointsMaterial vertexColors size={6} sizeAttenuation={false} depthTest={false} transparent />
+      </points>
+      <mesh ref={palmFill}>
+        <bufferGeometry><bufferAttribute attach="attributes-position" args={[new Float32Array(nh * outlineN * 9), 3]} /></bufferGeometry>
+        <meshStandardMaterial color="#9a9a9a" transparent opacity={0.22} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      {labels && !playing && rest.map(({ pose }, h) => pose.fingers.map((ch, fi) => ch.slice(0, -1).map((a, si) => {
+        const b = ch[si + 1];
+        return (
+          <Html key={`${h}-${fi}-${si}`} position={[(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + 0.25, (a[2] + b[2]) / 2]} center zIndexRange={[1, 0]}>
+            <span className="handlabel">{dims[FINGER_NAMES[fi]][si].toFixed(0)}</span>
+          </Html>
+        );
+      })))}
+    </group>
+  );
+}
+
+/** Camera region covering the board and both resting hands. */
+export function handFocus(g: Geometry, rigs: Rig[], d: HandDims, mode: ViewMode): Focus {
+  const b = boardBounds(g.key);
+  const xs = [-b.w / 2, b.w / 2], zs = [-b.h / 2, b.h / 2];
+  // Frame the unadjusted hands so the camera holds still while the wrist sliders move.
+  for (const { pose } of framesAt(rigs.map((r) => ({ ...r, place: r.base })), null, d, -1)) for (const p of [...pose.palm, ...pose.fingers.flat()]) { xs.push(p[0]); zs.push(p[2]); }
+  const [x0, x1, z0, z1] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
+  // The tilted camera foreshortens depth (its fit pads a shallow board's depth, see CameraRig).
+  return { cx: (x0 + x1) / 2, cz: (z0 + z1) / 2, w: x1 - x0, h: (mode === "3d" ? 0.62 : 1) * (z1 - z0) };
+}

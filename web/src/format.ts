@@ -36,6 +36,9 @@ export function undirected(pairs: Pair[]): Pair[] {
   return [...m.values()].sort((a, b) => b.freq - a.freq);
 }
 
+/** First letter upper-cased. */
+export const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
+
 export function fmt(v: number, digits = 2): string {
   if (!Number.isFinite(v)) return "–";
   if (Math.abs(v) >= 1000) return v.toFixed(0);

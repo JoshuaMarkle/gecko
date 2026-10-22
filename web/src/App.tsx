@@ -17,7 +17,7 @@ import { ProfileView } from "./components/views/ProfileView";
 import { SavedView } from "./components/views/SavedView";
 import { algoName, SearchView } from "./components/views/SearchView";
 import { SummaryView } from "./components/views/SummaryView";
-import { EMPTY, fitChars, fmt, fmtCount, fmtTime, layerSlots, swapChars } from "./format";
+import { cap, EMPTY, fitChars, fmt, fmtCount, fmtTime, layerSlots, swapChars } from "./format";
 import { handDims, handLength, withHand } from "./hand";
 import { useInputs, usePref } from "./inputs";
 import { useLanguages } from "./languages";
@@ -233,7 +233,7 @@ export function App() {
   const blocks: Block[] = [
     { tab: "board", title: "Board", rows: [["Board", geometry.name], ["Keys", `${geometry.key.length}`]],
       flags: [["Custom board", isCustomBoard], ["Custom constraints", Object.values(constraints).some((c) => c.on)]] },
-    { tab: "hand", title: "Hand", rows: [["Preset", hand.preset[0].toUpperCase() + hand.preset.slice(1)], ["Hand length", `${handLength(handDims(hand)).toFixed(0)} mm`]],
+    { tab: "hand", title: "Hand", rows: [["Preset", cap(hand.preset)], ["Hand length", `${handLength(handDims(hand)).toFixed(0)} mm`]],
       flags: [["Hand", hand.use]] },
     { tab: "language", title: "Language", rows: [["Language", corpus?.name ?? "–"], ["Characters", fmtCount(corpus?.chars ?? 0)]] },
     { tab: "profile", title: "Profile", rows: [["Profile", `${profile.name}${profileEdited ? " (edited)" : ""}`],
