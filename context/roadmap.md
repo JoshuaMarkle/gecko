@@ -1,114 +1,43 @@
 # Roadmap
 
-The feature backlog in the order to build it. Source of truth: GitHub issues #1–103 (#58 and #65 closed as superseded; 18 unwanted items deleted 2026-10-22) and the project [GECKO](https://github.com/users/JoshuaMarkle/projects/5). Each issue has a goal, steps, done-when and blocked-by links.
+Future work only. Task scope lives in the [open GitHub issues](https://github.com/JoshuaMarkle/gecko/issues?q=is%3Aissue%20state%3Aopen).
+Take the next priority below, then the first unblocked backlog item. Remove completed
+items instead of keeping checked boxes. Update issue scope before changing its roadmap
+summary; follow `AGENTS.md` for the working process.
 
-**Picking work:** take the lowest-numbered open item whose blockers are closed. No dates: items are done one after another. Size (S/M/L) is relative effort only.
+## Next two priorities
 
-When an item closes, tick it here. When scope changes, edit the issue first. New items use `.github/ISSUE_TEMPLATE/feature.md`; PRs follow `.github/pull_request_template.md`.
+1. **[#47](https://github.com/JoshuaMarkle/gecko/issues/47) · Angle-mod fingering geometry · S.**
+   Add `ansi-30-angle`, compare reference layouts under both finger assignments, and
+   record per-metric differences in [objective.md](objective.md). This addresses the
+   known standard-fingering mismatch in angle-layout comparisons and provides the
+   fixed baseline for finger-assignment search (#97).
 
-## Tracks
+## Remaining backlog
 
-| Track | Scope |
-|---|---|
-| A · Foundations | Testing, CI, speed. Makes unattended agent work safe. |
-| B · Search | New optimizers, diversity, certificates. |
-| C · Objective v2 | Better cost models and calibration (phase 3). |
-| D · Symbols & layers | Finish phase 5: Shift, one-shot layers, symbol metrics. |
-| E · Data & interop | Board import, more boards and corpora. |
-| F · Web UI | Views for the new features. |
-| G · 2D geometry | Phase 6: optimize key x, y, rotation on a plane. |
-| H · Hand model & 3D | Phase 7: hand model, IK reach costs, z/tilt/tent. Hand model landed 2026-10-21 (`context/hand-model.md`): #33 via profile `[hand]` presets/dims (no `data/hands/`), #40 as planar IK with limits (not the Cosmos closed form), #52 recomputes every key per scorer (cheap) instead of caching per pose. 4-DoF thumb and #63 G03 landed the same day (arms from profile `[hand.body]`; splits assumed aligned with the forearm). |
-| I · Free-form 3D | Phase 8: per-key 6-DoF poses, thumb clusters. |
-| J · Physical output | Turn an optimized board into something buildable. |
-| K · Learned costs | Phase 9: timing models, personal calibration. |
-| L · App workflow | Web app tabs follow the design process: Board, Hand, Corpus, Profile, Search, Optimize, Explore, Stats, Runs. |
+Sizes are relative effort (S/M/L). Dependencies below list only unfinished work;
+“ready” means no open prerequisite, not that implementation design is settled.
 
-## Sequence
-
-1. [x] [#1](https://github.com/JoshuaMarkle/gecko/issues/1) `A1` CI: GitHub Actions for Rust and web checks · S
-2. [x] [#7](https://github.com/JoshuaMarkle/gecko/issues/7) `A2` Metric unit tests with hand-computed answers · M
-3. [x] [#12](https://github.com/JoshuaMarkle/gecko/issues/12) `A3` insta snapshots of reference layout scores · S
-4. [x] [#16](https://github.com/JoshuaMarkle/gecko/issues/16) `A4` Automated WASM == CLI test · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
-5. [x] [#18](https://github.com/JoshuaMarkle/gecko/issues/18) `A5` criterion benches + bench/history.jsonl · S
-6. [x] [#20](https://github.com/JoshuaMarkle/gecko/issues/20) `A6` Scorer speed: cache per-trigram cost in State · M · after [#18](https://github.com/JoshuaMarkle/gecko/issues/18)
-7. [x] [#28](https://github.com/JoshuaMarkle/gecko/issues/28) `A7` Validate trigram classes and pair distances against external data · S
-8. [x] [#78](https://github.com/JoshuaMarkle/gecko/issues/78) `A8` `gecko verify run:<id>` · S
-9. [x] [#79](https://github.com/JoshuaMarkle/gecko/issues/79) `A9` Issue and PR templates for agent work · S
-10. [x] [#80](https://github.com/JoshuaMarkle/gecko/issues/80) `A10` Claude Code GitHub Action · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
-11. [x] [#81](https://github.com/JoshuaMarkle/gecko/issues/81) `A11` Release builds with the web UI embedded · S · after [#1](https://github.com/JoshuaMarkle/gecko/issues/1)
-12. [x] [#2](https://github.com/JoshuaMarkle/gecko/issues/2) `B1` Tabu search (robust tabu, RoTS) optimizer · M
-13. [x] [#3](https://github.com/JoshuaMarkle/gecko/issues/3) `C1` B11 finger-pair movement table · M
-14. [x] [#4](https://github.com/JoshuaMarkle/gecko/issues/4) `D1` Model Shift · M
-15. [x] [#5](https://github.com/JoshuaMarkle/gecko/issues/5) `E1` KLE JSON importer · M
-16. [x] [#6](https://github.com/JoshuaMarkle/gecko/issues/6) `H1` Verify hand-model parameters · S
-17. [x] [#82](https://github.com/JoshuaMarkle/gecko/issues/82) `L1` Navbar restructure: inputs become top-level tabs · M
-18. [x] [#8](https://github.com/JoshuaMarkle/gecko/issues/8) `B2` More neighbourhoods: 3-cycle, column swap, depth-2 swaps · S
-19. [x] [#9](https://github.com/JoshuaMarkle/gecko/issues/9) `C2` S04 skipgram LSB / scissor / stretch · S
-20. [x] [#10](https://github.com/JoshuaMarkle/gecko/issues/10) `D2` One-shot and toggle layers · M
-21. [x] [#11](https://github.com/JoshuaMarkle/gecko/issues/11) `E2` More boards: Lily58, Kyria, Ergodox, Dactyl-Manuform 5x6 · S · after [#5](https://github.com/JoshuaMarkle/gecko/issues/5)
-22. [x] [#83](https://github.com/JoshuaMarkle/gecko/issues/83) `L9` Flatten any board to a 2D view · M
-23. [x] [#13](https://github.com/JoshuaMarkle/gecko/issues/13) `B3` Memetic algorithm (GA + local search, islands) · M · after [#8](https://github.com/JoshuaMarkle/gecko/issues/8)
-24. [x] [#14](https://github.com/JoshuaMarkle/gecko/issues/14) `C3` Asymmetric row costs per finger · S
-25. [x] [#15](https://github.com/JoshuaMarkle/gecko/issues/15) `E3` Chat and multilingual corpora · S
-26. [x] [#84](https://github.com/JoshuaMarkle/gecko/issues/84) `L2` Board tab: board catalog, current board, start layout · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82), [#11](https://github.com/JoshuaMarkle/gecko/issues/11)
-27. [x] [#17](https://github.com/JoshuaMarkle/gecko/issues/17) `C4` Remaining P1/P2 metrics · M
-28. [x] [#85](https://github.com/JoshuaMarkle/gecko/issues/85) `E4` Import layouts from Oxeylyzer, genkey and cmini formats · S
-29. [x] [#19](https://github.com/JoshuaMarkle/gecko/issues/19) `D3` Y03 paired symbol placement · S
-30. [x] [#86](https://github.com/JoshuaMarkle/gecko/issues/86) `E5` Export layout image (SVG/PNG) · S · after [#83](https://github.com/JoshuaMarkle/gecko/issues/83)
-31. [x] [#87](https://github.com/JoshuaMarkle/gecko/issues/87) `L10` Mini keyboards everywhere · M · after [#83](https://github.com/JoshuaMarkle/gecko/issues/83)
-32. [x] [#21](https://github.com/JoshuaMarkle/gecko/issues/21) `B4` NSGA-II Pareto fronts · M
-33. [x] [#22](https://github.com/JoshuaMarkle/gecko/issues/22) `D4` Y04 home-row-mod misfire risk · S
-34. [x] [#23](https://github.com/JoshuaMarkle/gecko/issues/23) `C5` Worst words report per metric · S
-35. [x] [#24](https://github.com/JoshuaMarkle/gecko/issues/24) `D5` Thumb trigram classes + M09 thumb load · S
-36. [x] [#25](https://github.com/JoshuaMarkle/gecko/issues/25) `G1` Parametric 2D geometry model · M · after [#3](https://github.com/JoshuaMarkle/gecko/issues/3), [#17](https://github.com/JoshuaMarkle/gecko/issues/17)
-37. [x] [#26](https://github.com/JoshuaMarkle/gecko/issues/26) `C6` cmini community layout importer + ranking tests · M
-38. [x] [#27](https://github.com/JoshuaMarkle/gecko/issues/27) `D6` Count the layer key's own keystroke in effort and finger load · S
-39. [x] [#88](https://github.com/JoshuaMarkle/gecko/issues/88) `L4` Corpus tab: stats and sample text · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82)
-40. [x] [#29](https://github.com/JoshuaMarkle/gecko/issues/29) `B5` MAP-Elites quality-diversity archive · M
-41. [x] [#30](https://github.com/JoshuaMarkle/gecko/issues/30) `D7` Number and navigation layer optimization · S
-43. [x] [#89](https://github.com/JoshuaMarkle/gecko/issues/89) `D8` Magic / repeat (adaptive) keys · M
-44. [x] [#32](https://github.com/JoshuaMarkle/gecko/issues/32) `G2` Fast cost-table rebuild when keys move · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
-45. [x] [#33](https://github.com/JoshuaMarkle/gecko/issues/33) `H2` Hand module: skeleton from measurements · M · after [#6](https://github.com/JoshuaMarkle/gecko/issues/6), [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
-47. [x] [#35](https://github.com/JoshuaMarkle/gecko/issues/35) `C7` Learning-to-rank profile weights · M · after [#26](https://github.com/JoshuaMarkle/gecko/issues/26)
-50. [x] [#37](https://github.com/JoshuaMarkle/gecko/issues/37) `B6` Lower bound (Gilmore–Lawler) and optimality gap · M
-51. [x] [#38](https://github.com/JoshuaMarkle/gecko/issues/38) `F1` Web: Pareto front and MAP-Elites views · M · after [#21](https://github.com/JoshuaMarkle/gecko/issues/21), [#29](https://github.com/JoshuaMarkle/gecko/issues/29)
-53. [x] [#39](https://github.com/JoshuaMarkle/gecko/issues/39) `G3` G04 2D collision (OBB, SAT) · S
-54. [x] [#40](https://github.com/JoshuaMarkle/gecko/issues/40) `H3` Finger IK with joint limits · L · after [#33](https://github.com/JoshuaMarkle/gecko/issues/33)
-55. [x] [#92](https://github.com/JoshuaMarkle/gecko/issues/92) `L7` Hand tab: hand parameters with live skeleton · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82), [#33](https://github.com/JoshuaMarkle/gecko/issues/33)
-56. [x] [#41](https://github.com/JoshuaMarkle/gecko/issues/41) `C8` L01 shortcut placement and L02 familiarity · S
-57. [x] [#42](https://github.com/JoshuaMarkle/gecko/issues/42) `G4` Geometry-driven costs: G02 travel + 2D reach proxy · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
-59. [x] [#94](https://github.com/JoshuaMarkle/gecko/issues/94) `L6` Search tab: algorithm and budget settings · S · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82)
-60. [x] [#43](https://github.com/JoshuaMarkle/gecko/issues/43) `B7` MIP oracle for sub-problems (HiGHS / CP-SAT) · L · after [#37](https://github.com/JoshuaMarkle/gecko/issues/37)
-61. [x] [#44](https://github.com/JoshuaMarkle/gecko/issues/44) `C9` L06 held-out corpus generalization · S
-62. [ ] [#45](https://github.com/JoshuaMarkle/gecko/issues/45) `F2` Web: bench views · M
-65. [ ] [#47](https://github.com/JoshuaMarkle/gecko/issues/47) `C10` Alternate fingering: angle mod geometry · S
-67. [ ] [#97](https://github.com/JoshuaMarkle/gecko/issues/97) `C11` Optimize finger assignment (alt fingering) · M
-69. [x] [#48](https://github.com/JoshuaMarkle/gecko/issues/48) `G5` CMA-ES continuous optimizer · M
-74. [x] [#52](https://github.com/JoshuaMarkle/gecko/issues/52) `H4` G01 reach cost and G05 press alignment · M · after [#40](https://github.com/JoshuaMarkle/gecko/issues/40), [#32](https://github.com/JoshuaMarkle/gecko/issues/32)
-75. [ ] [#53](https://github.com/JoshuaMarkle/gecko/issues/53) `F5` Web: process views (per-worker convergence, temperature/acceptance) · M
-76. [x] [#54](https://github.com/JoshuaMarkle/gecko/issues/54) `G6` Bilevel geometry + layout search · L · after [#32](https://github.com/JoshuaMarkle/gecko/issues/32), [#39](https://github.com/JoshuaMarkle/gecko/issues/39), [#42](https://github.com/JoshuaMarkle/gecko/issues/42), [#48](https://github.com/JoshuaMarkle/gecko/issues/48)
-77. [ ] [#55](https://github.com/JoshuaMarkle/gecko/issues/55) `B8` Adaptive fidelity scoring · M
-79. [x] [#57](https://github.com/JoshuaMarkle/gecko/issues/57) `H5` Hand model validation suite · S · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52)
-80. [ ] [#100](https://github.com/JoshuaMarkle/gecko/issues/100) `F8` Remaining search-space views · L
-81. [x] [#59](https://github.com/JoshuaMarkle/gecko/issues/59) `H6` 3D parametric params: z, tilt, tent, curvature · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
-82. [x] [#60](https://github.com/JoshuaMarkle/gecko/issues/60) `B9` Rank-sum selection over many runs (`gecko select`) · S
-84. [x] [#62](https://github.com/JoshuaMarkle/gecko/issues/62) `G7` `gecko geom` CLI · S · after [#54](https://github.com/JoshuaMarkle/gecko/issues/54)
-85. [x] [#63](https://github.com/JoshuaMarkle/gecko/issues/63) `H7` G03 wrist posture cost · S · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52), [#59](https://github.com/JoshuaMarkle/gecko/issues/59)
-87. [x] [#67](https://github.com/JoshuaMarkle/gecko/issues/67) `G9` Web: geometry runs (before/after board overlay) · S · after [#54](https://github.com/JoshuaMarkle/gecko/issues/54)
-88. [x] [#66](https://github.com/JoshuaMarkle/gecko/issues/66) `H8` 3D collision (keycap + switch, GJK) · M · after [#39](https://github.com/JoshuaMarkle/gecko/issues/39)
-90. [ ] [#68](https://github.com/JoshuaMarkle/gecko/issues/68) `H9` Web: posed hand in the 3D viewer · M · after [#40](https://github.com/JoshuaMarkle/gecko/issues/40)
-91. [x] [#69](https://github.com/JoshuaMarkle/gecko/issues/69) `H10` 3D bilevel search · M · after [#59](https://github.com/JoshuaMarkle/gecko/issues/59), [#63](https://github.com/JoshuaMarkle/gecko/issues/63), [#66](https://github.com/JoshuaMarkle/gecko/issues/66), [#54](https://github.com/JoshuaMarkle/gecko/issues/54)
-92. [x] [#102](https://github.com/JoshuaMarkle/gecko/issues/102) `L8` Typing simulation tab · L · after [#92](https://github.com/JoshuaMarkle/gecko/issues/92), [#40](https://github.com/JoshuaMarkle/gecko/issues/40), [#68](https://github.com/JoshuaMarkle/gecko/issues/68)
-93. [ ] [#103](https://github.com/JoshuaMarkle/gecko/issues/103) `H11` Optimize for a range of hand sizes · M · after [#69](https://github.com/JoshuaMarkle/gecko/issues/69)
-94. [ ] [#70](https://github.com/JoshuaMarkle/gecko/issues/70) `I1` Free-form per-key 6-DoF poses · L · after [#69](https://github.com/JoshuaMarkle/gecko/issues/69)
-95. [ ] [#71](https://github.com/JoshuaMarkle/gecko/issues/71) `I2` Thumb cluster optimization (G06) · M · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52)
-96. [x] [#72](https://github.com/JoshuaMarkle/gecko/issues/72) `I3` Collision repair step · S · after [#66](https://github.com/JoshuaMarkle/gecko/issues/66)
-97. [x] [#73](https://github.com/JoshuaMarkle/gecko/issues/73) `I4` G07 manufacturability constraints · M
-98. [ ] [#74](https://github.com/JoshuaMarkle/gecko/issues/74) `I5` Differentiable reach-cost surrogate (optional) · L · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52)
-99. [ ] [#75](https://github.com/JoshuaMarkle/gecko/issues/75) `J4` Generate plate and case mesh (STL) · L · after [#66](https://github.com/JoshuaMarkle/gecko/issues/66), [#73](https://github.com/JoshuaMarkle/gecko/issues/73)
-100. [ ] [#76](https://github.com/JoshuaMarkle/gecko/issues/76) `J5` Web: export and printable preview · S · after [#75](https://github.com/JoshuaMarkle/gecko/issues/75)
-101. [ ] [#77](https://github.com/JoshuaMarkle/gecko/issues/77) `J6` End-to-end walkthrough: hand → board → STL · M · after [#75](https://github.com/JoshuaMarkle/gecko/issues/75), [#69](https://github.com/JoshuaMarkle/gecko/issues/69)
+| Issue | Remaining work | Size | Dependency |
+|---|---|---|---|
+| [#45](https://github.com/JoshuaMarkle/gecko/issues/45) | Serve benchmark results and show performance profiles / time-to-target ECDFs in the web UI | M | Ready |
+| [#97](https://github.com/JoshuaMarkle/gecko/issues/97) | Search allowed finger assignments per key; compare against fixed angle mod | M | #47 for the comparison baseline |
+| [#53](https://github.com/JoshuaMarkle/gecko/issues/53) | Record per-worker convergence, temperature and acceptance telemetry; show process views | M | Ready |
+| [#55](https://github.com/JoshuaMarkle/gecko/issues/55) | Adaptive top-K n-gram scoring with full-objective confirmation; benchmark speed and quality | M | Ready |
+| [#100](https://github.com/JoshuaMarkle/gecko/issues/100) | Local-optima / trajectory networks, symbol migration and scored paths between layouts | L | #53 for telemetry-dependent views |
+| [#68](https://github.com/JoshuaMarkle/gecko/issues/68) | Finish hover-to-pose interaction and per-key reach overlay, reusing the hand rig and parity-tested TS IK | M | Ready |
+| [#103](https://github.com/JoshuaMarkle/gecko/issues/103) | Optimize mean or worst-case cost over hand sizes; compare with single-hand optima | M | Ready |
+| [#70](https://github.com/JoshuaMarkle/gecko/issues/70) | Free per-key 6-DoF search with neighbour smoothness and collision repair | L | Ready |
+| [#71](https://github.com/JoshuaMarkle/gecko/issues/71) | G06 thumb-IK metric; search thumb key count and poses | M | Ready |
+| [#74](https://github.com/JoshuaMarkle/gecko/issues/74) | Optional differentiable reach surrogate; compare refinement time-to-quality with CMA-ES | L | Ready |
+| [#75](https://github.com/JoshuaMarkle/gecko/issues/75) | Generate switch plate and case STL from optimized key poses | L | Ready |
+| [#76](https://github.com/JoshuaMarkle/gecko/issues/76) | Finish export formats and printable case preview | S | #75 |
+| [#77](https://github.com/JoshuaMarkle/gecko/issues/77) | Reproducible hand → optimized board → STL walkthrough | M | #75 |
 
 ## Path to a printable board
 
-Objective v2 (C1, C4) → parametric 2D geometry (G1) → table rebuild, collision, geometric costs (G2–G4) → CMA-ES (G5) → bilevel search (G6) → hand model + IK (H2–H4) → 3D params, 3D collision (H6, H8) → 3D bilevel (H10) → free-form + manufacturability (I1, I4) → STL (J4) → walkthrough (J6).
+[#75](https://github.com/JoshuaMarkle/gecko/issues/75) plate and case generation →
+[#76](https://github.com/JoshuaMarkle/gecko/issues/76) printable preview and
+[#77](https://github.com/JoshuaMarkle/gecko/issues/77) reproducible walkthrough.
+Free-form search (#70) and thumb-cluster search (#71) extend the design space;
+they are not prerequisites for exporting a parametric board.

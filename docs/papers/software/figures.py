@@ -1,9 +1,13 @@
-"""Figures for the software paper, from repo data only (no synthetic values).
+"""Figures for the software paper. Data figures use repo data only (no synthetic values);
+template figures (section at the end) are watermarked layouts for planned results and plot
+illustrative shapes, never numbers. Replace each with its data figure when the run exists.
 Run from anywhere: MPLCONFIGDIR=/tmp/gecko-mpl python3 docs/papers/software/figures.py
 Sources: bench/memetic-2026-10-21/leaderboard.json; bench/software-paper-2026-10-21/ (metric-count sweep,
 thread scaling, the SA and QD runs, Graphite score); numbers copied from
 context/algorithms/bounds.md (run 20261021-171218-sa-a3306812) and context/objective.md
-(geometry rebuild table); `gecko compare` output of 2026-10-21 (default profile, ansi-30, english).
+(geometry rebuild table); `gecko compare` output of 2026-10-21 (default profile, ansi-30, english);
+context/algorithms/bounds.md "Certified sub-problems" and context/algorithms/geometry-search.md
+(board + layout search tables).
 """
 import json, re
 from pathlib import Path
@@ -49,15 +53,16 @@ box(0, 5.5, 2.6, 1.0, 'n-gram\ntables')
 box(3.2, 5.5, 2.6, 1.0, 'cost\ntables')
 box(6.4, 5.5, 2.6, 1.0, 'metric\nweights')
 box(1.0, 3.7, 8.0, 1.1, 'scorer: folded tables, swap-delta state', fc=BLUE, ec=BLUE, tc='white')
-box(0, 1.9, 2.9, 1.0, 'optimizers\n(8, one trait)')
-box(3.4, 1.9, 2.7, 1.0, 'bounds,\natlas, QD')
-box(6.6, 1.9, 2.9, 1.0, 'runs/\n(verifiable)')
-box(0, 0, 9.5, 1.0, 'CLI (--json)  ·  gecko serve (HTTP, SSE)  ·  WASM in the web UI', fc='#f4f6f9' if False else 'white')
+box(0, 1.9, 2.25, 1.0, 'layout\noptimizers')
+box(2.45, 1.9, 2.25, 1.0, 'bounds, certify,\natlas, QD')
+box(4.9, 1.9, 2.25, 1.0, 'board search\n→ STL')
+box(7.35, 1.9, 2.25, 1.0, 'runs/\n(verifiable)')
+box(0, 0, 9.6, 1.0, 'CLI (--json)  ·  gecko serve (HTTP, SSE)  ·  WASM in the web UI')
 for x in (1.3, 4.5, 7.7): arrow(x, 7.5, x, 6.5)
 for x in (1.3, 4.5, 7.7): arrow(x, 5.5, 3.0 if x < 4 else (5.0 if x < 6 else 7.0), 4.8)
-for x in (1.45, 4.75): arrow(4.8 if x > 3 else 3.5, 3.7, x, 2.9)
-arrow(6.4, 3.7, 8.0, 2.9)
-for x in (1.45, 4.75, 8.05): arrow(x, 1.9, x, 1.0)
+for x in (1.12, 3.57, 6.02): arrow(max(x, 2.0), 3.7, x, 2.9)
+arrow(8.0, 3.7, 8.47, 2.9)
+for x in (1.12, 3.57, 6.02, 8.47): arrow(x, 1.9, x, 1.0)
 save(fig, 'architecture')
 
 # 2. Leaderboard: per-seed scores (bench/memetic-2026-10-21).
@@ -173,4 +178,91 @@ for sp in ax.spines.values(): sp.set_visible(False)
 cb = fig.colorbar(im, ax=ax, pad=.02, fraction=.05); cb.ax.tick_params(length=0, labelsize=6); cb.outline.set_visible(False)
 cb.set_label('Best score in cell', fontsize=6.5, color=MUTED)
 save(fig, 'qdmap')
+
+# 10. Certified sub-problems: time to prove the optimum against free symbols (bounds.md, B7).
+k = [10, 12, 14, 16, 18, 20, 22]
+full_t = [0.01, 0.1, 0.5, 3.3, 12.7, 74, None]
+pair_t = [0.005, 0.005, 0.1, 0.6, 2.2, 10, 66]
+fig, ax = frame(2.0)
+ax.plot(k[:6], full_t[:6], color=BLUE, lw=.9, marker='o', ms=3, label='full objective')
+ax.plot(k, pair_t, color=MUTED, lw=.9, marker='s', ms=3, label='pair part')
+ax.scatter([22], [300], marker='x', s=16, color=BLUE, linewidths=.9)
+ax.text(21.6, 160, 'stopped\nat 300 s', fontsize=5.6, color=INK, ha='right', va='center')
+ax.set_yscale('log')
+ax.set(xlabel='Free symbols k (others fixed at the run\'s layout)', ylabel='Time to certify (s)', xticks=k)
+ax.legend(frameon=False, fontsize=6.2, loc='upper left')
+save(fig, 'certify')
+
+# 11. Board + layout search: start board vs best board, equal layout effort (geometry-search.md).
+runs = [('2D', 11.63, 10.53), ('2D, alt.', 11.70, 10.46), ('3D', 11.56, 7.24),
+        ('3D, bounded', 11.63, 7.27), ('3D, priors', 11.66, 7.48)]
+fig, ax = frame(2.0)
+x = np.arange(len(runs))
+ax.bar(x - .18, [r[1] for r in runs], width=.34, color=HAIR, label='start board (Corne)')
+ax.bar(x + .18, [r[2] for r in runs], width=.34, color=BLUE, label='best board found')
+for xi, r in zip(x, runs):
+    ax.text(xi + .18, r[2] + .25, f'{100 * (r[2] - r[1]) / r[1]:.0f}%', ha='center', fontsize=5.8, color=INK)
+ax.set(xticks=x, ylabel='Score · lower is better', ylim=(0, 16))
+ax.set_xticklabels([r[0] for r in runs], fontsize=6)
+ax.legend(frameon=False, fontsize=6.2, loc='upper right', ncol=2)
+save(fig, 'geomsearch')
+
+# ---- Template figures: layout of a planned result, illustrative shapes only, watermarked. ----
+def template(ax):
+    ax.text(.5, .5, 'TEMPLATE\nillustrative, not data', transform=ax.transAxes, ha='center', va='center',
+            fontsize=13, color=HAIR, alpha=.9, rotation=18, fontweight='bold', zorder=0)
+GHOST = dict(color=MUTED, lw=.9)
+
+# T1. Performance profiles / time-to-target ECDF (#45): fraction of (seed, instance) pairs that
+#     reach a target within a time. Shapes are logistic curves, not measurements.
+fig, ax = frame(2.0); template(ax)
+t = np.logspace(-1, 2, 200)
+for i, (name, mid, ls) in enumerate([('BLS', 2, '-'), ('SA', 3, '--'), ('Memetic', 6, '-.'), ('Tabu', 15, ':')]):
+    ax.plot(t, 1 / (1 + (mid / t) ** 2.2), ls=ls, label=name, color=BLUE if i == 0 else MUTED, lw=.9)
+ax.set_xscale('log')
+ax.set(xlabel='Wall time (s)', ylabel='Runs within 0.5% of best known', ylim=(0, 1.02))
+ax.legend(frameon=False, fontsize=6.2, loc='lower right')
+save(fig, 'tpl-ttt')
+
+# T2. Local-optima network (#100): nodes are optima, edges are kicks, size = basin.
+fig, ax = plt.subplots(figsize=(3.4, 2.2), layout='constrained'); ax.axis('off'); template(ax)
+g = np.random.default_rng(3)
+pts = np.concatenate([g.normal(c, .45, (14, 2)) for c in [(-1.6, .2), (0, -.4), (1.7, .5)]])
+for _ in range(60):
+    a, b = g.integers(0, len(pts), 2)
+    if np.linalg.norm(pts[a] - pts[b]) < 1.3:
+        ax.plot(*zip(pts[a], pts[b]), color=HAIR, lw=.5, zorder=1)
+ax.scatter(pts[:, 0], pts[:, 1], s=g.uniform(4, 30, len(pts)), color=MUTED, linewidths=0, zorder=2)
+ax.scatter([0], [-.4], s=40, color=BLUE, zorder=3); ax.text(.12, -.75, 'funnel bottom', fontsize=5.8, color=INK)
+save(fig, 'tpl-lon')
+
+# T3. Robust design over hand sizes (#103): cost of each optimum across a hand-size range.
+fig, ax = frame(2.0); template(ax)
+h = np.linspace(160, 215, 60)
+ax.plot(h, 1 + .0012 * (h - 175) ** 2, ls='--', **GHOST, label='optimum for 175 mm')
+ax.plot(h, 1 + .0012 * (h - 200) ** 2, ls=':', **GHOST, label='optimum for 200 mm')
+ax.plot(h, 1.12 + .0004 * (h - 188) ** 2, color=BLUE, lw=1, label='robust (mean over sizes)')
+ax.set(xlabel='Hand length (mm)', ylabel='Relative score', ylim=(.9, 2.0))
+ax.legend(frameon=False, fontsize=6, loc='upper center')
+save(fig, 'tpl-handsizes')
+
+# T4. Adaptive top-K n-gram scoring (#55): speed and score loss against K.
+fig, ax = frame(2.0); template(ax)
+kk = np.logspace(2, 4.3, 40)
+ax.plot(kk, 6.4 * (2e4 / kk) ** .45, color=BLUE, lw=1, label='swap deltas / s (millions)')
+ax.plot(kk, 3 * np.exp(-kk / 1500), ls='--', **GHOST, label='score loss after confirmation (%)')
+ax.set_xscale('log'); ax.set(xlabel='Trigrams kept (K)', ylim=(0, 20))
+ax.legend(frameon=False, fontsize=6, loc='upper right')
+save(fig, 'tpl-topk')
+
+# T5. Free-form 6-DoF refinement after parametric search (#70, #74): best score against boards.
+fig, ax = frame(2.0); template(ax)
+n = np.linspace(0, 1, 100)
+ax.plot(n * 20, 7.5 + 4 * np.exp(-8 * n), **GHOST, ls='--', label='parametric (34 params)')
+ax.plot(20 + n * 20, 7.5 - .9 * (1 - np.exp(-5 * n)), color=BLUE, lw=1, label='free-form, CMA-ES')
+ax.plot(20 + n * 20, 7.5 - 1.0 * (1 - np.exp(-14 * n)), color=BLUE, lw=1, ls=':', label='free-form, surrogate gradient')
+ax.set(xlabel='Boards evaluated (thousands)', ylabel='Best score', ylim=(6, 12))
+ax.legend(frameon=False, fontsize=6, loc='upper right')
+save(fig, 'tpl-freeform')
+
 print('figures written to', HERE / 'assets')
