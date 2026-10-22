@@ -24,3 +24,4 @@ Stack, process, CI, testing approach, papers and repository organization. Newest
 - 2026-10-21 — `bench/` run copies are kept as recorded. — Time-budget runs can't be regenerated; they back the leaderboards.
 - 2026-10-21 — `CLAUDE.md` is just `@AGENTS.md`; `context/README.md` is the file index; decisions and web docs split by area. — Duplicated routing tables had drifted apart.
 - 2026-10-21 — Decision entries trimmed to one line; specs live in topic docs and code. — The log had grown into a second spec that agents had to read.
+- 2026-10-21 — The CLI layout image is `gecko layouts svg`, not a new `gecko export` group; it ports the web's `boardSvg` to `interop::svg` with the same sizes and colors, SVG only. — Layout output already lives under `layouts`; one picture in both front ends; PNG would add a rasterizer dependency for what `rsvg-convert` does.

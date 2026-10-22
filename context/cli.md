@@ -47,6 +47,9 @@ gecko geometry import-kle <file.json> --out <name> [--force]       # KLE board �
 gecko layouts import <file> [--from oxeylyzer|genkey|cmini|auto] [--out <name>] [--force]
                [--name N] [-g geometry]          # → layout TOML (stdout, or data/layouts/<out>.toml)
 gecko layouts export <layout> --to oxeylyzer|genkey|cmini [-g geometry]   # 30 alpha keys → stdout
+gecko layouts svg <layout> [--color plain|fingers|heat] [--base-only] [--no-title] [--out f.svg] [-g -p -c]
+                                                                  # the web Export tab's image: every layer,
+                                                                  #   title + score; PNG: rsvg-convert f.svg
 gecko layouts import-cmini <cmini checkout>                           # → data/community/cmini.json
 gecko layouts likes [--top 10] [--dups] [-g -p -c]                     # GECKO rank vs cmini likes (Spearman)
 gecko corpus nav <corpus> [--share 0.03] [--seed 1] --out <name>        # add modelled arrow keys

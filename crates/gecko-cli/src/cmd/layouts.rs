@@ -1,5 +1,5 @@
-//! `gecko layouts import | export | import-cmini | likes`: interop with other analyzers and the
-//! cmini community bundle.
+//! `gecko layouts import | export | svg | import-cmini | likes`: interop with other analyzers,
+//! layout images and the cmini community bundle.
 
 use std::path::PathBuf;
 
@@ -7,10 +7,11 @@ use anyhow::{bail, Context, Result};
 use clap::Subcommand;
 use gecko_core::interop::community;
 use gecko_core::interop::import::{export, import, Format};
+use gecko_core::interop::svg::{board_svg, layer_heat, KeyColor, SvgOptions};
 use gecko_core::{Layout, SCHEMA};
 use serde_json::json;
 
-use crate::ctx::{Ctx, Inputs};
+use crate::ctx::{score_layout, Ctx, Inputs};
 
 #[derive(Subcommand)]
 pub enum LayoutsCmd {
@@ -40,6 +41,25 @@ pub enum LayoutsCmd {
         /// oxeylyzer | genkey | cmini.
         #[arg(long)]
         to: String,
+        #[command(flatten)]
+        inputs: Inputs,
+    },
+    /// Draw a layout on its board as a standalone SVG (the web Export tab's image): every layer,
+    /// a title with the score. Prints the SVG unless --out.
+    Svg {
+        layout: String,
+        /// plain | fingers | heat (keystroke share under the corpus).
+        #[arg(long, default_value = "plain")]
+        color: String,
+        /// Base layer only.
+        #[arg(long)]
+        base_only: bool,
+        /// No title or score line.
+        #[arg(long)]
+        no_title: bool,
+        /// Write the SVG to this file.
+        #[arg(long)]
+        out: Option<PathBuf>,
         #[command(flatten)]
         inputs: Inputs,
     },
@@ -77,10 +97,38 @@ impl LayoutsCmd {
                 }
                 Ok(())
             }
+            LayoutsCmd::Svg { layout, color, base_only, no_title, out, inputs } => {
+                svg(ctx, &layout, KeyColor::parse(&color)?, !base_only, !no_title, out.as_deref(), &inputs)
+            }
             LayoutsCmd::ImportCmini { dir } => import_cmini(ctx, &dir),
             LayoutsCmd::Likes { top, dups, inputs } => likes(ctx, top, dups, &inputs),
         }
     }
+}
+
+fn svg(ctx: &Ctx, spec: &str, color: KeyColor, layers: bool, title: bool, out: Option<&std::path::Path>, inputs: &Inputs) -> Result<()> {
+    let l = ctx.load(inputs)?;
+    let lay = ctx.layout(spec, &l)?;
+    let (sc, st) = score_layout(&l, &lay)?;
+    let a = gecko_core::report::analyze(&sc, &st, 0);
+    let heat = layer_heat(&l.geometry, &lay, &a)?;
+    let sub = format!("{} · {} · {} · score {:.3}", l.geometry.name, l.corpus.name, l.profile.name, a.breakdown.score);
+    let o = SvgOptions { color, layers, title: title.then(|| (lay.name.clone(), sub)) };
+    let text = board_svg(&l.geometry, &lay, &heat, &o);
+    if let Some(path) = out {
+        ctx.write_file(path, &text)?;
+    }
+    if ctx.json {
+        let mut v = json!({"schema": SCHEMA, "layout": lay.name, "geometry": l.geometry.name, "score": a.breakdown.score});
+        match out {
+            Some(p) => v["path"] = json!(p),
+            None => v["svg"] = json!(text),
+        }
+        ctx.print(v);
+    } else if out.is_none() {
+        println!("{text}");
+    }
+    Ok(())
 }
 
 fn import_file(

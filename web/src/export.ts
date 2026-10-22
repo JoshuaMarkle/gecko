@@ -172,7 +172,8 @@ const FONT = "Inter, -apple-system, 'Helvetica Neue', Arial, sans-serif";
 const LAYER_MODE: Record<string, string> = { hold: "hold", oneshot: "one-shot", toggle: "toggle" };
 
 /** The layout on its physical board as a standalone SVG (the Export preview and the SVG/PNG
- *  download): one board per layer when `layers`, a title and score line when `title`. */
+ *  download): one board per layer when `layers`, a title and score line when `title`.
+ *  Ported to gecko-core `interop::svg` (`gecko layouts svg`): keep sizes and colors in sync. */
 export function boardSvg(e: ExportInfo, o: ImageOptions): string {
   const g = e.geometry;
   const U = 56, PAD = 28, GAP = 36, CAP = 22;
