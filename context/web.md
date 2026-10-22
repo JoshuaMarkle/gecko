@@ -113,8 +113,9 @@ each run (`profile_override`).
 
 ### Search
 Sidebar: algorithm; starting layout (Auto = the loaded layout, or a named layout) and **Edit
-layout**; budget (time or evaluations), threads, seed; stop confidence (saved, not applied
-yet); the algorithm's own parameters. Main: a short description and a small animation of
+layout**; budget (time or evaluations), threads, seed; holdout corpus (L06: results are also
+scored on it, never searched on); stop confidence (saved, not applied yet); the algorithm's own
+parameters. Main: a short description and a small animation of
 the algorithm (bars being swapped, or a population evolving), or the **layout editor**
 overlay (`LayoutEditor`: 2D board, click two keys to swap, Pin mode, layer picker, heat,
 undo). Bottom: search-space size (arrangements, after pins), estimates from past runs on the
@@ -146,7 +147,9 @@ the run has one), score vs reference and the main metrics.
 ### Analysis · Saved
 Analysis: every chart for the current layout (click two heatmap keys to swap). Saved: all
 runs; the selected run's convergence, best layouts as 2D thumbnails (click one to make it
-the working model) and reproducibility facts.
+the working model) and reproducibility facts. With a holdout corpus, the best-layouts table adds
+each layout's score on it, and the Run facts show the holdout corpus, start → best on both
+corpora, the gain kept and the rank ρ.
 
 ## Explore view (`components/explore/`)
 
@@ -190,7 +193,7 @@ locked; both presets fit the board to the viewport. A floor grid (1u cells, 5u s
 | `GET /api/corpora/{name}` | `.gkc` bytes (for WASM) |
 | `GET /api/corpora/{name}/sources` · `/sources/{file}` | source texts of a corpus (`data/corpora/src/<name>/`; loose `src/` files = `english`): list `[{name, bytes}]`, or one file as text |
 | `POST /api/score` | `{geometry, corpus, profile \| profile_override, chars \| layout, top}` → analysis |
-| `GET /api/runs` · `POST /api/runs` | list / start (`algo, time_ms \| evals, threads, seed, pins, sa_steps, ga_pop, memetic, moves` + score inputs) |
+| `GET /api/runs` · `POST /api/runs` | list / start (`algo, time_ms \| evals, threads, seed, pins, sa_steps, ga_pop, memetic, moves, holdout` + score inputs) |
 | `GET /api/runs/{id}` | config, result, progress, running, paused |
 | `GET /api/runs/{id}/events` | SSE: `progress`, then `done` (RunResult) or `failed` |
 | `POST /api/runs/{id}/cancel` | stop early (results are still saved) |

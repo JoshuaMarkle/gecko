@@ -315,6 +315,9 @@ struct RunReq {
     /// Extra descent neighbourhoods, e.g. "cycle3,depth2".
     #[serde(default)]
     moves: Option<String>,
+    /// Corpus to score the results on without searching on it (L06).
+    #[serde(default)]
+    holdout: Option<String>,
 }
 
 async fn start_run(State(app): State<AppState>, Json(req): Json<RunReq>) -> ApiResult {
@@ -348,6 +351,7 @@ async fn start_run(State(app): State<AppState>, Json(req): Json<RunReq>) -> ApiR
         params.moves = gecko_core::optimize::moves::MoveParams::parse(m)
             .ok_or_else(|| ApiError(StatusCode::BAD_REQUEST, format!("unknown moves '{m}'")))?;
     }
+    let holdout = req.holdout.as_deref().filter(|h| !h.is_empty()).map(|h| app.store.corpus(h)).transpose()?;
     let spec = RunSpec {
         geometry: &r.geometry,
         corpus: &r.corpus,
@@ -355,6 +359,7 @@ async fn start_run(State(app): State<AppState>, Json(req): Json<RunReq>) -> ApiR
         start: &r.layout,
         pins: &req.pins,
         params: params.clone(),
+        holdout: holdout.as_ref(),
     };
     let prep = run::prepare(&app.store.runs, &spec)?;
     let id = prep.config.id.clone();
@@ -363,7 +368,15 @@ async fn start_run(State(app): State<AppState>, Json(req): Json<RunReq>) -> ApiR
     app.live.lock().unwrap().insert(id.clone(), live.clone());
     let pins = req.pins.clone();
     std::thread::spawn(move || {
-        let spec = RunSpec { geometry: &r.geometry, corpus: &r.corpus, profile: &r.profile, start: &r.layout, pins: &pins, params };
+        let spec = RunSpec {
+            geometry: &r.geometry,
+            corpus: &r.corpus,
+            profile: &r.profile,
+            start: &r.layout,
+            pins: &pins,
+            params,
+            holdout: holdout.as_ref(),
+        };
         let res = run::execute(&prep, &spec, &live.control, |p| live.send("progress", serde_json::to_string(p).unwrap()));
         match res {
             Ok(res) => live.send("done", serde_json::to_string(&res).unwrap()),

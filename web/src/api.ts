@@ -103,11 +103,13 @@ export interface AtlasSummary {
   coverage: { within: number; observed: number; estimate: number };
   distinct_dist: number; distinct: AtlasBest[];
 }
-export interface Ranked { rank: number; score: number; chars: string; rows: string[]; hash: string; breakdown: Breakdown }
+export interface Ranked { rank: number; score: number; chars: string; rows: string[]; hash: string; breakdown: Breakdown; holdout?: number }
+/** L06: the start layout and best result on the search corpus and on a held-out corpus (gecko-core `run::HoldoutReport`). */
+export interface HoldoutReport { corpus: string; start: number; best: number; start_search: number; best_search: number; retained: number; rank_corr?: number }
 /** A lower bound and the optimality gap of a run's best layout (gecko-core `bound::Gap`). */
 export interface BoundGap { lower: number; gilmore_lawler: number; value: number; gap_pct: number }
 export interface BoundReport { method: string; symbols: number; iters: number; total: BoundGap; pair: BoundGap; elapsed_ms: number }
-export interface RunResult { schema: number; id: string; geometry: string; evals: number; elapsed_ms: number; evals_per_sec: number; best: Ranked[]; bound?: BoundReport }
+export interface RunResult { schema: number; id: string; geometry: string; evals: number; elapsed_ms: number; evals_per_sec: number; best: Ranked[]; bound?: BoundReport; holdout?: HoldoutReport }
 export interface RunParams { algo: string; seed: number; threads: number; time_ms: number | null; evals: number | null; top: number }
 export interface RunConfig {
   id: string;
@@ -118,6 +120,7 @@ export interface RunConfig {
   profile: Profile;
   start: string;
   pins: string;
+  holdout?: { name: string; hash: string };
 }
 export interface RunSummary {
   id: string; created: string; algo: string; profile: string; corpus: string; geometry: string;
@@ -162,5 +165,7 @@ export const api = {
 export interface ScoreRequest { geometry: string; corpus: string; profile_override: Profile; chars: string; top?: number }
 export interface RunRequest extends ScoreRequest {
   algo: string; time_ms?: number; evals?: number; threads: number; seed: number; pins: string; sa_steps?: number; ga_pop?: number;
+  /** Corpus id to score results on without searching on it (L06). */
+  holdout?: string;
   memetic?: { ga: { pop_size: number }; local_search: "hc" | "tabu"; local_steps: number; islands: number; migration_interval: number; migrants: number };
 }

@@ -216,9 +216,12 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 ## Results
 
 A run directory `runs/<timestamp>-<algo>-<short-hash>/` contains:
-- `config.json` (params, input names + hashes, full profile, start layout, pins, version)
+- `config.json` (params, input names + hashes, full profile, start layout, pins, version;
+  `holdout` corpus name + hash when set)
 - `best.json` (resolved params, top-K layouts with full metric breakdown, evals, speed, and
-  `bound`: lower bound + optimality gap of the best layout, `context/algorithms/bounds.md`)
+  `bound`: lower bound + optimality gap of the best layout, `context/algorithms/bounds.md`;
+  with a holdout corpus, each layout's `holdout` score and a `holdout` report: start/best on
+  both corpora, `retained` share of the gain, `rank_corr` Spearman over the top-K)
 - `progress.jsonl` (elapsed, evals, best score and layout, every ~250 ms)
 
 Explore runs add an **atlas** (`explore/atlas.rs`; little-endian, fixed-size records,

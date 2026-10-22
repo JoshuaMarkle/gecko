@@ -48,7 +48,8 @@ pub fn explore(ctx: &Ctx, a: ExploreArgs) -> Result<()> {
     if let Some(m) = a.max_optima {
         params.explore.max_optima = m;
     }
-    let spec = RunSpec { geometry: &l.geometry, corpus: &l.corpus, profile: &l.profile, start: &start, pins: &a.pin, params };
+    let spec =
+        RunSpec { geometry: &l.geometry, corpus: &l.corpus, profile: &l.profile, start: &start, pins: &a.pin, params, holdout: None };
     let prep = run::prepare(&ctx.store.runs, &spec)?;
     eprintln!("explore {}  ({} threads · {})", prep.config.id, spec.params.threads, l.profile.name);
     let quiet = ctx.json;
@@ -313,7 +314,8 @@ pub fn qd(ctx: &Ctx, a: QdArgs) -> Result<()> {
     if let Some(d) = a.descent {
         params.qd.descent = d;
     }
-    let spec = RunSpec { geometry: &l.geometry, corpus: &l.corpus, profile: &l.profile, start: &start, pins: &a.pin, params };
+    let spec =
+        RunSpec { geometry: &l.geometry, corpus: &l.corpus, profile: &l.profile, start: &start, pins: &a.pin, params, holdout: None };
     let prep = run::prepare(&ctx.store.runs, &spec)?;
     eprintln!("qd {}  ({} threads · {} · {})", prep.config.id, spec.params.threads, l.profile.name, spec.params.qd.axes.join(" × "));
     let quiet = ctx.json;

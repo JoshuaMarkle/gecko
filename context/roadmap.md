@@ -85,7 +85,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 58. [ ] [#93](https://github.com/JoshuaMarkle/gecko/issues/93) `L3` Board tab: Unity-style key editing · M · after [#84](https://github.com/JoshuaMarkle/gecko/issues/84), [#39](https://github.com/JoshuaMarkle/gecko/issues/39)
 59. [x] [#94](https://github.com/JoshuaMarkle/gecko/issues/94) `L6` Search tab: algorithm and budget settings · S · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82)
 60. [ ] [#43](https://github.com/JoshuaMarkle/gecko/issues/43) `B7` MIP oracle for sub-problems (HiGHS / CP-SAT) · L · after [#37](https://github.com/JoshuaMarkle/gecko/issues/37)
-61. [ ] [#44](https://github.com/JoshuaMarkle/gecko/issues/44) `C9` L06 held-out corpus generalization · S
+61. [x] [#44](https://github.com/JoshuaMarkle/gecko/issues/44) `C9` L06 held-out corpus generalization · S
 62. [ ] [#45](https://github.com/JoshuaMarkle/gecko/issues/45) `F2` Web: bench views · M
 63. [ ] [#46](https://github.com/JoshuaMarkle/gecko/issues/46) `K2` Web: per-finger tapping test · M · after [#35](https://github.com/JoshuaMarkle/gecko/issues/35)
 64. [ ] [#95](https://github.com/JoshuaMarkle/gecko/issues/95) `L13` Saved workspaces · S · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82)

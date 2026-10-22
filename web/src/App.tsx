@@ -190,6 +190,7 @@ export function App() {
         geometry: geometry.id, corpus: corpus.id, profile_override: profile, chars: start, algo,
         ...(byEvals ? { evals } : { time_ms: search.timeS * 1000 }),
         threads: search.threads, seed: search.seed, pins, sa_steps: search.saSteps, ga_pop: search.gaPop,
+        holdout: search.holdout && search.holdout !== corpus.id ? search.holdout : undefined,
         memetic: search.algo === "memetic" ? {
           ga: { pop_size: search.memeticPop ?? 24 }, local_search: search.localSearch ?? "hc",
           local_steps: search.localSteps ?? 12, islands: search.islands ?? 0,
@@ -348,7 +349,7 @@ export function App() {
             geometry={geometry} chars={viewChars} layouts={layouts} a={analysis} />
         )}
         {view === "search" && (
-          <SearchView meta={meta} layouts={layouts} geometry={geometry} corpusName={corpus?.name ?? ""} profileName={profile.name} search={search} setSearch={setSearch}
+          <SearchView meta={meta} layouts={layouts} geometry={geometry} corpora={corpora} corpusId={corpusId} corpusName={corpus?.name ?? ""} profileName={profile.name} search={search} setSearch={setSearch}
             running={!!live?.running} runs={runs} chars={editChars} label={hasModel ? model!.label : label} a={analysis} pins={pins} setPins={setPins}
             onSwap={swap} canUndo={chars !== startChars} onUndo={() => setChars(startChars, "start")} onLoad={(c, l) => setChars(c, l)} />
         )}
