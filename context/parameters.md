@@ -87,6 +87,7 @@ thumb CMC degrees of freedom, scale from hand length and breadth.
 | `allowed[slot]` | Symbol classes allowed per slot |
 | `reference` + `max_moved` | Stay close to a known layout |
 | `shortcut_keys` | Keep Z X C V on the left bottom row |
+| `[build]` | G07 board build limits for geometry search (`geometry.md#manufacturability-g07`) |
 
 ### Search
 

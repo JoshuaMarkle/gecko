@@ -11,8 +11,10 @@
 //!   budget, no layout search and no polish (the reported layout is the start layout).
 //!
 //! Collisions (2D on flat candidates, approximate 3D otherwise) add a penalty per unit of depth;
-//! past `hard_fail` the layout search is skipped. Both modes end with an equal SA polish of the
-//! best and the start board, so the reported gain compares like with like.
+//! past `hard_fail` the layout search is skipped. A profile `[build]` section (G07,
+//! `geometry/manufacture.rs`) adds its violations and their excess (u) to the collisions.
+//! Both modes end with an equal SA polish of the best and the start board, so the reported
+//! gain compares like with like.
 
 use std::collections::BTreeMap;
 use std::io::Write;
@@ -414,6 +416,7 @@ struct Problem<'a> {
     /// |start board score| + 1 (after the start board's layout search): the unit of collision penalties.
     unit: f64,
     start_score: f64,
+    build: Option<crate::geometry::manufacture::BuildLimits>,
 }
 
 impl Problem<'_> {
@@ -433,7 +436,8 @@ impl Problem<'_> {
 
     fn collisions(&self, g: &Geometry) -> (usize, f64) {
         let c = if g.is_flat() { g.collisions(self.p.margin) } else { g.collisions_3d(self.p.margin) };
-        (c.len(), c.iter().map(|c| c.depth as f64).sum())
+        let b = self.build.as_ref().map(|l| g.manufacture(l)).unwrap_or_default();
+        (c.len() + b.violations.len(), c.iter().map(|c| c.depth as f64).sum::<f64>() + b.excess)
     }
 
     fn rejected(&self, collisions: usize, depth: f64, sym: &[u8]) -> Cand {
@@ -635,6 +639,7 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
         p,
         unit: start_score.abs() + 1.0,
         start_score,
+        build: spec.profile.build.clone(),
     };
     pr.movable = Ctx::new(&pr.scorer, pr.movable.clone(), pr.scorer.identity()).movable;
     let threads = p.threads.max(1);

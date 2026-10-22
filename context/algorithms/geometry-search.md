@@ -58,7 +58,9 @@ moved keys, CMA-ES and the bilevel driver below.
 - **Collisions**: 2D on flat candidates, `collisions_3d` otherwise, with `--margin` clearance.
   Objective = score + `penalty` · (|start board score| + 1) · total depth, the start board
   scored after its first layout search (not the raw start layout, e.g. QWERTY); past `hard_fail` (2 u) the
-  layout search is skipped. The best collision-free board is reported.
+  layout search is skipped. The best collision-free board is reported. A profile `[build]`
+  section (G07, [../geometry.md](../geometry.md#manufacturability-g07)) adds its violations to
+  `collisions` and their excess to the depth, so build limits share the penalty and hard fail.
 - **Budget**: with `--time`, 10% for the first layout run, 70% for the search, 10% each for the
   final SA on the best board and on the start board, so the reported gain compares equal
   layout effort. With `--evals N`: N boards, `--polish-evals` swaps per layout run;
