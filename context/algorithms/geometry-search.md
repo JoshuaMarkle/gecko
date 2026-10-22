@@ -170,3 +170,11 @@ Comparison, each board with the same 12 s SA from QWERTY (`gecko optimize -p han
 - Throughput fell from ~14k to ~5.9k boards per 120 s while another agent shared the machine;
   3D collision costs 0.24 ms per 36-key board against ~0.3 s of layout search per candidate,
   so it is not the bottleneck.
+
+**3D search under G07 limits, then STL (J4, 2026-10-22)**: `--free 3d`, 90 s, seed 3, `hand`
+profile plus a default `[build]` section (key angle ≤ 60°): `20261022-184243-geom-19d9c66f`,
+11.56 → 7.57 (−34.5%), within every build limit (split tent 36°, tilt −4°, opening 10°, row
+curve 30° at its bound). `gecko build stl run:<id>` gives a 215 × 114 × 77 mm case with every
+switch cutout clear (12 connectors dropped) but 8 keycaps hitting webs within their travel;
+the H10 runs without `[build]` (tent to 104°) leave 2–24 cutouts blocked. A buildable board
+needs `[build]` during the search, and keycap clearance is not yet a search constraint.

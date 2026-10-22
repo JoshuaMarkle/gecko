@@ -3,13 +3,16 @@
 //!
 //! Submodules: `parametric` (zones/columns/rows → keys), `derive` (effort and stretch from
 //! positions), `flat2d` (2D drawing), `collision` (2D keycap overlap), `collision3d` (3D keycap and
-//! switch hulls, GJK + EPA), `pose` (key frames in 3D).
+//! switch hulls, GJK + EPA), `pose` (key frames in 3D), `manufacture` (G07 build limits), `mesh` +
+//! `case` (plate and case STL).
 
+pub mod case;
 pub mod collision;
 pub mod collision3d;
 pub mod derive;
 pub mod flat2d;
 pub mod manufacture;
+pub mod mesh;
 pub mod parametric;
 pub mod pose;
 
