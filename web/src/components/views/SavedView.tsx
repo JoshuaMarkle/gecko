@@ -1,10 +1,10 @@
 // Saved view: every saved run on the left; the selected run's convergence, ranked layouts
 // (2D thumbnails) and reproducibility details on the right.
 
-import type { Geometry, Progress, RunDetail, RunSummary } from "../api";
-import { fitChars, fmt, fmtCount, fmtTime } from "../format";
-import { Thumb } from "./Board2D";
-import { Convergence } from "./Charts";
+import type { Geometry, Progress, RunDetail, RunSummary } from "../../api";
+import { fitChars, fmt, fmtCount, fmtTime } from "../../format";
+import { Thumb } from "../Board2D";
+import { Convergence } from "../Charts";
 
 interface Props {
   runs: RunSummary[];
@@ -19,7 +19,7 @@ interface Props {
   onShowHome: () => void;
 }
 
-export function ResultsView(p: Props) {
+export function SavedView(p: Props) {
   const res = p.run?.result;
   const cfg = p.run?.config;
   const geo = cfg ? p.geometries.find((g) => g.name === cfg.geometry.name) : undefined;

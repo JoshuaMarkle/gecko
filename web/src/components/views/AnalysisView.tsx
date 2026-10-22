@@ -1,11 +1,11 @@
 // Analysis view: every chart for the current layout at once, against the reference.
 
-import type { Analysis, Geometry } from "../api";
-import { fmt, verdict } from "../format";
-import { FingerLoad, Heatmap, MetricBars, WorstNgrams } from "./Charts";
+import type { Analysis, Geometry } from "../../api";
+import { fmt, verdict } from "../../format";
+import { FingerLoad, Heatmap, MetricBars, WorstNgrams } from "../Charts";
 
 /** Per-metric value vs reference and weighted contribution, with a better/worse dot. */
-export function MetricTable({ a, refA, refName }: { a: Analysis; refA: Analysis | null; refName: string }) {
+function MetricTable({ a, refA, refName }: { a: Analysis; refA: Analysis | null; refName: string }) {
   return (
     <table className="tbl">
       <thead><tr><th>metric</th><th>value</th><th>{refName}</th><th>score</th><th /></tr></thead>
