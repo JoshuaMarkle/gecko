@@ -1,36 +1,38 @@
-// App shell (context/web.md): navbar (input tabs | result tabs · play / pause /
-// stop centred, run % beside · working model) over one view. Inputs: Board, Hand, Language,
-// Profile, Search (three-panel layout). Results: Home, Explore, Analysis, Saved, Export.
+// App shell (context/web.md): navbar (Home | Inputs | Optimize | Saved tab groups · play / pause /
+// stop centred, run % beside · working model) over one view. Home is the optimization flowchart;
+// Inputs: Board, Hand, Language, Profile, Summary; Optimize: Layout, Board, Both, Explore (Play
+// runs the open one); Saved: Runs, Export.
 
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react";
 import { api, type Analysis, type CorpusInfo, type Geometry, type GeomRunDetail, type LayoutInfo, type Meta, type Profile, type RunDetail, type RunSummary } from "./api";
+import { ExploreView } from "./components/explore/ExploreView";
 import { collisionColors, stableFocus, useParamBoard } from "./components/geom/GeomBoard";
 import { useGeomVars } from "./components/geom/GeomSearch";
-import { asProgress, freeSpec, GEOM_DEFAULTS } from "./geom";
-import { ExploreView } from "./components/explore/ExploreView";
-import type { ExportInfo } from "./export";
-import { IconBoard, IconExplore, IconExport, IconHand, IconHome, IconLanguage, IconPause, IconPlay, IconProfile, IconRuns, IconSearch, IconStats, IconStop, IconSummary } from "./components/Icons";
-import { AnalysisView } from "./components/views/AnalysisView";
+import { IconBoard, IconExplore, IconExport, IconHand, IconHome, IconLanguage, IconOptBoard, IconOptBoth, IconOptLayout, IconPause, IconPlay, IconProfile, IconRuns, IconStop, IconSummary } from "./components/Icons";
+import { BoardSearchView, type LiveBoard } from "./components/views/BoardSearchView";
 import { BoardView } from "./components/views/BoardView";
 import { ExportView } from "./components/views/ExportView";
 import { HandView } from "./components/views/HandView";
-import { HomeView, type Block } from "./components/views/HomeView";
+import { HomeView } from "./components/views/HomeView";
 import { LanguageView } from "./components/views/LanguageView";
+import { algoName, LayoutView } from "./components/views/LayoutView";
 import { ProfileView } from "./components/views/ProfileView";
 import { SavedView } from "./components/views/SavedView";
-import { algoName, SearchView } from "./components/views/SearchView";
 import { SummaryView } from "./components/views/SummaryView";
-import { cap, EMPTY, fitChars, fmt, fmtCount, fmtTime, layerSlots, swapChars } from "./format";
-import { handDims, handLength, withHand } from "./hand";
+import { sameInputs } from "./estimate";
+import type { ExportInfo } from "./export";
+import { EMPTY, fitChars, fmt, fmtCount, fmtTime, layerSlots, swapChars } from "./format";
+import { asProgress, freeSpec, GEOM_DEFAULTS } from "./geom";
+import { withHand } from "./hand";
 import { useInputs, usePref } from "./inputs";
 import { useLanguages } from "./languages";
 import { useLiveRun } from "./liveRun";
-import { asView, INPUT_TABS, RESULT_TABS, type InputTabName, type View } from "./tabs";
-import { Scorer, wasmReady } from "./wasm";
+import { asView, isOptimizeTab, TAB_GROUPS, type OptimizeTabName, type View } from "./tabs";
+import { profileHash, Scorer, wasmReady } from "./wasm";
 
 const ICONS: Record<View, () => ReactElement> = {
-  board: IconBoard, hand: IconHand, language: IconLanguage, profile: IconProfile, search: IconSearch, summary: IconSummary,
-  home: IconHome, explore: IconExplore, analysis: IconStats, saved: IconRuns, export: IconExport,
+  home: IconHome, board: IconBoard, hand: IconHand, language: IconLanguage, profile: IconProfile, summary: IconSummary,
+  layout: IconOptLayout, shape: IconOptBoard, both: IconOptBoth, explore: IconExplore, runs: IconRuns, export: IconExport,
 };
 
 export function App() {
@@ -48,8 +50,11 @@ export function App() {
     chars, setChars: setCharsRaw, label, setLabel, startChars, setStartChars, pins, setPins, search, setSearch,
     customBoards, setCustomBoards, constraints, setConstraints, hand, setHand, model, setModel,
   } = inputs;
-  const [viewPref, setView] = usePref<string>("view", "home");
+  const [viewPref, setViewPref] = usePref<string>("view", "home");
   const view = asView(viewPref);
+  /** The optimize tab used last: Home highlights it. */
+  const [lastOpt, setLastOpt] = usePref<OptimizeTabName>("lastOptimize", "layout");
+  const setView = (v: View) => { setViewPref(v); if (isOptimizeTab(v)) setLastOpt(v); };
   const [boardCustom, setBoardCustom] = usePref("boardCustom", false);
   const langs = useLanguages(corpora);
 
@@ -57,10 +62,8 @@ export function App() {
   const [scorerKey, setScorerKey] = useState("");
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [refAnalysis, setRefAnalysis] = useState<Analysis | null>(null);
-  /** Selected slot on the Analysis heatmap (an index into the flat layered string). */
-  const [selected, setSelected] = useState<number | null>(null);
   const [runDetail, setRunDetail] = useState<RunDetail | null>(null);
-  /** The opened run when it is a board + layout run (then `runDetail` is null). */
+  /** The opened run when it is a board run (then `runDetail` is null). */
   const [geomDetail, setGeomDetail] = useState<GeomRunDetail | null>(null);
   const [rank, setRank] = useState<number | null>(null);
   // Handlers are declared below; the hook calls them only after a run ends.
@@ -123,10 +126,20 @@ export function App() {
     return () => { alive = false; setScorer(null); made?.free(); };
   }, [geometry, corpus]);
 
-  // ---- board + layout search: free parameters (Search tab), the live board (Home) ----
-  const boardTarget = search.target === "board";
-  const geomSettings = search.geom ?? GEOM_DEFAULTS;
-  const geomVars = useGeomVars(geometry ?? { id: "", name: "", description: "", key: [] }, boardTarget ? geomSettings.groups : []);
+  // ---- past layout runs on exactly these inputs (hashes; custom boards and local languages never run) ----
+  const [profHash, setProfHash] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    if (profile) profileHash(profile).then((h) => alive && setProfHash(h)).catch(() => alive && setProfHash(null));
+    return () => { alive = false; };
+  }, [profile]);
+  const matching = useMemo(() => sameInputs(runs.filter((r) => r.kind !== "geometry"), geometry?.hash && !isCustomBoard && corpus && profHash
+    ? { geometry_hash: geometry.hash, corpus_hash: corpus.hash, profile_hash: profHash } : null), [runs, geometry, isCustomBoard, corpus, profHash]);
+
+  // ---- board searches: free parameters (Board / Both tabs), the live board ----
+  const geomTab = view === "shape" || view === "both";
+  const geomSettings = { ...GEOM_DEFAULTS, ...search.geom };
+  const geomVars = useGeomVars(geometry ?? { id: "", name: "", description: "", key: [] }, geomTab ? geomSettings.groups : []);
   const lg = live?.geom;
   const lgNames = useMemo(() => lg?.vars.map((v) => v.name) ?? [], [lg?.vars]);
   const lgStarts = useMemo(() => lg?.vars.map((v) => v.start), [lg?.vars]);
@@ -134,7 +147,8 @@ export function App() {
   const liveStart = useParamBoard(lg?.param, lgNames, lgStarts, "live-start");
   const liveNow = useParamBoard(lg?.param, lgNames, lgLast?.values ?? lgStarts, "live");
 
-  const previewChars = live?.running && live.algo !== "explore" ? live.progress[live.progress.length - 1]?.best_chars : undefined;
+  const layoutLive = !!live?.running && live.algo !== "explore" && live.algo !== "geometry";
+  const previewChars = layoutLive ? live!.progress[live!.progress.length - 1]?.best_chars : undefined;
   const viewChars = geometry ? fitChars(previewChars ?? chars, geometry) : previewChars ?? chars;
   const editChars = geometry ? fitChars(chars, geometry) : chars;
   // The 3D views show the base layer; `slots[0][key]` indexes `viewChars`.
@@ -170,27 +184,18 @@ export function App() {
   }, [scoreChars, reference]);
 
   // ---- actions ----
-  const setChars = (c: string, l: string) => { setCharsRaw(c); setLabel(l); setStartChars(c); setSelected(null); setRank(null); };
+  const setChars = (c: string, l: string) => { setCharsRaw(c); setLabel(l); setStartChars(c); setRank(null); };
   const setProfileId = (id: string) => { setProfileIdRaw(id); const p = profiles.find((x) => x.id === id); if (p) loadProfile(p); };
   const swap = (i: number, j: number) => { setCharsRaw(swapChars(editChars, i, j)); setLabel("edited"); setRank(null); };
   /** Make a layout the working model (and the loaded layout runs start from on Auto). */
   const adopt = (c: string, l: string, score: number | null, run?: string) => {
-    setCharsRaw(c); setLabel(l); setStartChars(c); setSelected(null);
+    setCharsRaw(c); setLabel(l); setStartChars(c);
     setModel({ chars: c, label: l, score, run });
-  };
-
-  /** Analysis heatmap: click two keys (slots) to swap them. */
-  const onSlot = (i: number) => {
-    if (live?.running) return;
-    if (i < 0) { setSelected(null); return; }
-    if (selected === null) { setSelected(i); return; }
-    if (selected !== i) swap(selected, i);
-    setSelected(null);
   };
 
   const refreshRuns = () => api.runs().then(setRuns).catch(() => {});
 
-  /** Make a geometry run's best board the board, and its layout the working model. */
+  /** Make a board run's best board the board, and its layout the working model. */
   const adoptBoard = async (id: string, d?: GeomRunDetail) => {
     try {
       const detail = d ?? await api.geomRun(id);
@@ -198,7 +203,7 @@ export function App() {
       if (!best) return;
       if (!geometries.some((g) => g.run === id)) setGeometries(await api.geometries());
       setGeomId(`run:${id}`);
-      adopt(best.chars, "board + layout run", best.score);
+      adopt(best.chars, detail.config.params.mode === "board" ? "board run" : "board + layout run", best.score);
       setRank(null);
     } catch (e) {
       setErr((e as Error).message);
@@ -222,31 +227,28 @@ export function App() {
     }
   };
 
-  const startRun = async (explore = false) => {
+  /** Start the run of an optimize tab with the shared inputs. */
+  const startRun = async (kind: OptimizeTabName) => {
     if (!profile || !geometry || !corpus) return;
     if (isCustomBoard) { setErr("Custom boards cannot be optimized yet: the server needs a geometry upload route. Pick a bundled board to run."); return; }
     setErr(null);
     const start = search.start && search.start !== "auto" ? layouts.find((l) => l.id === search.start)?.chars ?? chars : chars;
-    const byEvals = !explore && search.budget === "evals";
-    if (!explore && boardTarget) {
-      if (!geometry.param) { setErr(`${geometry.name} has no parameter file, so its shape cannot be optimized. Pick a parametric board, or switch Search to Layout.`); return; }
-      if (!geomVars.vars.length) { setErr(geomVars.error ?? "No free parameters: turn on a group under Board shape on the Search tab."); return; }
-      const g = geomSettings;
-      try {
+    try {
+      if (kind === "shape" || kind === "both") {
+        if (!geometry.param) { setErr(`${geometry.name} has no parameter file, so its shape cannot be optimized. Pick a parametric board on the Board tab.`); return; }
+        if (!geomVars.vars.length) { setErr(geomVars.error ?? "No free parameters: turn on a group under Board shape."); return; }
+        const g = geomSettings;
         await run.start({
           geometry: geometry.id, corpus: corpus.id, profile_override: profile, chars: start, algo: "geometry",
-          ...(byEvals ? { evals: g.evals } : { time_ms: search.timeS * 1000 }), threads: search.threads, seed: search.seed, pins,
-          geom: { free: freeSpec(g, geometry.id, geomVars.vars), mode: g.mode, inner_evals: g.innerEvals, margin: g.margin, penalty: g.penalty, keep_effort: g.keepEffort },
+          ...(g.budget === "evals" ? { evals: g.evals } : { time_ms: (g.timeS ?? 60) * 1000 }), threads: search.threads, seed: search.seed, pins,
+          geom: { free: freeSpec(g, geometry.id, geomVars.vars), mode: kind === "shape" ? "board" : g.mode, inner_evals: g.innerEvals, margin: g.margin, penalty: g.penalty, keep_effort: g.keepEffort },
         }, geometry.param);
-      } catch (e) {
-        setErr((e as Error).message);
+        return;
       }
-      return;
-    }
-    try {
+      const explore = kind === "explore";
       await run.start({
         geometry: geometry.id, corpus: corpus.id, profile_override: profile, chars: start, algo: explore ? "explore" : search.algo,
-        ...(byEvals ? { evals: search.evals ?? 50_000_000 } : { time_ms: search.timeS * 1000 }),
+        ...(!explore && search.budget === "evals" ? { evals: search.evals ?? 50_000_000 } : { time_ms: search.timeS * 1000 }),
         threads: search.threads, seed: search.seed, pins, sa_steps: search.saSteps, ga_pop: search.gaPop,
         holdout: search.holdout && search.holdout !== corpus.id ? search.holdout : undefined,
         memetic: search.algo === "memetic" ? {
@@ -260,7 +262,8 @@ export function App() {
     }
   };
 
-  const play = () => { if (!live?.running) startRun(view === "explore"); else setPaused(false); };
+  const optTab = isOptimizeTab(view) ? view : null;
+  const play = () => { if (!live?.running) { if (optTab) startRun(optTab); } else setPaused(false); };
 
   const progress = live && (live.running || (runDetail ?? geomDetail)?.config.id !== live.id) ? live.progress
     : runDetail?.progress ?? geomDetail?.progress.map(asProgress) ?? live?.progress ?? [];
@@ -274,45 +277,41 @@ export function App() {
     if (b) { adopt(b.chars, `${runDetail!.config.params.algo} run #${i + 1}`, b.score, runDetail!.config.id); setRank(i); }
   };
   const hasModel = !!model && model.chars === chars;
-  const shownLabel = live?.running ? "Live best" : hasModel ? model!.label : label;
+  const shownLabel = layoutLive ? "Live best" : hasModel ? model!.label : label;
   const baseProfile = profiles.find((x) => x.id === profileId);
   const profileEdited = !!baseProfile && JSON.stringify({ ...withHand(baseProfile, hand), id: undefined }) !== JSON.stringify({ ...profile, id: undefined });
+  /** The shown layout is the reference itself: comparing it with itself says nothing. */
+  const isRef = !!reference && fitChars(reference.chars, geometry) === viewChars;
 
   // ---- navbar: working model / live status ----
   const status = live?.running
     ? lgLast
       ? `${paused ? "Paused · " : ""}Board · gen ${lgLast.generation} · ${fmtCount(lgLast.candidates)} boards · best ${fmt(lgLast.best, 3)}`
-    : live.algo === "geometry" ? `${paused ? "Paused · " : ""}Board · first layout search…`
+    : live.algo === "geometry" ? `${paused ? "Paused · " : ""}Board · starting…`
     : liveP?.explore
       ? `${paused ? "Paused · " : ""}Explore · ${fmtCount(liveP.explore.optima)} optima · best ${fmt(liveP.best, 3)}`
       : `${paused ? "Paused · " : ""}${live.algo.toUpperCase()} · ${fmtCount(liveP?.evals ?? 0)} evals · best ${liveP ? fmt(liveP.best, 3) : "–"}`
     : null;
   const modelScore = model ? (model.chars === chars && analysis ? analysis.breakdown.score : model.score) : null;
-
-  const blocks: Block[] = [
-    { tab: "board", title: "Board", rows: [["Board", geometry.name], ["Keys", `${geometry.key.length}`]],
-      flags: [["Custom board", isCustomBoard], ["Custom constraints", Object.values(constraints).some((c) => c.on)]] },
-    { tab: "hand", title: "Hand", rows: [["Preset", cap(hand.preset)], ["Hand length", `${handLength(handDims(hand)).toFixed(0)} mm`]],
-      flags: [["Hand", hand.use]] },
-    { tab: "language", title: "Language", rows: [["Language", corpus?.name ?? "–"], ["Characters", fmtCount(corpus?.chars ?? 0)]] },
-    { tab: "profile", title: "Profile", rows: [["Profile", `${profile.name}${profileEdited ? " (edited)" : ""}`],
-      ["Weighted metrics", `${Object.values(profile.weights).filter((w) => w > 0).length}`]] },
-    { tab: "search", title: "Search", rows: [boardTarget ? ["Optimize", `Board + layout · ${geomSettings.groups.length} groups`] : ["Algorithm", algoName(search.algo)],
-      ["Budget", search.budget === "evals" ? (boardTarget ? `${fmtCount(geomSettings.evals)} boards` : `${fmtCount(search.evals ?? 50_000_000)} evals`) : `${search.timeS}s`],
-      ["Threads · seed", `${search.threads} · ${search.seed}`],
-      ["Start", search.start && search.start !== "auto" ? layouts.find((l) => l.id === search.start)?.name ?? search.start : `Auto · ${label}`],
-      ["Pins", pins || "none"]],
-      flags: [["Stop early", search.stopConf != null]] },
-  ];
+  const playTitle = paused ? "Resume" : live?.running ? "Running"
+    : optTab === "explore" ? `Explore the search space (${search.timeS}s)`
+    : optTab === "shape" || optTab === "both" ? `Optimize ${optTab === "shape" ? "the board" : "board + layout"}, ${geomSettings.budget === "evals" ? `${fmtCount(geomSettings.evals)} boards` : `${geomSettings.timeS ?? 60}s`}`
+    : `Optimize the layout: ${algoName(search.algo)}, ${search.budget === "evals" ? `${fmtCount(search.evals ?? 50_000_000)} evals` : `${search.timeS}s`}`;
 
   // Export describes the shown layout; run facts only when it is that run's adopted layout.
   const modelRun = hasModel && model?.run && runDetail?.config.id === model.run ? runDetail : null;
   const holdout = modelRun?.result?.holdout;
   const exportInfo: ExportInfo = {
     name: shownLabel, geometry, chars: viewChars, a: analysis, corpus: corpus?.name, profile: profile.name,
-    ref: refAnalysis && reference && reference.chars !== viewChars ? { name: refName, a: refAnalysis } : undefined,
+    ref: refAnalysis && !isRef ? { name: refName, a: refAnalysis } : undefined,
     run: modelRun ? { id: modelRun.config.id, algo: modelRun.config.params.algo, holdout: holdout && { corpus: holdout.corpus, retained: holdout.retained } } : undefined,
   };
+
+  const liveBoard: LiveBoard | undefined = live?.running && live.algo === "geometry" && liveNow && !liveNow.error ? {
+    geometry: liveNow.geometry, ghost: liveStart?.geometry.key, colors: collisionColors(liveNow.geometry.key.length, liveNow.collisions),
+    focus: liveStart ? stableFocus(liveStart.geometry.key) : undefined, collisions: liveNow.collisions.length,
+    caption: lgLast ? `Live best board · generation ${lgLast.generation} · ${fmt(lgLast.best, 3)}` : "Start board",
+  } : undefined;
 
   const sel = langs.selected;
   const canSummarize = !!sel && sel.local && sel.status !== "Summarized" && !!sel.sources?.length && langs.busy === null;
@@ -321,11 +320,11 @@ export function App() {
     <div className="shell">
       <header id="top">
         <nav className="views" aria-label="Tabs">
-          {([["Inputs", INPUT_TABS], ["Results", RESULT_TABS]] as const).map(([group, tabs], gi) => (
-            <div key={group} className="tabgroup">
+          {TAB_GROUPS.map(([group, tabs], gi) => (
+            <div key={gi} className="tabgroup">
               {gi > 0 && <span className="tabdivider" aria-hidden="true" />}
-              <span className="grouplabel">{group}</span>
-              <div className="toolgroup" aria-label={group}>
+              {group && <span className="grouplabel">{group}</span>}
+              <div className="toolgroup" aria-label={group || "Home"}>
                 {tabs.map(([v, name]) => {
                   const Icon = ICONS[v];
                   return <button key={v} className={`tool ${view === v ? "on" : ""}`} onClick={() => setView(v)} title={name} aria-label={name} aria-pressed={view === v}><Icon /></button>;
@@ -335,12 +334,9 @@ export function App() {
           ))}
         </nav>
         <div className="transportwrap">
-          {!INPUT_TABS.some(([tab]) => tab === view) && <>
+          {(optTab || live?.running) && <>
             <div className="transport" aria-label="Optimization">
-              <button className="play" onClick={play} disabled={!corpus || (live?.running && !paused)} aria-label={paused ? "Resume" : "Play"}
-                title={paused ? "Resume" : live?.running ? "Running" : view === "explore" ? `Explore the search space (${search.timeS}s)`
-                  : boardTarget ? `Optimize board + layout, ${search.budget === "evals" ? `${fmtCount(geomSettings.evals)} boards` : `${search.timeS}s`}`
-                  : `Optimize: ${algoName(search.algo)}, ${search.budget === "evals" ? `${fmtCount(search.evals ?? 50_000_000)} evals` : `${search.timeS}s`}`}>
+              <button className="play" onClick={play} disabled={!corpus || (live?.running ? !paused : !optTab || ((optTab === "shape" || optTab === "both") && !geometry?.param))} aria-label={paused ? "Resume" : "Play"} title={playTitle}>
                 <IconPlay />
               </button>
               <button className={`tool ${paused ? "on" : ""}`} onClick={() => setPaused(!paused)} disabled={!live?.running}
@@ -369,6 +365,10 @@ export function App() {
       {err && <div className="errbar"><div className="notice error">{err}</div><button className="btn soft small" onClick={() => setErr(null)}>Dismiss</button></div>}
 
       <main className="page">
+        {view === "home" && (
+          <HomeView meta={meta} geometry={geometry} isCustomBoard={isCustomBoard} hand={hand} profile={profile} profileEdited={profileEdited} corpus={corpus}
+            search={search} score={analysis?.breakdown.score ?? null} label={shownLabel} matching={matching.length} runs={runs} active={lastOpt} onGo={setView} />
+        )}
         {view === "board" && (
           <BoardView geometries={geometries} customBoards={customBoards} setCustomBoards={setCustomBoards} geometry={geometry} setGeomId={setGeomId}
             constraints={constraints} setConstraints={setConstraints} custom={boardCustom} setCustom={setBoardCustom} />
@@ -379,36 +379,27 @@ export function App() {
           <ProfileView meta={meta} profiles={profiles} profileId={profileId} setProfileId={setProfileId} profile={profile} setProfile={setProfile} hand={hand}
             geometry={geometry} chars={viewChars} layouts={layouts} a={analysis} />
         )}
-        {view === "search" && (
-          <SearchView meta={meta} layouts={layouts} geometry={geometry} corpora={corpora} corpusId={corpusId} corpusName={corpus?.name ?? ""} profileName={profile.name} search={search} setSearch={setSearch}
-            running={!!live?.running} runs={runs} chars={editChars} label={hasModel ? model!.label : label} a={analysis} pins={pins} setPins={setPins}
-            onSwap={swap} canUndo={chars !== startChars} onUndo={() => setChars(startChars, "start")} onLoad={(c, l) => setChars(c, l)}
-            geomVars={geomVars} handWeighted={["G01", "G03", "G05"].some((m) => (profile.weights[m] ?? 0) !== 0)} />
-        )}
         {view === "summary" && <SummaryView inputs={inputs} meta={meta} geometry={geometry} corpus={corpus} profile={profile} layouts={layouts} />}
-        {view === "home" && (
-          <HomeView blocks={blocks} onGo={(t: InputTabName) => setView(t)} geometry={geometry} view={baseView} label={shownLabel} hasModel={hasModel}
-            running={!!live?.running && live.algo !== "explore"} a={analysis} refA={refAnalysis} refName={refName} progress={progress} run={runDetail}
-            runs={runs} corpusName={corpus?.name ?? ""} profileName={profile.name}
-            liveBoard={live?.running && liveNow && !liveNow.error ? {
-              geometry: liveNow.geometry, ghost: liveStart?.geometry.key, colors: collisionColors(liveNow.geometry.key.length, liveNow.collisions),
-              focus: liveStart ? stableFocus(liveStart.geometry.key) : undefined, collisions: liveNow.collisions.length,
-              caption: lgLast ? `Live best board · generation ${lgLast.generation} · ${fmt(lgLast.best, 3)}` : "Start board · first layout search",
-            } : undefined} />
+        {view === "layout" && (
+          <LayoutView meta={meta} layouts={layouts} geometry={geometry} corpora={corpora} corpusId={corpusId} search={search} setSearch={setSearch}
+            locked={!!live?.running} live={layoutLive} runs={matching} chars={editChars} label={hasModel ? model!.label : label} a={analysis}
+            pins={pins} setPins={setPins} onSwap={swap} canUndo={chars !== startChars} onUndo={() => setChars(startChars, "start")} onLoad={(c, l) => setChars(c, l)}
+            view={baseView} shownLabel={shownLabel} hasModel={hasModel} refA={refAnalysis} isRef={isRef} refName={refName} progress={progress} run={runDetail} />
+        )}
+        {(view === "shape" || view === "both") && (
+          <BoardSearchView key={view} target={view === "shape" ? "board" : "both"} meta={meta} layouts={layouts} geometry={geometry} search={search} setSearch={setSearch}
+            locked={!!live?.running} geomVars={geomVars} handWeighted={["G01", "G03", "G05"].some((m) => (profile.weights[m] ?? 0) !== 0)}
+            chars={editChars} label={hasModel ? model!.label : label} pins={pins} onLoad={(c, l) => setChars(c, l)} liveBoard={liveBoard} />
         )}
         {view === "explore" && (
           <ExploreView meta={meta} runs={runs} geometries={geometries} corpora={corpora} layouts={layouts} profile={profile} setProfile={setProfile}
-            scorer={scorer} scorerKey={scorerKey} search={search} setSearch={setSearch} onStart={() => startRun(true)}
+            scorer={scorer} scorerKey={scorerKey} search={search} setSearch={setSearch} onStart={() => startRun("explore")}
             live={live && live.algo === "explore" ? { id: live.id, version: liveP?.explore?.version ?? 0, running: live.running } : null}
-            onOpen={(c, l) => { adopt(c, l, null); setView("home"); }} />
+            onOpen={(c, l) => { adopt(c, l, null); setView("layout"); }} />
         )}
-        {view === "analysis" && (
-          <AnalysisView geometry={geometry} chars={viewChars} label={shownLabel} a={analysis} refA={refAnalysis}
-            refName={refName} selected={selected} onKey={onSlot} />
-        )}
-        {view === "saved" && (
+        {view === "runs" && (
           <SavedView runs={runs} run={runDetail} progress={progress} rank={rank} refScore={refAnalysis?.breakdown.score} refName={refName} geometries={allBoards}
-            onOpenRun={(id) => openRun(id, false)} onPickRank={pickRank} onShowHome={() => setView("home")}
+            onOpenRun={(id) => openRun(id, false)} onPickRank={pickRank} onShowLayout={() => setView("layout")}
             geomRun={geomDetail} onUseBoard={(id) => adoptBoard(id, geomDetail?.config.id === id ? geomDetail : undefined)} />
         )}
         {view === "export" && <ExportView info={exportInfo} label={shownLabel} onError={setErr} />}

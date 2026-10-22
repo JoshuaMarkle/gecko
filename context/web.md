@@ -16,7 +16,7 @@ web/src/
   inputs.ts            the one input store (board, custom boards, constraints, hand, language,
                        profile, layout, pins, search, working model) + usePref
   api.ts               API client + types mirroring the Rust serde shapes (checked by test:contract)
-  wasm.ts              gecko-wasm loader (Scorer, flat2d, export_layout, corpus stats / build,
+  wasm.ts              gecko-wasm loader (Scorer, flat2d, export_layout, corpus stats / build, profileHash,
                        paramBoard: a parametric board at given parameter values + collisions)
   format.ts            pure helpers (rows, swaps, layers, verdicts, validation, cap)
   export.ts            Export tab file builders (image SVG, layout TOML/text/JSON, KLE, stats)
@@ -25,12 +25,12 @@ web/src/
                        against Rust by hand.parity.test.ts
   colors.ts            data colors (finger palette, heat ramp)
   components/          Form (Frame, Sec, Num, …), Board2D, LayoutEditor, Charts, Icons
-    views/             one file per tab (Board, Hand, Language, Profile, Search, Summary,
-                       Home, Analysis, Saved, Export); OptimizationFlow is Summary's
-                       inputs → scorer → search diagram
+    views/             one file per tab (Home, Board, Hand, Language, Profile, Summary, Layout,
+                       BoardSearch (Board and Both), Saved (Runs), Export); FlowChart is
+                       Home's inputs → physical cost / frequencies → scoring → optimize diagram
     hand/              Hand tab parts: rigs (hand placement), Hands3D, Panels (bottom tabs)
     explore/           Explore tab: ExploreView, Panels, Board, Scatter, Picked
-    geom/              board + layout search: GeomSearch (Search tab parts, `useGeomVars`),
+    geom/              board + layout search: GeomSearch (Board / Both tab parts, `useGeomVars`),
                        GeomRunPanel (Saved), GeomBoard (`useParamBoard`, 2D overlay)
   geom.ts              free-parameter groups, `--free` spec, labels, progress → chart shape
   three/Keyboard3D.tsx 3D keyboard (auto-rotate, click position, scene children)
@@ -75,12 +75,12 @@ be scored, layout-optimized or shape-searched again.
 | Route | |
 |---|---|
 | `GET /api/meta` | defaults, algos, metric definitions, core count |
-| `GET /api/layouts` · `/api/geometries` · `/api/profiles` · `/api/corpora` | data dir contents; geometries add each finished geometry run's best board (`run:<id>`) and `param` on parametric boards |
+| `GET /api/layouts` · `/api/geometries` · `/api/profiles` · `/api/corpora` | data dir contents; geometries add each finished geometry run's best board (`run:<id>`) and `param` on parametric boards; geometries and corpora carry their content `hash` |
 | `GET /api/geometries/{id}/free?spec=` | free parameters of a parametric board for a `--free` spec: `{vars: [{name, lo, hi, start}]}` |
 | `GET /api/corpora/{name}` | `.gkc` bytes (for WASM) |
 | `GET /api/corpora/{name}/sources` · `/sources/{file}` | source texts of a corpus (`data/corpora/src/<name>/`; loose `src/` files = `english`): list `[{name, bytes}]`, or one file as text |
 | `POST /api/score` | `{geometry, corpus, profile \| profile_override, chars \| layout, top}` → analysis |
-| `GET /api/runs` · `POST /api/runs` | list (each with `kind`: layout / geometry) / start (`algo, time_ms \| evals, threads, seed, pins, sa_steps, ga_pop, memetic, moves, holdout` + score inputs; with `geom: {free, mode, inner_evals, margin, penalty, keep_effort, …}` a board + layout search, `evals` then counts boards) |
+| `GET /api/runs` · `POST /api/runs` | list (each with `kind`: layout / geometry and the `geometry_hash`, `corpus_hash`, `profile_hash` of its inputs, so the UI matches runs by content, not names) / start (`algo, time_ms \| evals, threads, seed, pins, sa_steps, ga_pop, memetic, moves, holdout` + score inputs; with `geom: {free, mode (bilevel / alternate / board), inner_evals, margin, penalty, keep_effort, …}` a board + layout search, `evals` then counts boards) |
 | `GET /api/runs/{id}` | config, result, progress, running, paused; a geometry run adds `kind: "geometry"` and its start `param` |
 | `GET /api/runs/{id}/events` | SSE: `progress`, then `done` (RunResult) or `failed` |
 | `POST /api/runs/{id}/cancel` | stop early (results are still saved) |
@@ -91,8 +91,8 @@ be scored, layout-optimized or shape-searched again.
 
 ## Dev
 
-`npm run wasm` (after Rust changes to the scorer), `npm run dev` (proxies `/api` to :7777),
-`npm run build` → `web/dist`, `npm run typecheck`, `npm test`.
+`npm run wasm:dev` (after Rust changes to the scorer; skips wasm-opt, ~0.5 s) or `npm run wasm` (release, with wasm-opt), `npm run dev` (proxies `/api` to :7777),
+`npm run build:dev` (vite only) / `npm run build` (tsc + vite) → `web/dist`, `npm run typecheck`, `npm test`.
 `npm run test:parity` builds WASM and the native CLI and checks every reference score and
 metric against fresh CLI output across all bundled profiles (1e-6 relative).
 `npm run test:contract` checks the `api.ts` types against real server JSON ([testing.md](testing.md)).

@@ -24,4 +24,10 @@ export const IconHome = () => <Svg><path d="M2.5 7.5 8 3l5.5 4.5" /><path d="M4 
 export const IconLanguage = () => <Svg><path d="M2 3.5h6M5 2v1.5M3.5 3.5c.5 2.5 2 4.3 4 5.2M6.5 3.5c-.4 2.2-1.8 4.3-4 5.5" /><path d="M8.5 14l2.8-7 2.8 7M9.5 11.8h3.6" /></Svg>;
 export const IconStop = () => <Svg fill><rect x="3.5" y="3.5" width="9" height="9" rx="1.2" /></Svg>;
 export const IconSummary = () => <Svg><rect x="2" y="2" width="12" height="12" rx="1" /><path d="M2 6h12M2 10h12M6 2v12M10 2v12" /></Svg>;
-export const IconExport = () => <Svg><path d="M8 10V2.5M5 5.3 8 2.3l3 3" /><path d="M2.5 9.5v3a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3" /></Svg>;
+/** Optimize the layout: two keys swapping. */
+export const IconOptLayout = () => <Svg><rect x="1.5" y="2.5" width="5" height="5" rx="1" /><rect x="9.5" y="8.5" width="5" height="5" rx="1" /><path d="M8.5 4.5h2.5a1.5 1.5 0 0 1 1.5 1.5v1M7.5 11.5H5A1.5 1.5 0 0 1 3.5 10V9" /></Svg>;
+/** Optimize the board: a case with a resize arrow. */
+export const IconOptBoard = () => <Svg><rect x="1.5" y="6" width="9.5" height="7.5" rx="1.5" /><path d="M10 2.5h3.5V6M13.5 2.5 9.5 6.5" /></Svg>;
+/** Optimize both: a case with a key and a resize arrow. */
+export const IconOptBoth = () => <Svg><rect x="1.5" y="6" width="9.5" height="7.5" rx="1.5" /><rect x="4" y="8.5" width="2.6" height="2.6" rx=".5" fill="currentColor" stroke="none" /><path d="M10 2.5h3.5V6M13.5 2.5 9.5 6.5" /></Svg>;
+export const IconExport =() => <Svg><path d="M8 10V2.5M5 5.3 8 2.3l3 3" /><path d="M2.5 9.5v3a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3" /></Svg>;

@@ -15,6 +15,18 @@ optimization on top. Rust core + CLI + server + WASM; TypeScript web UI with a 3
   relevant `context/` file is still accurate.
 - Keep docs concise. Update docs in the same change as the code.
 
+## Git and builds
+
+- **Work on `main`.** Never create branches or worktrees unless the user gives explicit
+  typed permission. Other agents edit the same checkout at the same time: work around
+  each other. Leave files and changes you did not make alone. Commit only your own paths
+  (`git commit --only <paths>`).
+- **Check upstream at the start of a session:** `git fetch`, `git log HEAD..origin/main`,
+  and the issue's state (`gh issue view <n>`). Another agent may already have done it.
+  Pull (`git pull --rebase`) before committing.
+- **Build in dev mode:** `make` / `make serve` (no wasm-opt, no tsc). Use `make release` only
+  when a long data crunch needs the optimized build.
+
 ## Where to look (read only what the task needs)
 
 | Task | Read |
@@ -53,7 +65,8 @@ cd web && npm run test:contract           # web/src/api.ts types vs real server 
 python3 -I research/scripts/research.py lint   # research/ links, frontmatter, index (also in make test)
 ```
 
-Or `make` (build everything), `make test`, `make serve`.
+Or `make` / `make serve` (fast dev build: wasm without wasm-opt, no tsc), `make release` / `make serve-release`
+(full: wasm-opt + typecheck), `make test`.
 
 ## Non-negotiables
 

@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { INK } from "../../colors";
-import { fmt, fmtCount } from "../../format";
+import { fmt, fmtCorpusChars, fmtCount } from "../../format";
 import { useLanguageStats, type Language, type Languages } from "../../languages";
 import { useSize } from "../Charts";
 import { Frame } from "../Form";
@@ -74,7 +74,7 @@ function Stats({ lang }: { lang: Language }) {
   return (
     <div className="langstats">
       <div className="langfacts">
-        <div className="kv"><span>Characters</span><span>{fmtCount(stats.chars)}</span></div>
+        <div className="kv"><span>Characters</span><span>{fmtCorpusChars(stats.chars)}</span></div>
         <div className="kv"><span>Words</span><span>{lang.words !== null ? fmtCount(lang.words) : "–"}</span></div>
         <div className="kv"><span>Sources</span><span>{lang.sources ? lang.sources.length : "–"}</span></div>
         <div className="kv"><span>Charset</span><span className="mono" title={stats.charset}>{stats.charset.length} symbols</span></div>

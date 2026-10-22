@@ -1,18 +1,16 @@
-// Search tab (web-screens.md "Search"): search settings | a small animation of the chosen
-// algorithm (or the 2D layout editor) | search-space size and time-to-optimum estimates.
-// With "Board + layout" (a parametric board): board shape groups and settings | a preview of
-// the board with one parameter swept | the free parameters and their bounds (`geom/GeomSearch`).
+// Layout tab (web-screens.md "Layout"): the layout for the chosen board. Search settings |
+// the working model in 3D, the algorithm's animation, or the 2D layout editor | convergence,
+// past runs on these inputs, score and main metrics.
 
-import { useEffect, useRef, useState } from "react";
-import { api, type Analysis, type BoundGap, type CorpusInfo, type Geometry, type GeomVar, type LayoutInfo, type Meta, type RunSummary } from "../../api";
-import { ACCENT, HAIR, INK, MUTED } from "../../colors";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { api, type Analysis, type BoundGap, type CorpusInfo, type Geometry, type LayoutInfo, type Meta, type PairKind, type Progress, type RunDetail, type RunSummary } from "../../api";
+import { ACCENT, fingerLegend, HAIR, INK, MUTED, PAIR_KINDS } from "../../colors";
 import { fmtPow10, rediscovery, searchSpace, timeToOptimum } from "../../estimate";
-import { fmt, fmtCount, fmtTime, slotCount } from "../../format";
-import { GEOM_DEFAULTS, type GeomSettings } from "../../geom";
+import { fmt, fmtCount, fmtTime, scoredMetrics, slotCount, undirected, verdict } from "../../format";
 import type { SearchSettings } from "../../inputs";
-import { useSize } from "../Charts";
+import { Keyboard3D, type Arc, type Overlay, type ViewMode } from "../../three/Keyboard3D";
+import { Convergence, useSize } from "../Charts";
 import { Frame, Num, Sec, Seg, Slider, Toggle } from "../Form";
-import { GeomParams, GeomPreview, GeomSide } from "../geom/GeomSearch";
 import { LayoutEditor } from "../LayoutEditor";
 
 export const ALGOS: [string, string, string][] = [
@@ -34,15 +32,18 @@ interface Props {
   geometry: Geometry;
   corpora: CorpusInfo[];
   corpusId: string;
-  corpusName: string;
-  profileName: string;
   search: SearchSettings;
   setSearch: (s: SearchSettings) => void;
-  running: boolean;
+  /** A run of any kind is live: settings are locked. */
+  locked: boolean;
+  /** A layout run is live: the main view shows its best layout. */
+  live: boolean;
+  /** Layout runs on exactly the current inputs (`sameInputs`). */
   runs: RunSummary[];
   /** The layout runs start from on Auto, and the editor edits. */
   chars: string;
   label: string;
+  /** Score of the shown layout (the live best during a run). */
   a: Analysis | null;
   pins: string;
   setPins: (p: string) => void;
@@ -50,10 +51,43 @@ interface Props {
   canUndo: boolean;
   onUndo: () => void;
   onLoad: (chars: string, label: string) => void;
-  /** Free parameters of the board for the selected groups (`useGeomVars`). */
-  geomVars: { vars: GeomVar[]; error: string | null };
-  /** The profile weights a hand-model metric (G01 / G03 / G05): without one, board shape barely matters. */
-  handWeighted: boolean;
+  /** The shown layer of the shown layout: symbols, heat and muted keys per key. */
+  view: { chars: string; heat: number[]; muted: boolean[] };
+  shownLabel: string;
+  hasModel: boolean;
+  refA: Analysis | null;
+  /** The shown layout is the reference (no "vs reference" comparison). */
+  isRef: boolean;
+  refName: string;
+  progress: Progress[];
+  /** The opened layout run (convergence title, lower bound). */
+  run: RunDetail | null;
+}
+
+/** Sidebar section shared by every optimize tab: the layout runs start from (or keep). */
+export function StartSec({ layouts, start, setStart, label, pins, onLoad, onEdit, title = "Starting layout", note = "where runs begin" }: {
+  layouts: LayoutInfo[]; start: string; setStart: (v: string) => void; label: string; pins: string;
+  onLoad: (chars: string, label: string) => void; onEdit?: () => void; title?: string; note?: string;
+}) {
+  return (
+    <Sec id="search-start" title={title} note={note}>
+      <div className="row">
+        <label title="Auto uses whatever layout is loaded (the working model or your edits). Pick a named layout to always use it.">Layout</label>
+        <select value={start} onChange={(e) => {
+          const v = e.target.value;
+          setStart(v);
+          const l = layouts.find((x) => x.id === v);
+          if (l) onLoad(l.chars, l.name);
+        }}>
+          <option value="auto">Auto · {label || "loaded layout"}</option>
+          {layouts.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+        </select>
+        <span />
+      </div>
+      <div className="btns">{onEdit && <button className="btn outline small" onClick={onEdit}>Edit layout</button>}
+        {pins && <span className="hint">pins: <span className="mono">{pins}</span></span>}</div>
+    </Sec>
+  );
 }
 
 // ---------- algorithm animation ----------
@@ -143,138 +177,96 @@ function AlgoVisual({ algo }: { algo: string }) {
   );
 }
 
-// ---------- estimates ----------
+// ---------- bottom: past runs ----------
 
-function Estimates(p: Props & { onEstimate: () => void; bound: BoundGap | null | "loading" }) {
+/** Chance the best known layout is optimal, this algorithm's time-to-optimum guess, the search
+ *  space and the lower bound (the opened run's, or loaded from the best matching run). */
+function PastRuns(p: Props) {
+  const [loaded, setLoaded] = useState<BoundGap | null | "loading">(null);
   const slots = slotCount(p.geometry, p.chars);
   const sym = new Set([...p.chars]);
   const pinned = [...new Set(p.pins.replace(/\s/g, ""))].filter((c) => sym.has(c)).length;
   const sp = searchSpace(slots, pinned);
-  const same = p.runs.filter((r) => r.geometry === p.geometry.name && r.corpus === p.corpusName && r.profile === p.profileName && r.algo === p.search.algo);
-  const c = rediscovery(same);
-  const tto = timeToOptimum(c);
+  const all = rediscovery(p.runs);
+  const algo = rediscovery(p.runs.filter((r) => r.algo === p.search.algo));
+  const tto = timeToOptimum(algo);
+  const bound = p.run?.result?.bound?.total ?? (loaded !== "loading" ? loaded : null);
+  const load = async () => {
+    const best = p.runs.filter((r) => r.best_score !== null).sort((a, b) => a.best_score! - b.best_score!)[0];
+    if (!best) return;
+    setLoaded("loading");
+    try { setLoaded((await api.run(best.id)).result?.bound?.total ?? null); } catch { setLoaded(null); }
+  };
   return (
-    <div className="bottomgrid">
-      <div>
-        <h4>Search space</h4>
-        <div className="kv"><span>Slots</span><span>{slots}{pinned ? ` · ${pinned} pinned` : ""}</span></div>
-        <div className="kv"><span>Arrangements</span><span title="slots!">{fmtPow10(sp.total)}</span></div>
-        <div className="kv"><span>After pins</span><span title="(slots − pinned)!">{fmtPow10(sp.effective)}</span></div>
-        <div className="hint">Every arrangement of the symbols over the keys; pins remove their symbols and keys.</div>
+    <div>
+      <h4>Chance we've found the optimal layout</h4>
+      <div className="score"><b>{all.runs ? `${(100 * all.chance).toFixed(0)}%` : "–"}</b></div>
+      <div className="hint">
+        {all.runs
+          ? `${all.runs} run${all.runs === 1 ? "" : "s"} on these inputs; the best (${fmt(all.best ?? 0, 3)}) was reached ${all.hits}×. Estimated from how often independent runs rediscover it.`
+          : "No runs on these inputs yet. Press play."}
       </div>
-      <div>
-        <h4>From past runs <span className="hint">{algoName(p.search.algo)} · same board, language, profile</span></h4>
-        <div className="kv"><span>Runs</span><span>{c.runs}{c.runs ? ` · mean ${fmtTime(c.meanMs)}` : ""}</span></div>
-        <div className="kv"><span>Best score</span><span>{c.best !== null ? `${fmt(c.best, 3)} · reached ${c.hits}×` : "–"}</span></div>
-        <div className="kv"><span>Found per run</span><span>{c.runs ? `${(100 * c.perRun).toFixed(0)}%` : "–"}</span></div>
-        <div className="kv"><span>Chance it is optimal</span><span>{c.runs ? `${(100 * c.chance).toFixed(0)}%` : "–"}</span></div>
-        <div className="kv"><span>Time to optimum</span><span>{tto !== null ? `~${fmtTime(tto)} (guess)` : c.runs ? "more runs needed" : "–"}</span></div>
-        <div className="hint">Heuristic: how often independent runs rediscover the same best layout.</div>
-      </div>
-      <div className="estimate-cell">
-        <h4>Lower bound <span className="hint">Gilmore–Lawler</span></h4>
-        {p.bound === null && <div className="hint">Reads the bound saved with the best matching run (needs a run on these inputs).</div>}
-        {p.bound === "loading" && <div className="hint">Loading…</div>}
-        {p.bound && p.bound !== "loading" && <>
-          <div className="kv"><span>No layout below</span><span>{fmt(p.bound.lower, 3)}</span></div>
-          <div className="kv"><span>Best found</span><span>{fmt(p.bound.value, 3)}</span></div>
-          <div className="kv"><span>Gap</span><span>within {fmt(p.bound.gap_pct, 1)}% of optimal</span></div>
-        </>}
-        <button className="btn outline small estimate-btn" disabled={!same.length} onClick={p.onEstimate} title={same.length ? "Load the bound from the best matching run" : "No matching runs yet"}>Estimate</button>
-      </div>
+      <div className="kv"><span title={`${algoName(p.search.algo)}: mean run length / chance one run finds the best`}>Time to optimum</span>
+        <span>{tto !== null ? `~${fmtTime(tto)} (guess)` : algo.runs ? "more runs needed" : "–"}</span></div>
+      <div className="kv"><span title="Arrangements of the unpinned symbols over the unpinned keys">Search space</span>
+        <span>{fmtPow10(sp.effective)}{pinned ? ` · ${pinned} pinned` : ""}</span></div>
+      <div className="kv"><span title="Gilmore–Lawler: no layout scores below this">Lower bound</span>
+        <span>{bound ? `${fmt(bound.lower, 3)} · within ${fmt(bound.gap_pct, 1)}%`
+          : loaded === "loading" ? "loading…"
+          : <button className="btn soft small" disabled={!p.runs.length} onClick={load} title={p.runs.length ? "Read the bound saved with the best matching run" : "No matching runs yet"}>Load</button>}</span></div>
     </div>
   );
 }
 
-export function SearchView(p: Props) {
+const HIDDEN: PairKind[] = ["same_hand", "alternate"];
+
+export function LayoutView(p: Props) {
   const s = p.search;
   const set = (patch: Partial<SearchSettings>) => p.setSearch({ ...s, ...patch });
   const [editing, setEditing] = useState(false);
-  const [bound, setBound] = useState<BoundGap | null | "loading">(null);
+  const [shown, setShown] = usePrefMain();
+  const [mode, setMode] = useState<ViewMode>("3d");
+  const [overlay, setOverlay] = useState<Overlay>("none");
   const desc = ALGOS.find(([a]) => a === s.algo)?.[2] ?? "";
   const algos = ALGOS.filter(([a]) => p.meta.algos.includes(a));
   const start = s.start ?? "auto";
   const budget = s.budget ?? "time";
-  const board = s.target === "board";
-  const g = s.geom ?? GEOM_DEFAULTS;
-  const setGeom = (patch: Partial<GeomSettings>) => set({ geom: { ...g, ...patch } });
-  // Board preview: the selected free parameter and its shown value.
-  const [sel, setSel] = useState<number | null>(null);
-  const [pv, setPv] = useState(0);
-  const vars = p.geomVars.vars;
-  useEffect(() => { setSel(null); }, [p.geometry.id, vars.length]);
-  const pick = (i: number) => { setSel(i); setPv(vars[i].start); };
-
-  const estimate = async () => {
-    const same = p.runs.filter((r) => r.geometry === p.geometry.name && r.corpus === p.corpusName && r.profile === p.profileName && r.algo === s.algo && r.best_score !== null);
-    const best = same.sort((a, b) => a.best_score! - b.best_score!)[0];
-    if (!best) return;
-    setBound("loading");
-    try {
-      const d = await api.run(best.id);
-      setBound(d.result?.bound?.total ?? null);
-    } catch {
-      setBound(null);
-    }
-  };
+  const a = p.a;
+  const arcs = useMemo((): Arc[] => {
+    const pairs = undirected(a?.bigrams ?? []).filter((x) => !HIDDEN.includes(x.kind));
+    const max = Math.max(...pairs.map((x) => x.freq), 1e-9);
+    return pairs.map((x) => ({ ngram: x.ngram, w: Math.sqrt(x.freq / max), color: PAIR_KINDS[x.kind][1] }));
+  }, [a]);
+  const delta = a && p.refA && !p.isRef ? a.breakdown.score - p.refA.breakdown.score : null;
+  const top = a ? scoredMetrics(a.breakdown.metrics).slice(0, 7) : [];
 
   return (
     <Frame
-      title="Search"
-      control={<span className="hint">{p.running ? "locked while running" : ""}</span>}
+      title="Optimize layout"
+      control={<span className="hint">{p.locked ? "locked while running" : "for the chosen board"}</span>}
       side={
-        <fieldset className="plain" disabled={p.running}>
-          <Sec id="search-target" title="Optimize" note="what Play changes">
+        <fieldset className="plain" disabled={p.locked}>
+          <Sec id="search-algo" title="Algorithm" note="how the search moves">
             <div className="row">
-              <label title="Layout: search key assignments on the chosen board. Board + layout: also search the board's shape (stagger, splay, curvature, tenting…), each candidate board with its own layout search. Needs a parametric board.">Optimize</label>
-              <Seg value={board ? "board" : "layout"} onChange={(v) => set({ target: v, geom: g })} options={[["layout", "Layout"], ["board", "Board + layout"]]} />
-              <span />
-            </div>
-            {board && !p.geometry.param && <div className="hint">{p.geometry.name} has no parameter file: pick a parametric board to run.</div>}
-            {board && !p.handWeighted && <div className="hint">The profile weights no hand-model metric, so the board's shape only moves distance metrics. Turn on "Use hand in optimization" on the Hand tab.</div>}
-          </Sec>
-          {board && <GeomSide s={g} set={setGeom} />}
-          {!board && <Sec id="search-algo" title="Algorithm" note="how the search moves">
-            <div className="row">
-              <label title="Search algorithm. Its own settings appear below.">Algorithm</label>
+              <label title={desc}>Algorithm</label>
               <select value={s.algo} onChange={(e) => set({ algo: e.target.value })}>
-                {algos.map(([a, n]) => <option key={a} value={a}>{n}</option>)}
+                {algos.map(([x, n]) => <option key={x} value={x}>{n}</option>)}
               </select>
               <span />
             </div>
-          </Sec>}
-          <Sec id="search-start" title="Starting layout" note="where runs begin">
-            <div className="row">
-              <label title="Auto starts from whatever layout is loaded (the working model or your edits). Pick a named layout to always start from it.">Start from</label>
-              <select value={start} onChange={(e) => {
-                const v = e.target.value;
-                set({ start: v });
-                const l = p.layouts.find((x) => x.id === v);
-                if (l) p.onLoad(l.chars, l.name);
-              }}>
-                <option value="auto">Auto · {p.label || "loaded layout"}</option>
-                {p.layouts.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-              </select>
-              <span />
-            </div>
-            <div className="btns"><button className="btn outline small" onClick={() => setEditing(true)}>Edit layout</button>
-              {p.pins && <span className="hint">pins: <span className="mono">{p.pins}</span></span>}</div>
           </Sec>
+          <StartSec layouts={p.layouts} start={start} setStart={(v) => set({ start: v })} label={p.label} pins={p.pins} onLoad={p.onLoad} onEdit={() => setEditing(true)} />
           <Sec id="search" title="Budget" note="how long, how wide">
             <div className="row">
-              <label title={board ? "Stop after a wall-clock time or after a number of candidate boards (exactly reproducible)." : "Stop after a wall-clock time or after a number of evaluations (exactly reproducible)."}>Budget</label>
-              <Seg value={budget} onChange={(b) => set({ budget: b })} options={[["time", "Time"], ["evals", board ? "Boards" : "Evaluations"]]} />
+              <label title="Stop after a wall-clock time or after a number of evaluations (exactly reproducible).">Budget</label>
+              <Seg value={budget} onChange={(b) => set({ budget: b })} options={[["time", "Time"], ["evals", "Evaluations"]]} />
               <span />
             </div>
             {budget === "time"
-              ? <Num label="Time" help={board ? "Wall-clock budget for the run, final layout polish of both boards included (a minute or more is useful)." : "Wall-clock budget for the run."} value={s.timeS} min={1} step={1} unit="s" onChange={(v) => set({ timeS: Math.max(1, v) })} />
-              : board
-                ? <Num label="Boards" help="Candidate boards to score; each gets its own layout search." value={g.evals} min={10} step={50} onChange={(v) => setGeom({ evals: Math.max(10, Math.round(v)) })} />
-                : <Num label="Evaluations" help="Total layout evaluations across threads." value={s.evals ?? 50_000_000} min={1000} step={1_000_000} unit={fmtCount(s.evals ?? 50_000_000)} onChange={(v) => set({ evals: Math.max(1000, Math.round(v)) })} />}
-            <Num label="Threads" help="Independent workers (restarts / islands) in parallel." value={s.threads} min={1} max={p.meta.threads} unit={`/${p.meta.threads}`} onChange={(v) => set({ threads: Math.min(p.meta.threads, Math.max(1, Math.round(v))) })} />
-            <Num label="Seed" help="Runs are reproducible from the seed (exactly so with an evaluation budget)." value={s.seed} min={0} onChange={(v) => set({ seed: Math.max(0, Math.round(v)) })} />
+              ? <Num label="Time" help="Wall-clock budget for the run." value={s.timeS} min={1} step={1} unit="s" onChange={(v) => set({ timeS: Math.max(1, v) })} />
+              : <Num label="Evaluations" help="Total layout evaluations across threads." value={s.evals ?? 50_000_000} min={1000} step={1_000_000} unit={fmtCount(s.evals ?? 50_000_000)} onChange={(v) => set({ evals: Math.max(1000, Math.round(v)) })} />}
+            <ThreadsSeed s={s} set={set} cores={p.meta.threads} />
           </Sec>
-          {!board && <>
           <Sec id="search-holdout" title="Holdout corpus" note="check for overfitting">
             <div className="row">
               <label title="Also score the results on a corpus the search never sees. If they keep most of their gain there, they did not just fit the search corpus.">Holdout</label>
@@ -285,7 +277,7 @@ export function SearchView(p: Props) {
               <span />
             </div>
           </Sec>
-          <Sec id="search-stop" title="Stop confidence" note="stop early">
+          <Sec id="search-stop" title="Stop confidence" note="saved, not applied yet">
             <Toggle label="Stop early" help="Stop once the estimated chance of having found the optimum passes the threshold (estimator planned; saved but not applied yet)." value={s.stopConf != null} onChange={(on) => set({ stopConf: on ? 0.95 : null })} />
             {s.stopConf != null && <Slider label="Threshold" help="Chance of having found the optimum." value={s.stopConf} min={0.5} max={0.999} step={0.005} unit={`${(100 * s.stopConf).toFixed(1)}%`} onChange={(v) => set({ stopConf: v })} />}
           </Sec>
@@ -311,25 +303,88 @@ export function SearchView(p: Props) {
             </>}
             {!["sa", "ga", "memetic"].includes(s.algo) && <div className="hint">No extra settings; defaults from the core.</div>}
           </Sec>
-          </>}
         </fieldset>
       }
       main={
         editing ? (
           <LayoutEditor geometry={p.geometry} chars={p.chars} label={p.label} a={p.a} pins={p.pins} setPins={p.setPins}
             onSwap={(i, j) => { if (start !== "auto") set({ start: "auto" }); p.onSwap(i, j); }} canUndo={p.canUndo} onUndo={p.onUndo} onClose={() => setEditing(false)} />
-        ) : board ? (
-          <GeomPreview geometry={p.geometry} vars={vars} sel={sel} value={pv} setValue={setPv} chars={p.chars} />
-        ) : (
+        ) : shown === "algorithm" ? (
           <div className="algoview">
             <div className="algoview-text"><h3>{algoName(s.algo)}</h3><p>{desc}</p></div>
             <div className="algoview-anim"><AlgoVisual algo={s.algo} /></div>
+            <div className="viewctl"><MainSeg shown={shown} setShown={setShown} /></div>
+          </div>
+        ) : (
+          <div className="viewport">
+            <Keyboard3D geometry={p.geometry} chars={p.view.chars} heat={p.view.heat} muted={p.view.muted} arcs={arcs} overlay={overlay} mode={mode} selected={null} onKey={() => {}} />
+            <div className="viewlabel">
+              <span>{p.live ? "Live best" : p.hasModel ? p.shownLabel : `No model · showing ${p.shownLabel || "the start layout"}`}</span>
+              {a && <span className="muted">{fmt(a.breakdown.score, 3)}</span>}
+            </div>
+            <div className="viewctl">
+              <MainSeg shown={shown} setShown={setShown} />
+              <div className="seg inline"><button className={mode === "3d" ? "on" : ""} onClick={() => setMode(mode === "3d" ? "top" : "3d")} title="3D view (off: flat top-down)">3D</button></div>
+              <div className="seg inline">
+                {([["none", "Default"], ["heat", "Heat"], ["fingers", "Fingers"], ["ngrams", "N-grams"]] as [Overlay, string][]).map(([o, n]) => <button key={o} className={overlay === o ? "on" : ""} onClick={() => setOverlay(o)}>{n}</button>)}
+              </div>
+            </div>
+            {overlay === "fingers" && <div className="legend">{fingerLegend.map(([n, c]) => <span key={n}><i style={{ background: c }} />{n}</span>)}</div>}
+            {overlay === "heat" && <div className="legend"><span>darker = more keystrokes</span></div>}
+            {overlay === "ngrams" && <div className="legend">{(["sfb", "lsb", "scissor"] as PairKind[]).map((k) => <span key={k}><i style={{ background: PAIR_KINDS[k][1] }} />{PAIR_KINDS[k][0]}</span>)}</div>}
           </div>
         )
       }
-      bottom={board
-        ? <GeomParams s={g} set={setGeom} board={p.geometry.id} vars={vars} error={p.geomVars.error} sel={sel} onSel={pick} />
-        : <div className="bottompad"><Estimates {...p} onEstimate={estimate} bound={bound} /></div>}
+      bottom={
+        <div className="homegrid">
+          <div className="homeconv">
+            <h4>Convergence <span className="hint">{p.run?.result ? `${p.run.config.params.algo} · ${fmtTime(p.run.result.elapsed_ms)}` : p.live ? "live" : ""}</span></h4>
+            <div className="chartfill"><Convergence progress={p.progress} reference={p.refA?.breakdown.score} refName={p.refName} geometry={p.geometry} /></div>
+          </div>
+          <PastRuns {...p} />
+          <div>
+            <h4>Score <span className="hint">lower is better</span></h4>
+            <div className="score">
+              <b>{a ? fmt(a.breakdown.score, 3) : "–"}</b>
+              {delta !== null && <span className={`badge ${delta < -1e-9 ? "success" : delta > 1e-9 ? "error" : ""}`}>{delta <= 0 ? "" : "+"}{fmt(delta, 3)} vs {p.refName}</span>}
+            </div>
+            <table className="tbl">
+              <tbody>
+                {top.map((m) => {
+                  const r = p.isRef ? undefined : p.refA?.breakdown.metrics.find((x) => x.id === m.id);
+                  const v = r ? verdict(m.dir, m.value, r.value) : "same";
+                  return <tr key={m.id}><td>{m.name}</td><td>{fmt(m.value)}{m.unit === "%" ? "%" : ""}</td><td>{v !== "same" && <span className={`dot ${v}`} />}</td></tr>;
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
     />
   );
+}
+
+type Main = "result" | "algorithm";
+
+/** Which main view is shown (remembered per browser). */
+function usePrefMain(): [Main, (m: Main) => void] {
+  const [m, setM] = useState<Main>(() => { try { return localStorage.getItem("gecko.layoutMain") === "algorithm" ? "algorithm" : "result"; } catch { return "result"; } });
+  return [m, (x) => { setM(x); try { localStorage.setItem("gecko.layoutMain", x); } catch { /* storage unavailable */ } }];
+}
+
+function MainSeg({ shown, setShown }: { shown: Main; setShown: (m: Main) => void }) {
+  return (
+    <div className="seg inline">
+      <button className={shown === "result" ? "on" : ""} onClick={() => setShown("result")} title="The working model (or the live best) in 3D">Result</button>
+      <button className={shown === "algorithm" ? "on" : ""} onClick={() => setShown("algorithm")} title="How the chosen algorithm searches">Algorithm</button>
+    </div>
+  );
+}
+
+/** Threads and seed rows (every optimize tab). */
+export function ThreadsSeed({ s, set, cores }: { s: SearchSettings; set: (patch: Partial<SearchSettings>) => void; cores: number }) {
+  return <>
+    <Num label="Threads" help="Independent workers (restarts / islands / candidate boards) in parallel." value={s.threads} min={1} max={cores} unit={`/${cores}`} onChange={(v) => set({ threads: Math.min(cores, Math.max(1, Math.round(v))) })} />
+    <Num label="Seed" help="Runs are reproducible from the seed (exactly so with an evaluation budget)." value={s.seed} min={0} onChange={(v) => set({ seed: Math.max(0, Math.round(v)) })} />
+  </>;
 }

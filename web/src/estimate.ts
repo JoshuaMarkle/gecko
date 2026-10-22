@@ -1,4 +1,4 @@
-// Rough estimators for the Search and Home views (unit-tested in estimate.test.ts): search-space
+// Rough estimators for the Layout view (unit-tested in estimate.test.ts): search-space
 // size, and how likely past runs have found the optimum. Heuristics, labelled as such in the UI;
 // the Gilmore–Lawler bound (#37), when a run reports it, is the hard evidence.
 
@@ -48,6 +48,15 @@ export interface Confidence {
   chance: number;
   /** Mean run length (ms). */
   meanMs: number;
+}
+
+/** Hashes of the board, corpus and profile a run searches with (the `RunSummary` fields). */
+export type InputKey = Pick<RunSummary, "geometry_hash" | "corpus_hash" | "profile_hash">;
+
+/** Runs that searched exactly these inputs. Names are not enough: a profile, board or corpus
+ *  can change under the same name. No key (inputs that cannot be run): none. */
+export function sameInputs(runs: RunSummary[], key: InputKey | null): RunSummary[] {
+  return key ? runs.filter((r) => r.geometry_hash === key.geometry_hash && r.corpus_hash === key.corpus_hash && r.profile_hash === key.profile_hash) : [];
 }
 
 /**

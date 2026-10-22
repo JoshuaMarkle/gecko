@@ -7,6 +7,8 @@
 //!   seed (common random numbers), so their differences come from the board.
 //! - **Alternate:** CMA-ES over the board with the layout fixed (a rebuild + one full score per
 //!   candidate), then a full SA on the new board, for a few rounds.
+//! - **Board:** the board for a fixed layout: CMA-ES with the start layout fixed for the whole
+//!   budget, no layout search and no polish (the reported layout is the start layout).
 //!
 //! Collisions (2D on flat candidates, approximate 3D otherwise) add a penalty per unit of depth;
 //! past `hard_fail` the layout search is skipped. Both modes end with an equal SA polish of the
@@ -31,6 +33,7 @@ use crate::{hash, Corpus, Error, Geometry, Layout, ParametricGeometry, Profile, 
 pub enum Mode {
     Bilevel,
     Alternate,
+    Board,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -398,7 +401,7 @@ struct Problem<'a> {
     scorer: Scorer,
     movable: Vec<usize>,
     p: &'a GeomParams,
-    /// |start score| + 1: the unit of collision penalties.
+    /// |start board score| + 1 (after the start board's layout search): the unit of collision penalties.
     unit: f64,
     start_score: f64,
 }
@@ -634,7 +637,9 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
     // Budgets: a time budget gives each of the three layout runs (start board before the
     // search, both boards after it) polish_frac / 2 and the board search the rest; an
     // evaluation budget, `evals` board candidates and `polish_evals` swaps per layout run.
-    let search_ms = p.time_ms.map(|ms| (ms as f64 * (1.0 - p.polish_frac)) as u64);
+    // Board mode searches the board only, so it has no layout runs and gets the whole budget.
+    let board_only = p.mode == Mode::Board;
+    let search_ms = p.time_ms.map(|ms| if board_only { ms } else { (ms as f64 * (1.0 - p.polish_frac)) as u64 });
     let polish = match (p.evals, p.time_ms) {
         (Some(_), _) | (None, None) => Budget::Evals(p.polish_evals),
         (None, Some(ms)) => Budget::Time((ms as f64 * p.polish_frac / 2.0) as u64),
@@ -646,7 +651,22 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
 
     // The start board with a full layout search, so candidates warm-start from a good layout
     // and the search measures boards rather than the layout catching up.
-    let (first, pre_evals) = pr.layout_search(&x_start, &identity, polish, p.seed, control)?;
+    // Board mode keeps the start layout: the start board is scored as it is.
+    let (mut first, pre_evals) = if board_only {
+        (pr.evaluate_all(&mut scorers[..1], std::slice::from_ref(&x_start), &identity, false, 0).remove(0), 0)
+    } else {
+        pr.layout_search(&x_start, &identity, polish, p.seed, control)?
+    };
+    // Penalties scale with the start board's score after its layout search (the start
+    // layout's raw score can be several times larger, e.g. QWERTY), so one penalty setting
+    // weighs overlap against score the same way whatever layout the run starts from.
+    // A start board past hard_fail was rejected unscored and keeps the layout's score.
+    if first.depth <= p.hard_fail {
+        let raw = first.f - p.penalty * pr.unit * first.depth;
+        pr.unit = raw.abs() + 1.0;
+        pr.start_score = raw;
+        first.f = raw + p.penalty * pr.unit * first.depth;
+    }
     let mut tr = Track { best: (x_start.clone(), first.clone()), feasible: None, candidates: 1, generations: 0, layout_evals: pre_evals };
     tr.offer(&x_start, &first);
     let search_start = first.f;
@@ -678,7 +698,7 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
     };
 
     match p.mode {
-        Mode::Bilevel => {
+        Mode::Bilevel | Mode::Board => {
             let limit = p.evals.unwrap_or(u64::MAX).saturating_sub(1);
             let out = cmaes::minimize_batch(
                 |xs| {
@@ -687,14 +707,19 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
                     }
                     tr.generations += 1;
                     let seed = Rng::for_worker(p.seed, tr.generations as u64).next_u64();
-                    let cands = pr.evaluate_all(&mut scorers, xs, &incumbent, true, seed);
+                    let cands = pr.evaluate_all(&mut scorers, xs, &incumbent, !board_only, seed);
                     tr.candidates += xs.len() as u64;
-                    tr.layout_evals += xs.len() as u64 * p.inner_evals;
+                    if !board_only {
+                        tr.layout_evals += xs.len() as u64 * p.inner_evals;
+                    }
                     for (x, c) in xs.iter().zip(&cands) {
                         tr.offer(x, c);
                     }
-                    // Warm-start the next generation from the best board's layout.
-                    incumbent = tr.best.1.sym.clone();
+                    // Bilevel: warm-start the next generation from the best board's layout.
+                    // Only an overlap-free board can supply it (the reported board is too).
+                    if !board_only {
+                        incumbent = tr.chosen().1.sym.clone();
+                    }
                     let gen_best = cands.iter().map(|c| c.f).fold(f64::INFINITY, f64::min);
                     emit(&tr, "search", gen_best, &mut on_progress);
                     cands.into_iter().map(|c| c.f).collect()
@@ -761,10 +786,16 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
     }
     let search_best = tr.chosen().1.f;
 
-    // Polish the chosen board and the start board equally.
+    // Polish the chosen board and the start board equally (Board mode: the layout stays).
     let (best_x, best_c) = tr.chosen().clone();
-    let (best, e1) = pr.layout_search(&best_x, &best_c.sym, polish, p.seed.wrapping_add(1000), control)?;
-    let (start, e2) = pr.layout_search(&x_start, &first.sym, polish, p.seed.wrapping_add(1000), control)?;
+    let ((best, e1), (start, e2)) = if board_only {
+        ((best_c, 0), (first.clone(), 0))
+    } else {
+        (
+            pr.layout_search(&best_x, &best_c.sym, polish, p.seed.wrapping_add(1000), control)?,
+            pr.layout_search(&x_start, &first.sym, polish, p.seed.wrapping_add(1000), control)?,
+        )
+    };
     tr.layout_evals += e1 + e2;
     emit(&tr, "polish", best.f, &mut on_progress);
 
@@ -961,6 +992,56 @@ pub fn load_result(dir: &Path) -> Result<GeomResult> {
 
 pub fn load_progress(dir: &Path) -> Vec<GeomProgress> {
     std::fs::read_to_string(dir.join("progress.jsonl")).unwrap_or_default().lines().filter_map(|l| serde_json::from_str(l).ok()).collect()
+}
+
+/// Re-run a saved `--evals` geometry run from its directory and compare with `best.json`
+/// (`gecko verify`). Inputs must hash as recorded: the start parameter file
+/// (`start.param.toml`), the corpus by name, the recorded profile. Nothing is written.
+pub fn verify(store: &crate::store::Store, dir: &Path) -> Result<crate::run::Verification> {
+    use crate::run::{Check, Verification};
+    let config = load_config(dir)?;
+    let recorded = load_result(dir)?;
+    if config.params.evals.is_none() {
+        return Err(Error::invalid("verify", format!("run {} has a time budget; only --evals runs are reproducible", config.id)));
+    }
+    let check = |name: &str, expected: String, actual: String| Check { name: name.into(), ok: expected == actual, expected, actual };
+    let start_path = dir.join("start.param.toml");
+    let start_text = std::fs::read_to_string(&start_path).map_err(|e| Error::invalid("run", format!("{}: {e}", start_path.display())))?;
+    let params = ParametricGeometry::from_toml(&start_text)?;
+    let board = store.geometry(&start_path.to_string_lossy())?;
+    let corpus = store.corpus(&config.corpus.name)?;
+    let mut checks = vec![
+        check("geometry", config.geometry.hash.clone(), hash::hex(hash::fnv1a(start_text.as_bytes()))),
+        check("corpus", config.corpus.hash.clone(), hash::hex(corpus.hash())),
+        check("profile", config.profile_hash.clone(), hash::hex(config.profile.hash())),
+    ];
+    if checks.iter().any(|c| !c.ok) {
+        return Ok(Verification { schema: SCHEMA, id: config.id, ok: false, checks, rerun: None });
+    }
+    let start = Layout::from_flat("start", &board, config.start.chars().collect())?;
+    let spec = GeomSpec {
+        params: &params,
+        board: &board,
+        corpus: &corpus,
+        profile: &config.profile,
+        start: &start,
+        pins: &config.pins,
+        vars: &config.vars,
+        search: config.params.clone(),
+    };
+    let res = search(&spec, &Control::default(), |_| {})?;
+    let close = |x: f64, y: f64| (x - y).abs() <= 1e-9 * x.abs().max(1.0);
+    let point = |name: &str, a: &GeomPoint, b: &GeomPoint| Check {
+        name: name.into(),
+        expected: format!("{:.6} {} {:?}", a.score, a.chars, a.values),
+        actual: format!("{:.6} {} {:?}", b.score, b.chars, b.values),
+        ok: a.chars == b.chars && close(a.score, b.score) && a.values.len() == b.values.len() && a.values.iter().zip(&b.values).all(|(x, y)| close(*x, *y)),
+    };
+    checks.push(check("candidates", recorded.candidates.to_string(), res.candidates.to_string()));
+    checks.push(point("start", &recorded.start, &res.start));
+    checks.push(point("best", &recorded.best, &res.best));
+    let ok = checks.iter().all(|c| c.ok);
+    Ok(Verification { schema: SCHEMA, id: config.id, ok, checks, rerun: None })
 }
 
 /// The start parameter file of a geometry run (`start.param.toml`).

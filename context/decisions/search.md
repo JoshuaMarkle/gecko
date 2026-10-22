@@ -28,5 +28,6 @@ Optimizers, runs and their reproducibility, exploration, quality-diversity and b
 - 2026-10-21 — Bilevel geometry search runs a full SA on the start board before CMA-ES; candidates warm-start from the incumbent with one inner seed per generation. — Otherwise early generations measure the layout catching up from QWERTY, not the board.
 - 2026-10-21 — Geometry CMA-ES uses σ0 0.1 and IPOP restarts from the best point (`restart_from_best`). — On Corne's touching columns σ0 0.25 and uniform restarts sampled almost only colliding boards.
 - 2026-10-21 — A geometry run reports start and best board after equal final SA polishes. — The search phase gives the best board more layout effort; equal polish keeps the gain honest.
-- 2026-10-21 — Geometry runs write their own `config.json` (`kind: "geometry"`), not `RunConfig`. — Different parameters and outputs; `list runs` and `verify` skip them for now.
-
+- 2026-10-21 — Geometry runs write their own `config.json` (`kind: "geometry"`), not `RunConfig`. — Different parameters and outputs; `verify` dispatches on `kind` (`geomsearch::verify`).
+- 2026-10-22 — Geometry collision penalty unit is |start board score| + 1 after the first layout search, not the raw start layout's score. — QWERTY scores ≈ 6× an optimized layout, so the same `--penalty` weighed overlap very differently by start layout.
+- 2026-10-22 — Bilevel candidates warm-start from the reported (collision-free-first) board's layout, not the lowest-objective board. — A penalized overlapping board could otherwise steer every later candidate's layout.

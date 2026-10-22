@@ -32,6 +32,8 @@ export interface Geometry {
   param?: ParamGeometry;
   /** Set on the best board of a geometry run (id `run:<run>`). */
   run?: string;
+  /** `Geometry::hash` (served boards; a run records the same in `geometry_hash`). */
+  hash?: string;
 }
 
 /** A parametric board (gecko-core `ParametricGeometry`); opaque here, passed to WASM `param_board`. */
@@ -63,7 +65,7 @@ export interface MetricDef { id: string; name: string; unit: string; order: stri
 /** `chars` is slot-ordered; for a layered layout it is the flat string over its layer slots
  *  (see `layerSlots`), and `layers` names layers 1, 2, …. */
 export interface LayoutInfo { id: string; name: string; geometry: string; source: string; chars: string; layers?: string[] }
-export interface CorpusInfo { id: string; name: string; chars: number; charset: string }
+export interface CorpusInfo { id: string; name: string; chars: number; charset: string; hash: string }
 
 export interface Meta {
   schema: number;
@@ -134,6 +136,8 @@ export interface RunSummary {
   id: string; created: string; algo: string; profile: string; corpus: string;
   /** Board name; for a geometry run, its best board's (the `run:<id>` board) once done. */
   geometry: string;
+  /** Input hashes (a geometry run: its start board's parameter file). */
+  geometry_hash: string; corpus_hash: string; profile_hash: string;
   best_score: number | null; best: string | null; elapsed_ms: number | null; status: string;
   kind: "layout" | "geometry";
 }
@@ -152,7 +156,7 @@ export interface GeomProgress {
 }
 export interface GeomPoint { values: number[]; score: number; f: number; collisions: number; depth: number; chars: string; rows: string[]; breakdown: Breakdown }
 export interface GeomSearchParams {
-  mode: "bilevel" | "alternate"; seed: number; threads: number; time_ms: number | null; evals: number | null;
+  mode: "bilevel" | "alternate" | "board"; seed: number; threads: number; time_ms: number | null; evals: number | null;
   inner_evals: number; inner_accept0: number; polish_frac: number; polish_evals: number; sigma0: number; popsize: number | null;
   margin: number; penalty: number; hard_fail: number; rounds: number; keep_effort: boolean;
 }
@@ -223,4 +227,4 @@ export interface RunRequest extends ScoreRequest {
   geom?: GeomRequest;
 }
 /** `free` as `gecko geom optimize --free`; the rest override `GeomSearchParams`. */
-export interface GeomRequest { free: string; mode?: "bilevel" | "alternate"; inner_evals?: number; margin?: number; penalty?: number; keep_effort?: boolean }
+export interface GeomRequest { free: string; mode?: "bilevel" | "alternate" | "board"; inner_evals?: number; margin?: number; penalty?: number; keep_effort?: boolean }

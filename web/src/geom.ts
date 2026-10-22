@@ -1,5 +1,5 @@
-// Board + layout search (geometry runs, gecko-core `geomsearch`): the free-parameter groups the
-// Search tab offers, the `--free` spec sent to the server, readable parameter names, and progress
+// Board searches (geometry runs, gecko-core `geomsearch`): the free-parameter groups the
+// Board and Both tabs offer, the `--free` spec sent to the server, readable parameter names, and progress
 // in the shape the convergence chart reads.
 
 import type { Breakdown, GeomProgress, GeomVar, Progress } from "./api";
@@ -22,12 +22,16 @@ export const GEOM_GROUPS: [string, string, string, boolean][] = [
 export const PRESET_2D = GEOM_GROUPS.filter((g) => !g[3]).map((g) => g[0]);
 export const PRESET_3D = GEOM_GROUPS.map((g) => g[0]);
 
-/** Search-tab settings of a board + layout search (persisted with the other search settings). */
+/** Settings of the Board and Both optimize tabs (persisted with the other search settings). */
 export interface GeomSettings {
   groups: string[];
   /** `<board id>|<parameter>` → [lo, hi], replacing the default bounds. */
   bounds: Record<string, [number, number]>;
+  /** Both tab: how board and layout searches combine (the Board tab always runs "board"). */
   mode: "bilevel" | "alternate";
+  /** Budget kind and wall-clock seconds (board searches want longer than layout runs). */
+  budget?: "time" | "evals";
+  timeS?: number;
   /** Layout swaps per board candidate (bilevel). */
   innerEvals: number;
   /** Keycap clearance per side, u. */
@@ -40,7 +44,7 @@ export interface GeomSettings {
 }
 
 export const GEOM_DEFAULTS: GeomSettings = {
-  groups: PRESET_2D, bounds: {}, mode: "bilevel", innerEvals: 20_000, margin: 0, penalty: 10, keepEffort: false, evals: 400,
+  groups: PRESET_2D, bounds: {}, mode: "bilevel", budget: "time", timeS: 60, innerEvals: 20_000, margin: 0, penalty: 10, keepEffort: false, evals: 400,
 };
 
 /** The groups part of the spec (no bounds): what `/api/geometries/{id}/free` expands. */

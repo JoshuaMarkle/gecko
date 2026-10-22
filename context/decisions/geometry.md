@@ -33,3 +33,4 @@ Boards (2D, parametric, 3D), KLE import, collision, derived costs and the hand m
 - 2026-10-21 — Geometry search drops hand-entered efforts and derives them per candidate (`--keep-effort` opts out). — Fixed efforts would make M01 blind to moved keys.
 - 2026-10-21 — Spread and row pitch default to ≥ 1 u (MX pitch) in geometry search; margin 0. — With 18 mm caps the search packs keys to 18.1 mm pitch, which shortens every distance but fails `validate` and needs Choc-style caps.
 - 2026-10-21 — Default bounds: split tent 0–45°, tilt −15–10°, row curve 0–30°. — The hand model has no finger-vs-keycap clearance term, so the search runs to whatever bound it is given.
+- 2026-10-22 — `geomsearch` gains `Mode::Board` (board for a fixed layout), sharing the bilevel CMA-ES loop with the inner layout search off. — The web UI separates "board for this layout" from "board and layout together"; reusing the loop keeps one driver and its pause / progress / run-dir code.

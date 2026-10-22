@@ -194,6 +194,15 @@ fn search_3d_and_alternate_mode() {
 }
 
 #[test]
+fn board_mode_keeps_the_start_layout() {
+    let r = search(Mode::Board, "2d", 2);
+    assert_eq!(r.best.chars, r.start.chars);
+    assert_eq!(r.layout_evals, 0);
+    assert!(r.feasible && r.best.score <= r.start.score + 1e-9, "{} > {}", r.best.score, r.start.score);
+    assert_eq!(search(Mode::Board, "2d", 2).best.values, r.best.values);
+}
+
+#[test]
 fn run_directory_holds_a_loadable_board() {
     let st = store();
     let p = corne();

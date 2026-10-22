@@ -1,4 +1,4 @@
-// Search tab, "Board + layout" (web-screens.md "Search"): which board parameters move and how
+// Board and Both tabs (web-screens.md "Board · Both"): which board parameters move and how
 // far (sidebar groups, bottom bounds table), and a 3D preview of the board with one parameter
 // swept across its bounds, collisions marked as the search would count them.
 
@@ -26,8 +26,9 @@ export function useGeomVars(geometry: Geometry, groups: string[]): { vars: GeomV
   return state.key === key ? { vars: state.vars, error: state.error } : { vars: [], error: null };
 }
 
-/** Sidebar sections: what moves, and the search's own settings. */
-export function GeomSide({ s, set }: { s: GeomSettings; set: (patch: Partial<GeomSettings>) => void }) {
+/** Sidebar sections: what moves, and the search's own settings (`board`: the layout stays fixed,
+ *  so the bilevel / alternate settings do not apply). */
+export function GeomSide({ s, set, target }: { s: GeomSettings; set: (patch: Partial<GeomSettings>) => void; target: "board" | "both" }) {
   const has = (g: string) => s.groups.includes(g);
   const toggle = (g: string, on: boolean) => set({ groups: on ? [...s.groups, g] : s.groups.filter((x) => x !== g) });
   const preset = PRESET_3D.every(has) && s.groups.length === PRESET_3D.length ? "3d"
@@ -45,14 +46,16 @@ export function GeomSide({ s, set }: { s: GeomSettings; set: (patch: Partial<Geo
       ))}
     </Sec>
     <Sec id="geom-settings" title="Board search settings" note="CMA-ES over the board">
-      <div className="row">
-        <label title="Bilevel: every candidate board gets a short layout search. Alternate: board steps with the layout fixed, then a full layout search, for a few rounds.">Mode</label>
-        <select value={s.mode} onChange={(e) => set({ mode: e.target.value as GeomSettings["mode"] })}>
-          <option value="bilevel">Bilevel</option><option value="alternate">Alternate</option>
-        </select>
-        <span />
-      </div>
-      <Num label="Layout swaps / board" help="Bilevel: layout swaps tried on each candidate board, starting from the best layout so far." value={s.innerEvals} min={0} step={5000} onChange={(v) => set({ innerEvals: Math.max(0, Math.round(v)) })} />
+      {target === "both" && <>
+        <div className="row">
+          <label title="Bilevel: every candidate board gets a short layout search. Alternate: board steps with the layout fixed, then a full layout search, for a few rounds.">Mode</label>
+          <select value={s.mode} onChange={(e) => set({ mode: e.target.value as GeomSettings["mode"] })}>
+            <option value="bilevel">Bilevel</option><option value="alternate">Alternate</option>
+          </select>
+          <span />
+        </div>
+        <Num label="Layout swaps / board" help="Bilevel: layout swaps tried on each candidate board, starting from the best layout so far." value={s.innerEvals} min={0} step={5000} onChange={(v) => set({ innerEvals: Math.max(0, Math.round(v)) })} />
+      </>}
       <Num label="Clearance" help="Extra space kept around each keycap (per side). 0 lets caps touch." value={s.margin} min={0} step={0.01} unit="u" onChange={(v) => set({ margin: Math.max(0, v) })} />
       <Num label="Collision penalty" help="Score added per u of keycap overlap, in units of the start score. Higher keeps the search away from colliding boards." value={s.penalty} min={0} step={1} onChange={(v) => set({ penalty: Math.max(0, v) })} />
       <Toggle label="Keep key efforts" help="Keep the board file's hand-entered key efforts instead of deriving them from each candidate's key positions." value={s.keepEffort} onChange={(v) => set({ keepEffort: v })} />

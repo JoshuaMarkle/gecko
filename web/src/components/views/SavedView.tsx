@@ -18,7 +18,7 @@ interface Props {
   geometries: Geometry[];
   onOpenRun: (id: string) => void;
   onPickRank: (i: number) => void;
-  onShowHome: () => void;
+  onShowLayout: () => void;
   /** The selected run when it is a board + layout run (then `run` is null). */
   geomRun: GeomRunDetail | null;
   onUseBoard: (id: string) => void;
@@ -67,7 +67,7 @@ export function SavedView(p: Props) {
             <div className="panehead">
               <b>{cfg.params.algo} run</b>
               <span className="hint mono">{cfg.id}</span>
-              {res && <button className="btn soft small" style={{ marginLeft: "auto" }} onClick={p.onShowHome}>Open in Home</button>}
+              {res && <button className="btn soft small" style={{ marginLeft: "auto" }} onClick={p.onShowLayout}>Open in Layout</button>}
             </div>
             <div className="scroll">
               <div className="pad">
