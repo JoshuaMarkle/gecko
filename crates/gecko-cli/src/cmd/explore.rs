@@ -12,32 +12,112 @@ use gecko_core::run::{self, RunSpec};
 use gecko_core::{Scorer, SCHEMA};
 use serde_json::json;
 
-use super::{parse_duration, Ctx, Inputs};
+use crate::ctx::{threads, time_budget, Ctx, Inputs};
+use crate::fmt::chars_rows as rows;
 
+#[derive(clap::Args)]
 pub struct ExploreArgs {
-    pub time: Option<String>,
-    pub evals: Option<u64>,
-    pub seed: u64,
-    pub threads: Option<usize>,
-    pub pin: String,
-    pub from: Option<String>,
-    pub samples: Option<usize>,
-    pub max_optima: Option<usize>,
-    pub inputs: Inputs,
+    /// Time budget, e.g. 2m (default 60s).
+    #[arg(long)]
+    time: Option<String>,
+    /// Evaluation budget (deterministic with --threads 1).
+    #[arg(long)]
+    evals: Option<u64>,
+    #[arg(long, default_value_t = 1)]
+    seed: u64,
+    #[arg(long)]
+    threads: Option<usize>,
+    #[arg(long, default_value = "")]
+    pin: String,
+    #[arg(long)]
+    from: Option<String>,
+    /// Random layouts measured by the landscape probe.
+    #[arg(long)]
+    samples: Option<usize>,
+    /// Archive cap (the worst optima beyond it are dropped).
+    #[arg(long)]
+    max_optima: Option<usize>,
+    #[command(flatten)]
+    inputs: Inputs,
 }
 
-fn cores() -> usize {
-    std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1)
+#[derive(clap::Args)]
+pub struct QdArgs {
+    /// Time budget, e.g. 2m (default 60s).
+    #[arg(long)]
+    time: Option<String>,
+    /// Evaluation budget (deterministic with --threads 1).
+    #[arg(long)]
+    evals: Option<u64>,
+    #[arg(long, default_value_t = 1)]
+    seed: u64,
+    #[arg(long)]
+    threads: Option<usize>,
+    #[arg(long, default_value = "")]
+    pin: String,
+    #[arg(long)]
+    from: Option<String>,
+    /// 1–3 axes, each name or name:lo:hi (roll_ratio, index_load, pinky_load, hand_balance,
+    /// or a metric id). Without a range, the seed descents set it.
+    #[arg(long, value_delimiter = ',', default_value = "roll_ratio,index_load")]
+    axes: Vec<String>,
+    /// Bins per axis.
+    #[arg(long, default_value_t = 16)]
+    bins: usize,
+    /// Random descents that seed the grid.
+    #[arg(long)]
+    seeds: Option<usize>,
+    /// Improving moves after each mutation (0 = descend to a local optimum).
+    #[arg(long)]
+    descent: Option<usize>,
+    /// Print an existing qd run instead of searching.
+    #[arg(long)]
+    show: Option<String>,
+    #[command(flatten)]
+    inputs: Inputs,
+}
+
+#[derive(clap::Args)]
+pub struct LandscapeArgs {
+    #[arg(long, default_value_t = 4000)]
+    samples: usize,
+    #[arg(long, default_value_t = 64)]
+    walks: usize,
+    #[arg(long, default_value_t = 400)]
+    walk_len: usize,
+    #[arg(long, default_value_t = 1)]
+    seed: u64,
+    /// Layout whose symbol set is probed (default: the reference layout).
+    #[arg(long)]
+    from: Option<String>,
+    #[command(flatten)]
+    inputs: Inputs,
+}
+
+#[derive(clap::Args)]
+pub struct AtlasArgs {
+    /// Run id of an explore run.
+    run: String,
+    #[arg(long, default_value_t = 10)]
+    top: usize,
+    /// Family radius: slots that may differ from the family's leader.
+    #[arg(long, default_value_t = 8)]
+    cut: usize,
+    /// How many of the best optima are grouped into families.
+    #[arg(long, default_value_t = 300)]
+    pool: usize,
+    #[command(flatten)]
+    inputs: Inputs,
 }
 
 pub fn explore(ctx: &Ctx, a: ExploreArgs) -> Result<()> {
     let l = ctx.load(&a.inputs)?;
-    let start = ctx.layout(a.from.as_deref().unwrap_or(&ctx.store.defaults.reference), &l)?;
+    let start = ctx.start(a.from.as_deref(), &l)?;
     let mut params = Params {
         algo: Algo::Explore,
         seed: a.seed,
-        threads: a.threads.unwrap_or_else(cores),
-        time_ms: if a.evals.is_some() { None } else { Some(parse_duration(a.time.as_deref().unwrap_or("60s"))?) },
+        threads: threads(a.threads),
+        time_ms: time_budget(a.time.as_deref(), a.evals, "60s")?,
         evals: a.evals,
         top: 10,
         ..Default::default()
@@ -78,12 +158,6 @@ pub fn explore(ctx: &Ctx, a: ExploreArgs) -> Result<()> {
     Ok(())
 }
 
-/// Slot-ordered symbols split into the geometry's rows (symbols may repeat).
-fn rows(chars: &str, g: &gecko_core::Geometry) -> String {
-    let mut it = chars.chars();
-    g.row_lengths().iter().map(|&n| it.by_ref().take(n).collect::<String>()).collect::<Vec<_>>().join(" ")
-}
-
 fn print_summary(s: &Summary, g: &gecko_core::Geometry) {
     println!("atlas {}  {} evals in {:.1}s", s.id, s.evals, s.elapsed_ms as f64 / 1000.0);
     println!(
@@ -111,12 +185,13 @@ fn print_summary(s: &Summary, g: &gecko_core::Geometry) {
     }
 }
 
-pub fn landscape(ctx: &Ctx, inputs: &Inputs, from: Option<&str>, samples: usize, walks: usize, walk_len: usize, seed: u64) -> Result<()> {
-    let l = ctx.load(inputs)?;
-    let start = ctx.layout(from.unwrap_or(&ctx.store.defaults.reference), &l)?;
+pub fn landscape(ctx: &Ctx, a: LandscapeArgs) -> Result<()> {
+    let LandscapeArgs { samples, walks, walk_len, seed, from, inputs } = a;
+    let l = ctx.load(&inputs)?;
+    let start = ctx.start(from.as_deref(), &l)?;
     let sc = Scorer::new(&l.geometry, &l.corpus, &l.profile, &start)?;
     let sctx = SearchCtx::new(&sc, (0..sc.n).collect(), sc.identity());
-    let p = probe::run(&sctx, seed, cores(), samples, walks, walk_len, &Control::default());
+    let p = probe::run(&sctx, seed, threads(None), samples, walks, walk_len, &Control::default());
     let (rho, ell) = stats::autocorrelation(&p.walks, 20);
     let mut scores: Vec<f64> = p.samples.iter().map(|s| s.score).collect();
     scores.sort_by(f64::total_cmp);
@@ -157,8 +232,9 @@ pub fn landscape(ctx: &Ctx, inputs: &Inputs, from: Option<&str>, samples: usize,
     Ok(())
 }
 
-pub fn atlas_cmd(ctx: &Ctx, id: &str, inputs: &Inputs, top: usize, cut: usize, family_pool: usize) -> Result<()> {
-    let dir = ctx.store.runs.join(id);
+pub fn atlas(ctx: &Ctx, a: AtlasArgs) -> Result<()> {
+    let AtlasArgs { run: id, top, cut, pool: family_pool, inputs } = a;
+    let dir = ctx.store.runs.join(&id);
     let config = run::load_config(&dir)?;
     let (summary, at) = atlas::load(&dir, None)?;
     let g = ctx.store.geometry(&config.geometry.name)?;
@@ -261,21 +337,6 @@ pub fn atlas_cmd(ctx: &Ctx, id: &str, inputs: &Inputs, top: usize, cut: usize, f
     Ok(())
 }
 
-pub struct QdArgs {
-    pub time: Option<String>,
-    pub evals: Option<u64>,
-    pub seed: u64,
-    pub threads: Option<usize>,
-    pub pin: String,
-    pub from: Option<String>,
-    pub axes: Vec<String>,
-    pub bins: usize,
-    pub seeds: Option<usize>,
-    pub descent: Option<usize>,
-    pub show: Option<String>,
-    pub inputs: Inputs,
-}
-
 pub fn qd(ctx: &Ctx, a: QdArgs) -> Result<()> {
     if let Some(id) = &a.show {
         let dir = ctx.store.runs.join(id);
@@ -296,12 +357,12 @@ pub fn qd(ctx: &Ctx, a: QdArgs) -> Result<()> {
         bail!("--axes takes 1 to 3 axes");
     }
     let l = ctx.load(&a.inputs)?;
-    let start = ctx.layout(a.from.as_deref().unwrap_or(&ctx.store.defaults.reference), &l)?;
+    let start = ctx.start(a.from.as_deref(), &l)?;
     let mut params = Params {
         algo: Algo::Qd,
         seed: a.seed,
-        threads: a.threads.unwrap_or_else(cores),
-        time_ms: if a.evals.is_some() { None } else { Some(parse_duration(a.time.as_deref().unwrap_or("60s"))?) },
+        threads: threads(a.threads),
+        time_ms: time_budget(a.time.as_deref(), a.evals, "60s")?,
         evals: a.evals,
         top: 10,
         ..Default::default()
