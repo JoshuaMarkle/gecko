@@ -1,5 +1,11 @@
 # Focus topics
 
+**Current focus (four papers):** exploring the layout landscape (T3, T4), a general cost function
+(T1, T5, T8, T11), finding the best layout (T2, T10), and the software paper. The rest are parked
+candidates. Paper links in the table below: P1 and P5 are now merged into
+[02-cost-function](drafts/02-cost-function.md), P2 is [03-best-layout](drafts/03-best-layout.md),
+P3 is [01-landscape](drafts/01-landscape.md), P4 is [later/geometry-codesign](drafts/later/geometry-codesign.md).
+
 Questions GECKO is built to answer, in the order they become answerable. For each: the question,
 what we already know from the repo (with source), the hypothesis, the experiment, the figures that
 would make the result convincing, and what blocks it. "Have" means a measured number exists today;
@@ -7,14 +13,14 @@ everything under **Hypothesis** is a prediction, not a result.
 
 | # | Topic | Core claim to test | Ready? | Paper |
 |---|---|---|---|---|
-| T1 | Objective sensitivity | The "best layout" is a region, not a point; a few weights decide which | Yes | [P1](drafts/P1-objective-sensitivity.md) |
-| T2 | Certified optimality | Optimizers are near-optimal; bounds can say how near, at least on sub-problems | Mostly | [P2](drafts/P2-certified-optimality.md) |
-| T3 | Landscape structure | Layout space is a big-valley with few funnels; most good layouts share a skeleton | Yes | [P3](drafts/P3-landscape.md) |
-| T4 | Trade-off atlas | Every popular layout sits on a small Pareto/QD front; the front is mapped | Yes | [P3](drafts/P3-landscape.md) |
+| T1 | Objective sensitivity | The "best layout" is a region, not a point; a few weights decide which | Yes | [P1](drafts/02-cost-function.md) |
+| T2 | Certified optimality | Optimizers are near-optimal; bounds can say how near, at least on sub-problems | Mostly | [P2](drafts/03-best-layout.md) |
+| T3 | Landscape structure | Layout space is a big-valley with few funnels; most good layouts share a skeleton | Yes | [P3](drafts/01-landscape.md) |
+| T4 | Trade-off atlas | Every popular layout sits on a small Pareto/QD front; the front is mapped | Yes | [P3](drafts/01-landscape.md) |
 | T5 | Metric gaming and generalization | Optimizing a proxy beats real comfort measures unless the proxy is held out | Yes | P1 §Goodhart |
-| T6 | Board geometry co-design | Which board features (stagger, splay, thumb arc, tent) buy the most comfort | Needs #54, #59 | [P4](drafts/P4-geometry-codesign.md) |
+| T6 | Board geometry co-design | Which board features (stagger, splay, thumb arc, tent) buy the most comfort | Needs #54, #59 | [P4](drafts/later/geometry-codesign.md) |
 | T7 | Hand-size robustness | A layout/board tuned for one hand fails on others; robust designs cost little | Needs #103 | P4 |
-| T8 | Learned costs | Timing and preference data calibrate the objective better than hand weights | Needs #31, #61 | [P5](drafts/P5-learned-costs.md) |
+| T8 | Learned costs | Timing and preference data calibrate the objective better than hand weights | Needs #31, #61 | [P5](drafts/02-cost-function.md) |
 | T9 | Symbols, layers, code | Layer and adaptive-key designs change the optimum for programmers | Partly | new |
 | T10 | Search benchmark | On a QAP with trigram terms, which metaheuristic wins at which budget | Yes | software paper §7 |
 | T11 | Community agreement | Which metrics predict what ~4,000 community layouts keep and like | Yes | P5 / P1 |

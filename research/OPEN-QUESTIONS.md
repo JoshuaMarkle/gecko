@@ -3,15 +3,16 @@
 The one place for research debt. Two lists: claims to **verify**, and topics **not yet
 researched**. When an item is closed, fix the source file, delete the marker there, and add one
 line to "Closed" with the date. `python3 -I research/scripts/research.py lint` counts the
-`(verify)` markers still in the files. Last pass: 2026-10-21.
+`(verify)` markers still in the files. Last pass: 2026-10-21 (second pass: thumb, finger fatigue, pronation).
 
 ## To verify
 
 | Item | Where | Why it is open | To close |
 |---|---|---|---|
-| Aalto 136M data | [dhakal](sources/dhakal-136m-keystrokes.md) | Aalto host refuses connections; Kaggle mirror (18.85 GB) needs a user API token and a size-approved download | Token in `~/.kaggle/`, sample first, compare with the paper's means |
+| Aalto 136M data | [dhakal](sources/dhakal-136m-keystrokes.md) | Aalto host refuses connections; the Kaggle mirror is a third-party upload | Mostly closed: the full mirror agrees with the paper within 3.5% on all four bigram classes. Left: the paper's exact outlier filters, and the Aalto zip if the host returns |
 | Buchholz phalanx ratios, third decimals; finger metacarpal lengths | [hand models](sources/hand-models.md) | Read through secondary tables; metacarpals only in the 1989 dissertation | Buchholz 1992 full text. Low value: reach costs do not need them |
 | MCP abduction ROM per finger | [hand models](sources/hand-models.md) | One small study (n = 41) | A larger study |
+| Thumb workspace scaling with hand size | [thumb](sources/thumb-biomechanics.md) | Tang 2008 abstract gives 15 women, no hand-length scaling | Read the full text; check ANSUR II for thumb length |
 | Engram protocol on column-stagger and ortho boards | [Engram](sources/engram-preference-study.md) | Study used row-stagger boards, left hand only | Re-run on a split board (#50) |
 | Taillard 1991 tenure range, AZERTY amélioré text | [QAP](sources/qap-metaheuristics.md), [integer programming](sources/integer-programming-bounds.md) | Citations now checked; the papers themselves are unread | Read them if the numbers start to matter |
 
@@ -23,9 +24,9 @@ found little recent work, so most gaps below are gaps in the literature too.
 | Topic | Needed by | State |
 |---|---|---|
 | Hand-size population data (hand length, breadth, finger ratios) | H11 (#103), hand presets | Only small regional studies found. Source: ANSUR II public CSVs (a few MB each); needs a download OK |
-| Per-finger strength, speed, fatigue; RSI risk factors | M02 targets, `finger_target` | Peak key force per finger known ([wrist posture](sources/wrist-posture-and-finger-load.md)); no fatigue limits |
-| Forearm pronation and other posture limits beyond the wrist | G03 | Carpal-tunnel angles done; pronation limit missing |
-| Thumb biomechanics and thumb-cluster ergonomics | I2 (#71), G06 | ROM only |
+| RSI risk factors; fatigue over a full workday on non-QWERTY boards | M02 targets, `finger_target` | Typing is ≈ 10 % MVC and shows potentiation, not fatigue ([finger force](sources/finger-force-and-fatigue.md)); no per-finger limit exists in the literature found, so none is needed for M02 |
+| A forearm pronation *limit* (not just effect of tent) | G03 | Tent 20–30° gives ≈ 45° pronation (Marklin review, Rempel 2007: best of six had 14° gable); no injury-linked threshold found. Elbow and shoulder posture not covered |
+| Keyboard-specific thumb data: key force by cluster position, space-bar use, thumb fatigue | I2 (#71), G06 | Joint range and operational workspace done ([thumb](sources/thumb-biomechanics.md)); studies are phone-based and small |
 | Layout learning cost | L02 familiarity | Two peer-reviewed studies, rest anecdote; keep as a user-set weight |
 | Symbol and code frequency, layer design | Y-track, D9 (#91) | The French-standard CACM paper is unread |
 | Key switch force, travel, actuation | J, I-tracks | Armstrong 1994 and Martin 1996 give typing forces; no switch-design source |
@@ -37,6 +38,7 @@ found little recent work, so most gaps below are gaps in the literature too.
 
 ## Closed
 
+- 2026-10-21 — Thumb ROM and operational workspace ([thumb](sources/thumb-biomechanics.md)); typing force, make-force and fatigue studies ([finger force](sources/finger-force-and-fatigue.md)).
 - 2026-10-21 — carpalx `k`, `w`, row/finger penalties, stroke weights checked on the primary site (site is reachable now).
 - 2026-10-21 — Citations checked via Crossref / Europe PMC / arXiv: Rempel 2009, John & Karrenbauer MOTOR 2019, Feit CACM 2021, CVT-MAP-Elites, FUTO Swipe (arXiv:2606.25247, and its role corrected), Engram IJHCI 2026 DOI, Hume 1990.
 - 2026-10-21 — RoTS tenure 0.9n–1.1n confirmed in a secondary source (arXiv:1010.0157).

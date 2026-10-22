@@ -44,6 +44,6 @@ judges a layout).
 ## Confidence
 
 Research was done 2026-10-20 (hand-model parameters checked 2026-10-21). Repositories were cloned
-and read directly. Several primary sites (carpalx at bcgsc.ca, the Aalto 136M keystrokes page, MPI
+and read directly. Several primary sites (carpalx at bcgsc.ca, the Aalto 136M keystrokes page (its data was read from a Kaggle mirror instead), MPI
 keyboard-optimization pages, semilin.github.io) were unreachable, so those details come from
 mirrors, archives or abstracts and are marked `secondary` in the index.

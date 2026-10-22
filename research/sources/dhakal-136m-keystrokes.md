@@ -10,8 +10,9 @@ take: IKI by hand/alternation; rollover ≈ 50 % for fast typists (data site unr
 # Dhakal, Feit, Kristensson, Oulasvirta — "Observations on Typing from 136 Million Keystrokes" (CHI 2018)
 
 doi:10.1145/3173574.3174220. PDF: https://www.pokristensson.com/pubs/DhakalEtAlCHI2018.pdf.
-Data: https://userinterfaces.aalto.fi/136Mkeystrokes/ (blocked from our env; also Cambridge
-repository https://www.repository.cam.ac.uk/handle/1810/277516). Free for research.
+Data: https://userinterfaces.aalto.fi/136Mkeystrokes/ (host down 2026-10-21; also Cambridge
+repository https://www.repository.cam.ac.uk/handle/1810/277516, paper only). Free for research.
+Usable copy: Kaggle mirror `noelsmathew/keystrokes`, checked against the paper below.
 
 ## What it is
 
@@ -56,3 +57,43 @@ own keyboards. Logged: key-down/key-up timestamps per character, sentences, demo
   PARTICIPANT_ID, TEST_SECTION_ID, SENTENCE, USER_INPUT, KEYSTROKE_ID, PRESS_TIME, RELEASE_TIME,
   LETTER, KEYCODE. Third-party upload; check it against the paper's numbers before trusting it.
 
+## Mirror sample check (2026-10-21)
+
+54 participants (810 sentences, ~19k letter bigrams) pulled from `noelsmathew/keystrokes` with the
+Kaggle CLI (since deleted). Letter-to-letter press-to-press IKI
+under 2 s, QWERTY left hand = QWERTASDFGZXCVB:
+
+| | Paper (all) | Sample |
+|---|---|---|
+| Left same-hand | 215 ms | 192 ms |
+| Right same-hand | 204 ms | 176 ms |
+| Alternating | 198 ms | 160 ms |
+| Repetition | 176 ms | 183 ms (n = 695) |
+
+- Same columns as documented; the mirror's per-participant files parse cleanly.
+- Order agrees (alternating fastest, same-hand slower), but the sample is 25 ms faster overall and
+  the alternation gap is larger (≈ 30 ms vs 6–17). 54 of 168k people is too few to call it a
+  mismatch, and the paper's exact filtering is unknown. Not yet verified.
+- Kaggle limits listing and downloads (HTTP 429 after ~55 single-file downloads in a minute). The
+  full 18.85 GB needs a slower, resumable pull, or the first 1.4 GB zip if the Aalto host returns.
+
+## Full mirror check (2026-10-21)
+
+All 168,595 participant files from `noelsmathew/keystrokes` (18.85 GB, zip tests clean) unzipped and scanned; the raw files were then deleted
+(re-download from Kaggle to rerun). Script and per-bigram output are kept in
+`~/projects/gecko-workspace/aalto-analysis/` (`iki.py`, `out/bigrams.csv`). Same measure as above (letter-to-letter press-to-press IKI, 0 < IKI < 2 s):
+
+| | Paper (all) | Mirror, all | n | Mirror, sentence typed exactly |
+|---|---|---|---|---|
+| Left same-hand | 215 ms | 213.4 | 16.5M | 207.8 |
+| Right same-hand | 204 ms | 201.0 | 10.6M | 195.2 |
+| Alternating | 198 ms | 191.2 | 29.2M | 184.9 |
+| Repetition | 176 ms | 175.7 | 2.1M | 173.4 |
+
+- The mirror matches the paper to within 1% on left and repetition and within 3.5% on right and
+  alternating; the order and the gaps agree. The 54-person sample above was unrepresentative
+  (too fast, alternation gap too large), not evidence against the mirror.
+- The remaining few ms are plausibly the paper's unstated outlier filter. The mirror is usable as the
+  Aalto data; still a third-party upload, so cite the paper's numbers, not these, in published results.
+- `bigrams.csv` holds n and mean IKI for all 26 x 26 letter bigrams, for the all and clean variants,
+  ready for fitting a bigram time model.
