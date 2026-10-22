@@ -46,6 +46,7 @@ all files are collected in [`../OPEN-QUESTIONS.md`](../OPEN-QUESTIONS.md).
 | [hager-ross-finger-independence.md](hager-ross-finger-independence.md) | Ring least independent, then middle | read |
 | [hand-models.md](hand-models.md) | Segment ratios, joint ROM, DIP–PIP coupling; Buchholz, MediaPipe, MANO, MyoSuite | verified |
 | [split-keyboard-ergonomics.md](split-keyboard-ergonomics.md) | Slope 0 to −4°, opening ≈ 15° | secondary |
+| [wrist-posture-and-finger-load.md](wrist-posture-and-finger-load.md) | Carpal-tunnel limits ext 33° / flex 49° / radial 22° / ulnar 15°; typing sits at ext ~20°, ulnar ~15° | secondary |
 
 ### Optimization and ML
 

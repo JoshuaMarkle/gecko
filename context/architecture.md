@@ -71,9 +71,10 @@ profile (weights) ────────────────────�
 
 ## Concurrency
 
-Optimizers run independent restarts/islands with `rayon`. The scorer's tables are
-immutable and shared (`Arc`); each worker owns its layout and RNG
-(seeded from run seed + worker index).
+Optimizers run independent restarts/islands on `std::thread::scope` threads (no thread-pool
+crate). The scorer is immutable and shared by reference (`&Scorer` in `Ctx`); each worker owns
+its layout and RNG (seeded from run seed + worker index). Progress reaches the caller over an
+`mpsc` channel; `optimize::Control` (atomics) cancels or pauses.
 
 ## Web/server split
 

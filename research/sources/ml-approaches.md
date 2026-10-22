@@ -33,8 +33,10 @@ Where learning (not just search) helps. Ordered by how directly GECKO can use it
 - GECKO's scorer is cheap, so surrogates matter only for: geometry candidates (each needs an
   inner layout search), hand-model IK costs, and simulated typists. Gaussian-process or
   small-MLP surrogates + Bayesian optimization fit there.
-- FUTO Swipe (arXiv:2606.25247, **verify**): a neural swipe decoder used directly as the
-  objective for a swipe layout. Same pattern: a learned model as the cost function.
+- FUTO Swipe (arXiv:2606.25247, Miller & Kostarevas, June 2026, found by web search, abstract
+  only): a layout-agnostic neural swipe decoder, trained on a corpus of over 1M donated swipes.
+  FUTO's KASROZ swipe layout is optimised against such a decoder (per FUTO's GitHub; the write-up
+  was not read). Same pattern: a learned model as the cost function.
 
 ## 3. Simulated users
 

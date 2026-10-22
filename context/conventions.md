@@ -5,10 +5,12 @@
 - Edition 2021+, stable toolchain. `cargo fmt` (`rustfmt.toml`: width 140),
   `cargo clippy --all-targets -- -D warnings`.
 - Hot paths: no allocation, no `HashMap`, no dynamic dispatch inside the inner loop.
-  Use flat `Vec<f32>` tables with index helpers. Optimizers are generic over the scorer.
+  Use flat `Vec<f32>` tables with index helpers. Optimizers take the concrete `&Scorer`; a
+  boxed `dyn Optimizer` is dispatched once per step (thousands of evaluations), never per evaluation.
 - Errors: `thiserror` in core, `anyhow` in the CLI.
-- Crates in use: `serde`, `toml`, `serde_json`, `thiserror`, `anyhow`, `clap`, `axum`,
-  `tokio`, `tower-http`, `wasm-bindgen`, `proptest`. Threads are `std::thread::scope`;
+- Crates in use: core `serde`, `serde_json`, `toml`, `thiserror`; CLI `clap`, `anyhow`, `axum`,
+  `tokio`, `tokio-stream`, `futures-util`, `tower-http`, `mime_guess`, `percent-encoding`;
+  WASM `wasm-bindgen`; tests `proptest`, `insta`, `criterion`, `tower`. Threads are `std::thread::scope`;
   the RNG is our own (`gecko_core::rng`) so results match across platforms.
 - One algorithm per module. Metric table builders live in `metrics/` keyed by catalog ID
   (trigram classes in their own file); split a metric into its own file once it needs more

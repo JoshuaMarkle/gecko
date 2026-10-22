@@ -11,12 +11,14 @@ take: Exact bounds to certify optima; AZERTY standard (MPI pages unreachable)
 
 - Karrenbauer & Oulasvirta, "Improvements to keyboard optimization with integer programming",
   UIST 2014, doi:10.1145/2642918.2647382. Project: https://resources.mpi-inf.mpg.de/keyboardoptimization/UIST2014
-- John & Karrenbauer, MOTOR 2019, iterative lower bounds for sparse QAP (exact title **verify**):
+- John & Karrenbauer, "Dynamic Sparsification for Quadratic Assignment Problems", MOTOR 2019,
+  LNCS, pp. 232–246, doi:10.1007/978-3-030-22629-9_17 (Crossref). Paper:
   https://resources.mpi-inf.mpg.de/keyboardoptimization/MOTOR2019/MOTOR2019.pdf
 - Feit, "Assignment Problems for Optimizing Text Input", PhD thesis, Aalto 2018:
   https://aaltodoc.aalto.fi/items/5c7322e4-b490-419d-9a1a-d848f5a851d6
 - Feit, Nancel, John, Karrenbauer, Weir, Oulasvirta, "AZERTY amélioré: computational design on
-  a national scale", CACM 2021 (the French standard NF Z71-300) **(verify citation details)**.
+  a national scale", *CACM* 64(2):48–58, Jan 2021, doi:10.1145/3382035 (Crossref). The
+  French standard NF Z71-300; the paper itself is still unread.
 
 (MPI pages were blocked from our env; details below are from abstracts and the thesis record.)
 
