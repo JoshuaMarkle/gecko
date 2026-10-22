@@ -37,6 +37,10 @@ interface Props {
   focus?: Focus;
   /** Live press state per key (0 up, else depth fraction of KEY_TRAVEL), read every frame: pressed keys sink and turn blue. */
   pressed?: MutableRefObject<Float32Array>;
+  /** Per-key keycap color over the overlay's (e.g. colliding keys). */
+  colors?: (string | undefined)[];
+  /** Outlines of another board's keys in the same coordinates (e.g. a geometry run's start board). */
+  ghost?: Key[];
 }
 export interface Focus { cx: number; cz: number; w: number; h: number }
 
@@ -49,6 +53,8 @@ const CORNER_SEGS = 6;
 /** Keycap color when no overlay colors the keys; muted keys (unusable on the shown layer). */
 const CAP = "#ffffff";
 const MUTED = "#c8c8c8";
+/** Outline color of `ghost` keys. */
+const GHOST = "#707070";
 /** Keycap color while pressed (`pressed` prop). */
 const PRESSED = "#5c9bff";
 /** Empty-slot glyph (gecko-core `layout::EMPTY`): drawn as a blank cap. */
@@ -265,7 +271,18 @@ function CameraRig({ mode, w, h, cx = 0, cz = 0, reset }: { mode: ViewMode; w: n
   return null;
 }
 
-export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, selected, onKey, spin = 0, children, focus, pressed }: Props) {
+/** Outline of a key of another board (`ghost`): edges of its keycap, no fill. */
+function GhostKey({ k, cx, cy }: { k: Key; cx: number; cy: number }) {
+  const { p, r } = place(k, cx, cy);
+  return (
+    <mesh geometry={capGeometry(k.size[0] - 0.08, k.size[1] - 0.08)} position={[p[0], p[1] + CAP_H / 2, p[2]]} rotation={r} raycast={() => null}>
+      <meshBasicMaterial color={GHOST} transparent opacity={0.12} depthWrite={false} />
+      <Edges color={GHOST} threshold={30} />
+    </mesh>
+  );
+}
+
+export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, selected, onKey, spin = 0, children, focus, pressed, colors, ghost }: Props) {
   const keys = geometry.key;
   const groups = useRef<(THREE.Group | null)[]>([]);
   const bounds = useMemo(() => boardBounds(keys), [keys]);
@@ -276,6 +293,12 @@ export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, 
   const caseGeo = useMemo(() => caseGeometry(bounds.w + 2 * CASE_PAD, bounds.h + 2 * CASE_PAD), [bounds.w, bounds.h]);
   useEffect(() => () => caseGeo.dispose(), [caseGeo]);
   const maxHeat = Math.max(...heat, 1e-9);
+  // Boards whose keys go below the case top (tented or tilted halves pivot about their inner
+  // edge) are raised so every keycap sits above it.
+  const lift = useMemo(() => Math.max(0, ...keys.map((k) => {
+    const d = Math.PI / 180, reach = 0.5 * Math.max(k.size[0], k.size[1]);
+    return -(k.pos[2] - reach * Math.min(1, Math.abs(Math.sin(k.rot[0] * d)) + Math.abs(Math.sin(k.rot[1] * d))));
+  })), [keys]);
   const sym = useMemo(() => [...chars], [chars]);
   const slotOf = useMemo(() => new Map(sym.map((c, i) => [c, i])), [sym]);
 
@@ -293,11 +316,12 @@ export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, 
       <mesh geometry={caseGeo}>
         <meshStandardMaterial color="#d2d2d2" roughness={0.9} />
       </mesh>
+      <group position={[0, lift, 0]}>
       {keys.map((k, i) => {
         const off = muted?.[i] ?? false;
         const ch = off || sym[i] === EMPTY ? "" : sym[i] ?? "";
         const t = (heat[i] ?? 0) / maxHeat;
-        const color = off ? MUTED : overlay === "heat" ? heatColor(t) : overlay === "fingers" || overlay === "ngrams" ? fingerColor(k.finger) : CAP;
+        const color = colors?.[i] ?? (off ? MUTED : overlay === "heat" ? heatColor(t) : overlay === "fingers" || overlay === "ngrams" ? fingerColor(k.finger) : CAP);
         const text = overlay === "heat" ? heatText(t) : INK;
         return (
           <Keycap key={i} k={k} cx={bounds.cx} cy={bounds.cy} ch={ch} color={color} text={text} selected={selected === i} onClick={(at) => onKey(i, at)}
@@ -326,8 +350,10 @@ export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, 
           />
         );
       })}
+      {ghost?.map((k, i) => <GhostKey key={`g${i}`} k={k} cx={bounds.cx} cy={bounds.cy} />)}
       {pressed && <PressAnimator pressed={pressed} groups={groups} />}
       {children}
+      </group>
       <OrbitControls makeDefault enableRotate={mode === "3d"} enablePan enableDamping dampingFactor={0.12} maxPolarAngle={Math.PI / 2.05} minDistance={3} maxDistance={40} />
     </Canvas>
   );

@@ -57,8 +57,14 @@ moved keys, CMA-ES and the bilevel driver below.
 - **Run directory** `runs/<stamp>-geom-<hash>/`: `config.json` (`kind: "geometry"`, params,
   free variables, input hashes), `start.param.toml`, `progress.jsonl` (one line per generation),
   `best.json` (start and best board: values, score, collisions, layout, breakdown) and the best
-  board as `geometry.param.toml` and `geometry.toml` (keys, loads with `-g` anywhere). Geometry
-  runs are not listed by `gecko list runs` or replayed by `gecko verify` yet.
+  board as `geometry.param.toml` and `geometry.toml` (keys, loads with `-g` anywhere, or by name
+  as `-g run:<id>`). The best board is named `<start>-opt-<run hash>`. Each progress line carries
+  the reported board (`values`, its layout `chars`, `collisions`), so the web UI can replay the
+  run. `gecko list runs` lists geometry runs (algo `geometry`); `gecko verify` does not replay
+  them yet.
+- **Pause** (`Control`): the search waits at the next generation and paused time does not count
+  against the budget or toward `elapsed_ms`. Restarts left without budget are not listed in
+  `cma_runs`.
 
 ## CMA-ES (`gecko_core::cmaes`, G5)
 

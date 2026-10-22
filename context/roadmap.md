@@ -111,7 +111,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 84. [x] [#62](https://github.com/JoshuaMarkle/gecko/issues/62) `G7` `gecko geom` CLI · S · after [#54](https://github.com/JoshuaMarkle/gecko/issues/54)
 85. [x] [#63](https://github.com/JoshuaMarkle/gecko/issues/63) `H7` G03 wrist posture cost · S · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52), [#59](https://github.com/JoshuaMarkle/gecko/issues/59)
 86. [ ] [#64](https://github.com/JoshuaMarkle/gecko/issues/64) `J3` Export to Cosmos expert config · M · after [#59](https://github.com/JoshuaMarkle/gecko/issues/59)
-87. [ ] [#67](https://github.com/JoshuaMarkle/gecko/issues/67) `G9` Web: geometry runs (before/after board overlay) · S · after [#54](https://github.com/JoshuaMarkle/gecko/issues/54)
+87. [x] [#67](https://github.com/JoshuaMarkle/gecko/issues/67) `G9` Web: geometry runs (before/after board overlay) · S · after [#54](https://github.com/JoshuaMarkle/gecko/issues/54)
 88. [ ] [#66](https://github.com/JoshuaMarkle/gecko/issues/66) `H8` 3D collision (keycap + switch, GJK) · M · after [#39](https://github.com/JoshuaMarkle/gecko/issues/39)
 89. [ ] [#101](https://github.com/JoshuaMarkle/gecko/issues/101) `G10` Switch type: MX vs Choc · S · after [#39](https://github.com/JoshuaMarkle/gecko/issues/39)
 90. [ ] [#68](https://github.com/JoshuaMarkle/gecko/issues/68) `H9` Web: posed hand in the 3D viewer · M · after [#40](https://github.com/JoshuaMarkle/gecko/issues/40)

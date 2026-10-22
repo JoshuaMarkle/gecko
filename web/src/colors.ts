@@ -20,6 +20,8 @@ export const SUCCESS = "#24a148";
 export const ERROR = "#da1e28";
 export const MUTED = "#707070";
 export const HAIR = "#e0e0e0";
+/** Keycap fill of keys in a collision (geometry runs): a light tint of ERROR so legends stay readable. */
+export const COLLIDE = "#f4a9ad";
 
 /** N-gram arc colors: same-finger red, lateral stretch orange, scissors violet, other same-hand ink, alternation faint. */
 export const PAIR_KINDS: Record<PairKind, [string, string]> = {

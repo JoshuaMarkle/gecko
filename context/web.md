@@ -16,7 +16,8 @@ web/src/
   inputs.ts            the one input store (board, custom boards, constraints, hand, language,
                        profile, layout, pins, search, working model) + usePref
   api.ts               API client + types mirroring the Rust serde shapes (checked by test:contract)
-  wasm.ts              gecko-wasm loader (Scorer, flat2d, export_layout, corpus stats / build)
+  wasm.ts              gecko-wasm loader (Scorer, flat2d, export_layout, corpus stats / build,
+                       paramBoard: a parametric board at given parameter values + collisions)
   format.ts            pure helpers (rows, swaps, layers, verdicts, validation, cap)
   export.ts            Export tab file builders (image SVG, layout TOML/text/JSON, KLE, stats)
   board.ts hand.ts handCosts.ts estimate.ts explore.ts fingerEffort.ts languages.ts
@@ -29,6 +30,9 @@ web/src/
                        inputs → scorer → search diagram
     hand/              Hand tab parts: rigs (hand placement), Hands3D, Panels (bottom tabs)
     explore/           Explore tab: ExploreView, Panels, Board, Scatter, Picked
+    geom/              board + layout search: GeomSearch (Search tab parts, `useGeomVars`),
+                       GeomRunPanel (Saved), GeomBoard (`useParamBoard`, 2D overlay)
+  geom.ts              free-parameter groups, `--free` spec, labels, progress → chart shape
   three/Keyboard3D.tsx 3D keyboard (auto-rotate, click position, scene children)
 web/contract/          API contract check (loose.ts; generated samples are gitignored)
 ```
@@ -53,18 +57,31 @@ violet, other same-hand ink, alternation faint; same-hand and alternate start hi
 render in board-centred coordinates (`boardBounds`, `place`, `CAP_H`; the Hand tab's
 skeletal hands; a `focus` region makes the camera frame board and hands; `pressed`, a per-key depth array read each frame, sinks and tints keys without re-rendering). A 3D toggle (default on) switches between the orbit camera and a flat top-down view with rotation
 locked; both presets fit the board to the viewport. A floor grid (1u cells, 5u sections) sits under the case. Flat and curved boards use the same code path.
+Boards with keys below the case top (tented or tilted halves pivot about their inner edge) are
+raised until every keycap clears it. `colors` overrides key colors (collisions); `ghost` outlines
+another board's keys in the same coordinates (a geometry run's start board).
+
+## Board + layout search
+
+Parametric boards (`/api/geometries` sends their parameter file as `param`) can be searched with
+the board's shape free (gecko-core `geomsearch`, [algorithms/geometry-search.md](algorithms/geometry-search.md)).
+The browser builds any candidate board with WASM `param_board` (same generator and collision
+test as the search), so previews, the live board and the run replay need no server round trip.
+A finished run's best board is listed as `run:<id>` (with `run` and its own `param`), so it can
+be scored, layout-optimized or shape-searched again.
 
 ## API (gecko serve)
 
 | Route | |
 |---|---|
 | `GET /api/meta` | defaults, algos, metric definitions, core count |
-| `GET /api/layouts` · `/api/geometries` · `/api/profiles` · `/api/corpora` | data dir contents |
+| `GET /api/layouts` · `/api/geometries` · `/api/profiles` · `/api/corpora` | data dir contents; geometries add each finished geometry run's best board (`run:<id>`) and `param` on parametric boards |
+| `GET /api/geometries/{id}/free?spec=` | free parameters of a parametric board for a `--free` spec: `{vars: [{name, lo, hi, start}]}` |
 | `GET /api/corpora/{name}` | `.gkc` bytes (for WASM) |
 | `GET /api/corpora/{name}/sources` · `/sources/{file}` | source texts of a corpus (`data/corpora/src/<name>/`; loose `src/` files = `english`): list `[{name, bytes}]`, or one file as text |
 | `POST /api/score` | `{geometry, corpus, profile \| profile_override, chars \| layout, top}` → analysis |
-| `GET /api/runs` · `POST /api/runs` | list / start (`algo, time_ms \| evals, threads, seed, pins, sa_steps, ga_pop, memetic, moves, holdout` + score inputs) |
-| `GET /api/runs/{id}` | config, result, progress, running, paused |
+| `GET /api/runs` · `POST /api/runs` | list (each with `kind`: layout / geometry) / start (`algo, time_ms \| evals, threads, seed, pins, sa_steps, ga_pop, memetic, moves, holdout` + score inputs; with `geom: {free, mode, inner_evals, margin, penalty, keep_effort, …}` a board + layout search, `evals` then counts boards) |
+| `GET /api/runs/{id}` | config, result, progress, running, paused; a geometry run adds `kind: "geometry"` and its start `param` |
 | `GET /api/runs/{id}/events` | SSE: `progress`, then `done` (RunResult) or `failed` |
 | `POST /api/runs/{id}/cancel` | stop early (results are still saved) |
 | `GET /api/runs/{id}/atlas` | explore run summary (`atlas.json`) |

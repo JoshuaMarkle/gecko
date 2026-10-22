@@ -116,6 +116,10 @@ pub struct RunSummary {
     pub best: Option<String>,
     pub elapsed_ms: Option<u64>,
     pub status: String,
+    /// `layout`, or `geometry` for a board + layout search (`geomsearch`; `algo` is then
+    /// `geometry` and `geometry` names the best board, loadable as `run:<id>`).
+    #[serde(default)]
+    pub kind: String,
 }
 
 /// UTC timestamp `YYYYMMDD-HHMMSS` and ISO form, without a date crate.
@@ -356,7 +360,25 @@ pub fn load_progress(dir: &Path) -> Vec<Progress> {
     std::fs::read_to_string(dir.join("progress.jsonl")).unwrap_or_default().lines().filter_map(|l| serde_json::from_str(l).ok()).collect()
 }
 
-/// All runs, newest first.
+fn geometry_summary(dir: &Path) -> Option<RunSummary> {
+    let c = crate::geomsearch::load_config(dir).ok()?;
+    let r = crate::geomsearch::load_result(dir).ok();
+    Some(RunSummary {
+        geometry: if r.is_some() { crate::geomsearch::best_name(&c.geometry.name, &c.id) } else { c.geometry.name },
+        id: c.id,
+        created: c.created,
+        algo: "geometry".into(),
+        profile: c.profile.name,
+        corpus: c.corpus.name,
+        best_score: r.as_ref().map(|r| r.best.score),
+        best: r.as_ref().map(|r| r.best.rows.join(" ")),
+        elapsed_ms: r.as_ref().map(|r| r.elapsed_ms),
+        status: if r.is_some() { "done".into() } else { "incomplete".into() },
+        kind: "geometry".into(),
+    })
+}
+
+/// All runs (layout and geometry), newest first.
 pub fn list(runs: &Path) -> Vec<RunSummary> {
     let mut v: Vec<RunSummary> = std::fs::read_dir(runs)
         .into_iter()
@@ -365,6 +387,9 @@ pub fn list(runs: &Path) -> Vec<RunSummary> {
         .filter(|e| e.path().is_dir())
         .filter_map(|e| {
             let dir = e.path();
+            if crate::geomsearch::is_run(&dir) {
+                return geometry_summary(&dir);
+            }
             let c = load_config(&dir).ok()?;
             let r = load_result(&dir).ok();
             Some(RunSummary {
@@ -378,6 +403,7 @@ pub fn list(runs: &Path) -> Vec<RunSummary> {
                 best: r.as_ref().and_then(|r| r.best.first().map(|b| b.rows.join(" "))),
                 elapsed_ms: r.as_ref().map(|r| r.elapsed_ms),
                 status: if r.is_some() { "done".into() } else { "incomplete".into() },
+                kind: "layout".into(),
             })
         })
         .collect();

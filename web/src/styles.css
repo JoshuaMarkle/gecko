@@ -411,3 +411,12 @@ fieldset.plain:disabled { opacity: .45; }
 .fmtrow .hint { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fmtrow .btns { flex: none; flex-wrap: nowrap; }
 .exportgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr); gap: var(--s4) 24px; padding: var(--s3) var(--s4); }
+
+/* Board + layout search (components/geom) */
+.tbl input.cell { width: 64px; height: 22px; padding: 0 4px; text-align: right; font: inherit; }
+.legend.geomsweep { left: var(--s3); right: auto; }
+.legend.geomsweep input[type="range"] { width: 200px; }
+.geomstage { position: relative; height: 380px; background: var(--soft); border-radius: var(--r-sm); overflow: hidden; }
+.geomscrub { display: flex; align-items: center; gap: var(--s2); }
+.geomscrub input[type="range"] { flex: 1; }
+.geomscrub i.dash { display: inline-block; width: 12px; height: 8px; border: 1px dashed var(--muted); margin-right: 4px; vertical-align: -1px; }
