@@ -26,11 +26,23 @@ pub struct Params {
     pub tol_x: f64,
     /// Stop as soon as a value at or below this is found.
     pub target: f64,
+    /// IPOP restarts start at the best point so far instead of a uniform point in the bounds
+    /// (for problems where most of the box is infeasible, e.g. colliding keyboards).
+    pub restart_from_best: bool,
 }
 
 impl Default for Params {
     fn default() -> Self {
-        Params { sigma0: 0.3, popsize: None, max_evals: 10_000, restarts: 9, tol_fun: 1e-12, tol_x: 1e-11, target: f64::NEG_INFINITY }
+        Params {
+            sigma0: 0.3,
+            popsize: None,
+            max_evals: 10_000,
+            restarts: 9,
+            tol_fun: 1e-12,
+            tol_x: 1e-11,
+            target: f64::NEG_INFINITY,
+            restart_from_best: false,
+        }
     }
 }
 
@@ -49,6 +61,8 @@ pub enum Stop {
     TolX,
     Condition,
     Stagnation,
+    /// The evaluator returned no values (a time budget or cancel); no further restarts.
+    Halted,
 }
 
 #[derive(Clone, Debug)]
@@ -77,7 +91,8 @@ pub fn minimize(mut f: impl FnMut(&[f64]) -> f64, x0: &[f64], bounds: Option<&Bo
 }
 
 /// Minimize with a batch evaluator: `eval` scores one generation (all points in bounds) at
-/// once, so a caller can score candidates in parallel. The first run starts at `x0`; IPOP
+/// once, so a caller can score candidates in parallel; returning no values stops the search
+/// (`Stop::Halted`). The first run starts at `x0`; IPOP
 /// restarts start at a uniform point in the bounds (at `x0` without bounds) with twice the
 /// previous population.
 pub fn minimize_batch(
@@ -111,10 +126,20 @@ pub fn minimize_batch(
         if out.evals >= p.max_evals || out.f <= p.target {
             break;
         }
-        let start = if run == 0 || bounds.is_none() { to_u(x0) } else { (0..n).map(|_| rng.f64()).collect() };
+        let start = if run == 0 || bounds.is_none() {
+            to_u(x0)
+        } else if p.restart_from_best {
+            to_u(&out.x)
+        } else {
+            (0..n).map(|_| rng.f64()).collect()
+        };
         let mut es = Cma::new(start, p.sigma0, lambda);
         let info = es.run(&mut eval, &to_x, bounds.is_some(), p, rng, &mut out);
+        let halted = info.stop == Stop::Halted;
         out.runs.push(info);
+        if halted {
+            break;
+        }
         lambda *= 2;
     }
     out
@@ -216,6 +241,9 @@ impl Cma {
             let us: Vec<Vec<f64>> = ys.iter().map(|y| (0..n).map(|i| self.m[i] + self.sigma * y[i]).collect()).collect();
             let xs: Vec<Vec<f64>> = us.iter().map(|u| to_x(u)).collect();
             let fs = eval(&xs);
+            if fs.is_empty() {
+                break Stop::Halted;
+            }
             assert_eq!(fs.len(), xs.len(), "the evaluator must score every point");
             evals += xs.len();
             out.evals += xs.len();

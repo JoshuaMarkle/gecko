@@ -20,10 +20,45 @@ The candidate representation is implemented in `gecko_core::parametric`:
 zones/columns/rows with column stagger/splay, split spread/angle and thumb arc/pose, plus 3D
 row/column curvature, column lift and zone/split tent and tilt.
 See [../geometry.md](../geometry.md); existing parametric Corne/ortho models reproduce the
-explicit boards exactly. Building blocks in place: `Scorer::set_geometry` (fast table rebuild,
-[../objective.md](../objective.md#geometry-rebuild-g2)), `Geometry::collisions` (penalty by depth,
-[../geometry.md](../geometry.md#collision-g04)), derived efforts that follow moved keys, and CMA-ES
-below. The bilevel driver (G6, #54) is next.
+explicit boards exactly. Building blocks: `Scorer::set_geometry` (fast table rebuild,
+[../objective.md](../objective.md#geometry-rebuild-g2)), `Geometry::collisions` / `collisions_3d`
+(penalty by depth, [../geometry.md](../geometry.md#collision-g04)), derived efforts that follow
+moved keys, CMA-ES and the bilevel driver below.
+
+## Board + layout search (`gecko_core::geomsearch`, G6)
+
+`gecko geometry optimize -g <name>.param --free 3d -p hand --time 5m` (alias `gecko geom`).
+
+- **Free parameters** (`--free`, comma list; `name=lo:hi` sets bounds): presets `2d` (column
+  stagger, splay and spread, thumb cluster anchor/rotation/staggers) and `3d` (2d + row and column
+  curvature, column lift, split tent and tilt, thumb tent/tilt/lift/curve), groups of those, or
+  single fields `split.<f>`, `<zone>.<f>`, `<zone>.<col>.<f>`. Finger zones are zones containing
+  their home row; the others are thumb zones. Mirrored zones move both halves. Default bounds
+  sit around the start value (stagger ±0.75 u, splay ±15°, spread and row pitch 1–1.6 u, i.e. not
+  below MX pitch, row curve 0–30°, column curve 0–15°, split tent 0–45°, tilt −15–10°).
+- **Efforts** are dropped and derived from key positions per candidate (`--keep-effort` keeps
+  the file's), so M01 follows moved keys.
+- **Bilevel** (default): one full SA on the start board first, so candidates warm-start from a
+  good layout. Then CMA-ES (σ0 0.1 of each range, IPOP restarts from the best point) proposes
+  boards; each gets a 20k-swap low-temperature SA (accept0 0.05) from the incumbent layout plus
+  a steepest descent. All candidates of a generation share one inner seed (common random
+  numbers) and run in parallel, one scorer per thread (`set_geometry`, ≈ 1 ms per board).
+- **Alternate** (`--mode alternate`): rounds of a full SA on the current board, then CMA-ES over
+  the board with that layout fixed (one rebuild + full score per candidate). Stops when a round
+  gains nothing.
+- **Collisions**: 2D on flat candidates, `collisions_3d` otherwise, with `--margin` clearance.
+  Objective = score + `penalty` · (|start score| + 1) · total depth; past `hard_fail` (2 u) the
+  layout search is skipped. The best collision-free board is reported.
+- **Budget**: with `--time`, 10% for the first layout run, 70% for the search, 10% each for the
+  final SA on the best board and on the start board, so the reported gain compares equal
+  layout effort. With `--evals N`: N boards, `--polish-evals` swaps per layout run;
+  reproducible for a fixed thread count (the layout runs split swaps over threads, as in
+  `gecko optimize`).
+- **Run directory** `runs/<stamp>-geom-<hash>/`: `config.json` (`kind: "geometry"`, params,
+  free variables, input hashes), `start.param.toml`, `progress.jsonl` (one line per generation),
+  `best.json` (start and best board: values, score, collisions, layout, breakdown) and the best
+  board as `geometry.param.toml` and `geometry.toml` (keys, loads with `-g` anywhere). Geometry
+  runs are not listed by `gecko list runs` or replayed by `gecko verify` yet.
 
 ## CMA-ES (`gecko_core::cmaes`, G5)
 
@@ -51,7 +86,9 @@ Parameters: `sigma0` 0.3, `popsize` default, `max_evals` 10 000, `restarts` 9, `
 `tol_x` 1e-11, `target` −∞.
 
 **Pitfalls:** inner-loop noise (short SA) misleads the outer search; use common random
-seeds and warm starts. The hand model must be validated before results mean anything.
+seeds and warm starts. The hand model must be validated before results mean anything: the
+search pushes every unpenalized direction to its bound (see Results), so bounds are part of the
+experiment.
 
 ## Results
 
@@ -60,3 +97,24 @@ f ≤ 1e-10 in 1680–1910 evaluations (σ0 1); Rosenbrock 10-D from 0 to f ≤ 
 (one run, σ0 0.5); Rastrigin 5-D in [−5.12, 5.12] from 3: a single default-λ run ends in a local
 optimum (f 2.98–6.96), IPOP reaches f ≤ 1e-8 in 3.8k–24k evaluations (2–5 runs, final λ 16–128).
 These match published CMA-ES figures (≈ 1.8k and ≈ 6k for sphere / Rosenbrock 10-D).
+
+Board + layout search (`gecko geom optimize -g corne-36.param -p hand -c english`, QWERTY start,
+20 threads, 2026-10-21). Score = after the equal final SA polish; "hand" = G01 + G03 + G05 part.
+
+| run | free | budget | boards | start → best | hand / other | notes |
+|---|---|---|---|---|---|---|
+| `…034058-geom-263d9e6b` | 2d, seed 1 | 60 s | 6.8k | 11.63 → 10.53 (−9.4%) | −0.69 / −0.41 | thumbs inward ≈ 1 u, mild splay |
+| `…034158-geom-ee9166d5` | 2d, seed 2 | 60 s | 6.8k | 11.68 → 10.56 (−9.6%) | −0.69 / −0.42 | |
+| `…034259-geom-de24db86` | 2d, alternate | 60 s | 45k | 11.70 → 10.46 (−10.6%) | −0.74 / −0.50 | cheap board steps win in 2D |
+| `…033829-geom-10c6ce3e` | 3d | 120 s | 14k | 11.56 → 7.24 (−37.4%) | −3.84 / −0.48 | row curve 30° (bound), tent 36°, tilt −12° |
+| `…034605-geom-2239a9cb` | 3d, seed 2 | 120 s | 14k | 11.64 → 7.29 (−37.4%) | −3.71 / −0.64 | row curve 30° (bound), tent 40°, tilt −13° |
+| `…034405-geom-3599b4d0` | 3d, row curve ≤ 20°, tent ≤ 30°, tilt −5–0° | 120 s | 14k | 11.63 → 7.27 (−37.5%) | −3.56 / −0.81 | col curve 15° (bound), tent 26° |
+
+- 2D gains are ~10%, split between hand model and layout metrics (B14, S04); seeds agree to 0.3%.
+- 3D gains come from the hand model: G05 press angle (−1.7) and G03 wrist posture (1.67 → ≈ 0)
+  dominate, G01 reach −0.5. Every 3D run tents 26–40° and tilts negative, matching the posture
+  literature's direction; curvature runs to its bound, but row and column curvature trade off
+  (Dactyl-like bounds reach the same score), so the optimum is a plateau, not one shape.
+- Caveat: the hand model has no finger-vs-neighbouring-keycap clearance and G03's optimum
+  (≈ 58° effective pronation relief) is uncalibrated, so 3D shapes are model-optimal, not
+  validated. Use bounds as priors (H6 #59, H10 #69).

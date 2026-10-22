@@ -37,7 +37,7 @@ gecko/
 
 | Module | Responsibility |
 |---|---|
-| `geometry` | Keys (pos, rot, size, finger, effort), fingers, hands; TOML parse and print. Submodules: `parametric` (zones/columns/rows → ordinary geometry), `derive` (G4 effort/stretch from positions), `pose` (3D key poses, per-hand measuring frames), `flat2d` (clean 2D drawing), `collision` (G04 keycap overlap, SAT) |
+| `geometry` | Keys (pos, rot, size, finger, effort), fingers, hands; TOML parse and print. Submodules: `parametric` (zones/columns/rows → ordinary geometry), `derive` (G4 effort/stretch from positions), `pose` (3D key poses, per-hand measuring frames), `flat2d` (clean 2D drawing), `collision` (G04 keycap overlap, SAT; approximate 3D keycap + switch volumes) |
 | `hand` | Hand model: skeleton, placement over home keys, finger IK, 4-DoF thumb, per-key G01/G03/G05 costs ([hand-model.md](hand-model.md)) |
 | `layout` | Slot-ordered symbols; rows ↔ flat; TOML; hash |
 | `magic` | Adaptive (magic / repeat) keys |
@@ -51,13 +51,15 @@ gecko/
 | `optimize` | `Optimizer` trait, threaded runner, top-K; `hill_climb`, `anneal`, `genetic`, `memetic`, `bls`, `tabu`, `map_elites`, `nsga2` |
 | `explore` | Landscape probe, local-optima archive, atlas files, distances/symmetry, atlas statistics, MAP-Elites grid |
 | `cmaes` | G5 CMA-ES with IPOP restarts and box bounds (continuous geometry parameters) |
+| `geomsearch` | G6 board + layout search: free parameters of a parametric board, CMA-ES outside, warm-started layout SA inside, geometry run directories |
 | `interop` | Other tools: `kle` (keyboard-layout-editor.com import/export), `import` (Oxeylyzer, genkey, cmini layout files), `community` (cmini bundle, duplicates, rank agreement) |
 | `run` | Run directories (config, progress, best), listing |
 | `store` | The data directory (`gecko.toml`, `data/`, `runs/`) and layout specs |
 | `rng` · `hash` · `error` | Seeded xoshiro256++ (identical on native and WASM); FNV-1a content hashes; error type |
 
 Dependency direction: `metrics → geometry, corpus`; `scorer → metrics`;
-`optimize → scorer, layout`; `explore → optimize` (via the `Observer` trait in `Ctx`); `run → optimize, explore`. No cycles. `gecko-core` has no CLI or HTTP code.
+`optimize → scorer, layout`; `explore → optimize` (via the `Observer` trait in `Ctx`); `run → optimize, explore`;
+`geomsearch → cmaes, optimize, geometry`. No cycles. `gecko-core` has no CLI or HTTP code.
 
 ## Data flow
 

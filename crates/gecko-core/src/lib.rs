@@ -11,6 +11,7 @@ pub mod corpus;
 pub mod error;
 pub mod explore;
 pub mod geometry;
+pub mod geomsearch;
 pub mod hand;
 pub mod hash;
 pub mod interop;

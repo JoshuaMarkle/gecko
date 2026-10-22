@@ -56,7 +56,8 @@ pub enum Cmd {
         #[command(subcommand)]
         cmd: corpus::CorpusCmd,
     },
-    /// Geometry tools.
+    /// Geometry tools: KLE import, board + layout optimization.
+    #[command(alias = "geom")]
     Geometry {
         #[command(subcommand)]
         cmd: geometry::GeometryCmd,
