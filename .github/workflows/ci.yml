@@ -49,6 +49,8 @@ jobs:
       # web/src/wasm/pkg is generated, not committed; typecheck needs it.
       - run: npm run test:parity
       - run: npm run typecheck
+      # Live API responses typechecked against src/api.ts (catches server/UI field drift).
+      - run: npm run test:contract
       - run: npm test
       - uses: actions/upload-artifact@v4
         if: failure()

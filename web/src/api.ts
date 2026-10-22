@@ -1,4 +1,5 @@
-// Types mirror the Rust serde shapes (gecko-core report/run/store). Keep them identical.
+// Types mirror the Rust serde shapes (gecko-core report/run/store); they may leave fields out.
+// `npm run test:contract` typechecks live server responses against `api`'s return types.
 
 export type Finger = "LP" | "LR" | "LM" | "LI" | "LT" | "RT" | "RI" | "RM" | "RR" | "RP";
 export const FINGERS: Finger[] = ["LP", "LR", "LM", "LI", "LT", "RT", "RI", "RM", "RR", "RP"];

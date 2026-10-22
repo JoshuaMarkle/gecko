@@ -3,6 +3,7 @@
 /web/dist
 /web/.cache
 /web/src/wasm/pkg
+/web/contract/*.generated.ts
 /runs/*
 !/runs/.gitkeep
 /data/corpora/src/
