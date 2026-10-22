@@ -20,7 +20,7 @@ optimization on top. Rust core + CLI + server + WASM; TypeScript web UI with a 3
 |---|---|
 | Orientation | `context/goals.md`, `context/architecture.md` |
 | Data formats (geometry, layout, corpus, runs) | `context/representation.md` |
-| Metrics, scoring, profiles | `context/objective.md`, `research/metrics-catalog.md` |
+| Metrics, scoring, profiles | `context/objective.md`, `context/metrics-catalog.md`, `context/parameters.md` |
 | An optimizer | `context/algorithms/README.md` + `context/algorithms/<name>.md` |
 | CLI | `context/cli.md` |
 | Web UI / 3D | `context/web.md`, `context/design.md` (visual design) |
@@ -29,7 +29,8 @@ optimization on top. Rust core + CLI + server + WASM; TypeScript web UI with a 3
 | Past decisions | `context/decisions.md` |
 | What to work on next (timeline, GitHub issues #1–103) | `context/roadmap.md` |
 | Why those items (research synthesis) | `research/SYNTHESIS.md` |
-| Background (other tools, parameters, hand model, data, per-source summaries) | `research/README.md`, `research/sources/` |
+| Background evidence (per-source summaries, studies, experiments) | `research/README.md`, `research/sources/` |
+| Unverified claims, uncovered research topics | `research/OPEN-QUESTIONS.md` |
 
 ## Commands
 

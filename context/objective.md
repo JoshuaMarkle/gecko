@@ -1,6 +1,6 @@
 # Objective
 
-Full metric list with IDs: `research/metrics-catalog.md`. Implemented now (`gecko list metrics`):
+Full metric list with IDs: `context/metrics-catalog.md`. Implemented now (`gecko list metrics`):
 B01 SFB, S01 SFS, S02 far SFS (gaps 2–3, decayed), S03 SFS distance, S04/S05 skip stretch (B14 on skipgrams), B03 finger speed,
 B04 LSB, B05 scissors, B06 half scissors, B07 bigram rolls in, B09 pinky–ring pairs, B10 row jump,
 B14 geometric stretch (Oxeylyzer 2), B11 finger-pair movement (KLO), M01 effort, M02 finger-load error,
@@ -145,7 +145,7 @@ placement on the home keys, elbow midline) and so recomputed on every rebuild.
   on unique liked cmini layouts, holding out 20% of whole layouts before computing scales.
   The opt-in `learned` profile gets 53.8% held-out pair accuracy vs default 52.0% and
   Engram 49.4% (seed 1); weak popularity evidence, not a replacement for comfort weights.
-  Method, hashes and exact fit: `research/profile-ranking.md`.
+  Method, hashes and exact fit: `research/experiments/2026-10-21-profile-ranking.md`.
 - Profiles are TOML in `data/profiles/` (`default`, `sfb`, `hand` = default + hand model, `engram` = independent judge, E05 only):
   weights, soft targets, constraints. Profiles are versioned; runs record the hash.
 

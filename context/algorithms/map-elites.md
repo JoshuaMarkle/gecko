@@ -1,6 +1,6 @@
 # MAP-Elites (quality-diversity map)
 
-Spec and background: `research/search-space-visualization.md` §4.2 (view 36), Mouret & Clune,
+Spec and background: `research/studies/search-space-visualization.md` §4.2 (view 36), Mouret & Clune,
 arXiv:1504.04909 (2015). Code: `gecko-core/src/explore/qd.rs`; CLI `gecko qd`.
 
 **Idea:** instead of one winner, a grid over 1–3 *behaviour descriptors*; each cell keeps the

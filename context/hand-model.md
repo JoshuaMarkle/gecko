@@ -4,7 +4,7 @@
 costs the scorer folds like any mono metric: **G01 reach**, **G05 press angle** and **G03 wrist
 posture**. The hand also scales B14's relaxed finger spread. It is a port of the web's `hand.ts` (same skeleton,
 constants, placement and IK), so the Hand tab shows the hand the scorer measures.
-Background: `research/hand-model-and-geometry.md`, `research/sources/hand-models.md`.
+Background: `research/sources/hand-models.md`.
 
 ## Inputs
 

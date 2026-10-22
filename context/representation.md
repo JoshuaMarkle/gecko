@@ -1,7 +1,7 @@
 # Representation
 
 Three independent inputs: **geometry** (physical board), **layout** (symbols on keys),
-**corpus** (n-gram statistics). Parameter lists: `research/parameters.md`.
+**corpus** (n-gram statistics). Parameter lists: `context/parameters.md`.
 
 ## Geometry
 

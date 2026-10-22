@@ -87,7 +87,7 @@ fn a_key_moved_away_is_unreachable_and_costly() {
     assert!(after.miss[i] > 15.0 && after.reach[i] > before.reach[i] + 5.0, "{} mm, {}", after.miss[i], after.reach[i]);
 }
 
-/// Validation from `research/hand-model-and-geometry.md`: on the same layout, ergonomic boards
+/// Validation (`research/sources/hand-models.md`): on the same layout, ergonomic boards
 /// cost less reach than flat ones, and the Dactyl keywell aligns presses best.
 #[test]
 fn ergonomic_boards_beat_flat_ones() {

@@ -2,7 +2,7 @@
 //! A landscape probe, then BLS workers with exclusion restarts feeding a shared archive of every
 //! local optimum (with raw metric vectors, so any profile can re-rank it later) and the kicks
 //! between them. Output is an atlas in the run directory. `context/algorithms/explore.md`,
-//! `research/search-space-visualization.md`.
+//! `research/studies/search-space-visualization.md`.
 
 pub mod archive;
 pub mod atlas;

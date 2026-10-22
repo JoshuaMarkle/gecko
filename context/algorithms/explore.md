@@ -1,6 +1,6 @@
 # Breakout local search and exploration
 
-Spec and background: `research/search-space-visualization.md` (archive once, re-weight forever).
+Spec and background: `research/studies/search-space-visualization.md` (archive once, re-weight forever).
 
 ## BLS (`--algo bls`, `optimize/bls.rs`)
 

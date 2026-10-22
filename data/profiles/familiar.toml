@@ -15,7 +15,7 @@ row_offset = [[0.0, 0.0], [-0.1, 0.1], [-0.2, 0.2], [0.2, -0.2]]
 # Weights are in spread units: the scorer applies weight / scale, and each scale is the metric's
 # standard deviation over the reference layouts, so weight 1 = "one reference spread" and weights
 # compare directly. Direction comes from the metric (rewards like rolls subtract). Larger = care
-# more. Ids: research/metrics-catalog.md. Rescale with `gecko profile normalize`.
+# more. Ids: context/metrics-catalog.md. Rescale with `gecko profile normalize`.
 [weights]
 B01 = 8.28   # SFB %
 S01 = 1.06   # SFS %, one key between

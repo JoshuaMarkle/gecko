@@ -1,5 +1,5 @@
 //! Distances between layouts (`sym[slot]` arrays over the same symbol set) and mirror
-//! canonicalization. `research/search-space-visualization.md` §1.
+//! canonicalization. `research/studies/search-space-visualization.md` §1.
 
 use crate::rng::Rng;
 use crate::scorer::Scorer;

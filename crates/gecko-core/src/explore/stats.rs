@@ -1,7 +1,7 @@
 //! Statistics over an atlas: re-scoring raw metric vectors under any profile, fitness–distance
 //! correlation, PCA embeddings, consensus (backbone), families, funnels, coverage and weight
 //! stability. Pure functions over flat arrays so the CLI and WASM share them.
-//! `research/search-space-visualization.md` §3–4.
+//! `research/studies/search-space-visualization.md` §3–4.
 
 use super::distance::hamming;
 use crate::metrics::{Dir, METRICS};

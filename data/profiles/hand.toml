@@ -12,7 +12,7 @@ row_offset = [[0.0, 0.0], [-0.1, 0.1], [-0.2, 0.2], [0.2, -0.2]]
 # Weights are in spread units: the scorer applies weight / scale, and each scale is the metric's
 # standard deviation over the reference layouts, so weight 1 = "one reference spread" and weights
 # compare directly. Direction comes from the metric (rewards like rolls subtract). Larger = care
-# more. Ids: research/metrics-catalog.md. Rescale with `gecko profile normalize`.
+# more. Ids: context/metrics-catalog.md. Rescale with `gecko profile normalize`.
 # Hand for G01/G03/G05 and B14's relaxed spread: size = "small" | "average" | "large", or explicit
 # [hand.dims] in mm (thumb, index, middle, ring, pinky segments; palm_width, palm_length, span,
 # reach), as the web's Hand tab edits them. Optional [hand.body] elbow_width / forearm (mm) for
