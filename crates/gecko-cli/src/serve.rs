@@ -161,6 +161,7 @@ async fn geometries(State(app): State<AppState>) -> ApiResult {
         let Ok(g) = app.store.geometry(&id) else { continue };
         let mut v = serde_json::to_value(&g)?;
         v["id"] = json!(id);
+        v["hash"] = json!(gecko_core::hash::hex(g.hash()));
         v["flat"] = serde_json::to_value(g.flat2d())?;
         if let Ok(p) = app.store.param_geometry(&id) {
             v["param"] = serde_json::to_value(p)?;
@@ -203,7 +204,7 @@ async fn corpora(State(app): State<AppState>) -> ApiResult {
     let mut out = Vec::new();
     for id in app.store.list("corpora") {
         let c = app.store.corpus(&id)?;
-        out.push(json!({"id": id, "name": c.name, "chars": c.total_chars(), "charset": c.charset.iter().collect::<String>()}));
+        out.push(json!({"id": id, "name": c.name, "chars": c.total_chars(), "charset": c.charset.iter().collect::<String>(), "hash": gecko_core::hash::hex(c.hash())}));
     }
     Ok(Json(json!(out)))
 }

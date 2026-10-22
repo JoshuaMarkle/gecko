@@ -57,6 +57,12 @@ export function fmtCount(n: number): string {
   return `${n}`;
 }
 
+/** A corpus's character count. `Corpus::mix` scales each part to 1e12 counts, so a mixed
+ *  corpus's total is a weight, not text (no real corpus reaches 1e11 characters). */
+export function fmtCorpusChars(n: number): string {
+  return n >= 1e11 ? "mixed corpus" : fmtCount(n);
+}
+
 /** Split slot-ordered chars into the geometry's rows (keys are listed row by row). */
 export function rowsOf(chars: string, g: Geometry): string[] {
   const out: string[] = [];

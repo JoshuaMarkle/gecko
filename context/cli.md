@@ -37,14 +37,14 @@ gecko atlas    <run> [--top 10] [--cut 8] [--pool 300] [-p profile]
 gecko magic    <layout> [--key 1] [--on <symbol>] [--keep] [--max-rules 32] [--min-gain 0.01] [--out name|path.toml]
                                                                   # greedy rule search for an adaptive key
 gecko verify   run:<id>                                           # re-run an --evals run from config.json;
-                                                                  #   check input hashes, evals and best.json
+                                                                  #   check input hashes, evals and best.json (layout and geometry runs)
 gecko perf     [--layout qwerty] [--record]                       # full evals/s, swap deltas/s, scorer builds/s, 1-key rebuilds/s (1 thread); --record appends to bench/history.jsonl
 gecko corpus build <files or dirs...> [--out english] [--charset default|code|nav|<symbols>] [--ext txt] [--fold]
 gecko corpus mix <corpus>[:weight]... --out <name>                     # weighted mix, same charset
 gecko corpus import <cmini corpus dir> --out <name> [--charset ...] [--fold]   # words.json or n-gram JSON; --fold: é→e; also writes <name>.words.tsv
 gecko geometry import-kle <file.json> --out <name> [--force]       # KLE board → data/geometries/<name>.toml
                                                                   #   (fingers/rows/home/effort guessed; edit after)
-gecko geometry optimize -g <name>.param [--free 2d|3d|<list>] [--mode bilevel|alternate]   # alias: gecko geom
+gecko geometry optimize -g <name>.param [--free 2d|3d|<list>] [--mode bilevel|alternate|board]   # alias: gecko geom
                [--time 60s | --evals N] [--seed --threads --pin --from] [--inner-evals 20000]
                [--polish-evals 1000000] [--sigma0 0.1] [--popsize] [--margin 0] [--penalty 10]
                [--hard-fail 2] [--rounds 4] [--keep-effort] [-p -c]

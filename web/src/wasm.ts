@@ -1,6 +1,6 @@
 // Loads the gecko-wasm scorer (same Rust code as the CLI). Built by `npm run wasm`.
 
-import init, { AtlasView, Engine, corpus_from_text, corpus_stats, export_layout as exportLayoutRaw, flat2d as flat2dRaw, hand_costs, param_board } from "./wasm/pkg/gecko_wasm.js";
+import init, { AtlasView, Engine, corpus_from_text, corpus_stats, export_layout as exportLayoutRaw, flat2d as flat2dRaw, hand_costs, param_board, profile_hash } from "./wasm/pkg/gecko_wasm.js";
 import type { Analysis, Flat, Geometry, ParamGeometry, Profile } from "./api";
 import type { HandSpec } from "./hand";
 
@@ -49,6 +49,12 @@ export async function wasmReady(): Promise<void> {
 export function flat2d(g: Geometry): Flat[] {
   const { flat: _f, ...rest } = g;
   return JSON.parse(flat2dRaw(JSON.stringify(rest))) as Flat[];
+}
+
+/** The `profile_hash` a run with this profile records (`Profile::hash`). */
+export async function profileHash(p: Profile): Promise<string> {
+  await wasmReady();
+  return profile_hash(JSON.stringify(p));
 }
 
 /** Another analyzer's 30-key format (gecko-wasm `export_layout`, same as `gecko layouts export`).

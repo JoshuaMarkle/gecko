@@ -41,13 +41,19 @@ moved keys, CMA-ES and the bilevel driver below.
 - **Bilevel** (default): one full SA on the start board first, so candidates warm-start from a
   good layout. Then CMA-ES (σ0 0.1 of each range, IPOP restarts from the best point) proposes
   boards; each gets a 20k-swap low-temperature SA (accept0 0.05) from the incumbent layout plus
-  a steepest descent. All candidates of a generation share one inner seed (common random
+  a steepest descent. The incumbent is the layout of the reported board (best collision-free
+  one when there is one), so an overlapping board never supplies it. All candidates of a generation share one inner seed (common random
   numbers) and run in parallel, one scorer per thread (`set_geometry`, ≈ 1 ms per board).
 - **Alternate** (`--mode alternate`): rounds of a full SA on the current board, then CMA-ES over
   the board with that layout fixed (one rebuild + full score per candidate). Stops when a round
   gains nothing.
+- **Board** (`--mode board`): the board for a fixed layout. The start layout (`--from`, else the
+  board's) is never changed: no warm-start SA, no inner layout search, no final polish; the whole
+  budget goes to CMA-ES over the board, one rebuild + full score per candidate. The web UI's
+  Board tab runs this; Both runs bilevel or alternate.
 - **Collisions**: 2D on flat candidates, `collisions_3d` otherwise, with `--margin` clearance.
-  Objective = score + `penalty` · (|start score| + 1) · total depth; past `hard_fail` (2 u) the
+  Objective = score + `penalty` · (|start board score| + 1) · total depth, the start board
+  scored after its first layout search (not the raw start layout, e.g. QWERTY); past `hard_fail` (2 u) the
   layout search is skipped. The best collision-free board is reported.
 - **Budget**: with `--time`, 10% for the first layout run, 70% for the search, 10% each for the
   final SA on the best board and on the start board, so the reported gain compares equal
@@ -60,8 +66,9 @@ moved keys, CMA-ES and the bilevel driver below.
   board as `geometry.param.toml` and `geometry.toml` (keys, loads with `-g` anywhere, or by name
   as `-g run:<id>`). The best board is named `<start>-opt-<run hash>`. Each progress line carries
   the reported board (`values`, its layout `chars`, `collisions`), so the web UI can replay the
-  run. `gecko list runs` lists geometry runs (algo `geometry`); `gecko verify` does not replay
-  them yet.
+  run. `gecko list runs` lists geometry runs (algo `geometry`); `gecko verify` re-runs an
+  `--evals` run from `start.param.toml` and checks input hashes, candidates, and start and best
+  board (values, layout, score).
 - **Pause** (`Control`): the search waits at the next generation and paused time does not count
   against the budget or toward `elapsed_ms`. Restarts left without budget are not listed in
   `cma_runs`.

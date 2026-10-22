@@ -5,24 +5,33 @@ Visual design: [design.md](design.md).
 
 ## Shell
 
-Navbar (see design.md "App shell"): Inputs tabs (Board, Hand, Language, Profile, Search, Summary) |
-Results tabs (Home, Explore, Analysis, Saved, Export) · play / pause / stop centred with run % beside
-(on Results tabs only) ·
-working model right. The tab is remembered in `localStorage`; old names map (Corpus →
-Language, Stats → Analysis, Runs → Saved, Optimize → Home).
+Navbar (see design.md "App shell"): Home | Inputs (Board, Hand, Language, Profile, Summary) |
+Optimize (Layout, Board, Both, Explore) | Saved (Runs, Export), icon tabs without labels so more
+tabs fit. Play / pause / stop sit centred with run % beside, on Optimize tabs (and on any tab
+while a run is going). Working model right. The tab is remembered in `localStorage`; old names
+map (Corpus → Language, Search / Analysis / Stats / Optimize → Layout, Saved / Results → Runs).
 
-- Inputs live in one store (`inputs.ts`); Play on any Results tab uses them: the
-  Search settings, an exploration on the Explore tab, or resume when paused. Pause freezes
-  the workers and the budget clock; Stop cancels (results so far are saved). The % is time
-  or evaluations used of the budget.
+- Inputs live in one store (`inputs.ts`); Play starts what the current Optimize tab searches:
+  a layout run (Layout), a board-only run (Board), a board + layout run (Both) or an exploration
+  (Explore); it resumes when paused. Board and Both are disabled on boards without a parameter
+  file. Pause freezes the workers and the budget clock; Stop cancels (results so far are
+  saved). The % is time or evaluations used of the budget.
 - **Working model**: the layout adopted when a run finishes, when a saved layout is picked
-  (Saved) or from Explore (Open in Home). Navbar right shows its name and score, "No model"
-  without one, and a live status line during a run.
-- All five input tabs and Home share the three-panel `Frame`: sidebar | main visual over a
-  bottom panel.
+  (Runs) or from Explore / Runs (Open in Layout). Navbar right shows its name and score, "No
+  model" without one, and a live status line during a run.
+- Input tabs and the Layout / Board / Both tabs share the three-panel `Frame`: sidebar | main
+  visual over a bottom panel.
 - Every board has a 3D view (`Keyboard3D`) and a 2D drawing (`Board2D`: `KeyGrid`,
   `FitBoard`, `Thumb`) from `geometry.flat`; 2D is used for board cards, thumbnails, the
   layout editor, heatmaps and per-key overlays.
+
+## Home
+The real start page: one flowchart (`FlowChart.tsx`, data-driven SVG) of how the optimization
+works, every box a link to its tab with a live one-line state. Board, Hand and Profile feed
+**Physical cost** (effort per key, finger load, hand model); Language feeds **Frequencies**;
+both feed the **Scoring model** (QWERTY's score), with Summary hanging below it (dashed). The
+scoring model feeds the four optimize modes (Layout, Board, Both, Explore; the last-used one is
+outlined blue, Board / Both are amber when the board is not parametric), then Runs → Export.
 
 ## Board
 Sidebar "Boards" with a **Custom** switch: off = 2-column board cards (2D drawing,
@@ -102,68 +111,51 @@ padding (`--s4`, 16px). Finger effort groups appear in index, middle, ring, pink
 using standard spacing and hairline dividers, with explicit
 Typing effort / Sideways effort / Vertical effort labels. Metric IDs remain in tooltips.
 
-## Search
+## Layout (optimize the layout for the board)
 Sidebar: algorithm; starting layout (Auto = the loaded layout, or a named layout) and **Edit
 layout**; budget (time or evaluations), threads, seed; holdout corpus (L06: results are also
 scored on it, never searched on); stop confidence (saved, not applied yet); the algorithm's own
-parameters. Main: a short description and a small animation of
-the algorithm (bars being swapped, or a population evolving), or the **layout editor**
-overlay (`LayoutEditor`: 2D board, click two keys to swap, Pin mode, layer picker, heat,
-undo). Bottom: search-space size (arrangements, after pins), estimates from past runs on the
-same inputs (rediscovery rate, chance optimal, time-to-optimum guess, `estimate.ts`), and an
-**Estimate** button (bottom-right) that loads the Gilmore–Lawler bound of the best matching
-run.
+parameters (memetic islands: population per island, HC/tabu refinement and its step cap, island
+count (0 = threads), migration interval (0 disables), migrant count; `POST /api/runs` accepts
+optional `memetic` in the core `MemeticParams` shape). Main: **Result** (3D working model or live
+best; Default / Heat / Fingers / N-grams) or **Algorithm** (a short description and animation),
+or the **layout editor** overlay (`LayoutEditor`: 2D board, click two keys to swap, Pin mode,
+layer picker, heat, undo). Bottom: convergence (hover: mini keyboard of the best layout then) |
+"Chance we've found the optimal layout" from past runs on the **same inputs** (board, corpus and
+profile hashes, not names; `estimate.ts` `sameInputs`), time to optimum, search-space size (after
+pins) and the Gilmore–Lawler lower bound (Load) | score vs the reference (none when the layout is
+the reference) and the main metrics.
 
-**Optimize** (top of the sidebar): Layout, or **Board + layout** (a board + layout search, G6;
-only on parametric boards, otherwise a note says why; a note also warns when the profile weights
-no hand-model metric). Board + layout replaces Algorithm, Holdout, Stop confidence and the
-algorithm settings with **Board shape** (2D / 3D / Custom presets and one switch per group:
-stagger, splay, spread, thumb cluster, row and column curvature, column height, tenting, tilt,
-thumb 3D) and **Board search settings** (mode bilevel / alternate, layout swaps per board,
-clearance, collision penalty, keep key efforts); the budget counts time or boards. Main: the 3D
-board with the picked parameter set to a previewed value (slider across its bounds, Sweep,
-Reset), the start board outlined, colliding keys red. Bottom: every free parameter (from
-`/api/geometries/{id}/free`) with editable lower / upper bounds (kept per board; Default bounds
-resets) and a range bar; click a row to preview it.
-
-Search includes memetic islands: population per island, HC/tabu refinement and its step
-cap, island count (0 = threads), migration interval (0 disables), and migrant count.
-`POST /api/runs` accepts optional `memetic` using the core `MemeticParams` shape; omitted
-fields use defaults. The server limits islands to core count and caps population/refinement
-work. Older saved Search preferences acquire defaults for the new fields.
+## Board · Both (optimize the board; board and layout together)
+Only on parametric boards, otherwise a note says why; a note also warns when the profile
+weights no hand-model metric. **Board** keeps the layout fixed (pick it under Layout) and spends
+the whole budget on the board's shape (`--mode board`). **Both** starts from a layout and
+searches board and layout together (mode bilevel / alternate, layout swaps per board). Sidebar:
+**Board shape** (2D / 3D / Custom presets and one switch per group: stagger, splay, spread,
+thumb cluster, row and column curvature, column height, tenting, tilt, thumb 3D), **Board search
+settings** (clearance, collision penalty, keep key efforts), budget in time or boards, threads,
+seed. Main: the 3D board with the picked parameter at a previewed value (slider across its
+bounds, Sweep, Reset), the start board outlined, colliding keys red; during a run the live best
+board. Bottom: every free parameter (`/api/geometries/{id}/free`) with editable lower / upper
+bounds (kept per board; Default bounds resets) and a range bar; click a row to preview it. When
+a run finishes its best board becomes the board (`run:<id>`) and its layout the working model.
 
 ## Summary
-Above Board & language, an inline flowchart shows language frequencies and physical
-keyboard costs feeding the scoring model, then the selected search algorithm and output
-layout. The graphic is unframed with padded margins, page-style titles and subtitles, and
-bulleted details, with no overall heading. It shares the right column with that table,
-opposite Search & stopping, and scrolls on narrow screens. Box titles use the standard
-12px section typography and details use 11px text; the SVG does not enlarge on wide screens.
-
-Final input tab: a full-width, scrollable reference sheet with paired parameter tables,
+Last input tab: a full-width, scrollable reference sheet with paired parameter tables,
 a complete metric table (weight, scale, effective weight, direction and description),
 finger costs / generated targets, and per-key geometry. Reads the live shared inputs;
 all sections stay expanded. Gray rows identify zero-weight metrics, missing comfort tables
-or familiarity references, other algorithms' settings, and saved-only hand / board /
-stop-confidence controls. This describes the next Search run, not a saved run or Explore.
+or familiarity references, other algorithms' settings, and saved-only board / stop-confidence
+controls. **Hand & simulation** shows whether the hand model is used and which hand-model
+metrics the profile weights. This describes the next Layout run, not a saved run or Explore.
 
-## Home (read-only)
-Sidebar: summary blocks for Board, Hand, Language, Profile, Search with on/off flags; each
-opens its tab. Main: 3D working model (3D toggle, Default / Heat / Fingers / N-grams).
-Bottom: convergence (hover: mini keyboard of the best layout at that time), "Chance we've found the optimal layout" (rediscovery over layout runs; bound gap when
-the run has one), score vs reference and the main metrics. During a board + layout run the main
-view shows the live best board (start board outlined, colliding keys red) and the navbar status
-counts generations and boards; when it finishes, its best board becomes the board (`run:<id>`)
-and its layout the working model.
-
-## Analysis · Saved
-Analysis: every chart for the current layout (click two heatmap keys to swap). Saved: all
-runs, each with a mini keyboard of its best layout; the selected run's convergence (hover as on Home), best layouts as 2D thumbnails (click one to make it
+## Runs
+All runs, each with a mini keyboard of its best layout; the selected run's convergence (hover as on Layout), best layouts as 2D thumbnails (click one to make it
 the working model) and reproducibility facts. With a holdout corpus, the best-layouts table adds
 each layout's score on it, and the Run facts show the holdout corpus, start → best on both
 corpora, the gain kept and the rank ρ.
 
-A board + layout run (algo "board") opens its own panel: the board at any point of the run over
+A board or board + layout run (algo "board") opens its own panel: the board at any point of the run over
 the start board's dashed outline (2D top-down or 3D; a scrubber and Play step through every
 generation to the polished best board), convergence, result (start vs best board after equal
 layout polish, collisions, the weighted metrics that moved most), every free parameter (start,

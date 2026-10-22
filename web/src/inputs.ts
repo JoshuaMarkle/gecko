@@ -20,9 +20,7 @@ export interface SearchSettings {
   stopConf?: number | null;
   /** Corpus id the results are also scored on but never searched on (L06); "" = none. */
   holdout?: string;
-  /** What Play optimizes: the layout, or the (parametric) board together with its layout. */
-  target?: "layout" | "board";
-  /** Board + layout search settings (`geom.ts`); defaults `GEOM_DEFAULTS`. */
+  /** Board and Both tab settings (`geom.ts`); defaults `GEOM_DEFAULTS`. */
   geom?: GeomSettings;
 }
 
@@ -31,7 +29,7 @@ export interface SearchSettings {
 export interface Constraint { on: boolean; [field: string]: number | boolean }
 export type Constraints = Record<string, Constraint>;
 
-/** The selected layout after an optimization (navbar right, Home). */
+/** The selected layout after an optimization (navbar right, Layout tab). */
 export interface WorkingModel { chars: string; label: string; score: number | null; run?: string }
 
 /** `useState` persisted in `localStorage` under `gecko.<key>`. */

@@ -100,10 +100,11 @@ A navbar over one view. The navbar follows the Unity editor: tabs left, transpor
 centre, working model right.
 
 - **Navbar** (40px): three columns (`1fr auto 1fr`) so the transport stays centred.
-  - Left: icon tabs in two segmented tracks with small muted group labels and a hairline
-    divider: Inputs (Board, Hand, Language, Profile, Search), Results (Home, Explore,
-    Analysis, Saved). Active tab is a white segment.
-  - Centre (Results tabs only; empty on Inputs): one joined cluster of three icon buttons: Play (`--ink` fill; resumes while
+  - Left: icon tabs (no text labels, so more tabs fit) in segmented tracks with small muted
+    group labels and hairline dividers: Home alone, Inputs (Board, Hand, Language, Profile,
+    Summary), Optimize (Layout, Board, Both, Explore), Saved (Runs, Export). Active tab is a
+    white segment.
+  - Centre (Optimize tabs, or any tab while a run is going): one joined cluster of three icon buttons: Play (`--ink` fill; resumes while
     paused), Pause (toggle; `--accent` while paused, the navbar's single blue mark), Stop.
     The run percent sits just right of the cluster, outside the centred group.
   - Right: view actions (Summarize on Language, outline button), then the working model:
@@ -120,15 +121,17 @@ centre, working model right.
 - Sidebar sections are collapsible (`Sec`, remembered per browser) or, on Profile, flat
   sections whose focused one gets a 2px `--accent` left edge. Disabled groups (Hand off)
   fade to 45%.
-- Cards (board cards, Home summary blocks): 1px `--hair`, `--r-md`; selected card =
-  `--accent` border + inset ring. Status labels (Language) and flags (Home) are `--soft`
+- Cards (board cards, Home flowchart boxes): 1px `--hair`, `--r-md`; selected card =
+  `--accent` border + inset ring. Status labels (Language) and flowchart edges (Home) are `--soft`
   chips with a 3px left edge in the semantic color (success = summarized / on, warning =
   outdated, hair = off).
-- **Saved**: runs table (left) | selected run (right): convergence, best layouts as 2D
+- **Runs**: runs table (left) | selected run (right): convergence, best layouts as 2D
   thumbnails with delta vs reference, reproducibility facts.
-- **Analysis**: the current layout's score and delta, then cards in a two-column grid:
-  heatmap, metrics table, score contributions, finger load, worst n-grams. One column below
-  1100px.
+- **Home**: the flowchart alone on `--canvas`; boxes are cards (1px `--hair`, `--r-md`) with
+  a 3px left edge in the semantic color (input on / off, amber when an optimize mode cannot run),
+  derived boxes (physical cost, frequencies, scoring) on `--soft`; hairline elbow connectors with
+  small arrowheads; the last-used optimize tab gets the `--accent` border. Column captions in
+  `--muted` below.
 - **Explore**: atlas controls (left, shared `--side` width) | linked cards in a two-column grid (centre) | picked
   layout (right). Point clouds are canvas scatters, grey by score (darker = better), best in
   ink and picked in `--accent` with a 2px surface ring; drag to brush, double-click clears,

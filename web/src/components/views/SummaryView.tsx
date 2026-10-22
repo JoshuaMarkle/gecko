@@ -4,8 +4,7 @@ import { fingerTargets } from "../../fingerEffort";
 import { handDims, wristOf } from "../../hand";
 import type { Inputs } from "../../inputs";
 import { CONSTRAINTS } from "./BoardView";
-import { algoName } from "./SearchView";
-import { OptimizationFlow } from "./OptimizationFlow";
+import { algoName } from "./LayoutView";
 
 const number = (v: number) => Number(v.toPrecision(5)).toLocaleString("en-US", { maximumFractionDigits: 5 });
 const value = (v: unknown): string => Array.isArray(v) ? v.map(value).join(" / ") : typeof v === "number" ? number(v) : typeof v === "boolean" ? v ? "On" : "Off" : String(v ?? "—");
@@ -64,13 +63,12 @@ export function SummaryView({ inputs: i, meta, geometry: g, corpus, profile: p, 
     ...["Pinky", "Ring", "Middle", "Index"].flatMap((f, n) => ["Above", "Below"].map((dir, k): Row => [`${f} · ${dir.toLowerCase()} home`, p.row_offset?.[n]?.[k] ?? 0, weighted("M01") && (p.row_offset?.[n]?.[k] ?? 0) !== 0, "Added row effort · M01"])),
   ];
   return <div className="input-summary">
-    <header className="input-summary-heading"><div><h1>Input summary</h1><p>Optimizer reference sheet · current inputs for your next search</p></div><span>{active} / {meta.metrics.length} metrics weighted</span></header>
-    <p className="hint">Gray rows are inactive, unweighted, or preview-only. Weighted metrics can still contribute zero when their pattern is absent. Algorithm-specific defaults not exposed in Search remain defined by the core.</p>
+    <header className="input-summary-heading"><div><h1>Input summary</h1><p>Optimizer reference sheet · current inputs for your next layout search</p></div><span>{active} / {meta.metrics.length} metrics weighted</span></header>
+    <p className="hint">Gray rows are inactive, unweighted, or preview-only. Weighted metrics can still contribute zero when their pattern is absent. Algorithm-specific defaults not exposed on the Layout tab remain defined by the core.</p>
     {(custom || !corpus) && <div className="notice">{custom ? "Custom boards can be previewed but cannot be optimized yet. " : ""}{!corpus ? "Select a bundled language to run optimization." : ""}</div>}
     <div className="input-summary-grid">
-      <Sheet title="Search & stopping"><Settings rows={searchRows} /></Sheet>
+      <Sheet title="Layout search & stopping"><Settings rows={searchRows} /></Sheet>
       <div className="input-summary-intro">
-      <OptimizationFlow algo={s.algo} />
       <Sheet title="Board & language"><Settings rows={[
         ["Board", g.name, true, `${g.key.length} physical keys`],
         ["Language", corpus?.name ?? i.corpusId, !!corpus, corpus ? "Corpus frequencies" : "Local language; runs not supported"],
@@ -91,10 +89,11 @@ export function SummaryView({ inputs: i, meta, geometry: g, corpus, profile: p, 
           <th scope="row">{m.id}</th><td>{m.name}</td><td>{m.dir === "info" ? "Report only" : !w ? "Off" : !on ? missing : "Weighted"}</td><td>{number(w)}</td><td>{number(scale)}</td><td>{number(w / scale)}</td><td>{m.dir === "max" ? "Reward" : m.dir === "min" ? "Penalize" : "Report"}</td><td>{m.desc} {m.unit && `(${m.unit})`}</td>
         </tr>; })}
       </tbody></table></Sheet>
-      <Sheet title="Hand & simulation · preview only"><Settings rows={[
-        ["Use hand in optimization", i.hand.use, false, "Not connected to the optimizer"],
-        ["Hand preset", i.hand.preset, false, "Preview only"],
-        ...Object.entries(handDims(i.hand)).map(([k, v]): Row => [k, `${value(v)} mm`, false, Array.isArray(v) ? "Segments, base → tip" : "Measurement"]),
+      <Sheet title="Hand & simulation"><Settings rows={[
+        ["Use hand in optimization", i.hand.use, i.hand.use, i.hand.use ? "Profile hand for G01 / G03 / G05" : "Off: the average hand, at the profile's weights"],
+        ["Hand-model metrics", weighted("G01", "G03", "G05") ? "Weighted" : "Unweighted", weighted("G01", "G03", "G05"), "G01 reach · G03 wrist · G05 press angle"],
+        ["Hand preset", i.hand.preset, i.hand.use, i.hand.use ? "Sent with every score and run" : "Preview only"],
+        ...Object.entries(handDims(i.hand)).map(([k, v]): Row => [k, `${value(v)} mm`, i.hand.use, Array.isArray(v) ? "Segments, base → tip" : "Measurement"]),
         ...Object.entries(wristOf(i.hand)).map(([k, v]): Row => [`Wrist ${k}`, v, false, "Simulation only"]),
       ]} /></Sheet>
       <Sheet title="Physical constraints · saved only"><Settings rows={CONSTRAINTS.flatMap(([id, title, , fields]) => fields.map(([key, label, , fallback, , , , unit]): Row => [

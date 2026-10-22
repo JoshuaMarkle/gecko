@@ -68,7 +68,11 @@ C3[s][t][u] = Σ_m w_m · c3_m[s][t][u]
 score = Σ_x f1[x]·C1[p(x)] + Σ_{x,y} f2[x][y]·C2[p(x)][p(y)] + … + nonlinear terms
 ```
 
-Adding a linear metric costs nothing at search time.
+Adding a linear metric to a channel that is already on costs nothing at search time; switching a
+channel on does. Measured 2026-10-21 (one thread, `bench/software-paper-2026-10-21/metrics_scaling.py`):
+swap deltas run at 4.8 M/s with bigram and gap-1 skipgram metrics only, 2.4 M/s once a far-skipgram
+metric (S02) is on, 2.1 M/s with the load terms (M02, M03, M07), and 0.64 M/s once any trigram
+metric is on; the rate is flat within each step.
 
 ## Delta evaluation
 

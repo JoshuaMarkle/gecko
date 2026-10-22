@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { RunSummary } from "./api";
-import { fmtPow10, log10Factorial, rediscovery, searchSpace } from "./estimate";
+import { fmtPow10, log10Factorial, rediscovery, sameInputs, searchSpace } from "./estimate";
 
-const run = (best_score: number | null, elapsed_ms = 1000): RunSummary =>
-  ({ id: "x", created: "", algo: "sa", profile: "p", corpus: "c", geometry: "g", best_score, best: null, elapsed_ms, status: "done", kind: "layout" });
+const run = (best_score: number | null, elapsed_ms = 1000, profile_hash = "p1"): RunSummary =>
+  ({ id: "x", created: "", algo: "sa", profile: "p", corpus: "c", geometry: "g", geometry_hash: "g1", corpus_hash: "c1", profile_hash,
+     best_score, best: null, elapsed_ms, status: "done", kind: "layout" });
 
 describe("search space", () => {
   it("log10 n! matches exact values", () => {
@@ -27,5 +28,13 @@ describe("rediscovery", () => {
     expect(some.hits).toBe(2);
     expect(all.chance).toBeGreaterThan(some.chance);
     expect(all.chance).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("sameInputs", () => {
+  it("keeps only runs with the same hashes, not the same names", () => {
+    const runs = [run(3), run(17, 1000, "p2")];
+    expect(sameInputs(runs, { geometry_hash: "g1", corpus_hash: "c1", profile_hash: "p1" }).map((r) => r.best_score)).toEqual([3]);
+    expect(sameInputs(runs, null)).toEqual([]);
   });
 });

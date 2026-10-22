@@ -112,6 +112,10 @@ pub struct RunSummary {
     pub profile: String,
     pub corpus: String,
     pub geometry: String,
+    /// Input hashes: runs with equal hashes searched the same problem (names alone do not say so).
+    pub geometry_hash: String,
+    pub corpus_hash: String,
+    pub profile_hash: String,
     pub best_score: Option<f64>,
     pub best: Option<String>,
     pub elapsed_ms: Option<u64>,
@@ -365,6 +369,10 @@ fn geometry_summary(dir: &Path) -> Option<RunSummary> {
     let r = crate::geomsearch::load_result(dir).ok();
     Some(RunSummary {
         geometry: if r.is_some() { crate::geomsearch::best_name(&c.geometry.name, &c.id) } else { c.geometry.name },
+        // The start board's parameter file.
+        geometry_hash: c.geometry.hash,
+        corpus_hash: c.corpus.hash,
+        profile_hash: c.profile_hash,
         id: c.id,
         created: c.created,
         algo: "geometry".into(),
@@ -399,6 +407,9 @@ pub fn list(runs: &Path) -> Vec<RunSummary> {
                 profile: c.profile.name,
                 corpus: c.corpus.name,
                 geometry: c.geometry.name,
+                geometry_hash: c.geometry.hash,
+                corpus_hash: c.corpus.hash,
+                profile_hash: c.profile_hash,
                 best_score: r.as_ref().and_then(|r| r.best.first().map(|b| b.score)),
                 best: r.as_ref().and_then(|r| r.best.first().map(|b| b.rows.join(" "))),
                 elapsed_ms: r.as_ref().map(|r| r.elapsed_ms),
@@ -440,6 +451,9 @@ fn check(name: &str, expected: impl ToString, actual: impl ToString) -> Check {
 /// Inputs are resolved by name from `store` and must hash as recorded; if any differs the
 /// optimizer is not re-run. The re-run writes to a temporary directory, never to the run.
 pub fn verify(store: &crate::store::Store, dir: &Path) -> Result<Verification> {
+    if crate::geomsearch::is_run(dir) {
+        return crate::geomsearch::verify(store, dir);
+    }
     let config = load_config(dir)?;
     let recorded = load_result(dir)?;
     if config.params.evals.is_none() {

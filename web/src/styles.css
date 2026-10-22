@@ -128,16 +128,12 @@ progress::-moz-progress-bar { background: var(--ink); border-radius: 999px; }
 .legend { align-items: center; }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 .grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s4); }
-/* ---------- Results and Analysis views ---------- */
+/* ---------- Saved views ---------- */
 .page { flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
 .pane { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 .results { height: 100%; display: grid; grid-template-columns: minmax(380px, 2fr) minmax(0, 3fr); }
 .results > .pane:first-child { border-right: 1px solid var(--hair); }
 .chartbox { height: 260px; min-height: 0; }
-.analysis { height: 100%; overflow-y: auto; padding: var(--s4); display: grid; gap: var(--s3); align-content: start; scrollbar-width: thin; }
-.analysis-head { display: flex; align-items: baseline; gap: var(--s3); flex-wrap: wrap; }
-.analysis-head > b { font-weight: 650; font-size: 13px; }
-.analysis-head .score b { font-size: 28px; }
 .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
 .card { border: 1px solid var(--hair); border-radius: var(--r-md); padding: var(--s3); min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s2); align-content: start; }
 .card.wide { grid-column: 1 / -1; }
@@ -340,8 +336,8 @@ fieldset.plain:disabled { opacity: .45; }
 .describe { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--s5, 24px); }
 .describe p { margin: 0 0 var(--s2); color: var(--ink-soft); max-width: 70ch; }
 
-/* Search */
-.algoview { height: 100%; display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); background: var(--canvas); }
+/* Layout (optimize tab) */
+.algoview { position: relative; height: 100%; display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); background: var(--canvas); }
 .algoview-text { padding: var(--s4); border-right: 1px solid var(--hair-soft); }
 .algoview-text h3 { margin: 0 0 var(--s2); font-size: 13px; font-weight: 650; }
 .algoview-text p { margin: 0; color: var(--ink-soft); }
@@ -353,18 +349,32 @@ fieldset.plain:disabled { opacity: .45; }
 .editor-foot { border-top: 1px solid var(--hair-soft); }
 .editor-board { flex: 1; min-height: 0; background: var(--soft); }
 .grow { flex: 1; }
-.estimate-btn { position: absolute; right: var(--s4); bottom: var(--s3); }
+.sidenotes { display: grid; gap: var(--s2); padding: var(--s3) var(--s4) 0; }
 
-/* Home */
-.summary { display: grid; gap: var(--s2); padding: var(--s3) var(--s4); }
-.sumblock { display: grid; gap: 1px; text-align: left; border: 1px solid var(--hair); border-radius: var(--r-md); background: var(--canvas); padding: var(--s2) var(--s3); font: inherit; color: inherit; cursor: pointer; }
-.sumblock:hover { border-color: var(--faint); }
-.sumhead { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 2px; }
-.sumhead b { font-weight: 650; }
-.sumblock .kv > :nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.flags { display: flex; flex-wrap: wrap; gap: var(--s1); margin-top: var(--s1); }
-.flag { font-size: 11px; padding: 0 6px; border-radius: var(--r-xs); background: var(--soft); color: var(--muted); box-shadow: inset 3px 0 0 var(--hair); }
-.flag.on { color: var(--ink); box-shadow: inset 3px 0 0 var(--success); }
+/* Home: the optimization flowchart. Boxes are tabs (white, hairline; hover darkens the edge),
+   derived steps are --soft; the state mark is a 3px left edge; the last optimize mode is blue. */
+.homeflow { height: 100%; overflow: auto; padding: var(--s4); scrollbar-width: thin; }
+.homeflow-head h1 { font-size: 15px; font-weight: 650; margin: 0; }
+.homeflow-head p { color: var(--muted); margin: var(--s1) 0 0; max-width: 90ch; }
+.flowchart-scroll { overflow-x: auto; margin-top: var(--s4); }
+.flowchart { display: block; width: 100%; min-width: 900px; max-width: 1120px; margin-inline: auto; font: 450 11px var(--font); }
+.flowchart .flow-node rect { fill: var(--canvas); stroke: var(--hair); }
+.flowchart .flow-node.derived rect { fill: var(--soft); }
+.flowchart .flow-node.link { cursor: pointer; outline: none; }
+.flowchart .flow-node.link:hover > rect:first-child, .flowchart .flow-node.link:focus-visible > rect:first-child { stroke: var(--ink); }
+.flowchart .flow-node.on > rect:first-child { stroke: var(--accent); stroke-width: 1.5; }
+.flowchart .flow-node text { fill: var(--muted); }
+.flowchart .flow-node .flow-title { fill: var(--ink); font-size: 12px; font-weight: 650; }
+.flowchart .flow-state { stroke: none; }
+.flowchart .flow-state.ok { fill: var(--success); }
+.flowchart .flow-state.warn { fill: var(--warning); }
+.flowchart .flow-state.off { fill: var(--hair); }
+.flowchart .flow-links path, .flowchart marker path { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-linejoin: round; }
+.flowchart .flow-links path.on { stroke: var(--accent); }
+.flowchart .flow-links path.dashed { stroke-dasharray: 3 3; }
+.flowchart .flow-groups text { fill: var(--faint); }
+
+/* Layout tab bottom: convergence | past runs | score */
 .homegrid { height: 100%; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr); gap: var(--s4) 24px; padding: var(--s3) var(--s4); min-height: 0; }
 .homeconv { display: flex; flex-direction: column; min-height: 0; }
 .homeconv .chartfill { flex: 1; }
@@ -381,14 +391,6 @@ fieldset.plain:disabled { opacity: .45; }
 .input-sheet { border: 1px solid var(--hair); border-radius: var(--r-sm); min-width: 0; overflow: hidden; }
 .input-sheet.wide { grid-column: 1 / -1; }
 .input-summary-intro { display: grid; gap: var(--s3); min-width: 0; }
-.optimization-flow { min-width: 0; padding: var(--s3); margin-bottom: var(--s2); }
-.optimization-flow-scroll { overflow-x: auto; }
-.optimization-flow svg { display: block; width: 640px; margin-inline: auto; font: 450 11px var(--font); }
-.optimization-flow .flow-node rect { fill: var(--canvas); stroke: var(--hair); }
-.optimization-flow .flow-node text { fill: var(--muted); }
-.optimization-flow .flow-node .flow-title { fill: var(--ink); font-size: 12px; font-weight: 650; }
-.optimization-flow .flow-scoring rect { fill: var(--soft); }
-.optimization-flow .flow-links, .optimization-flow marker path { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-linejoin: round; }
 .input-sheet h2 { font-size: 12px; font-weight: 650; padding: var(--s2) var(--s3); margin: 0; background: var(--soft); border-bottom: 1px solid var(--hair); }
 .input-sheet-table { overflow-x: auto; padding: var(--s2) var(--s3); }
 .summary-table th, .summary-table td { padding: var(--s1) var(--s2); vertical-align: top; }

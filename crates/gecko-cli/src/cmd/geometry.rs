@@ -37,8 +37,9 @@ pub struct OptimizeArgs {
     /// <zone>.<col>.<f>; `=lo:hi` sets bounds, e.g. "3d,tent=0:30".
     #[arg(long, default_value = "2d")]
     free: String,
-    /// bilevel (layout search per candidate) or alternate (board step ↔ layout step).
-    #[arg(long, default_value = "bilevel", value_parser = ["bilevel", "alternate"])]
+    /// bilevel (layout search per candidate), alternate (board step ↔ layout step) or board
+    /// (the board for the fixed start layout).
+    #[arg(long, default_value = "bilevel", value_parser = ["bilevel", "alternate", "board"])]
     mode: String,
     /// Time budget for the whole run, e.g. 30s, 5m.
     #[arg(long)]
@@ -72,7 +73,7 @@ pub struct OptimizeArgs {
     /// Keycap clearance per side, u.
     #[arg(long)]
     margin: Option<f32>,
-    /// Collision penalty per u of overlap, in units of |start score| + 1.
+    /// Collision penalty per u of overlap, in units of |start board score| + 1.
     #[arg(long)]
     penalty: Option<f64>,
     /// Total overlap (u) past which a candidate is rejected unscored.
@@ -124,7 +125,11 @@ fn optimize(ctx: &Ctx, a: OptimizeArgs) -> Result<()> {
     let start = ctx.start(a.from.as_deref(), &l)?;
     let vars = geomsearch::parse_free(&params, &a.free)?;
     let mut s = GeomParams {
-        mode: if a.mode == "alternate" { Mode::Alternate } else { Mode::Bilevel },
+        mode: match a.mode.as_str() {
+            "alternate" => Mode::Alternate,
+            "board" => Mode::Board,
+            _ => Mode::Bilevel,
+        },
         seed: a.seed,
         threads: threads(a.threads),
         time_ms: time_budget(a.time.as_deref(), a.evals, "60s")?,

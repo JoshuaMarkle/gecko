@@ -57,6 +57,13 @@ pub fn hand_costs(geometry_json: &str, hand_json: &str) -> Result<String, JsErro
     serde_json::to_string(&gecko_core::hand::costs_with(&geometry, &spec.dims(), &spec.body())).map_err(js)
 }
 
+/// `Profile::hash` as hex, the `profile_hash` a run with this profile records.
+#[wasm_bindgen]
+pub fn profile_hash(profile_json: &str) -> Result<String, JsError> {
+    let profile: Profile = serde_json::from_str(profile_json).map_err(js)?;
+    Ok(gecko_core::hash::hex(profile.hash()))
+}
+
 /// 2D drawing of a geometry (`Geometry::flat2d`) as JSON `[{pos: [x, y], rot}]` per key.
 #[wasm_bindgen]
 pub fn flat2d(geometry_json: &str) -> Result<String, JsError> {
