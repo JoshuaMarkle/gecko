@@ -1,26 +1,27 @@
-// App shell (context/web.md, frontend.md): navbar (input tabs | result tabs · play / pause /
+// App shell (context/web.md): navbar (input tabs | result tabs · play / pause /
 // stop centred, run % beside · working model) over one view. Inputs: Board, Hand, Language,
 // Profile, Search (three-panel layout). Results: Home, Explore, Analysis, Saved, Export.
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
-import { api, type Analysis, type CorpusInfo, type Geometry, type LayoutInfo, type Meta, type Profile, type Progress, type RunDetail, type RunSummary } from "./api";
-import { AnalysisView } from "./components/AnalysisView";
+import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react";
+import { api, type Analysis, type CorpusInfo, type Geometry, type LayoutInfo, type Meta, type Profile, type RunDetail, type RunSummary } from "./api";
 import { ExploreView } from "./components/explore/ExploreView";
 import type { ExportInfo } from "./export";
 import { IconBoard, IconExplore, IconExport, IconHand, IconHome, IconLanguage, IconPause, IconPlay, IconProfile, IconRuns, IconSearch, IconStats, IconStop, IconSummary } from "./components/Icons";
-import { ResultsView } from "./components/ResultsView";
+import { AnalysisView } from "./components/views/AnalysisView";
 import { BoardView } from "./components/views/BoardView";
 import { ExportView } from "./components/views/ExportView";
 import { HandView } from "./components/views/HandView";
 import { HomeView, type Block } from "./components/views/HomeView";
 import { LanguageView } from "./components/views/LanguageView";
 import { ProfileView } from "./components/views/ProfileView";
+import { SavedView } from "./components/views/SavedView";
 import { algoName, SearchView } from "./components/views/SearchView";
 import { SummaryView } from "./components/views/SummaryView";
 import { EMPTY, fitChars, fmt, fmtCount, fmtTime, layerSlots, swapChars } from "./format";
 import { handDims, handLength, withHand } from "./hand";
 import { useInputs, usePref } from "./inputs";
 import { useLanguages } from "./languages";
+import { useLiveRun } from "./liveRun";
 import { asView, INPUT_TABS, RESULT_TABS, type InputTabName, type View } from "./tabs";
 import { Scorer, wasmReady } from "./wasm";
 
@@ -28,9 +29,6 @@ const ICONS: Record<View, () => ReactElement> = {
   board: IconBoard, hand: IconHand, language: IconLanguage, profile: IconProfile, search: IconSearch, summary: IconSummary,
   home: IconHome, explore: IconExplore, analysis: IconStats, saved: IconRuns, export: IconExport,
 };
-
-// Pause bookkeeping mirrors the server: paused time does not use up the budget.
-interface Live { id: string; algo: string; progress: Progress[]; running: boolean; started: number; budgetMs: number | null; budgetEvals: number | null; pausedAt: number | null; pausedMs: number }
 
 export function App() {
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -58,10 +56,15 @@ export function App() {
   const [refAnalysis, setRefAnalysis] = useState<Analysis | null>(null);
   /** Selected slot on the Analysis heatmap (an index into the flat layered string). */
   const [selected, setSelected] = useState<number | null>(null);
-  const [live, setLive] = useState<Live | null>(null);
   const [runDetail, setRunDetail] = useState<RunDetail | null>(null);
   const [rank, setRank] = useState<number | null>(null);
-  const esRef = useRef<EventSource | null>(null);
+  // Handlers are declared below; the hook calls them only after a run ends.
+  const run = useLiveRun({
+    onDone: (id, algo) => { if (algo !== "explore") openRun(id); },
+    onError: setErr,
+    onRunsChanged: () => refreshRuns(),
+  });
+  const { live, last: liveP, paused, activeMs, frac, setPaused } = run;
 
   // ---- initial load ----
   useEffect(() => {
@@ -183,14 +186,12 @@ export function App() {
     if (!profile || !geometry || !corpus) return;
     if (isCustomBoard) { setErr("Custom boards cannot be optimized yet: the server needs a geometry upload route. Pick a bundled board to run."); return; }
     setErr(null);
-    const algo = explore ? "explore" : search.algo;
     const start = search.start && search.start !== "auto" ? layouts.find((l) => l.id === search.start)?.chars ?? chars : chars;
     const byEvals = !explore && search.budget === "evals";
-    const evals = search.evals ?? 50_000_000;
     try {
-      const r = await api.startRun({
-        geometry: geometry.id, corpus: corpus.id, profile_override: profile, chars: start, algo,
-        ...(byEvals ? { evals } : { time_ms: search.timeS * 1000 }),
+      await run.start({
+        geometry: geometry.id, corpus: corpus.id, profile_override: profile, chars: start, algo: explore ? "explore" : search.algo,
+        ...(byEvals ? { evals: search.evals ?? 50_000_000 } : { time_ms: search.timeS * 1000 }),
         threads: search.threads, seed: search.seed, pins, sa_steps: search.saSteps, ga_pop: search.gaPop,
         holdout: search.holdout && search.holdout !== corpus.id ? search.holdout : undefined,
         memetic: search.algo === "memetic" ? {
@@ -199,56 +200,14 @@ export function App() {
           migration_interval: search.migrationInterval ?? 5, migrants: search.migrants ?? 2,
         } : undefined,
       });
-      setLive({ id: r.id, algo, progress: [], running: true, started: Date.now(), budgetMs: byEvals ? null : search.timeS * 1000, budgetEvals: byEvals ? evals : null, pausedAt: null, pausedMs: 0 });
-      refreshRuns();
-      esRef.current?.close();
-      const es = new EventSource(`/api/runs/${encodeURIComponent(r.id)}/events`);
-      esRef.current = es;
-      es.addEventListener("progress", (e) => {
-        const p = JSON.parse((e as MessageEvent).data) as Progress;
-        setLive((l) => (l && l.id === r.id ? { ...l, progress: [...l.progress, p] } : l));
-      });
-      es.addEventListener("done", () => {
-        es.close();
-        setLive((l) => (l ? { ...l, running: false } : l));
-        if (!explore) openRun(r.id);
-        refreshRuns();
-      });
-      es.addEventListener("failed", (e) => {
-        es.close();
-        setLive((l) => (l ? { ...l, running: false } : l));
-        setErr(JSON.parse((e as MessageEvent).data).error);
-        refreshRuns();
-      });
-      es.onerror = () => { if (es.readyState === EventSource.CLOSED) setLive((l) => (l ? { ...l, running: false } : l)); };
     } catch (e) {
       setErr((e as Error).message);
     }
   };
 
-  const stopRun = () => { if (live) api.cancel(live.id).catch(() => {}); };
-  const setPaused = (on: boolean) => {
-    if (!live?.running || (live.pausedAt !== null) === on) return;
-    api.pause(live.id, on).then(() => setLive((l) => {
-      if (!l || l.id !== live.id) return l;
-      return on ? { ...l, pausedAt: Date.now() } : { ...l, pausedAt: null, pausedMs: l.pausedMs + Date.now() - (l.pausedAt ?? Date.now()) };
-    })).catch((e) => setErr((e as Error).message));
-  };
   const play = () => { if (!live?.running) startRun(view === "explore"); else setPaused(false); };
 
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    if (!live?.running) return;
-    const t = setInterval(() => setNow(Date.now()), 200);
-    return () => clearInterval(t);
-  }, [live?.running]);
-
   const progress = live && (live.running || runDetail?.config.id !== live.id) ? live.progress : runDetail?.progress ?? live?.progress ?? [];
-  const paused = !!live?.running && live.pausedAt !== null;
-  const activeMs = live ? (live.pausedAt ?? now) - live.started - live.pausedMs : 0;
-  const liveP = live?.progress[live.progress.length - 1];
-  const frac = !live ? null : !live.running ? 1
-    : live.budgetEvals ? Math.min(1, (liveP?.evals ?? 0) / live.budgetEvals) : Math.min(1, activeMs / (live.budgetMs ?? 1));
 
   if (!meta || !geometry || !profile) {
     return <div className="empty" style={{ height: "100%" }}>{err ? <div className="notice error" style={{ maxWidth: 520 }}>{err}</div> : "Loading…"}</div>;
@@ -325,7 +284,7 @@ export function App() {
               </button>
               <button className={`tool ${paused ? "on" : ""}`} onClick={() => setPaused(!paused)} disabled={!live?.running}
                 title={paused ? "Resume" : "Pause"} aria-label="Pause" aria-pressed={paused}><IconPause /></button>
-              <button className="tool" onClick={stopRun} disabled={!live?.running} title="Stop now (results are kept)" aria-label="Stop"><IconStop /></button>
+              <button className="tool" onClick={run.stop} disabled={!live?.running} title="Stop now (results are kept)" aria-label="Stop"><IconStop /></button>
             </div>
             {frac !== null && <span className="runpct" title={live?.running ? `${fmtTime(activeMs)} elapsed` : "done"}>{Math.round(100 * frac)}%</span>}
           </>}
@@ -381,7 +340,7 @@ export function App() {
             refName={refName} selected={selected} onKey={onSlot} />
         )}
         {view === "saved" && (
-          <ResultsView runs={runs} run={runDetail} progress={progress} rank={rank} refScore={refAnalysis?.breakdown.score} refName={refName} geometries={allBoards}
+          <SavedView runs={runs} run={runDetail} progress={progress} rank={rank} refScore={refAnalysis?.breakdown.score} refName={refName} geometries={allBoards}
             onOpenRun={(id) => openRun(id, false)} onPickRank={pickRank} onShowHome={() => setView("home")} />
         )}
         {view === "export" && <ExportView info={exportInfo} label={shownLabel} onError={setErr} />}
