@@ -2,9 +2,11 @@
 //! Format: `context/representation.md`.
 //!
 //! Submodules: `parametric` (zones/columns/rows → keys), `derive` (effort and stretch from
-//! positions), `flat2d` (2D drawing), `collision` (keycap overlap), `pose` (key frames in 3D).
+//! positions), `flat2d` (2D drawing), `collision` (2D keycap overlap), `collision3d` (3D keycap and
+//! switch hulls, GJK + EPA), `pose` (key frames in 3D).
 
 pub mod collision;
+pub mod collision3d;
 pub mod derive;
 pub mod flat2d;
 pub mod manufacture;
@@ -273,10 +275,11 @@ impl Geometry {
         out
     }
 
-    /// [`Geometry::check_keys`], and no two keycaps overlap ([`Geometry::collisions`]).
+    /// [`Geometry::check_keys`], and no two keys overlap: keycaps in 2D on flat boards
+    /// ([`Geometry::collisions`]), keycap and switch volumes otherwise ([`Geometry::collisions_3d`]).
     pub fn validate(&self) -> Result<()> {
         self.check_keys()?;
-        let hits = self.collisions(0.0);
+        let hits = if self.is_flat() { self.collisions(0.0) } else { self.collisions_3d(0.0) };
         if let Some(c) = hits.first() {
             let (a, b) = (&self.key[c.a], &self.key[c.b]);
             return Err(Error::invalid(

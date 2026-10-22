@@ -1,6 +1,8 @@
-//! G04 2D keycap collision (`Geometry::collisions`, #39): known overlapping and clear pairs,
-//! margins, rotated keys where bounding boxes lie, the grid broad phase against brute force,
-//! and validation of the bundled boards. See `context/testing.md`.
+//! G04 2D keycap collision (`Geometry::collisions`, #39) and H8 3D key volumes
+//! (`Geometry::collisions_3d`, #66): known overlapping and clear pairs, margins, rotated keys
+//! where bounding boxes lie, the grid broad phases against brute force, and validation of the
+//! bundled boards. GJK + EPA against separating axes is a unit test in `collision3d.rs`.
+//! See `context/testing.md`.
 
 use gecko_core::rng::Rng;
 use gecko_core::{Finger, Geometry, Key};
@@ -118,5 +120,43 @@ fn layer_copies_and_3d_boards_are_skipped() {
     assert!(layered.len() > 2 && layered.collisions(0.0).is_empty(), "virtual keys share their physical key");
     let mut tilted = board(vec![key(0.0, 0.0, 0.0), key(0.0, 0.0, 0.0)]);
     tilted.key[1].rot[0] = 10.0;
-    assert!(tilted.collisions(0.0).is_empty(), "3D boards are H8's");
+    assert!(tilted.collisions(0.0).is_empty(), "3D boards use collisions_3d");
+    assert_eq!(tilted.collisions_3d(0.0).len(), 1);
+    assert!(tilted.validate().unwrap_err().to_string().contains("overlapping"));
+    tilted.key[1].pos = [1.2, 0.0, 0.0];
+    assert!(tilted.validate().is_ok());
+}
+
+#[test]
+fn grid_matches_brute_force_3d() {
+    let mut rng = Rng::new(9);
+    let mut found = 0;
+    for _ in 0..30 {
+        let keys: Vec<Key> = (0..40)
+            .map(|_| {
+                let mut k = key(rng.below(700) as f32 / 100.0, rng.below(500) as f32 / 100.0, rng.below(60) as f32 - 30.0);
+                k.pos[2] = rng.below(150) as f32 / 100.0;
+                k.rot[0] = rng.below(60) as f32 - 30.0;
+                k.rot[1] = rng.below(80) as f32 - 40.0;
+                k.size = [1.0 + rng.below(3) as f32 * 0.25, 1.0];
+                k
+            })
+            .collect();
+        let g = board(keys);
+        for margin in [0.0, 0.1] {
+            let mut want = Vec::new();
+            for i in 0..g.len() {
+                for j in i + 1..g.len() {
+                    let pair = board(vec![g.key[i].clone(), g.key[j].clone()]);
+                    if let Some(c) = pair.contacts_3d(margin).first() {
+                        want.push((i, j, c.depth));
+                    }
+                }
+            }
+            let got: Vec<(usize, usize, f64)> = g.contacts_3d(margin).iter().map(|c| (c.a, c.b, c.depth)).collect();
+            assert_eq!(got, want);
+            found += got.len();
+        }
+    }
+    assert!(found > 100, "{found}");
 }

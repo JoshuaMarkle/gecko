@@ -157,16 +157,19 @@ as touching. `Geometry::validate` (TOML load, KLE import, parametric generation)
 overlap at margin 0; `check_keys` holds only the structural checks and is what layer expansion
 and `Scorer::set_geometry` use, so search candidates that collide can still be scored and
 penalized by depth. Layer copies share their physical key and are skipped. Non-flat boards
-return no collisions: tilted and tented keycaps need 3D volumes (H8, #66). Every bundled flat
-board is collision-free.
+return no 2D collisions; they use the 3D test below. Every bundled flat board is collision-free.
 
-`Geometry::collisions_3d(margin)` is the approximate 3D test the geometry search uses on
-non-flat candidates until H8: per key a keycap frustum (footprint + margin at the bottom, inset
-`CAP_TAPER` 0.15 u per side at the top, `CAP_HEIGHT` tall, like an SA/DSA cap) and an MX switch
-body below it (0.78 u square, 0.45 u deep), each pair tested with the full separating axis
-theorem (face normals and edge × edge axes); depth is the deepest overlap. It finds the same
-pairs as the 2D test on flat boards, and every bundled board (Dactyl included) is clear.
-`validate` still checks 2D only.
+**3D (H8, `collision3d.rs`).** `Geometry::contacts_3d(margin)` gives each physical key two
+convex hulls: a keycap frustum (footprint + margin at the bottom, inset `CAP_TAPER` 0.15 u per
+side at the top, `CAP_HEIGHT` tall, like an SA/DSA cap) and an MX switch body below it (0.78 u
+square + margin, 0.45 u deep). Candidate pairs come from a uniform 3D grid over each key's
+bounding sphere (cell = the largest diameter); GJK tests each hull pair and EPA returns the
+penetration depth and unit direction (`b` moves by `depth · normal` to clear it). A contact is
+the deepest of the four hull pairs; overlaps ≤ 0.001 u count as touching. `collisions_3d` is
+the same list without directions. On flat boards it finds the 2D pairs (depth the 2D one, or
+less when lifting over the cap is shorter); every bundled board (Dactyl included) is clear.
+`validate` uses it on non-flat boards, and the geometry search penalizes its depth whenever a
+candidate is not flat (z, tilt or tent free).
 
 ## Manufacturability (G07)
 
