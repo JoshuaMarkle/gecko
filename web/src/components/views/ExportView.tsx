@@ -1,13 +1,15 @@
 // Export (context/web.md "Export"): the last tab. Sidebar: name, image options and every file
-// format (copy or download). Main: the working model on its physical board, exactly as the
-// SVG/PNG export draws it. Bottom: score, run facts and metrics when the layout was scored.
+// format (copy or download), and the 3D-print STL files. Main: the working model on its physical
+// board, exactly as the SVG/PNG export draws it, or (3D, the default for boards with height or
+// tilt) the printable case with switches and keycaps. Bottom: score, run facts and metrics when the layout was scored.
 
 import { useEffect, useMemo, useState } from "react";
 import type { Geometry } from "../../api";
 import { boardSvg, kleJson, layerChars, layoutJson, layoutTextExport, layoutToml, slug, statsCsv, statsMarkdown, type ExportInfo, type ImageOptions, type KeyColor } from "../../export";
 import { fmt, scoredMetrics, verdict } from "../../format";
-import { exportLayout, wasmReady } from "../../wasm";
-import { Frame, Sec, Seg, Toggle } from "../Form";
+import { Case3D } from "../../three/Case3D";
+import { buildCase, exportLayout, wasmReady, type CaseModel, type CaseParams, type Switch } from "../../wasm";
+import { Frame, Num, Sec, Seg, Toggle } from "../Form";
 
 type Community = "oxeylyzer" | "genkey" | "cmini";
 interface FileFormat { id: string; title: string; help: string; ext: string; mime: string; make: (e: ExportInfo) => string; stats?: boolean }
@@ -40,6 +42,25 @@ async function toPng(svg: string, scale: number): Promise<Blob> {
   }
 }
 
+/** Case parameters the sidebar edits (mm), with their help. */
+const CASE_FIELDS: [keyof CaseParams, string, string][] = [
+  ["plate", "Plate", "Plate thickness"],
+  ["wall", "Wall", "Wall thickness at the floor"],
+  ["clearance", "Clearance", "Floor to the lowest switch bottom (wiring room)"],
+  ["bridge", "Bridge", "Largest gap between key edges a web spans; wider gaps split the plate"],
+];
+const STL_FILES: ["plate" | "case" | "bottom", string, string][] = [
+  ["case", "Case", "Plate and walls in one part"],
+  ["plate", "Plate", "Switch plate alone (sandwich or hand-wired build)"],
+  ["bottom", "Bottom", "Flat bottom plate per half"],
+];
+
+/** Any key raised or tilted out of the plane: the board is 3D. */
+const isFlat = (g: Geometry) => g.key.every((k) => k.pos[2] === 0 && k.rot[0] === 0 && k.rot[1] === 0);
+
+const mm = (v: number) => v.toFixed(0);
+const bytes = (n: number) => (n < 1e5 ? `${Math.ceil(n / 1e3)} KB` : `${(n / 1e6).toFixed(1)} MB`);
+
 /** Community formats through gecko-core (`gecko layouts export`): 30 alpha keys only. */
 function community(id: Community, title: string, help: string, ext: string): FileFormat {
   return { id, title, help, ext, mime: ext.endsWith("json") ? "application/json" : "text/plain", make: (e) => exportLayout(e.geometry, e.name, e.chars, id) };
@@ -55,6 +76,16 @@ export function ExportView({ info, label, onError }: { info: ExportInfo; label: 
   const [copied, setCopied] = useState<string | null>(null);
   const [wasm, setWasm] = useState(false);
   useEffect(() => { wasmReady().then(() => setWasm(true)).catch(() => {}); }, []);
+  const [view3d, setView3d] = useState(() => !isFlat(info.geometry));
+  useEffect(() => setView3d(!isFlat(info.geometry)), [info.geometry.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [caps, setCaps] = useState(true);
+  const [showBottom, setShowBottom] = useState(true);
+  const [sw, setSw] = useState<Switch>("mx");
+  const [over, setOver] = useState<Partial<CaseParams>>({});
+  const build = useMemo((): { model?: CaseModel; err?: string } => {
+    if (!wasm) return {};
+    try { return { model: buildCase(info.geometry, sw, over) }; } catch (err) { return { err: (err as Error).message }; }
+  }, [wasm, info.geometry, sw, over]);
 
   const e: ExportInfo = useMemo(() => ({ ...info, name: name.trim() || label || "layout" }), [info, name, label]);
   const g: Geometry = e.geometry;
@@ -104,6 +135,9 @@ export function ExportView({ info, label, onError }: { info: ExportInfo; label: 
 
   const savePng = () => toPng(svg, Number(scale)).then((b) => save(b, `${base}.png`)).catch((err) => onError(`PNG export failed: ${(err as Error).message}`));
   const saveSvg = () => save(new Blob([svg], { type: "image/svg+xml" }), `${base}.svg`);
+  const model = build.model;
+  const rep = model?.report;
+  const sizes = rep?.pieces.map((p) => `${mm(p.size[0])} × ${mm(p.size[1])} × ${mm(p.size[2])}`).join(" · ");
 
   const a = e.a, ref = e.ref;
   const delta = a && ref ? a.breakdown.score - ref.a.breakdown.score : null;
@@ -130,6 +164,31 @@ export function ExportView({ info, label, onError }: { info: ExportInfo; label: 
             <button className="btn outline" onClick={saveSvg}>Download SVG</button>
           </div>
         </Sec>
+        <Sec id="export.stl" title="3D print" note="STL">
+          <div className="row"><label title="Switch cutout and keycap height">Switch</label>
+            <Seg value={sw} onChange={setSw} options={[["mx", "MX"], ["choc", "Choc"]]} /><span /></div>
+          {CASE_FIELDS.map(([k, label, help]) => (
+            <Num key={k} label={label} help={help} unit="mm" step={0.5} min={0} value={(over[k] as number | undefined) ?? (model?.params[k] as number | undefined) ?? NaN}
+              onChange={(v) => setOver((o) => ({ ...o, [k]: v }))} />
+          ))}
+          {build.err && <div className="hint err">{build.err}</div>}
+          {STL_FILES.map(([part, title, help]) => (
+            <div key={part} className="fmtrow" title={help}>
+              <div><b>{title}</b><span className="hint">{model ? bytes(model.stl[part].length) : wasm ? "Unavailable" : "Loading…"}</span></div>
+              <div className="btns">
+                <button className="btn outline small" disabled={!model} onClick={() => model && save(new Blob([model.stl[part] as BlobPart], { type: "model/stl" }), `${slug(g.id)}-${sw}-${part}.stl`)}>Download</button>
+              </div>
+            </div>
+          ))}
+          {rep && (
+            <div className="casenotes">
+              <span className="hint">{rep.keys} switches · {rep.pieces.length === 1 ? "1 piece" : `${rep.pieces.length} pieces`} · {sizes} mm</span>
+              {rep.dropped > 0 && <span className="hint">{rep.dropped} connector{rep.dropped > 1 ? "s" : ""} left out (would block a switch)</span>}
+              {rep.blocked.length > 0 && <span className="hint err">Switch holes blocked: {rep.blocked.length} keys</span>}
+              {rep.cap_hits.length > 0 && <span className="hint err">Keycaps hit the case when pressed: {rep.cap_hits.length} keys (red)</span>}
+            </div>
+          )}
+        </Sec>
         {formats.map(([group, fs]) => (
           <Sec key={group} id={`export.${group}`} title={group}>
             {fs.map((f) => {
@@ -149,8 +208,16 @@ export function ExportView({ info, label, onError }: { info: ExportInfo; label: 
       </>}
       main={
         <div className="viewport exportview">
-          <img src={preview} alt={`${e.name} on ${g.name}`} />
+          {!view3d ? <img src={preview} alt={`${e.name} on ${g.name}`} />
+            : model ? <Case3D geometry={g} chars={e.chars} model={model} caps={caps} bottom={showBottom} />
+            : <div className="empty">{build.err ? `No case: ${build.err}` : "Building the case…"}</div>}
           <div className="viewlabel"><span>{e.name}</span>{a && <span className="muted">{fmt(a.breakdown.score, 3)}</span>}</div>
+          <div className="viewctl">
+            <div className="seg inline"><button className={view3d ? "on" : ""} onClick={() => setView3d(!view3d)} title="3D: the printable case (STL); off: the image export">3D</button></div>
+            {view3d && <div className="seg inline"><button className={caps ? "on" : ""} onClick={() => setCaps(!caps)} title="Switches and keycaps on the plate">Keycaps</button></div>}
+            {view3d && <div className="seg inline"><button className={showBottom ? "on" : ""} onClick={() => setShowBottom(!showBottom)} title="Bottom plate">Bottom</button></div>}
+          </div>
+          {view3d && rep && <div className="viewhint">{sw === "mx" ? "MX" : "Choc"} case · {sizes} mm{rep.cap_hits.length > 0 ? " · red keycaps hit the case when pressed" : ""}</div>}
         </div>
       }
       bottom={

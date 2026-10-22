@@ -297,3 +297,59 @@ impl AtlasView {
         Ok(stats::stability(&w, &self.raw, self.metrics.len(), &ks, factors))
     }
 }
+
+/// A board's plate, case and bottom (gecko-core `Geometry::case`, same as `gecko build stl`).
+#[wasm_bindgen]
+pub struct CaseBuild {
+    case: gecko_core::geometry::case::Case,
+    params: gecko_core::geometry::case::CaseParams,
+    header: String,
+}
+
+#[wasm_bindgen]
+impl CaseBuild {
+    /// `switch`: mx or choc; `overrides_json`: `CaseParams` fields (mm) over that switch's defaults.
+    #[wasm_bindgen(constructor)]
+    pub fn new(geometry_json: &str, switch: &str, overrides_json: &str) -> Result<CaseBuild, JsError> {
+        use gecko_core::geometry::case::{CaseParams, Switch};
+        let geometry: Geometry = serde_json::from_str(geometry_json).map_err(js)?;
+        geometry.validate().map_err(js)?;
+        let sw: Switch = serde_json::from_value(serde_json::Value::String(switch.into())).map_err(js)?;
+        let mut v = serde_json::to_value(CaseParams::for_switch(sw)).map_err(js)?;
+        let over: serde_json::Map<String, serde_json::Value> = serde_json::from_str(overrides_json).map_err(js)?;
+        v.as_object_mut().expect("CaseParams is an object").extend(over);
+        let params: CaseParams = serde_json::from_value(v).map_err(js)?;
+        let gap = gecko_core::geometry::manufacture::BuildLimits::default().piece_gap;
+        let case = geometry.case(&params, gap).map_err(js)?;
+        let header = format!("gecko {} {}", geometry.name, gecko_core::hash::hex(geometry.hash()));
+        Ok(CaseBuild { case, params, header })
+    }
+
+    /// JSON `{params, report}` (`build.json`'s fields).
+    pub fn report(&self) -> String {
+        serde_json::json!({"params": self.params, "report": self.case.report}).to_string()
+    }
+
+    /// Triangle corners of `part` (plate, walls or bottom) as `x y z` triples, mm, z up.
+    pub fn positions(&self, part: &str) -> Result<Vec<f32>, JsError> {
+        let m = self.part(part)?;
+        Ok(m.shells.iter().flat_map(|s| s.tris.iter().flat_map(|t| t.iter().flat_map(|&i| s.pts[i as usize].map(|x| x as f32)))).collect())
+    }
+
+    /// Binary STL of `part`: plate, case (plate + walls) or bottom.
+    pub fn stl(&self, part: &str) -> Result<Vec<u8>, JsError> {
+        Ok(self.part(part)?.stl(&self.header))
+    }
+}
+
+impl CaseBuild {
+    fn part(&self, part: &str) -> Result<gecko_core::geometry::mesh::Mesh, JsError> {
+        Ok(match part {
+            "plate" => self.case.plate.clone(),
+            "walls" => self.case.walls.clone(),
+            "case" => self.case.case(),
+            "bottom" => self.case.bottom.clone(),
+            _ => return Err(JsError::new(&format!("unknown part {part}"))),
+        })
+    }
+}

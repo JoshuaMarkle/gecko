@@ -412,6 +412,8 @@ fieldset.plain:disabled { opacity: .45; }
 .fmtrow > div:first-child b { font-weight: 600; white-space: nowrap; }
 .fmtrow .hint { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fmtrow .btns { flex: none; flex-wrap: nowrap; }
+.casenotes { display: flex; flex-direction: column; gap: 2px; margin-top: var(--s2); }
+.hint.err { color: var(--error); }
 .exportgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr); gap: var(--s4) 24px; padding: var(--s3) var(--s4); }
 
 /* Board + layout search (components/geom) */
