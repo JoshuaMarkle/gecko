@@ -180,8 +180,15 @@ Copy and Download: GECKO layout `.toml` (the `data/layouts` format; `{token}` na
 holdout facts), KLE (the board's 2D drawing with legends, layers as extra legends, the
 image's key colors), Oxeylyzer / Genkey / cmini (30 alpha keys, through WASM
 `export_layout` = `gecko layouts export`; disabled with the reason on boards without a
-3 × 10 alpha block), metrics CSV and a Markdown summary. Main: the image exactly as exported
-(`boardSvg`, a standalone SVG; layers two per row). Bottom: score vs the reference, board /
+3 × 10 alpha block), metrics CSV and a Markdown summary. **3D print** (STL): switch MX / Choc,
+plate, wall, clearance and bridge (mm, over the switch's defaults), Download case / plate /
+bottom `.stl` (WASM `CaseBuild` = `gecko build stl`, piece gap from the default build limits),
+then pieces and their size, connectors left out, blocked switch holes and keycap hits.
+Main: a **3D** toggle (on by default when any key is raised or tilted, off for flat boards;
+reset when the board changes). Off: the image exactly as exported (`boardSvg`, a standalone
+SVG; layers two per row). On: `three/Case3D` renders the STL triangles (bottom plate darker)
+with switch housings and the base layer's keycaps; **Keycaps** and **Bottom** toggles hide
+them, keycaps that hit the case when pressed are red. Bottom: score vs the reference, board /
 language / profile / run / holdout, weighted metrics and finger load; "No stats" when the
 layout is not scored (stats-only files are disabled, the rest still export).
 

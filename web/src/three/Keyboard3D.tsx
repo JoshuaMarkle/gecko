@@ -84,7 +84,7 @@ function caseGeometry(w: number, d: number): THREE.BufferGeometry {
  * rectangle at the top. Corners shade smooth, flat sides stay flat, and the top and base
  * edges are sharp (caps have their own vertices).
  */
-function capGeometry(w: number, d: number): THREE.BufferGeometry {
+export function capGeometry(w: number, d: number): THREE.BufferGeometry {
   const key = `${w.toFixed(3)}x${d.toFixed(3)}`;
   let g = caps.get(key);
   if (g) return g;
@@ -135,7 +135,7 @@ function capGeometry(w: number, d: number): THREE.BufferGeometry {
 
 const textures = new Map<string, THREE.CanvasTexture>();
 
-function legend(ch: string, color: string): THREE.CanvasTexture {
+export function legend(ch: string, color: string): THREE.CanvasTexture {
   const k = `${ch}|${color}`;
   let t = textures.get(k);
   if (!t) {

@@ -1,6 +1,6 @@
 // Loads the gecko-wasm scorer (same Rust code as the CLI). Built by `npm run wasm`.
 
-import init, { AtlasView, Engine, corpus_from_text, corpus_stats, export_layout as exportLayoutRaw, flat2d as flat2dRaw, hand_costs, param_board, profile_hash } from "./wasm/pkg/gecko_wasm.js";
+import init, { AtlasView, CaseBuild, Engine, corpus_from_text, corpus_stats, export_layout as exportLayoutRaw, flat2d as flat2dRaw, hand_costs, param_board, profile_hash } from "./wasm/pkg/gecko_wasm.js";
 import type { Analysis, Flat, Geometry, ParamGeometry, Profile } from "./api";
 import type { HandSpec } from "./hand";
 
@@ -107,4 +107,40 @@ export interface Collision { a: number; b: number; depth: number }
 export function paramBoard(param: ParamGeometry, names: string[], values: number[], id: string): { geometry: Geometry; collisions: Collision[] } {
   const r = JSON.parse(param_board(JSON.stringify(param), JSON.stringify(names), Float64Array.from(values))) as { geometry: Geometry; flat: Flat[]; collisions: Collision[] };
   return { geometry: { ...r.geometry, id, flat: r.flat }, collisions: r.collisions };
+}
+
+/** Case dimensions in mm (gecko-core `CaseParams`); the UI overrides a few of them. */
+export type Switch = "mx" | "choc";
+export interface CaseParams {
+  switch: Switch; hole: number; clip: number; clip_pocket: number; plate: number; rim: number; cap_gap: number; travel: number;
+  switch_depth: number; clearance: number; wall: number; wall_offset: number; bottom: number; bridge: number;
+}
+/** gecko-core `CaseReport`: key indices are base keys. */
+export interface CaseReport {
+  keys: number; pieces: { keys: number[]; size: [number, number, number] }[]; webs: number; junctions: number; walls: number; corners: number;
+  dropped: number; blocked: number[]; cap_hits: number[]; lift: number;
+}
+export type CasePart = "plate" | "walls" | "bottom";
+/** A board's plate, walls and bottom (gecko-wasm `CaseBuild`, same as `gecko build stl`): triangle corners in mm
+ *  (STL space: z up, y = −board y) and the STL files (`case` = plate + walls). */
+export interface CaseModel {
+  params: CaseParams; report: CaseReport;
+  mesh: Record<CasePart, Float32Array>;
+  stl: Record<"plate" | "case" | "bottom", Uint8Array>;
+}
+
+/** Needs `wasmReady()` first; throws on a board or parameters the generator rejects. */
+export function buildCase(g: Geometry, sw: Switch, overrides: Partial<CaseParams>): CaseModel {
+  const { flat: _f, ...rest } = g;
+  const b = new CaseBuild(JSON.stringify(rest), sw, JSON.stringify(overrides));
+  try {
+    const { params, report } = JSON.parse(b.report()) as { params: CaseParams; report: CaseReport };
+    return {
+      params, report,
+      mesh: { plate: b.positions("plate"), walls: b.positions("walls"), bottom: b.positions("bottom") },
+      stl: { plate: b.stl("plate"), case: b.stl("case"), bottom: b.stl("bottom") },
+    };
+  } finally {
+    b.free();
+  }
 }

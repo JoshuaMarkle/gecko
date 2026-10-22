@@ -206,7 +206,8 @@ the defaults (`tests/manufacture.rs`). `gecko build stl` reports the same violat
 `Geometry::case(&CaseParams, piece_gap)` (`case.rs`, mesh primitives in `mesh.rs`) builds a
 printable board from the key poses; `gecko build stl run:<id>` writes `plate.stl` (switch plate
 alone), `case.stl` (plate + walls), `bottom.stl` and `build.json` (params, geometry hash,
-report, G07 violations) to `runs/<id>/stl/` (or `build/<name>/`). Dactyl-style, every part is a
+report, G07 violations) to `runs/<id>/stl/` (or `build/<name>/`). The Export tab renders the
+same case in 3D and downloads the STLs (WASM `CaseBuild`). Dactyl-style, every part is a
 list of closed convex shells (own incremental hull, no CSG crate):
 
 - **Tile** per physical key at the plate pose: plate top `cap_gap` below the keycap bottom

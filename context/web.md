@@ -17,7 +17,8 @@ web/src/
                        profile, layout, pins, search, working model) + usePref
   api.ts               API client + types mirroring the Rust serde shapes (checked by test:contract)
   wasm.ts              gecko-wasm loader (Scorer, flat2d, export_layout, corpus stats / build, profileHash,
-                       paramBoard: a parametric board at given parameter values + collisions)
+                       paramBoard: a parametric board at given parameter values + collisions,
+                       buildCase: plate / walls / bottom triangles and STL files)
   format.ts            pure helpers (rows, swaps, layers, verdicts, validation, cap)
   export.ts            Export tab file builders (image SVG, layout TOML/text/JSON, KLE, stats)
   board.ts hand.ts handCosts.ts estimate.ts explore.ts fingerEffort.ts languages.ts
@@ -36,6 +37,7 @@ web/src/
   runViews.ts          metric columns of ranked layouts, 2-axis projection of a qd grid
   geom.ts              free-parameter groups, `--free` spec, labels, progress → chart shape
   three/Keyboard3D.tsx 3D keyboard (auto-rotate, click position, scene children)
+  three/Case3D.tsx     Export tab: printable case from WASM `CaseBuild`, switches and keycaps
 web/contract/          API contract check (loose.ts; generated samples are gitignored)
 ```
 
