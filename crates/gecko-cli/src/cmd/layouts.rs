@@ -5,8 +5,8 @@ use std::path::PathBuf;
 
 use anyhow::{bail, Context, Result};
 use clap::Subcommand;
-use gecko_core::community;
-use gecko_core::import::{export, import, Format};
+use gecko_core::interop::community;
+use gecko_core::interop::import::{export, import, Format};
 use gecko_core::{Layout, SCHEMA};
 use serde_json::json;
 

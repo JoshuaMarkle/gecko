@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
-use crate::pose;
+use crate::geometry::pose;
 use crate::{Error, Finger, Geometry, Hand, Key, Result};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

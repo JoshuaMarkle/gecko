@@ -2,7 +2,7 @@
 use std::path::Path;
 
 use gecko_core::calibrate::fit_preferences;
-use gecko_core::community::Bundle;
+use gecko_core::interop::community::Bundle;
 use gecko_core::store::Store;
 
 const ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");

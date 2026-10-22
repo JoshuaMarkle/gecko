@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 use serde::Serialize;
 
 use super::{costs, stdev, unit_profile};
-use crate::community::Bundle;
+use crate::interop::community::Bundle;
 use crate::metrics::{Dir, METRICS};
 use crate::{rng::Rng, Corpus, Error, Geometry, Profile, Result, Scorer};
 

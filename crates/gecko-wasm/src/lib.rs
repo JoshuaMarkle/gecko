@@ -70,9 +70,9 @@ pub fn flat2d(geometry_json: &str) -> Result<String, JsError> {
 #[wasm_bindgen]
 pub fn export_layout(geometry_json: &str, name: &str, chars: &str, format: &str) -> Result<String, JsError> {
     let geometry: Geometry = serde_json::from_str(geometry_json).map_err(js)?;
-    let f = gecko_core::import::Format::parse(format).map_err(js)?;
+    let f = gecko_core::interop::import::Format::parse(format).map_err(js)?;
     let layout = Layout::from_str_flat(name, &geometry.name, chars).and_then(|l| l.fit(&geometry)).map_err(js)?;
-    gecko_core::import::export(f, &layout, &geometry).map_err(js)
+    gecko_core::interop::import::export(f, &layout, &geometry).map_err(js)
 }
 
 /// Top `top` entries of an n-gram table as `[[ngram, % of the table], …]`, most frequent first.

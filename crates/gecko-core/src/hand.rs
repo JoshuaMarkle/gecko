@@ -11,9 +11,9 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::flat2d::{cross, dot, norm, sub};
+use crate::geometry::flat2d::{cross, dot, norm, sub};
+use crate::geometry::pose::{self, add, Frame};
 use crate::geometry::{Finger, Geometry, Hand};
-use crate::pose::{self, add, Frame};
 use crate::{Error, Result};
 
 /// Millimetres per key unit.

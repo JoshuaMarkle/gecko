@@ -27,7 +27,7 @@ impl GeometryCmd {
     pub fn run(self, ctx: &Ctx) -> Result<()> {
         let GeometryCmd::ImportKle { file, out, force } = self;
         let text = std::fs::read_to_string(&file).with_context(|| format!("reading {}", file.display()))?;
-        let g = gecko_core::kle::import(&out, &text)?;
+        let g = gecko_core::interop::kle::import(&out, &text)?;
         let path = ctx.store.data.join("geometries").join(format!("{out}.toml"));
         if path.exists() && !force {
             bail!("{} exists (use --force to overwrite)", path.display());

@@ -54,7 +54,7 @@ fn derived_efforts_track_hand_entered_ones() {
         let r = pearson(&pick(&given), &pick(&derived));
         assert!(r > 0.8, "{name}: r = {r}");
         for k in derived.key.iter().filter(|k| k.home && !k.stretch && !k.finger.is_thumb()) {
-            assert_eq!(k.effort, gecko_core::derive::HOME_EFFORT[k.finger.ord() as usize], "{name}");
+            assert_eq!(k.effort, gecko_core::geometry::derive::HOME_EFFORT[k.finger.ord() as usize], "{name}");
         }
         // The cheapest thumb key of each hand is its rest key.
         for t in [gecko_core::Finger::LT, gecko_core::Finger::RT] {
