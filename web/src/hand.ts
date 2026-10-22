@@ -3,7 +3,8 @@
 // similarity charts. Lengths in mm. Pure (unit-tested in hand.test.ts). The scorer runs the
 // same skeleton, placement and IK in Rust (`gecko_core::hand`, context/hand-model.md); "Use hand
 // in optimization" sends this hand as the profile's `hand` (`withHand`). The population is
-// synthetic until reference hand data lands.
+// synthetic until reference hand data lands. hand.parity.test.ts checks the skeleton, curl,
+// finger and thumb IK and placement against the Rust port (fixtures/hand-parity.json).
 
 import type { Profile } from "./api";
 
