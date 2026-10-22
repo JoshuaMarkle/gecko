@@ -9,6 +9,7 @@ pub mod calibrate;
 pub mod collision;
 pub mod community;
 pub mod corpus;
+pub mod derive;
 pub mod error;
 pub mod explore;
 pub mod flat2d;

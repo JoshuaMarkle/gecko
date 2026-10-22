@@ -155,3 +155,32 @@ penalized by depth. Layer copies share their physical key and are skipped. Non-f
 return no collisions: tilted and tented keycaps need 3D volumes (H8, #66). Every bundled flat
 board is collision-free.
 
+## Derived effort and stretch (G4)
+
+New boards need no hand-entered costs (`derive.rs`, `Geometry::derive_missing`). Distances are
+between key centres in each hand's measuring frame (`metric_points` + half the key size), so
+3D boards measure along their surface.
+
+- **Effort** (a reach proxy until the hand model replaces M01's base effort):
+  `HOME_EFFORT[finger] + TRAVEL[finger] · d`, d = distance (u) to the finger's non-stretch home
+  key. Home 1.6 / 1.3 / 1.1 / 1.0 (pinky → index, the bundled values); travel 1.14 / 1.15 /
+  1.03 / 1.08 per u, a least-squares fit to the seven bundled flat boards (r = 0.93, RMSE 0.28;
+  a d² term gained nothing). Thumbs: 1.0 + 0.5 per u from the thumb key nearest the rest point
+  0.5 u inward and 2.3 u below the index home key (unless a thumb key is marked `home`). A
+  finger without a home key measures from its hand's nearest home key. Missing efforts in a
+  board file are NaN until `from_toml` fills them; parametric columns without `effort`
+  re-derive on every `generate`, so efforts follow keys during a geometry search.
+- **Stretch**: an index key more than 0.625 u inward of the index's outermost home key (between
+  ANSI's `V`, 0.5 u, and `T`, 0.75 u). Derived only when a board file marks no key `stretch`
+  at all. It reproduces every bundled board's flags except ANSI's `N`, which the file labels
+  stretch by column although it sits 0.5 u from `J`, like `V` from `F`.
+- **Travel (G02)**: B03/S03 already measure Euclidean distance between metric points (with the
+  `sfb.lateral` multiplier), not grid steps, so they follow moved keys.
+
+Check (`tests/derive.rs`, english / default, nothing hand-entered): a 30-key grid with Corne's
+column stagger (pinky 0.3, ring 0.1, index 0.1, stretch 0.2 u) beats ANSI row stagger for
+Colemak-DH (−1.9), Graphite (−0.7), Semimak (−1.2), Sturdy (−0.3) and Dvorak (−0.9). QWERTY is
+the exception (+0.56): its bottom-row bigrams were laid out for row stagger and stretch more
+(B14 12.7 vs 11.9) without it. A plain ortho grid also beats ANSI for every layout but QWERTY
+(+0.04); stronger stagger (pinky 0.5, ring 0.125, index 0.25) helps Colemak-DH and Dvorak more.
+

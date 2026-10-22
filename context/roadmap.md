@@ -81,7 +81,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 54. [x] [#40](https://github.com/JoshuaMarkle/gecko/issues/40) `H3` Finger IK with joint limits · L · after [#33](https://github.com/JoshuaMarkle/gecko/issues/33)
 55. [x] [#92](https://github.com/JoshuaMarkle/gecko/issues/92) `L7` Hand tab: hand parameters with live skeleton · M · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82), [#33](https://github.com/JoshuaMarkle/gecko/issues/33)
 56. [x] [#41](https://github.com/JoshuaMarkle/gecko/issues/41) `C8` L01 shortcut placement and L02 familiarity · S
-57. [ ] [#42](https://github.com/JoshuaMarkle/gecko/issues/42) `G4` Geometry-driven costs: G02 travel + 2D reach proxy · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
+57. [x] [#42](https://github.com/JoshuaMarkle/gecko/issues/42) `G4` Geometry-driven costs: G02 travel + 2D reach proxy · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
 58. [ ] [#93](https://github.com/JoshuaMarkle/gecko/issues/93) `L3` Board tab: Unity-style key editing · M · after [#84](https://github.com/JoshuaMarkle/gecko/issues/84), [#39](https://github.com/JoshuaMarkle/gecko/issues/39)
 59. [x] [#94](https://github.com/JoshuaMarkle/gecko/issues/94) `L6` Search tab: algorithm and budget settings · S · after [#82](https://github.com/JoshuaMarkle/gecko/issues/82)
 60. [ ] [#43](https://github.com/JoshuaMarkle/gecko/issues/43) `B7` MIP oracle for sub-problems (HiGHS / CP-SAT) · L · after [#37](https://github.com/JoshuaMarkle/gecko/issues/37)
