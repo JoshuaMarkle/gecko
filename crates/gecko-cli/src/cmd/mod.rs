@@ -11,6 +11,7 @@ mod magic;
 mod optimize;
 mod profile;
 mod score;
+mod select;
 
 use std::path::PathBuf;
 
@@ -41,6 +42,9 @@ pub enum Cmd {
     /// Read an explore atlas: summary, ranked optima, families and consensus. With -p, re-rank
     /// the archive under another profile (no new search).
     Atlas(explore::AtlasArgs),
+    /// Rank-sum selection over many runs (Kühlmak): rank every layout of the runs per metric
+    /// and sort by the sum of its ranks, a trade-off pick that needs no weights.
+    Select(select::SelectArgs),
     /// Algorithm leaderboard: each algorithm over several seeds with the same budget.
     Bench(bench::BenchArgs),
     /// Re-run a saved --evals run from its config and check it reproduces best.json.
@@ -95,6 +99,7 @@ impl Cmd {
             Cmd::Qd(a) => explore::qd(&ctx, a),
             Cmd::Landscape(a) => explore::landscape(&ctx, a),
             Cmd::Atlas(a) => explore::atlas(&ctx, a),
+            Cmd::Select(a) => select::run(&ctx, a),
             Cmd::Bench(a) => bench::bench(&ctx, a),
             Cmd::Verify(a) => bench::verify(&ctx, a),
             Cmd::Perf(a) => bench::perf(&ctx, a),

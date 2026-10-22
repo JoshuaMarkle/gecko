@@ -37,7 +37,7 @@ gecko/
 
 | Module | Responsibility |
 |---|---|
-| `geometry` | Keys (pos, rot, size, finger, effort), fingers, hands; TOML parse and print. Submodules: `parametric` (zones/columns/rows → ordinary geometry), `derive` (G4 effort/stretch from positions), `pose` (3D key poses, per-hand measuring frames), `flat2d` (clean 2D drawing), `collision` (G04 2D keycap overlap, SAT), `collision3d` (H8 keycap + switch hulls, grid + GJK/EPA) |
+| `geometry` | Keys (pos, rot, size, finger, effort), fingers, hands; TOML parse and print. Submodules: `parametric` (zones/columns/rows → ordinary geometry), `derive` (G4 effort/stretch from positions), `pose` (3D key poses, per-hand measuring frames), `flat2d` (clean 2D drawing), `collision` (G04 2D keycap overlap, SAT), `manufacture` (G07 build limits), `collision3d` (H8 keycap + switch hulls, grid + GJK/EPA) |
 | `hand` | Hand model: skeleton, placement over home keys, finger IK, 4-DoF thumb, per-key G01/G03/G05 costs ([hand-model.md](hand-model.md)) |
 | `layout` | Slot-ordered symbols; rows ↔ flat; TOML; hash |
 | `magic` | Adaptive (magic / repeat) keys |
@@ -54,6 +54,7 @@ gecko/
 | `geomsearch` | G6 board + layout search: free parameters of a parametric board, CMA-ES outside, warm-started layout SA inside, geometry run directories |
 | `interop` | Other tools: `kle` (keyboard-layout-editor.com import/export), `import` (Oxeylyzer, genkey, cmini layout files), `community` (cmini bundle, duplicates, rank agreement) |
 | `run` | Run directories (config, progress, best), listing |
+| `select` | B9 rank-sum selection over the layouts of many runs (optimize, Pareto, atlas, qd) |
 | `store` | The data directory (`gecko.toml`, `data/`, `runs/`) and layout specs |
 | `rng` · `hash` · `error` | Seeded xoshiro256++ (identical on native and WASM); FNV-1a content hashes; error type |
 

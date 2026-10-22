@@ -148,6 +148,16 @@ splay, split reflection/angle/spread, circular thumb arcs and zone pose; invalid
 and duplicate logical slots fail. Store tests cover parameter-only discovery, direct paths,
 explicit-file precedence, de-duplication and comfort-table resolution.
 
+Manufacturability (`tests/manufacture.rs` + unit tests in `geometry/manufacture.rs`): each
+limit (pitch, key angle, height, plate turned to fit and split into pieces, column counts) on
+small boards, zero limits are off; every bundled board passes the defaults; a profile `[build]`
+parses and rejects unknown fields; a geometry search under a 5 × 5 u plate finds no feasible
+board, and the default limits leave a Corne search unchanged.
+
+Rank-sum selection (`tests/select.rs` + `ranks` unit test): three HC runs (one seed twice)
+merge duplicate layouts; per-metric ranks are permutations of 1..n (ties averaged, `max`
+metrics reversed), sorted by their sum; re-scored layouts match the runs' own scores.
+
 Profile ranking (`tests/ranking.rs`, `calibrate/rank.rs`): preference orientation, stable
 logistic loss and nonnegative weights; duplicate/mirror representatives stay in one group;
 changing held-out labels leaves fitted weights, scales and training loss exactly unchanged.
