@@ -27,7 +27,7 @@ Three groups: what **describes** a keyboard, what **steers** optimization, and w
 |---|---|
 | `stagger` | Row stagger (ANSI/ISO/JIS) or column stagger, or none (ortho) |
 | `split`, `split_angle` | Split boards, angle between halves |
-| `angle_mod` | Alternate fingering for bottom-left (ANSI angle mod) |
+| `angle_mod` | Alternate fingering for bottom-left (ANSI angle mod): a separate geometry, `ansi-30-angle` |
 | `fingering` | Map from key to finger; several can exist per geometry |
 | `layers` | Count and how they are reached (hold, one-shot, toggle) |
 
