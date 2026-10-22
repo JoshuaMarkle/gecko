@@ -24,6 +24,7 @@ pub mod report;
 pub mod rng;
 pub mod run;
 pub mod scorer;
+pub mod select;
 pub mod store;
 
 pub use corpus::Corpus;

@@ -34,6 +34,8 @@ gecko landscape [--samples 4000] [--walks 64] [--walk-len 400] [--seed 1] [--fro
 gecko atlas    <run> [--top 10] [--cut 8] [--pool 300] [-p profile]
                                                                   # summary, ranked, families, consensus,
                                                                   #   funnels, FDC; -p re-ranks under a profile
+gecko select   <run>... [--metrics B01,T03,M01] [--top 10] [--pool 300] [-g -p -c]
+                                                                  # rank-sum pick over optimize / pareto / atlas / qd runs
 gecko magic    <layout> [--key 1] [--on <symbol>] [--keep] [--max-rules 32] [--min-gain 0.01] [--out name|path.toml]
                                                                   # greedy rule search for an adaptive key
 gecko verify   run:<id>                                           # re-run an --evals run from config.json;
@@ -115,6 +117,33 @@ words belong to neither. `--top` sets the words per metric. JSON adds a top-leve
 - `ngrams`: the word's n-grams with non-zero cost, in typing order.
 
 Corpora without a word list (`english`, `code`, `mt-450k`, mixes) give an `error:`.
+
+### `select`
+
+Rank-sum selection (B9, Kühlmak; `gecko_core::select`). Gathers every layout of the given runs
+(optimize `best` top-K, NSGA-II / RWSA `front`, an atlas's best `--pool` unconstrained optima,
+a qd run's best `--pool` elites), merges duplicates (same board and chars), scores each on one
+board / corpus / profile, ranks all of them per metric (1 = best; ties share the mean rank;
+`+` metrics rank higher-is-better) and sorts by the sum of ranks, then by weighted score.
+A layout that is good on everything beats one that wins a single metric, without trusting
+the profile's weights. Defaults: the runs' board (runs on different boards need `-g`; geometry
+runs are refused), the first run's corpus and full profile (a warning when runs differ), and
+every metric the profile weights. Informational metrics are refused.
+
+```
+{ "schema": 1, "geometry": "ansi-30", "corpus": "english", "profile": "default",
+  "metrics": [ { "id": "B01", "name": "SFB", "unit": "%", "dir": "min" } ],
+  "runs": [ { "id": "…", "kind": "optimize|pareto|atlas|qd", "geometry": "…", "corpus": "…",
+              "profile": "…", "layouts": 300 } ],
+  "candidates": 972,
+  "ranked": [ { "rank": 1, "rank_sum": 26.0, "ranks": [1.0], "values": [0.51], "score": 17.56,
+                "chars": "…", "rows": ["…"], "hash": "…",
+                "sources": ["<run id>#1", "<atlas id>#o118", "<qd id>#e49", "<nsga2 id>#p3"] } ] }
+```
+
+`ranks` and `values` align with `metrics`; `ranked` holds the best `--top`. Sources name where a
+layout was found: `#<rank>` (optimize), `#p<rank>` (Pareto front), `#o<row>` (`optima.bin` row),
+`#e<row>` (`elites.bin` row).
 
 ### Multi-objective optimization (NSGA-II / RWSA)
 

@@ -91,7 +91,7 @@ When an item closes, tick it here. When scope changes, edit the issue first. New
 79. [x] [#57](https://github.com/JoshuaMarkle/gecko/issues/57) `H5` Hand model validation suite · S · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52)
 80. [ ] [#100](https://github.com/JoshuaMarkle/gecko/issues/100) `F8` Remaining search-space views · L
 81. [x] [#59](https://github.com/JoshuaMarkle/gecko/issues/59) `H6` 3D parametric params: z, tilt, tent, curvature · M · after [#25](https://github.com/JoshuaMarkle/gecko/issues/25)
-82. [ ] [#60](https://github.com/JoshuaMarkle/gecko/issues/60) `B9` Rank-sum selection over many runs (`gecko select`) · S
+82. [x] [#60](https://github.com/JoshuaMarkle/gecko/issues/60) `B9` Rank-sum selection over many runs (`gecko select`) · S
 84. [x] [#62](https://github.com/JoshuaMarkle/gecko/issues/62) `G7` `gecko geom` CLI · S · after [#54](https://github.com/JoshuaMarkle/gecko/issues/54)
 85. [x] [#63](https://github.com/JoshuaMarkle/gecko/issues/63) `H7` G03 wrist posture cost · S · after [#52](https://github.com/JoshuaMarkle/gecko/issues/52), [#59](https://github.com/JoshuaMarkle/gecko/issues/59)
 87. [x] [#67](https://github.com/JoshuaMarkle/gecko/issues/67) `G9` Web: geometry runs (before/after board overlay) · S · after [#54](https://github.com/JoshuaMarkle/gecko/issues/54)

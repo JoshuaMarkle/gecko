@@ -131,7 +131,7 @@ stats summing to 100% and makes reports easy to read.
 | Soft targets | Weight grows past a target, shrinks below (Kühlmak). |
 | Root-sum-square per finger/hand | Penalizes imbalance implicitly. |
 | Hard constraints / penalty terms | Pins, collisions, required positions. |
-| Rank-sum across objectives | Pick the best trade-off from many generated layouts without weights. |
+| Rank-sum across objectives | Pick the best trade-off from many generated layouts without weights (`gecko select`). |
 | Pareto front (NSGA-II) | Show trade-offs explicitly. |
 | Lexicographic | E.g. minimize SFB first, then everything else as tie-breaker. |
 
