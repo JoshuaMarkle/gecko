@@ -74,7 +74,7 @@ pub fn flat2d(geometry_json: &str) -> Result<String, JsError> {
 /// A parametric board (`param_json`, as `/api/geometries` serves it in `param`) with free
 /// parameters `names` (JSON array, `geomsearch` names such as `fingers.2.stagger`) set to
 /// `values`, as JSON `{geometry, flat, collisions: [{a, b, depth}]}`: the keys, their 2D drawing
-/// and the keycap collisions the geometry search penalizes (2D when flat, approximate 3D otherwise).
+/// and the keycap collisions the geometry search penalizes (2D when flat, 3D volumes otherwise).
 #[wasm_bindgen]
 pub fn param_board(param_json: &str, names_json: &str, values: &[f64]) -> Result<String, JsError> {
     let params: gecko_core::ParametricGeometry = serde_json::from_str(param_json).map_err(js)?;

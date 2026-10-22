@@ -10,7 +10,7 @@
 //! - **Board:** the board for a fixed layout: CMA-ES with the start layout fixed for the whole
 //!   budget, no layout search and no polish (the reported layout is the start layout).
 //!
-//! Collisions (2D on flat candidates, approximate 3D otherwise) add a penalty per unit of depth;
+//! Collisions (2D on flat candidates, 3D keycap + switch volumes otherwise) add a penalty per unit of depth;
 //! past `hard_fail` the layout search is skipped. A profile `[build]` section (G07,
 //! `geometry/manufacture.rs`) adds its violations and their excess (u) to the collisions.
 //! Both modes end with an equal SA polish of the best and the start board, so the reported

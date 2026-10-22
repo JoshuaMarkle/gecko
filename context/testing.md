@@ -88,7 +88,11 @@ changes no metric; Dactyl delta == full. Web: tilted keys are pressed along thei
 Collision (`tests/collision.rs`): touching vs 0.1 u overlap (depth exact), margins, corner
 contact, a 45° key whose bounding box overlaps but whose box does not, the grid broad phase
 equal to brute force on random boards (sizes, rotations, margins), every bundled flat board
-clear, `validate` rejecting an overlap that `check_keys` allows, layer copies and 3D boards skipped.
+clear, `validate` rejecting an overlap that `check_keys` allows (2D, and a tilted key in 3D),
+layer copies skipped, and the 3D grid equal to brute force (depths too) on random tilted, lifted
+boards. `collision3d` unit tests: GJK + EPA depth equals the separating axis depth on 4000 random
+frustum pairs, moving by the MTV clears every pair; symmetric, coincident, stacked and
+face-touching hulls.
 
 CMA-ES (`tests/cmaes.rs` + `eigh` unit test): sphere 10-D to 1e-10 in < 8k evaluations,
 Rosenbrock 10-D to 1e-8 at (1, …, 1), a bounded problem whose optimum lies outside the box ends

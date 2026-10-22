@@ -55,7 +55,7 @@ moved keys, CMA-ES and the bilevel driver below.
   board's) is never changed: no warm-start SA, no inner layout search, no final polish; the whole
   budget goes to CMA-ES over the board, one rebuild + full score per candidate. The web UI's
   Board tab runs this; Both runs bilevel or alternate.
-- **Collisions**: 2D on flat candidates, `collisions_3d` otherwise, with `--margin` clearance.
+- **Collisions**: 2D on flat candidates, 3D keycap + switch volumes (`collisions_3d`, GJK) otherwise, with `--margin` clearance.
   Objective = score + `penalty` · (|start board score| + 1) · total depth, the start board
   scored after its first layout search (not the raw start layout, e.g. QWERTY); past `hard_fail` (2 u) the
   layout search is skipped. The best collision-free board is reported. A profile `[build]`
