@@ -9,7 +9,8 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:parity": "npm run wasm && node --test scripts/wasm-parity.mjs"
+    "test:parity": "npm run wasm && node --test scripts/wasm-parity.mjs",
+    "test:contract": "GECKO_API_SAMPLES=$PWD/contract/api-samples.generated.ts cargo test --release -p gecko-cli api_samples && tsc -p tsconfig.contract.json --noEmit"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
