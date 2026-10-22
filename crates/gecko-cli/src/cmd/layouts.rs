@@ -74,6 +74,10 @@ pub enum LayoutsCmd {
         /// Keep duplicates and mirrors (default: one layout per group).
         #[arg(long)]
         dups: bool,
+        /// Score angle-board layouts with standard fingering (default: angle-mod fingering on
+        /// `<geometry>-angle` when that geometry exists).
+        #[arg(long)]
+        no_angle: bool,
         #[command(flatten)]
         inputs: Inputs,
     },
@@ -101,7 +105,7 @@ impl LayoutsCmd {
                 svg(ctx, &layout, KeyColor::parse(&color)?, !base_only, !no_title, out.as_deref(), &inputs)
             }
             LayoutsCmd::ImportCmini { dir } => import_cmini(ctx, &dir),
-            LayoutsCmd::Likes { top, dups, inputs } => likes(ctx, top, dups, &inputs),
+            LayoutsCmd::Likes { top, dups, no_angle, inputs } => likes(ctx, top, dups, no_angle, &inputs),
         }
     }
 }
@@ -208,19 +212,22 @@ fn import_cmini(ctx: &Ctx, dir: &std::path::Path) -> Result<()> {
     Ok(())
 }
 
-fn likes(ctx: &Ctx, top: usize, dups: bool, inputs: &Inputs) -> Result<()> {
+fn likes(ctx: &Ctx, top: usize, dups: bool, no_angle: bool, inputs: &Inputs) -> Result<()> {
     let l = ctx.load(inputs)?;
     let b = ctx.store.community()?;
+    let angle_name = format!("{}-angle", l.geometry.name);
+    let angle = if no_angle || !ctx.store.list("geometries").contains(&angle_name) { None } else { Some(ctx.store.geometry(&angle_name)?) };
     let r = if dups {
-        community::likes_report(&l.geometry, &l.corpus, &l.profile, b.layouts.iter())?
+        community::likes_report(&l.geometry, angle.as_ref(), &l.corpus, &l.profile, b.layouts.iter())?
     } else {
-        community::likes_report(&l.geometry, &l.corpus, &l.profile, b.unique())?
+        community::likes_report(&l.geometry, angle.as_ref(), &l.corpus, &l.profile, b.unique())?
     };
     if ctx.json {
         ctx.print(json!({"schema": SCHEMA, "report": r}));
         return Ok(());
     }
-    println!("{} cmini layouts on {} · {} · {}", r.all.n, r.geometry, r.profile, r.corpus);
+    let on = r.angle_geometry.as_ref().map_or(r.geometry.clone(), |a| format!("{} (angle board: {a})", r.geometry));
+    println!("{} cmini layouts on {on} · {} · {}", r.all.n, r.profile, r.corpus);
     println!("Spearman ρ (GECKO goodness vs likes; > 0 = agree)");
     let rho = |v: f64| if v.is_finite() { format!("{v:+.3}") } else { "-".into() };
     println!("  all          n={:<5} ρ={}", r.all.n, rho(r.all.rho));

@@ -163,24 +163,59 @@ comfort) and `gecko compare --corpora english,shai,mt-10k,mt-450k,reddit,french`
 
 **Community likes (cmini, `gecko layouts likes`).** 4121 cmini layouts → 1965 importable
 (30-key core, all letters, standard or angle fingering) → 1904 after merging 55 duplicates and
-6 mirrors; 303 have at least one like. Spearman ρ of GECKO goodness (−score) vs likes, ansi-30:
+6 mirrors; 303 have at least one like. Spearman ρ of GECKO goodness (−score) vs likes, ansi-30,
+with cmini's angle-board layouts scored on `ansi-30-angle` (angle-mod fingering, see Fingering
+below; `--no-angle` scores them with standard fingering):
 
 | profile · corpus | all (1904) | liked only (303) | ortho (1504) | angle (358) | stagger (40) |
 |---|---|---|---|---|---|
-| default · english | +0.039 | +0.105 | +0.059 | +0.005 | −0.310 |
-| default · shai | +0.039 | +0.105 | +0.064 | −0.007 | −0.310 |
+| default · english | +0.067 | +0.078 | +0.064 | +0.088 | −0.309 |
+| default · shai | +0.071 | +0.100 | +0.068 | +0.087 | −0.322 |
 | engram · english | +0.050 | +0.036 | +0.056 | +0.062 | −0.321 |
-| default · english on ortho-30 | +0.022 | +0.098 | +0.047 | −0.030 | −0.284 |
+| default · english, `--no-angle` | +0.043 | +0.099 | +0.064 | +0.001 | −0.309 |
+| default · english on ortho-30 (no angle board) | +0.031 | +0.096 | +0.057 | −0.029 | −0.294 |
 
-Liked layouts sit at a mean GECKO rank percentile of 47.7 % vs 50.4 % for unliked ones.
+Liked layouts sit at a mean GECKO rank percentile of 45.7 % vs 50.8 % for unliked ones.
 Reading: likes barely track layout quality. They measure fame and age (Graphite 77 likes, rank
-18; the joke layout `inqwerted` 76 likes, rank 1818; Dvorak and Colemak-DH ~20 likes, rank
+26; the joke layout `inqwerted` 76 likes, rank 1826; Dvorak and Colemak-DH ~20 likes, rank
 ~1460), and 84 % of layouts have zero likes (ties). The weak positive ρ among liked layouts is
 the usable signal; `cmini_likes_ranking` pins it (ρ > 0.05, Graphite and Gallium in the top
-10 % of liked layouts). Angle layouts are scored with standard fingering until angle-mod
-geometry (#47), which hurts them (Canary: rank 1021). The stagger group is small (40, 9 liked) and
+10 % of liked layouts: 8th and 15th of 303). Angle fingering lifts the angle group from ρ ≈ 0
+to +0.09 and the whole set from +0.043 to +0.067; liked-only ρ drops (0.099 → 0.078) because
+angle layouts now outrank some liked ortho ones. Engram's comfort tables are per key position,
+so its angle column does not change. The stagger group is small (40, 9 liked) and
 noisy. Per-metric ρ vs likes is printed too (all |ρ| ≤ 0.07). Use these
 layouts for C7 as preference pairs between liked layouts, not as raw like counts.
+
+## Fingering (angle mod)
+
+Fingering is part of the geometry. `ansi-30-angle` is `ansi-30` with the angle mod: the same
+key positions, but the left bottom row is typed one finger over (Z ring, X middle, C V B
+index; the left pinky has no bottom key). Re-fingered keys take their new finger's natural
+bottom-row effort ([decision](decisions/scoring.md)). Reference layouts, default profile,
+english, standard → angle fingering (lower is better; Colemak-DH angle is the ANSI angle
+variant with the `xcdvz` bottom row):
+
+| layout | ansi-30 | ansi-30-angle | Δ | largest weighted changes |
+|---|---|---|---|---|
+| Graphite | 21.68 (1) | 21.88 (1) | +0.20 | SFB 1.16 → 1.28 %, movement −21 % |
+| Sturdy | 21.83 (2) | 22.62 (2) | +0.79 | SFB 0.89 → 1.03 % |
+| Semimak | 24.05 (3) | 23.84 (3) | −0.21 | movement −27 %, stretch −0.4, SFB +0.13 |
+| Canary | 25.85 (4) | 23.87 (4) | −1.98 | SFB 0.97 → 0.74 %, movement −32 %, stretch −0.6 |
+| Dvorak | 31.43 (5) | 31.79 (6) | +0.37 | SFB, stretch slightly up |
+| Colemak-DH | 31.57 (6) | 32.06 (7) | +0.49 | SFB 1.54 → 1.64 %, load error up |
+| Colemak-DH angle | 32.59 (7) | 31.11 (5) | −1.48 | SFB 1.72 → 1.50 %, stretch −0.55 |
+| Halmak | 33.16 (8) | 34.21 (9) | +1.05 | SFB 2.75 → 2.99 % |
+| Colemak | 33.67 (9) | 34.09 (8) | +0.43 | as Colemak-DH |
+| Workman | 37.66 (10) | 36.57 (10) | −1.09 | SFB 3.00 → 2.85 % |
+| QWERTY | 69.58 (11) | 67.45 (11) | −2.13 | SFB 6.63 → 6.42 %, stretch −0.9 |
+
+Reading: angle fingering is worth about 2 points to layouts designed for it (Canary, the
+Colemak-DH angle variant) and costs 0.2–1 to layouts designed for standard fingering, almost
+all through SFB: the left index now covers C V B, so its bottom-row letters collide with its
+home column. Movement (B11) and stretch (B14) fall for most layouts because the bottom-left
+keys are closer to their fingers. Score a layout on the fingering it was designed for;
+compare fingerings with `gecko compare -g ansi-30` vs `-g ansi-30-angle`.
 
 ## Multi-objective
 

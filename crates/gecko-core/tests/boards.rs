@@ -117,3 +117,19 @@ fn full_board_scores_and_deltas_include_empty_slots_and_thumbs() {
         }
     }
 }
+
+/// `ansi-30-angle` is `ansi-30` with only the left bottom row re-fingered one finger over.
+#[test]
+fn angle_mod_changes_only_left_bottom_fingering() {
+    let (std, angle) = (geometry("ansi-30"), geometry("ansi-30-angle"));
+    assert_eq!(std.len(), angle.len());
+    for (a, b) in std.key.iter().zip(&angle.key) {
+        assert_eq!((a.pos, a.row, a.col), (b.pos, b.row, b.col));
+        if a.row != 2 || a.col > 4 {
+            assert_eq!((a.finger, a.effort), (b.finger, b.effort), "row {} col {}", a.row, a.col);
+        }
+    }
+    let bottom: Vec<Finger> = angle.key.iter().filter(|k| k.row == 2 && k.col <= 4).map(|k| k.finger).collect();
+    assert_eq!(bottom, [Finger::LR, Finger::LM, Finger::LI, Finger::LI, Finger::LI]);
+    assert!(!angle.key.iter().any(|k| k.row == 2 && k.finger == Finger::LP));
+}

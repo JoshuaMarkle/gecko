@@ -59,7 +59,7 @@ gecko layouts svg <layout> [--color plain|fingers|heat] [--base-only] [--no-titl
                                                                   # the web Export tab's image: every layer,
                                                                   #   title + score; PNG: rsvg-convert f.svg
 gecko layouts import-cmini <cmini checkout>                           # → data/community/cmini.json
-gecko layouts likes [--top 10] [--dups] [-g -p -c]                     # GECKO rank vs cmini likes (Spearman)
+gecko layouts likes [--top 10] [--dups] [--no-angle] [-g -p -c]        # GECKO rank vs cmini likes; angle boards on <g>-angle
 gecko corpus nav <corpus> [--share 0.03] [--seed 1] --out <name>        # add modelled arrow keys
 gecko profile normalize [-p profile] [--layouts a,b] [--out name]   # weights → spread units
 gecko profile fit [--target E05] [--layouts a,b] [--out name]       # fit weights to a judge metric

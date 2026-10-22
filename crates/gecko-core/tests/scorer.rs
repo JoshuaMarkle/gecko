@@ -18,7 +18,11 @@ fn read(p: &str) -> String {
 
 /// ansi-30 with its comfort tables, as the store loads them (so E04/E05 are exercised).
 fn ansi() -> Geometry {
-    let mut g = Geometry::from_toml(&read("data/geometries/ansi-30.toml")).unwrap();
+    with_comfort("ansi-30")
+}
+
+fn with_comfort(name: &str) -> Geometry {
+    let mut g = Geometry::from_toml(&read(&format!("data/geometries/{name}.toml"))).unwrap();
     for (metric, table) in g.comfort.clone() {
         g.load_comfort(&metric, &read(&format!("data/comfort/{table}.csv"))).unwrap();
     }
@@ -919,8 +923,9 @@ fn cmini_likes_ranking() {
     let b = gecko_core::interop::community::Bundle::from_json(&read("data/community/cmini.json")).unwrap();
     assert!(b.unique().count() > 1500, "{} unique cmini layouts", b.unique().count());
     let g = ansi();
+    let angle = with_comfort("ansi-30-angle");
     let p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
-    let r = gecko_core::interop::community::likes_report(&g, &c, &p, b.unique().filter(|l| l.likes > 0)).unwrap();
+    let r = gecko_core::interop::community::likes_report(&g, Some(&angle), &c, &p, b.unique().filter(|l| l.likes > 0)).unwrap();
     assert!(r.all.rho > 0.05, "ρ over liked layouts {}", r.all.rho);
     let n = r.layouts.len();
     for name in ["graphite", "gallium"] {

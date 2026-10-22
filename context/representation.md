@@ -15,7 +15,7 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   `effort`, or a board that marks no key `stretch`, gets them derived from key positions on
   load ([geometry.md](geometry.md#derived-effort-and-stretch-g4)); parametric columns may omit
   `effort` too. Optional `hrm` (bool) marks home-row mod keys for Y04;
-  unset = `home` keys on a finger outside the stretch columns (`Geometry::hrm`). Boards: `ansi-30`, `ortho-30`, `corne-36` (3x5+3),
+  unset = `home` keys on a finger outside the stretch columns (`Geometry::hrm`). Boards: `ansi-30` (and `ansi-30-angle`, angle-mod fingering), `ortho-30`, `corne-36` (3x5+3),
   `sweep-34` (3x5+2), `lily58` (58), `kyria` (50), `ergodox` (76), and
   `dactyl-manuform-5x6` (64). Split boards use pinned QMK flat configurator projections;
   source KLE, provenance and limitations: `data/geometries/sources/README.md`. Corne/Sweep
@@ -112,7 +112,8 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   out of `data/layouts/` so `compare` and `list layouts` stay on the curated references; use
   them as `cmini:<name>`. Only the 30-key core (rows 0–2, cols 0–9) is kept, as written;
   a layout is skipped if a letter sits off the core (thumb letters, a 31st column), a letter
-  is missing, or its fingering is non-standard (angle boards may use the angle-mod bottom row).
+  is missing, or its fingering is non-standard (angle boards may use the angle-mod bottom row;
+  `layouts likes` scores them on `<geometry>-angle`, e.g. `ansi-30-angle`, when it exists).
   Empty core keys become `·`. Duplicates: same 30 keys or their left–right mirror; the
   group's representative has the most likes. Likes = number of users in `likes.json`.
 - Scoring flattens a layered layout onto `Geometry::layered`: the base keys, then each layer's

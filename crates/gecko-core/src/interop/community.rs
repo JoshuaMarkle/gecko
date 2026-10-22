@@ -256,6 +256,8 @@ pub struct Agreement {
 #[derive(Clone, Debug, Serialize)]
 pub struct LikesReport {
     pub geometry: String,
+    /// Geometry the `angle`-board layouts were scored on (angle-mod fingering), if not `geometry`.
+    pub angle_geometry: Option<String>,
     pub profile: String,
     pub corpus: String,
     /// All scored layouts (duplicates and mirrors left out).
@@ -279,8 +281,11 @@ fn agreement<'a>(xs: impl Iterator<Item = &'a Scored>) -> Agreement {
 }
 
 /// Score every unique community layout on `g` and correlate GECKO's ranking with likes.
+/// Layouts from cmini's `angle` board are scored on `angle` instead when given (the same keys
+/// with angle-mod fingering, e.g. `ansi-30-angle`).
 pub fn likes_report<'a>(
     g: &Geometry,
+    angle: Option<&Geometry>,
     corpus: &Corpus,
     profile: &Profile,
     layouts: impl Iterator<Item = &'a CommunityLayout>,
@@ -288,6 +293,7 @@ pub fn likes_report<'a>(
     let mut scored = Vec::new();
     let mut values: Vec<Vec<f64>> = Vec::new();
     for c in layouts {
+        let g = angle.filter(|_| c.board == "angle").unwrap_or(g);
         let l = c.layout(&g.name)?.fit(g)?;
         let sc = Scorer::new(g, corpus, profile, &l)?;
         let b = breakdown(&sc, &sc.identity());
@@ -327,6 +333,7 @@ pub fn likes_report<'a>(
     let layouts: Vec<Scored> = order.iter().map(|&i| scored[i].clone()).collect();
     Ok(LikesReport {
         geometry: g.name.clone(),
+        angle_geometry: angle.map(|a| a.name.clone()),
         profile: profile.name.clone(),
         corpus: corpus.name.clone(),
         all: agreement(layouts.iter()),
