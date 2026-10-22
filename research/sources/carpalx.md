@@ -9,10 +9,12 @@ take: Triad effort model with default parameters (values via a mirror)
 
 # carpalx (Krzywinski)
 
-Perl optimizer, 2000s. The classic "typing effort" model. Site: https://mkweb.bcgsc.ca/carpalx/
-(blocked from our research env; config values below come from the antibracket mirror,
-https://github.com/pianohacker/antibracket/tree/master/generation/carpalx, which ships
-carpalx's `effort/*.conf`). License of carpalx: GPL.
+Perl optimizer, 2000s. The classic "typing effort" model. Site: https://mk.bcgsc.ca/carpalx/
+(reachable 2026-10-21). Model parameters below were checked against the site's
+[model parameters](https://mk.bcgsc.ca/carpalx/?model_parameters) page (set `mod_01`); the SA
+settings and the base-effort grid still come from the antibracket mirror,
+https://github.com/pianohacker/antibracket/tree/master/generation/carpalx (`effort/*.conf`).
+Site content is CC BY-NC-SA 4.0.
 
 ## Key ideas
 
@@ -31,11 +33,12 @@ carpalx's `effort/*.conf`). License of carpalx: GPL.
 |---|---|
 | kb, kp, ks | 0.3555, 0.6423, 0.4268 |
 | k1, k2, k3 | 1, 0.367, 0.235 |
-| wh, wr, wf | 1, 1.3088, 2.5948 |
+| w0, wh, wr, wf | 0, 1, 1.3088, 2.5948 |
 | row penalty (num, top, home, bottom) | 1.5, 0.5, 0, 1 |
 | finger penalty L (P R M I T) / R | 1 0.5 0 0 0 / 0 0 0 0.5 1 |
 | base effort home row | 0 0 0 0 2 2 0 0 0 0 2 (center columns = 2) |
 | base effort top / bottom | ~2 (2.5–3 at index stretch) / ~2 (3.5 at B) |
+| stroke path weights (hand, row, finger) | 1, 0.3, 0.3 |
 | SA | iterations 4096 per stage, t0 = 10, p0 = 0.7, k = 7.5 |
 
 QWERTY ≈ 9 effort units, optimized ≈ 4.5–5 (author's figures).

@@ -112,7 +112,9 @@ X-rays (Melzner) are shorter: they leave out the joint gaps and soft tissue at t
   ring–little 28° (right hand, males).
 - **[G]** Lee & Jung, "Ergonomic evaluation of biomechanical hand function", *Saf Health Work*
   6(1):9–17, 2015 (PMC4372184), Table 3; Hume et al., *J Hand Surg Am* 1990 values via the same
-  table. Hume's finger values were not found **(verify)**.
+  table. Hume's abstract (PMID 2324451, checked 2026-10-21) gives *functional* flexion in daily tasks, not
+  maximum ROM: fingers MCP 61°, PIP 60°, DIP 39°; thumb MCP 21°, IP 18°. The table's Hume thumb
+  values (53, 56) are active-range figures read through Lee & Jung and not seen in the abstract.
 
 ### DIP–PIP coupling
 

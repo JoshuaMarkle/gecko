@@ -527,7 +527,7 @@ Search
   *Evolutionary Computation* 19(2), 2011,
   https://www.cs.swarthmore.edu/~meeden/cs81/f17/papers/lehman_ecj11.pdf
 - Mouret & Clune, MAP-Elites, arXiv:1504.04909, 2015; Vassiliades, Chatzilygeroudis, Mouret,
-  CVT-MAP-Elites, *IEEE TEC* 22(4), 2018 **(verify citation details)**.
+  CVT-MAP-Elites, *IEEE TEC* 22(4):623–630, 2018, doi:10.1109/TEVC.2017.2735550.
 - Earl & Deem, parallel tempering review, 2005 (see [search-methods-general](../sources/search-methods-general.md)).
 
 Evaluation and visualization

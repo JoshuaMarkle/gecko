@@ -25,7 +25,8 @@ web/src/
   colors.ts            data colors (finger palette, heat ramp)
   components/          Form (Frame, Sec, Num, …), Board2D, LayoutEditor, Charts, Icons
     views/             one file per tab (Board, Hand, Language, Profile, Search, Summary,
-                       Home, Analysis, Saved, Export)
+                       Home, Analysis, Saved, Export); OptimizationFlow is Summary's
+                       inputs → scorer → search diagram
     hand/              Hand tab parts: rigs (hand placement), Hands3D, Panels (bottom tabs)
     explore/           Explore tab: ExploreView, Panels, Board, Scatter, Picked
   three/Keyboard3D.tsx 3D keyboard (auto-rotate, click position, scene children)

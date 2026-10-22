@@ -45,3 +45,14 @@ own keyboards. Logged: key-down/key-up timestamps per character, sentences, demo
   speed as one objective, not the objective.
 - Data access needs the Aalto download (MySQL dump/CSV); fetch from the user's machine if the
   site is reachable there.
+
+## Access (checked 2026-10-21)
+
+- `userinterfaces.aalto.fi` refuses connections on 443 from the user's machine and from Firecrawl's
+  proxy, so the host looks down, not blocked locally. The Cambridge record holds only the 2.8 MB paper.
+- Original: `.../136Mkeystrokes/data/Keystrokes.zip`, 1.4 GB zipped, 16 GB unzipped, one tab-separated
+  file per participant, with `readme.txt` and a metadata file. Free for research and non-commercial use with attribution.
+- Kaggle mirror `noelsmathew/keystrokes`: 169k files, 18.85 GB, CC BY-NC-SA 4.0. Columns:
+  PARTICIPANT_ID, TEST_SECTION_ID, SENTENCE, USER_INPUT, KEYSTROKE_ID, PRESS_TIME, RELEASE_TIME,
+  LETTER, KEYCODE. Third-party upload; check it against the paper's numbers before trusting it.
+

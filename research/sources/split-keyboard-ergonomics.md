@@ -10,8 +10,8 @@ take: Slope 0 to −4°, opening ≈ 15°
 # Split, tented, and sloped keyboards: posture studies
 
 - Rempel, Nathan-Roberts, Chen, Odell, "The effects of split keyboard geometry on upper body
-  postures", *Ergonomics* 2009 (NIOSH record: https://stacks.cdc.gov/view/cdc/191592 and
-  https://stacks.cdc.gov/view/cdc/216459) **(verify exact title/year)**.
+  postures", *Ergonomics* 52(1), 2009, doi:10.1080/00140130802481040 (title, authors and year
+  checked on Europe PMC, PMID 19308823; NIOSH record: https://stacks.cdc.gov/view/cdc/191592).
 - Marklin, Simoneau, Monroe, "Wrist and forearm posture from typing on split and vertically
   inclined computer keyboards", *Human Factors* 1999 (https://epublications.marquette.edu/phys_therapy_fac/31).
 - Meta-analysis of split/tented designs, *Am. J. Occup. Ther.* 60(1), 2006 (AOTA).

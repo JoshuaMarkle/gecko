@@ -1,50 +1,45 @@
 # Open questions and research backlog
 
 The one place for research debt. Two lists: claims to **verify**, and topics **not yet
-researched**. When an item is closed, fix the source file, delete the marker there, and move the
+researched**. When an item is closed, fix the source file, delete the marker there, and add one
 line to "Closed" with the date. `python3 -I research/scripts/research.py lint` counts the
-`(verify)` markers still in the files.
+`(verify)` markers still in the files. Last pass: 2026-10-21.
 
 ## To verify
 
 | Item | Where | Why it is open | To close |
 |---|---|---|---|
-| carpalx default `k`, `w` values | [carpalx](sources/carpalx.md) | Primary site unreachable; values come from the antibracket mirror's configs | Fetch the archived carpalx docs or compare with the Perl source |
-| Aalto 136M download | [dhakal](sources/dhakal-136m-keystrokes.md) | Site blocked from the research environment; needed for #31 | Try from the user's machine; else the Cambridge repository |
-| Rempel et al. title and year | [split ergonomics](sources/split-keyboard-ergonomics.md) | Cited from the NIOSH record | Open the NIOSH record |
-| John & Karrenbauer MOTOR 2019 exact title; Feit et al. CACM 2021 details | [integer programming](sources/integer-programming-bounds.md) | MPI pages blocked; read from abstracts | Fetch the PDFs |
-| RoTS tenure range (≈ 0.9n–1.1n) | [QAP metaheuristics](sources/qap-metaheuristics.md) | Remembered from the HeuristicLab docs | Read Taillard 1991 |
-| FUTO Swipe arXiv id | [ML approaches](sources/ml-approaches.md) | Id not confirmed | Search arXiv |
-| CVT-MAP-Elites citation | [search-space study](studies/search-space-visualization.md) | Citation details unchecked | Search the TEC 2018 paper |
-| Finger-metacarpal lengths, MCP joint centres | [hand models](sources/hand-models.md) | Only in Buchholz's 1989 dissertation | Not needed for reach costs; use scans or geometry parameters |
-| Third decimals of the Buchholz phalanx ratios | [hand models](sources/hand-models.md) | Read through secondary tables | Buchholz 1992 full text |
-| MCP abduction ROM per finger; Hume 1990 finger values | [hand models](sources/hand-models.md) | One small study (n = 41) | A larger study |
-| Neutral (relaxed) curl 5° / 4° / 9° | [Cosmos](sources/cosmos-keyboards.md), [hand models](sources/hand-models.md) | A design choice in Cosmos, not a measurement | A posture study of relaxed finger curl |
-| Engram protocol on column-stagger and ortho boards | [Engram](sources/engram-preference-study.md) | Study used row-stagger keyboards, left hand only | Re-run the comparison on a split board (#50) |
+| Aalto 136M data | [dhakal](sources/dhakal-136m-keystrokes.md) | Aalto host refuses connections; Kaggle mirror (18.85 GB) needs a user API token and a size-approved download | Token in `~/.kaggle/`, sample first, compare with the paper's means |
+| Buchholz phalanx ratios, third decimals; finger metacarpal lengths | [hand models](sources/hand-models.md) | Read through secondary tables; metacarpals only in the 1989 dissertation | Buchholz 1992 full text. Low value: reach costs do not need them |
+| MCP abduction ROM per finger | [hand models](sources/hand-models.md) | One small study (n = 41) | A larger study |
+| Engram protocol on column-stagger and ortho boards | [Engram](sources/engram-preference-study.md) | Study used row-stagger boards, left hand only | Re-run on a split board (#50) |
+| Taillard 1991 tenure range, AZERTY amélioré text | [QAP](sources/qap-metaheuristics.md), [integer programming](sources/integer-programming-bounds.md) | Citations now checked; the papers themselves are unread | Read them if the numbers start to matter |
 
 ## Not yet researched
 
-Gaps found by reading `context/` and the roadmap against `sources/`. These are candidates, not
-findings: no literature search has been done for any of them. The folder was built from
-16 repositories and about 20 papers, not from a systematic search, so a structured survey of
-recent (2023–2026) keyboard-design and typing-ergonomics work is itself the first item.
+Candidates, not findings. The 2023–2026 survey ([study](studies/literature-survey-2023-2026.md))
+found little recent work, so most gaps below are gaps in the literature too.
 
-| Topic | Needed by | Why |
+| Topic | Needed by | State |
 |---|---|---|
-| Systematic survey of recent computational keyboard design (HCI, ergonomics, optimization) | all tracks | Coverage so far follows the tools we found, not the literature |
-| Hand-size population data (percentiles of hand length, breadth, finger ratios) | H11 (#103), hand presets | Presets (× 0.92 / 1 / 1.08) are heuristic |
-| Per-finger strength, speed and fatigue; RSI risk factors | M02 targets, `finger_target` | Only individuation (Häger-Ross) is sourced |
-| Thumb biomechanics and thumb-cluster ergonomics | I2 (#71), G06 | Thumb data is thin: ROM only |
-| Wrist posture risk thresholds (ulnar deviation, extension, pronation) | G03 | Split-keyboard studies give means, not risk limits |
-| Layout learning cost and adaptation time | L02 familiarity | Only an adaptation study is cited ([ML approaches](sources/ml-approaches.md)) |
-| Symbol and code frequency, layer design studies | Y-track, D9 (#91) | The French-standard CACM paper is unread |
-| Key switch force, travel and actuation per finger | J, I-tracks | No physical-switch sources |
-| Manufacturability: plate, case, PCB and printing constraints | I4 (#73), J4 (#75) | Only ergogen spacing limits |
-| Non-English n-gram sources and multilingual layouts | E3 corpora | cmini and Leipzig listed, not evaluated |
-| Typing models beyond QWERTY habits (learned fingerings after layout change) | E01 (#31) | 136M data is QWERTY-biased |
+| Hand-size population data (hand length, breadth, finger ratios) | H11 (#103), hand presets | Only small regional studies found. Source: ANSUR II public CSVs (a few MB each); needs a download OK |
+| Per-finger strength, speed, fatigue; RSI risk factors | M02 targets, `finger_target` | Peak key force per finger known ([wrist posture](sources/wrist-posture-and-finger-load.md)); no fatigue limits |
+| Forearm pronation and other posture limits beyond the wrist | G03 | Carpal-tunnel angles done; pronation limit missing |
+| Thumb biomechanics and thumb-cluster ergonomics | I2 (#71), G06 | ROM only |
+| Layout learning cost | L02 familiarity | Two peer-reviewed studies, rest anecdote; keep as a user-set weight |
+| Symbol and code frequency, layer design | Y-track, D9 (#91) | The French-standard CACM paper is unread |
+| Key switch force, travel, actuation | J, I-tracks | Armstrong 1994 and Martin 1996 give typing forces; no switch-design source |
+| Manufacturability: plate, case, PCB, printing | I4 (#73), J4 (#75) | Only ergogen spacing limits |
+| Non-English n-gram sources, multilingual layouts | E3 corpora | cmini and Leipzig listed, not evaluated |
+| Timing data beyond QWERTY habits | E01 (#31) | 136M data is QWERTY-biased; emg2qwerty is a second source (size unchecked) |
+| Bigram-frequency control in the IKI model | E01 (#31) | 2026 preprint says frequency speeds keypresses; the fit must include it |
+| CHI/UIST proceedings 2023–2026, Engram IJHCI full text, 2025 Biomechanics wrist paper | all tracks | Not indexed by the tools used; abstracts only |
 
 ## Closed
 
-- 2026-10-21 — Buchholz segment ratios and joint ROM checked ([hand models](sources/hand-models.md), #6).
-- 2026-10-21 — Skipgram definition: GECKO counts `x _ z` with any middle character (`context/decisions.md`).
-- 2026-10-21 — Trigram classes and `rg` / `my` / `vt` distances tested (`tests/validation.rs`).
+- 2026-10-21 — carpalx `k`, `w`, row/finger penalties, stroke weights checked on the primary site (site is reachable now).
+- 2026-10-21 — Citations checked via Crossref / Europe PMC / arXiv: Rempel 2009, John & Karrenbauer MOTOR 2019, Feit CACM 2021, CVT-MAP-Elites, FUTO Swipe (arXiv:2606.25247, and its role corrected), Engram IJHCI 2026 DOI, Hume 1990.
+- 2026-10-21 — RoTS tenure 0.9n–1.1n confirmed in a secondary source (arXiv:1010.0157).
+- 2026-10-21 — Wrist posture risk thresholds ([wrist posture](sources/wrist-posture-and-finger-load.md)); first-pass 2023–2026 survey.
+- 2026-10-21 — Buchholz segment ratios and joint ROM (#6); skipgram definition; trigram classes and `rg` / `my` / `vt` distances tested.
+- Dropped: "neutral curl 5° / 4° / 9°" is a Cosmos design choice, not a claim to verify; it stays documented as such in [Cosmos](sources/cosmos-keyboards.md).

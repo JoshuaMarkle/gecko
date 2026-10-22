@@ -4,6 +4,11 @@ Non-obvious choices and why they were made, one line each: date — decision —
 Newest last in each file. Add an entry to the file for its area when you make a choice
 that someone would otherwise question or undo.
 
+Keep entries to one short line: the choice and the reason, not the spec. How something
+works belongs in its topic doc (or a code comment); numbers and results belong in the
+algorithm file's Results section. If the reason fits as a comment on the code it governs,
+put it there instead of here.
+
 | File | Area |
 |---|---|
 | [decisions/project.md](decisions/project.md) | Stack, process, CI, testing approach, papers and repository organization. |
