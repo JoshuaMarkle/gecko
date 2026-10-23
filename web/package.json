@@ -2,6 +2,7 @@
   "name": "gecko-web",
   "private": true,
   "version": "0.1.0",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "wasm": "PATH=$HOME/.cargo/bin:$PATH wasm-pack build ../crates/gecko-wasm --release --target web --out-dir ../../web/src/wasm/pkg",

@@ -177,6 +177,7 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   | Name | Source | Size | QWERTY SFB |
   |---|---|---|---|
   | `english` | 10 Project Gutenberg novels (raw text in `data/corpora/src/`, not committed; other corpora's sources go in `data/corpora/src/<name>/`, served by `/api/corpora/{name}/sources`) | 7.5M chars incl. space | 6.63 % |
+  | `english-cased` | Same 10 novels, rebuilt with the current tokenizer (`GKCORP3`: Shift tables, punctuation as shifted keys) | 7.5M chars incl. space | 6.61 % |
   | `shai` | cmini `corpora/shai/words.json` (iweb-based English; the community default) | 520M | 6.70 % |
   | `mt-10k` | cmini `corpora/english-10k` (Monkeytype 10k word list, each word once) | 82k | 8.40 % |
   | `mt-450k` | cmini `corpora/english-450k` (Monkeytype 450k list) | 4.8M | 8.30 % |
@@ -189,9 +190,10 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   `œ` → `oe`, `ß` → `ss`), so non-English text on an ASCII charset counts an accented letter
   as its base key (dead key / compose) instead of breaking the n-gram; without it French
   QWERTY SFB is 8.53 %. Accented keys of their own are future work.
-- Shift: case counts need a rebuild with the current tokenizer; the bundled corpora predate
-  them (`GKCORP2`), so Shift costs nothing on them until rebuilt (their raw sources are not
-  committed). cmini word lists are lowercase.
+- Shift: only `english-cased` has case counts (`GKCORP3`). The other bundled corpora predate
+  them (`GKCORP2`), so Shift costs nothing on them. `english` stays frozen because recorded runs
+  verify against its hash; use `english-cased` when a layout places `⇧`. cmini word lists are
+  lowercase, so their corpora cannot gain Shift counts.
 - Adaptive-key rewrite (`magic::rewrite`, run by `Scorer::new` when the layout has keys): each
   key joins the charset and every n-gram moves to its typed form, counts ×1000. A symbol's
   form depends on the one before it, so the tables need one more symbol of context: mono and
