@@ -327,7 +327,7 @@ what exists and state what no one has measured.
 
 ## 11. Availability
 
-MIT (no LICENSE file yet: TODO). `cargo build --release`; `gecko serve` for the web UI; WASM build via
+Code MIT (`LICENSE`); cmini-derived corpora and layouts GPL-3.0 (`NOTICE.md`). `cargo build --release`; `gecko serve` for the web UI; WASM build via
 `npm run wasm`. Data (corpora, boards, profiles, reference layouts) ships in `data/`.
 Quick start:
 

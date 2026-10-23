@@ -5,13 +5,18 @@ Take the next priority below, then the first unblocked backlog item. Remove comp
 items instead of keeping checked boxes. Update issue scope before changing its roadmap
 summary; follow `AGENTS.md` for the working process.
 
-## Next two priorities
+## Next priorities
 
-1. **[#47](https://github.com/JoshuaMarkle/gecko/issues/47) · Angle-mod fingering geometry · S.**
-   Add `ansi-30-angle`, compare reference layouts under both finger assignments, and
-   record per-metric differences in [objective.md](objective.md). This addresses the
-   known standard-fingering mismatch in angle-layout comparisons and provides the
-   fixed baseline for finger-assignment search (#97).
+Evidence and packaging before more features: the scorer must be shown correct (V1) and the
+optimizers shown to beat known layouts (V2) before results are shared or published.
+
+1. **[#140](https://github.com/JoshuaMarkle/gecko/issues/140) · Phase 1 validation · M.**
+   SFB and other numbers vs cmini on the same corpus; ranking vs community consensus.
+2. **[#141](https://github.com/JoshuaMarkle/gecko/issues/141) · Phase 2 evaluation · M.**
+   30 seeds per board/corpus vs Graphite, Sturdy, Semimak, Canary; holdout and bounds.
+   Depends on #140.
+3. **[#142](https://github.com/JoshuaMarkle/gecko/issues/142) · Release readiness · S.**
+   README for outsiders, `CITATION.cff`, contributor guide. The owner tags releases.
 
 ## Remaining backlog
 
@@ -21,7 +26,7 @@ Sizes are relative effort (S/M/L). Dependencies below list only unfinished work;
 | Issue | Remaining work | Size | Dependency |
 |---|---|---|---|
 | [#45](https://github.com/JoshuaMarkle/gecko/issues/45) | Serve benchmark results and show performance profiles / time-to-target ECDFs in the web UI | M | Ready |
-| [#97](https://github.com/JoshuaMarkle/gecko/issues/97) | Search allowed finger assignments per key; compare against fixed angle mod | M | #47 for the comparison baseline |
+| [#97](https://github.com/JoshuaMarkle/gecko/issues/97) | Search allowed finger assignments per key; compare against fixed angle mod | M | Ready |
 | [#53](https://github.com/JoshuaMarkle/gecko/issues/53) | Record per-worker convergence, temperature and acceptance telemetry; show process views | M | Ready |
 | [#55](https://github.com/JoshuaMarkle/gecko/issues/55) | Adaptive top-K n-gram scoring with full-objective confirmation; benchmark speed and quality | M | Ready |
 | [#100](https://github.com/JoshuaMarkle/gecko/issues/100) | Local-optima / trajectory networks, symbol migration and scored paths between layouts | L | #53 for telemetry-dependent views |

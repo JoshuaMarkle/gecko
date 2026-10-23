@@ -40,3 +40,8 @@ Every command takes `--json`. See [context/cli.md](context/cli.md).
 | `research/` | Evidence behind the metrics and parameters |
 
 Contributors and agents: read [AGENTS.md](AGENTS.md).
+
+## License
+
+Code: [MIT](LICENSE). Some bundled data (the cmini-derived corpora and layout list) is GPL-3.0;
+see [NOTICE.md](NOTICE.md).
