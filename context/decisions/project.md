@@ -28,3 +28,4 @@ Stack, process, CI, testing approach, papers and repository organization. Newest
 
 - 2026-10-22 — Keep the roadmap future-only; prioritize #43 and #47 before the remaining historical queue (supersedes strict issue-order selection). — Exact small-instance references and correct angle fingering strengthen GECKO’s core layout judgments before more visualization work.
 - 2026-10-22 — The software paper describes GECKO as the finished system (goals + roadmap) in the present tense; unbuilt results are `TODO(run)` plus watermarked template figures. — The user wants a draft of the complete software that only needs numbers filled in as features land.
+- 2026-10-23 — `gecko serve` accepts only store names (and `run:<id>`) for geometry, corpus, profile and layout; the CLI keeps its file-path fallback. — The path fallback let any request read a server file (echoed in the TOML parse error); the UI only sends names and `chars`.

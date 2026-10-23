@@ -101,6 +101,15 @@ impl Store {
         v
     }
 
+    /// `path` if it exists, else an error naming the known entries of `kind` (for a bare name
+    /// that is neither in the store nor a file).
+    fn existing(&self, kind: &str, what: &str, name: &str, path: PathBuf) -> Result<PathBuf> {
+        if path.exists() {
+            return Ok(path);
+        }
+        Err(Error::invalid(what, format!("'{name}' is not a known {what} or file (known: {})", self.list(kind).join(", "))))
+    }
+
     /// A board by name: `data/geometries/<name>.toml` or `<name>.param.toml`, `run:<id>` (the
     /// best board of a geometry run, `runs/<id>/geometry.toml`), or a path.
     pub fn geometry(&self, name: &str) -> Result<Geometry> {
@@ -116,7 +125,7 @@ impl Store {
         } else if param.is_file() {
             param
         } else {
-            PathBuf::from(name)
+            self.existing("geometries", "geometry", name, PathBuf::from(name))?
         };
         let mut g = if p.file_name().is_some_and(|n| n.to_string_lossy().ends_with(".param.toml")) {
             crate::ParametricGeometry::from_toml(&read(&p)?)?.generate()?
@@ -164,7 +173,7 @@ impl Store {
 
     pub fn profile(&self, name: &str) -> Result<Profile> {
         let p = self.dir("profiles").join(format!("{name}.toml"));
-        let p = if p.is_file() { p } else { PathBuf::from(name) };
+        let p = if p.is_file() { p } else { self.existing("profiles", "profile", name, PathBuf::from(name))? };
         Profile::from_toml(&read(&p)?)
     }
 
@@ -220,6 +229,9 @@ impl Store {
         }
         if let Some(r) = spec.strip_prefix("run:") {
             let (id, rank) = r.split_once('#').map(|(a, b)| (a, b.parse::<usize>().unwrap_or(1))).unwrap_or((r, 1));
+            if id.is_empty() || id.contains(['/', '\\']) || id.contains("..") {
+                return Err(Error::invalid("layout", format!("bad run id '{id}'")));
+            }
             let res = crate::run::load_result(&self.runs.join(id))?;
             let l = res.best.get(rank.saturating_sub(1)).ok_or_else(|| Error::invalid("layout", format!("run {id} has no rank {rank}")))?;
             let magic = crate::run::load_config(&self.runs.join(id)).map(|c| c.magic).unwrap_or_default();
