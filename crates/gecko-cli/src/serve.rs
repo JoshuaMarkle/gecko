@@ -186,7 +186,7 @@ fn two_d() -> String {
 
 /// Free parameters (`geomsearch::parse_free`) of a parametric board: names, bounds, start values.
 async fn geometry_free(State(app): State<AppState>, Path(id): Path<String>, Query(q): Query<FreeReq>) -> ApiResult {
-    let p = app.store.param_geometry(&id)?;
+    let p = app.store.param_geometry(store_name("geometry", &id)?)?;
     Ok(Json(json!({"schema": SCHEMA, "vars": geomsearch::parse_free(&p, &q.spec)?})))
 }
 
@@ -280,17 +280,29 @@ struct Resolved {
     layout: Layout,
 }
 
+/// A store entry name from a request. The CLI also accepts file paths; the API must not read
+/// files outside the store, so names (and `run:<id>` ids) may not hold path separators or `..`.
+fn store_name<'a>(what: &str, name: &'a str) -> std::result::Result<&'a str, ApiError> {
+    let body = name.strip_prefix("run:").unwrap_or(name);
+    if body.is_empty() || body.contains(['/', '\\']) || body.contains("..") {
+        return Err(ApiError(StatusCode::BAD_REQUEST, format!("bad {what} name '{name}'")));
+    }
+    Ok(name)
+}
+
 fn resolve(store: &Store, r: &InputsReq) -> std::result::Result<Resolved, ApiError> {
     let d = &store.defaults;
-    let geometry = store.geometry(r.geometry.as_deref().unwrap_or(&d.geometry))?;
-    let corpus = store.corpus(r.corpus.as_deref().unwrap_or(&d.corpus))?;
+    let geometry = store.geometry(store_name("geometry", r.geometry.as_deref().unwrap_or(&d.geometry))?)?;
+    let corpus = store.corpus(store_name("corpus", r.corpus.as_deref().unwrap_or(&d.corpus))?)?;
     let profile = match &r.profile_override {
         Some(p) => p.clone(),
-        None => store.profile(r.profile.as_deref().unwrap_or(&d.profile))?,
+        None => store.profile(store_name("profile", r.profile.as_deref().unwrap_or(&d.profile))?)?,
     };
     let layout = match (&r.chars, &r.layout) {
         (Some(c), _) => Layout::from_str_flat("custom", &geometry.name, c)?,
-        (None, Some(spec)) => store.layout(spec, &geometry.name)?,
+        // `raw:` and `cmini:` specs are symbols / bundle names, never paths.
+        (None, Some(spec)) if spec.starts_with("raw:") || spec.starts_with("cmini:") => store.layout(spec, &geometry.name)?,
+        (None, Some(spec)) => store.layout(store_name("layout", spec)?, &geometry.name)?,
         (None, None) => store.layout(&d.reference, &geometry.name)?,
     }
     .fit(&geometry)?;
@@ -396,7 +408,12 @@ async fn start_run(State(app): State<AppState>, Json(mut req): Json<RunReq>) -> 
         params.moves = gecko_core::optimize::moves::MoveParams::parse(m)
             .ok_or_else(|| ApiError(StatusCode::BAD_REQUEST, format!("unknown moves '{m}'")))?;
     }
-    let holdout = req.holdout.as_deref().filter(|h| !h.is_empty()).map(|h| app.store.corpus(h)).transpose()?;
+    let holdout = req
+        .holdout
+        .as_deref()
+        .filter(|h| !h.is_empty())
+        .map(|h| Ok::<_, ApiError>(app.store.corpus(store_name("corpus", h)?)?))
+        .transpose()?;
     let spec = RunSpec {
         geometry: &r.geometry,
         corpus: &r.corpus,
@@ -678,6 +695,32 @@ mod tests {
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
         let response = get("/api/corpora/english/sources/missing.txt").await.unwrap();
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    /// Request inputs are store names: the CLI's file-path fallback must not let the API read
+    /// arbitrary files.
+    #[tokio::test]
+    async fn inputs_reject_paths() {
+        let root = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+        let app = router(Store::open(root).unwrap(), None);
+        let score = |body: Value| {
+            let req = Request::builder().method("POST").uri("/api/score").header("content-type", "application/json");
+            app.clone().oneshot(req.body(Body::from(body.to_string())).unwrap())
+        };
+        for body in [
+            json!({"profile": "/etc/hostname"}),
+            json!({"geometry": "../gecko.toml"}),
+            json!({"corpus": "../corpora/english"}),
+            json!({"layout": "/etc/hostname"}),
+            json!({"layout": "run:../x"}),
+        ] {
+            let response = score(body.clone()).await.unwrap();
+            let msg: Value = serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+            assert!(msg["error"].as_str().unwrap().starts_with("bad "), "{body}: {msg}");
+        }
+        assert_eq!(score(json!({"layout": "raw:qwertyuiopasdfghjkl;zxcvbnm,./"})).await.unwrap().status(), StatusCode::OK);
+        let free = Request::builder().uri("/api/geometries/..%2Fx/free").body(Body::empty()).unwrap();
+        assert_eq!(app.clone().oneshot(free).await.unwrap().status(), StatusCode::BAD_REQUEST);
     }
 
     /// Calls every JSON endpoint the web UI reads (runs go to a temporary directory). With
