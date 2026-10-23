@@ -96,7 +96,7 @@ pub struct Body {
 /// Average arms. The elbow width is set so a flat board gives the ≈ 12° mean ulnar deviation
 /// measured on conventional keyboards (`research/sources/split-keyboard-ergonomics.md`; ANSI
 /// 11.9°/12.8°, ortho 12.3°; ±10 mm moves it ≈ 1.3°); forearm ≈ 0.15 × stature.
-pub const BODY: Body = Body { elbow_width: 465.0, forearm: 255.0 };
+pub const BODY: Body = Body { elbow_width: 490.0, forearm: 255.0 };
 
 impl Body {
     /// [`BODY`] scaled with hand length.
@@ -198,6 +198,23 @@ const CURL: f64 = 0.95;
 const COUPLE: f64 = 0.7;
 const PITCH: f64 = -0.2;
 
+/// Lean of each finger's flexion plane (index → pinky, radians: 2°, 4°, 8°, 15°): the plane's
+/// up axis is turned about the hand's long axis toward the pinky, so a curling finger closes
+/// toward the thumb side (flexed fingers converge on the scaphoid, the pinky most). Heuristic.
+const LEAN: [f64; 4] = [0.035, 0.07, 0.14, 0.26];
+
+/// Up axis of finger `i`'s (index 0 … pinky 3) flexion plane, hand-local.
+fn finger_up(i: usize) -> V3 {
+    [LEAN[i].sin(), LEAN[i].cos(), 0.0]
+}
+
+/// Natural fingertip offset from the knuckle, hand-local: `natural_tip` in the leaned plane.
+fn natural_tip3(l: &[f64; 3], i: usize) -> V3 {
+    let [fwd, drop] = natural_tip(l);
+    let up = finger_up(i);
+    [-drop * up[0], -drop * up[1], -fwd]
+}
+
 /// Joint limits (radians, flexion positive): MCP from 20° hyperextension, PIP, DIP.
 const MCP: [f64; 2] = [-0.35, 1.5];
 const PIP: [f64; 2] = [-0.05, 1.9];
@@ -227,8 +244,8 @@ pub struct Chain {
     pub miss: f64,
 }
 
-/// Planar IK toward a target `tu` ahead of and `tv` above the base, in the finger's vertical
-/// plane (the web's `fingerChain`). For each MCP flexion the last two segments close the gap
+/// Planar IK toward a target `tu` ahead of and `tv` above the base, in the finger's flexion
+/// plane (the web's `fingerChain`; [`plane`] gives `tu`, `tv`). For each MCP flexion the last two segments close the gap
 /// when they can, every joint clamped to its limits; the pose kept misses least, then sits
 /// closest to DIP ≈ `ratio`·PIP with the MCP near `rest`. Out of reach: the finger points
 /// straight at the target.
@@ -275,6 +292,17 @@ pub fn solve(tu: f64, tv: f64, l: &[f64; 3], ratio: f64, rest: f64) -> Chain {
         best = r;
     }
     best.1
+}
+
+/// A target in a finger's flexion plane: the plane holds the knuckle, the target and the
+/// finger's up axis `up` (unit, fixed in the hand, so the plane rolls with it). Returns the
+/// target's distance ahead (`tu`) and above (`tv`), and the unit forward direction.
+pub fn plane(knuckle: V3, target: V3, up: V3) -> (f64, f64, V3) {
+    let v = sub(target, knuckle);
+    let tv = dot(v, up);
+    let h = sub(v, scaled(up, tv));
+    let tu = dot(h, h).sqrt();
+    (tu, tv, if tu < 1e-9 { [0.0; 3] } else { scaled(h, 1.0 / tu) })
 }
 
 // ---------- thumb ----------
@@ -485,6 +513,15 @@ impl Placement {
         [self.wrist[0] + d[0], self.wrist[1] + d[1], self.wrist[2] + d[2]]
     }
 
+    /// World (right-hand frame) → hand-local: the inverse of [`Placement::world`].
+    fn local(&self, w: V3) -> V3 {
+        let (dx, dy, dz) = (w[0] - self.wrist[0], w[1] - self.wrist[1], w[2] - self.wrist[2]);
+        let (s, c) = self.yaw.sin_cos();
+        let (x, z) = (dx * c - dz * s, dx * s + dz * c);
+        let (sr, cr) = self.roll.sin_cos();
+        [x * cr - dy * sr, x * sr + dy * cr, z]
+    }
+
     /// A hand-local direction in the world frame (roll, then yaw).
     fn dir(&self, p: V3) -> V3 {
         let (sr, cr) = self.roll.sin_cos();
@@ -496,23 +533,20 @@ impl Placement {
 
 /// Place a right hand (targets already mirrored for the left) over its index, middle, ring,
 /// pinky home targets: wrist x, z, yaw, height and roll minimise each finger's deviation from
-/// its natural curl (forward and height, plus a lighter sideways term), with weak pulls toward
+/// its natural curl in the hand's frame (forward and height, plus a lighter sideways term; the
+/// leaned planes put each natural fingertip a little toward the thumb), with weak pulls toward
 /// the natural yaw and no roll. Pattern search, as in the web's `placeHand`.
 fn place(t: &[V3; 4], d: &HandDims) -> Placement {
     let sk = skeleton(d);
     let nat: [[f64; 2]; 4] = std::array::from_fn(|i| natural_tip(&d.segments(3 - i as u8)));
+    let nat3: [V3; 4] = std::array::from_fn(|i| natural_tip3(&d.segments(3 - i as u8), i));
     let cost = |q: &[f64; 5]| {
         let [wx, wz, yaw, wy, roll] = *q;
-        let (s, c) = yaw.sin_cos();
-        let (sr, cr) = roll.sin_cos();
+        let pl = Placement { wrist: [wx, wy, wz], yaw, roll };
         let mut e = 300.0 * (yaw - YAW0).powi(2) + 300.0 * roll * roll;
         for i in 0..4 {
-            let k = sk.knuckles[i];
-            let (lx, ly) = (k[0] * cr + k[1] * sr, k[1] * cr - k[0] * sr);
-            let vx = t[i][0] - (wx + lx * c + k[2] * s);
-            let vz = t[i][2] - (wz - lx * s + k[2] * c);
-            let (fwd, lat, drop) = (-vx * s - vz * c, vx * c - vz * s, wy + ly - t[i][1]);
-            e += (fwd - nat[i][0]).powi(2) + 0.3 * lat * lat + (drop - nat[i][1]).powi(2);
+            let v = sub(sub(pl.local(t[i]), sk.knuckles[i]), nat3[i]);
+            e += v[2] * v[2] + 0.3 * v[0] * v[0] + v[1] * v[1];
         }
         e
     };
@@ -734,26 +768,21 @@ pub fn costs_with(g: &Geometry, d: &HandDims, body: &Body) -> HandCosts {
                 let l = d.segments(ord as u8);
                 let fi = 3 - ord;
                 let (k, home) = (knuckles[fi], t[fi]);
-                let flat = |q: V3| [q[0] - k[0], q[2] - k[2]];
-                let (v, v0) = (flat(p), flat(home));
-                let tu = v[0].hypot(v[1]);
-                let chain = solve(tu, p[1] - k[1], &l, COUPLE, -PITCH);
+                let up = pl.dir(finger_up(fi));
+                let (tu, tv, dir) = plane(k, p, up);
+                let (tu0, _, dir0) = plane(k, home, up);
+                let chain = solve(tu, tv, &l, COUPLE, -PITCH);
                 let nat = [-PITCH, CURL, COUPLE * CURL];
                 // Splay: the finger's plane turned away from its plane on the home key.
-                let splay = if tu < 1e-6 || v0[0].hypot(v0[1]) < 1e-6 {
-                    0.0
-                } else {
-                    (v[0] * v0[1] - v[1] * v0[0]).atan2(v[0] * v0[0] + v[1] * v0[1])
-                };
+                let splay = if tu < 1e-6 || tu0 < 1e-6 { 0.0 } else { dot(cross(dir0, dir), up).atan2(dot(dir0, dir)) };
                 let joints: f64 = (0..3).map(|j| ((chain.angles[j] - nat[j]) / JOINT).powi(2)).sum::<f64>() / 3.0;
                 let shortfall = if chain.miss < MISS_TOL { 0.0 } else { chain.miss };
                 let mm = shortfall / MISS;
                 // The fingertip presses along its distal phalanx; only the key's tilt within the
                 // finger's plane counts (sideways tilt is the wrist's roll, not the finger's).
-                let dir = if tu < 1e-6 { [0.0, 0.0] } else { [v[0] / tu, v[1] / tu] };
                 let a = chain.angles.iter().sum::<f64>();
                 let press = [a.cos(), -a.sin()];
-                let into = [-(nrm[0] * dir[0] + nrm[2] * dir[1]), -nrm[1]];
+                let into = [-dot(nrm, dir), -dot(nrm, up)];
                 let len = into[0].hypot(into[1]).max(1e-9);
                 let angle = ((press[0] * into[0] + press[1] * into[1]) / len).clamp(-1.0, 1.0).acos();
                 // Out of reach the finger points straight at the key: the gap lies along it.
@@ -824,13 +853,23 @@ mod parity {
                         chains.push(json!({"tu": tu, "tv": tv, "angles": c.angles, "miss": c.miss}));
                     }
                 }
-                let home = |dz: f64| -> [V3; 4] { std::array::from_fn(|i| [20.0 * i as f64 - 10.0, -60.0, -150.0 + dz * i as f64]) };
-                let placements: Vec<Value> = [0.0, 4.0]
+                // Home rows: flat, staggered toward the wrist, and sloping down toward the pinky (a roll).
+                let home = |dz: f64, dy: f64| -> [V3; 4] {
+                    std::array::from_fn(|i| [20.0 * i as f64 - 10.0, -60.0 + dy * i as f64, -150.0 + dz * i as f64])
+                };
+                let placements: Vec<Value> = [(0.0, 0.0), (4.0, 0.0), (0.0, -8.0)]
                     .into_iter()
-                    .map(|dz| {
-                        let t = home(dz);
+                    .map(|(dz, dy)| {
+                        let t = home(dz, dy);
                         let p = place(&t, &d);
-                        json!({"targets": t, "wrist": p.wrist, "yaw": p.yaw, "roll": p.roll})
+                        let up: Vec<V3> = (0..4).map(|i| p.dir(finger_up(i))).collect();
+                        let planes: Vec<[f64; 2]> = (0..4)
+                            .map(|i| {
+                                let (tu, tv, _) = plane(p.world(sk.knuckles[i]), t[i], up[i]);
+                                [tu, tv]
+                            })
+                            .collect();
+                        json!({"targets": t, "wrist": p.wrist, "yaw": p.yaw, "roll": p.roll, "up": up, "planes": planes})
                     })
                     .collect();
                 let thumb = Thumb::new(&d, &Placement { wrist: [0.0; 3], yaw: 0.0, roll: 0.0 });

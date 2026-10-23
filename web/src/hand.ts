@@ -36,7 +36,7 @@ export interface HandSettings { use: boolean; preset: Preset; custom: HandDims |
 /** Arms for G03 (mm): elbow-to-elbow distance while typing and forearm length. Unset: average arms scaled with the hand. */
 export interface Body { elbowWidth: number; forearm: number }
 /** Average arms (`gecko_core::hand::BODY`). */
-export const BODY: Body = { elbowWidth: 465, forearm: 255 };
+export const BODY: Body = { elbowWidth: 490, forearm: 255 };
 /** The arms G03 uses for a hand: `body`, else `BODY` scaled with hand length. */
 export const bodyOf = (h: HandSettings): Body => {
   if (h.body) return h.body;
@@ -208,6 +208,10 @@ export const sub3 = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]
 const scale = (a: V3, s: number): V3 => [a[0] * s, a[1] * s, a[2] * s];
 const lerp3 = (a: V3, b: V3, t: number): V3 => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 export const dist3 = (a: V3, b: V3) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+const dot3 = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cross3 = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const norm3 = (a: V3): V3 => scale(a, 1 / (Math.hypot(a[0], a[1], a[2]) || 1));
+const perp3 = (v: V3, d: V3): V3 => norm3(sub3(v, scale(d, dot3(v, d))));
 
 /**
  * Right hand, palm down, in mm: x toward the pinky, y up, z toward the wrist (fingers point to
@@ -269,6 +273,22 @@ export function naturalTip(l: [number, number, number]): [number, number] {
   return [pu * Math.cos(PITCH) - pv * Math.sin(PITCH), -(pu * Math.sin(PITCH) + pv * Math.cos(PITCH))];
 }
 
+/**
+ * Lean of each finger's flexion plane (index → pinky, radians: 2°, 4°, 8°, 15°): the plane's up
+ * axis is turned about the hand's long axis toward the pinky, so a curling finger closes toward
+ * the thumb side (flexed fingers converge on the scaphoid, the pinky most). Heuristic.
+ */
+export const LEAN = [0.035, 0.07, 0.14, 0.26];
+
+/** Up axis of finger `i`'s (index 0 … pinky 3) flexion plane, hand-local (right-hand frame). */
+export const fingerUp = (i: number): V3 => [Math.sin(LEAN[i]), Math.cos(LEAN[i]), 0];
+
+/** Natural fingertip offset from knuckle `i`, hand-local: `naturalTip` in the leaned plane. */
+export function naturalTip3(l: [number, number, number], i: number): V3 {
+  const [fwd, drop] = naturalTip(l), up = fingerUp(i);
+  return [-drop * up[0], -drop * up[1], -fwd];
+}
+
 /** Joint limits (radians, flexion positive): MCP from 20° hyperextension, PIP, DIP. */
 const MCP: [number, number] = [-0.35, 1.5];
 const PIP: [number, number] = [-0.05, 1.9];
@@ -276,18 +296,16 @@ const DIP: [number, number] = [0, 1.4];
 
 /**
  * Joint positions (base, 2 joints, tip) of a 3-segment finger reaching from `base` to `target`
- * in the vertical plane through both. For each knuckle (MCP) flexion the last two segments
+ * in its flexion plane: the plane through both that holds the unit `up` axis (fixed in the hand,
+ * leaned per finger: `fingerUp`; default straight up). For each knuckle (MCP) flexion the last two segments
  * close the gap exactly when they can (the DIP angle from the remaining distance, the PIP angle
  * from its direction), with every joint clamped to its limits. The pose kept misses the target
  * least, then sits closest to the tendon coupling DIP ≈ `ratio`·PIP with the knuckle near its
  * resting pitch `rest`, so a near key curls the finger at the knuckle instead of buckling it.
  * Out of reach: the finger points straight at the target.
  */
-export function fingerChain(base: V3, target: V3, l: [number, number, number], ratio = COUPLE, rest = -PITCH): V3[] {
-  const dx = target[0] - base[0], dz = target[2] - base[2];
-  const h = Math.hypot(dx, dz);
-  const dir: V3 = h > 1e-9 ? [dx / h, 0, dz / h] : [0, 0, -1];
-  const tu = h, tv = target[1] - base[1];
+export function fingerChain(base: V3, target: V3, l: [number, number, number], ratio = COUPLE, rest = -PITCH, up: V3 = [0, 1, 0]): V3[] {
+  const { tu, tv, dir } = fingerPlane(base, target, up);
   const clamp = (x: number, [lo, hi]: [number, number]) => Math.max(lo, Math.min(hi, x));
   const total = l[0] + l[1] + l[2];
   // Pose for MCP flexion `a`: [cost, a, PIP, DIP] (angles below the horizontal, flexion positive).
@@ -324,10 +342,21 @@ export function fingerChain(base: V3, target: V3, l: [number, number, number], r
   let cur = base;
   for (let i = 0; i < 3; i++) {
     const a = angles[i];
-    cur = add(cur, add(scale(dir, l[i] * Math.cos(a)), [0, -l[i] * Math.sin(a), 0]));
+    cur = add(cur, add(scale(dir, l[i] * Math.cos(a)), scale(up, -l[i] * Math.sin(a))));
     pts.push(cur);
   }
   return pts;
+}
+
+/**
+ * A target in a finger's flexion plane (`gecko_core::hand::plane`): its distance ahead (`tu`) and
+ * above (`tv`, along `up`) the knuckle, and the unit forward direction (straight ahead, −z, when
+ * the target is right above or below).
+ */
+export function fingerPlane(knuckle: V3, target: V3, up: V3): { tu: number; tv: number; dir: V3 } {
+  const v = sub3(target, knuckle), tv = dot3(v, up);
+  const h = sub3(v, scale(up, tv)), tu = Math.hypot(h[0], h[1], h[2]);
+  return { tu, tv, dir: tu > 1e-9 ? scale(h, 1 / tu) : perp3([0, 0, -1], up) };
 }
 
 // ---------- placement ----------
@@ -369,8 +398,9 @@ export function adjustPlacement(side: Side, pl: Placement, w: Wrist, u: number):
 
 /**
  * Place a hand over its four home targets (world, three.js axes: y up, z toward the user): the
- * wrist position, height, yaw and roll minimise each finger's deviation from its natural curl
- * (forward and height error, plus a lighter sideways error), with weak pulls toward the natural
+ * wrist position, height, yaw and roll minimise each finger's deviation from its natural curl in
+ * the hand's frame (forward and height error, plus a lighter sideways error; the leaned planes put
+ * each natural fingertip a little toward the thumb), with weak pulls toward the natural
  * yaw and no roll; the shorter pinky so settles the hand slightly pinky-side down. Solved in the right-hand frame
  * (left-hand targets are mirrored first), so mirrored targets give exactly mirrored hands.
  */
@@ -379,17 +409,15 @@ export function placeHand(side: Side, home: Record<FingerName, V3>, d: HandDims,
   const T = FOUR.map((f) => [(m * home[f][0]) / u, home[f][1] / u, home[f][2] / u]);
   const lay = handLayout(d);
   const nat = FOUR.map((f) => naturalTip(d[f]));
+  const nat3 = FOUR.map((f, i) => naturalTip3(d[f], i));
   // Variables: wrist x, z, yaw, wrist height, roll (right-hand frame, mm and radians).
   const cost = (q: number[]) => {
     const [wx, wz, yaw, wy, roll] = q;
-    const c = Math.cos(yaw), s = Math.sin(yaw), cr = Math.cos(roll), sr = Math.sin(roll);
+    const pl: Placement = { wrist: [wx, wy, wz], yaw, roll };
     let e = 300 * (yaw - YAW0) ** 2 + 300 * roll * roll;
     for (let i = 0; i < 4; i++) {
-      const k = lay.knuckles[i];
-      const lx = k[0] * cr + k[1] * sr, ly = k[1] * cr - k[0] * sr;
-      const vx = T[i][0] - (wx + lx * c + k[2] * s), vz = T[i][2] - (wz - lx * s + k[2] * c);
-      const fwd = -vx * s - vz * c, lat = vx * c - vz * s, drop = wy + ly - T[i][1];
-      e += (fwd - nat[i][0]) ** 2 + 0.3 * lat * lat + (drop - nat[i][1]) ** 2;
+      const v = sub3(sub3(toLocal("R", pl, 1, T[i] as V3), lay.knuckles[i]), nat3[i]);
+      e += v[2] * v[2] + 0.3 * v[0] * v[0] + v[1] * v[1];
     }
     return e;
   };
@@ -415,6 +443,8 @@ export function placeHand(side: Side, home: Record<FingerName, V3>, d: HandDims,
 export interface HandPose {
   /** Joint chains for thumb, index, middle, ring, pinky (base → tip). */
   fingers: V3[][];
+  /** Flexion axis of each finger's plane, index → pinky (unit, toward the pinky side). */
+  axes: V3[];
   /** Closed palm outline (see `HandLayout.outline`). */
   palm: V3[];
   /** Centre of the wrist crease. */
@@ -430,16 +460,19 @@ export function poseHand(side: Side, pl: Placement, targets: Record<FingerName, 
   const thumb = new Thumb(d);
   const local = sub3(targets.thumb, offset);
   const fingers: V3[][] = [thumb.joints(thumb.solve(toLocal(side, pl, u, local)).q).map(W)];
-  FOUR.forEach((f, i) => fingers.push(fingerChain(knuckles[i], targets[f], L(d[f]))));
-  return { fingers, palm: lay.outline.map(W), wrist: W([0, 0, 0]) };
+  const axes: V3[] = [];
+  const m = side === "L" ? -1 : 1;
+  FOUR.forEach((f, i) => {
+    const up = norm3(sub3(W(add(lay.knuckles[i], fingerUp(i))), knuckles[i]));
+    fingers.push(fingerChain(knuckles[i], targets[f], L(d[f]), COUPLE, -PITCH, up));
+    // Mirroring flips the cross product: × side keeps the axis toward the pinky.
+    axes.push(scale(norm3(cross3(fingerPlane(knuckles[i], targets[f], up).dir, up)), m));
+  });
+  return { fingers, axes, palm: lay.outline.map(W), wrist: W([0, 0, 0]) };
 }
 
 // ---------- thumb ----------
 
-const dot3 = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const cross3 = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-const norm3 = (a: V3): V3 => scale(a, 1 / (Math.hypot(a[0], a[1], a[2]) || 1));
-const perp3 = (v: V3, d: V3): V3 => norm3(sub3(v, scale(d, dot3(v, d))));
 /** `v` rotated by `a` radians about unit `axis` (Rodrigues). */
 function rotate3(axis: V3, a: number, v: V3): V3 {
   const s = Math.sin(a), c = Math.cos(a), k = cross3(axis, v), d = dot3(axis, v) * (1 - c);

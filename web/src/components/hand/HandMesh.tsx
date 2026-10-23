@@ -146,7 +146,9 @@ export class Rigged {
     const n = fwd.clone().normalize();
     this.root.updateWorldMatrix(true, false);
     this.cut.setFromNormalAndCoplanarPoint(n, wrist.clone().addScaledVector(n, -FOREARM * MM)).applyMatrix4(this.root.matrixWorld);
-    // Swing each segment from its parent's rotation onto the posed segment (twist is inherited).
+    // Finger phalanges: the bind (segment, across-the-palm) frame onto the posed (segment, flexion
+    // axis) frame, so a finger rolls with its plane. Thumb: swing each segment from its parent's
+    // rotation onto the posed segment (twist is inherited).
     this.chains.forEach((c, f) => {
       const pts = pose.fingers[f].map(v3);
       // Finger metacarpals ride rigidly on the wrist; posed joints start at the knuckle.
@@ -158,6 +160,7 @@ export class Rigged {
         if (f > 0 && j === 0) return place(bi, p, dw, null);
         const seg = at(j + 1).sub(p);
         const len = seg.length();
+        if (f > 0) return place(bi, p, frame(seg, v3(pose.axes[f - 1])).multiply(frame(b.dir, this.restLat).invert()), len);
         const swing = new THREE.Quaternion().setFromUnitVectors(b.dir.clone().applyQuaternion(pd), seg.normalize());
         place(bi, p, swing.multiply(pd), len);
       });

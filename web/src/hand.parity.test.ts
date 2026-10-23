@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import fixture from "./fixtures/hand-parity.json";
-import { fingerChain, FOUR, handLayout, naturalTip, placeHand, Thumb, type FingerName, type HandDims, type V3 } from "./hand";
+import { fingerChain, fingerPlane, fingerUp, FOUR, handLayout, naturalTip, placeHand, sub3, Thumb, toWorld, type FingerName, type HandDims, type V3 } from "./hand";
 
 const TOL = 1e-6;
 
@@ -67,6 +67,14 @@ for (const c of fixture.cases) {
         near(got.wrist, p.wrist, "wrist");
         near(got.yaw, p.yaw, "yaw");
         near(got.roll ?? 0, p.roll, "roll");
+        const lay = handLayout(d);
+        FOUR.forEach((f, i) => {
+          const k = toWorld("R", got, 1, lay.knuckles[i]);
+          const up = sub3(toWorld("R", got, 1, fingerUp(i)), toWorld("R", got, 1, [0, 0, 0]));
+          near(up, p.up[i], `${f} plane up`);
+          const { tu, tv } = fingerPlane(k, home[f], up);
+          near([tu, tv], p.planes[i], `${f} plane target`);
+        });
       }
     });
 

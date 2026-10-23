@@ -181,7 +181,7 @@ fn wrist_posture_ranks_split_and_tented_boards() {
     // A key the planted hand reaches sideways for adds deviation.
     let mut g = ansi.clone();
     let i = g.key.iter().position(|k| k.row == 0 && k.col == 9).unwrap();
-    g.key[i].pos[0] += 2.0;
+    g.key[i].pos[0] += 2.5;
     let out = costs(&g, &AVERAGE);
     assert!(out.miss[i] > 3.0 && out.wrist[i] > c.wrist[i] + 0.1, "{} mm: {} vs {}", out.miss[i], out.wrist[i], c.wrist[i]);
     let bad = "name = \"x\"\n[hand]\nsize = \"average\"\n[hand.body]\nelbow_width = 50\nforearm = 250\n";

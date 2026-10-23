@@ -13,7 +13,7 @@ Profile `[hand]`: `size = "small" | "average" | "large"` (average × 0.92 / 1 / 
 `ring`, `pinky` (three segments each, base → tip), `palm_width`, `palm_length`, `span`, `reach`
 (`reach` is shown in the web, not used in costs). `[hand.body]` (optional, mm): `elbow_width`
 (elbow to elbow while typing, 100–1500) and `forearm` (elbow to wrist crease, 100–600); default
-465 / 255 scaled with hand length. Without `[hand]`, G01/G03/G05 use the average hand and arms
+490 / 255 scaled with hand length. Without `[hand]`, G01/G03/G05 use the average hand and arms
 and B14 is unchanged. The web's **Use hand in optimization** sends the Hand tab's hand (and arms,
 when edited under Advanced → Arms) as this block (`hand.ts` `withHand`) and adds G01 1.0 / G03 1.0
 / G05 0.5 (with scales) when the profile has no weight for them. Bundled profile:
@@ -25,14 +25,18 @@ because its hand-entered key efforts also encode reach).
 1. **Skeleton** (right hand; the left is its mirror): knuckles on an arch across 0.76 × palm
    width, the thumb's base and rest point from palm width/length (`hand.ts` `handLayout`).
 2. **Placement:** per hand, a pattern search over wrist x, z, height, yaw and roll puts each
-   finger's natural curl (PIP 54°, DIP 0.7 × PIP, proximal phalanx 11° down) on its home key
-   (non-stretch home key, else any home key, else its first key), pulled weakly toward 10°
-   inward yaw and no roll. A hand without all four finger keys is not placed (its keys cost 0).
+   finger's natural curl (PIP 54°, DIP 0.7 × PIP, proximal phalanx 11° down, in its leaned
+   plane, step 4) on its home key (non-stretch home key, else any home key, else its first key),
+   errors taken in the hand's frame, pulled weakly toward 10° inward yaw and no roll. A hand without all four finger keys is not placed (its keys cost 0).
 3. **Fingertip targets:** keycap top centres (`pose::contact`). On 3D boards they are taken in
    each hand's frame (`Geometry::hand_frame`, the best-fit plane of its finger keys), like the
    geometric metrics, so a rigid tent changes nothing: the forearm's roll belongs to G03.
-4. **IK** (`hand::solve`): planar 3-segment chain in the vertical plane through knuckle and
-   target; joint limits MCP −20°…86°, PIP −3°…109°, DIP 0…80°; among MCP angles, the pose that
+4. **IK** (`hand::solve`): planar 3-segment chain in the finger's flexion plane
+   (`hand::plane`): the plane through knuckle and target that holds the finger's up axis. That
+   axis is fixed in the hand (it rolls with the hand, as the MCP's flexion axis does) and leaned
+   toward the pinky about the hand's long axis (`LEAN`: index 2°, middle 4°, ring 8°, pinky 15°),
+   so a curling finger closes toward the thumb side: flexed fingers converge on the scaphoid, and
+   the resting pinky leans in toward the ring finger. Heuristic angles, not measured; joint limits MCP −20°…86°, PIP −3°…109°, DIP 0…80°; among MCP angles, the pose that
    misses least, then sits nearest DIP ≈ 0.7·PIP with the MCP near rest. Out of reach: the finger
    points straight at the target and the shortfall is the miss.
 5. **Thumb** (`hand::Thumb`, 4 DoF): CMC flexion (tip sweeps across toward the fingers) and
@@ -54,8 +58,8 @@ because its hand-entered key efforts also encode reach).
 ## Costs (per key; layer copies use their physical key, plus the layer holder like M01)
 
 - **G01 reach** = mean over MCP/PIP/DIP of ((angle − natural) / 29°)² + (splay / comfortable
-  abduction)² + 2·(miss / 10 mm) + (miss / 10 mm)². Splay is the finger plane's turn from its
-  home key (thumb: from its rest point); comfortable abduction pinky 25°, ring/middle/index 21°,
+  abduction)² + 2·(miss / 10 mm) + (miss / 10 mm)². Splay is the finger plane's turn (about its
+  up axis) from its home key (thumb: from its rest point); comfortable abduction pinky 25°, ring/middle/index 21°,
   thumb 30°. Misses under 0.5 mm are IK rounding. ≈ 0 on home keys, ≈ 1 for a comfortable
   off-home key, 3–5 for keys the planted hand cannot reach.
   Thumbs: mean over the 4 joints of ((angle − rest) / scale)² (CMC 26°, MCP 34°, IP 46°) plus
@@ -95,14 +99,14 @@ lengths; `toLocal` inverts `toWorld`. QWERTY, english, average hand and arms:
 
 | board | G01 | G05 | G03 | resting wrist (R): deviation, pronation |
 |---|---|---|---|---|
-| ortho-30 | 1.196 | 0.522 | 2.34 | 12° ulnar, 88° |
-| ansi-30 | 1.153 | 0.534 | 2.34 | 13° ulnar, 88° |
-| ergodox | 1.286 | 0.541 | 1.67 | 0°, 88° |
-| corne-36 | 0.914 | 0.468 | 1.67 | 0°, 88° |
-| lily58 | 0.885 | 0.467 | 1.67 | 0°, 88° |
-| kyria | 0.854 | 0.476 | 1.67 | 0°, 88° |
-| sweep-34 | 0.861 | 0.489 | 1.67 | 0°, 88° |
-| dactyl-manuform-5x6 | 0.623 | 0.175 | 1.04 | −2°, 73° |
+| ortho-30 | 1.237 | 0.514 | 2.29 | 12° ulnar, 87° |
+| ansi-30 | 1.184 | 0.536 | 2.28 | 13° ulnar, 87° |
+| ergodox | 1.232 | 0.509 | 1.61 | 0°, 87° |
+| corne-36 | 0.943 | 0.451 | 1.61 | 0°, 87° |
+| lily58 | 0.912 | 0.451 | 1.61 | 0°, 87° |
+| kyria | 0.871 | 0.453 | 1.61 | 0°, 87° |
+| sweep-34 | 0.866 | 0.465 | 1.61 | 0°, 87° |
+| dactyl-manuform-5x6 | 0.661 | 0.201 | 1.02 | −2°, 72° |
 
 The 4-DoF thumb reaches Corne/Kyria clusters more cheaply than the old planar chain (Corne G01
 0.99 → 0.91) and finds Ergodox's outer thumb keys 4–6 mm out of reach (1.15 → 1.29), the cluster's
@@ -111,8 +115,9 @@ Dactyl < 0.6 × Corne on G05. On ANSI the
 left bottom row costs 2–2.4 for ring/middle vs 0.5–0.6 on the right (the stagger's known
 asymmetry); index top and centre-column keys, Q and P are out of reach for the planted average
 hand by 3–10 mm, matching the Hand tab. Reference layouts on ansi-30 (G01): Halmak 0.45,
-Canary/Graphite 0.50, Workman 0.51, Semimak 0.52, Sturdy 0.53, Colemak-DH 0.56, Colemak 0.62,
-Dvorak 0.75, QWERTY 1.15.
+Canary/Graphite 0.49, Workman 0.51, Semimak 0.51, Sturdy 0.53, Colemak-DH 0.56, Colemak 0.64,
+Dvorak 0.77, QWERTY 1.18 (table and these with the leaned finger planes, 2026-10-23; before them
+G01 moved by ≤ 0.04 and the ranking was the same).
 
 ## Results (english, SA, seed 1, 15 s, 2026-10-21)
 
@@ -143,7 +148,8 @@ the default profile (8.29 vs 8.24) while the default optimum costs 2.6% under th
 
 ## Limits and next steps
 
-- Planar finger IK: abduction is free within the cost, not a joint; no MCP abduction/flexion
+- Planar finger IK: abduction is free within the cost, not a joint; the finger's axial rotation
+  is only its plane's fixed lean (no PIP-axis obliquity growing with flexion); no MCP abduction/flexion
   coupling (abduction shrinks at full flexion). The thumb's CMC axes are fixed (no CMC axial
   rotation/opposition coupling); G06 (thumb-arc fit) is separate, unimplemented.
 - G03: elbows level with the keys, one elbow width for every board; split halves assumed ideally
