@@ -63,3 +63,5 @@ Metrics, profiles, the scorer, corpora, layouts, layers and adaptive keys. Newes
 - 2026-10-22 — `learned` profile removed; likes fits print a warning. — Its optimum games the fit (home row 8 %); a likes fit is a ranking aid. Old runs embed their profile.
 - 2026-10-22 — B10 measures each key from its finger's home keys (the hand's if none). — Raw y made column stagger along finger length a "jump"; on row-stagger boards values are unchanged.
 - 2026-10-22 — The trigram coverage cut keeps its index tie-break. — Ties make scores depend on symbol order by ~3e-5, but changing it would break `gecko verify` of saved runs; tests compare with the run's own symbol order.
+- 2026-10-23 — Ranking validation uses community tiers plus likes on 16 named layouts, not likes over all cmini layouts. — No published ranking exists; full-set likes track exposure and memes (ρ +0.08).
+- 2026-10-23 — Trigram classes keep first = third trigrams and same-finger-end redirects instead of cmini's `sfR`/`dsfb-red` buckets. — Every trigram gets one class and `ere` is a real redirect motion; the differences are documented in objective.md §Validation.

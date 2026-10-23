@@ -10,12 +10,10 @@ summary; follow `AGENTS.md` for the working process.
 Evidence and packaging before more features: the scorer must be shown correct (V1) and the
 optimizers shown to beat known layouts (V2) before results are shared or published.
 
-1. **[#140](https://github.com/JoshuaMarkle/gecko/issues/140) · Phase 1 validation · M.**
-   SFB and other numbers vs cmini on the same corpus; ranking vs community consensus.
-2. **[#141](https://github.com/JoshuaMarkle/gecko/issues/141) · Phase 2 evaluation · M.**
+1. **[#141](https://github.com/JoshuaMarkle/gecko/issues/141) · Phase 2 evaluation · M.**
    30 seeds per board/corpus vs Graphite, Sturdy, Semimak, Canary; holdout and bounds.
-   Depends on #140.
-3. **[#142](https://github.com/JoshuaMarkle/gecko/issues/142) · Release readiness · S.**
+   Phase 1 validation (#140) is in `context/objective.md` §Validation.
+2. **[#142](https://github.com/JoshuaMarkle/gecko/issues/142) · Release readiness · S.**
    README for outsiders, `CITATION.cff`, contributor guide. The owner tags releases.
 
 ## Remaining backlog
