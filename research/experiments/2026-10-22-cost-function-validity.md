@@ -40,7 +40,12 @@
 
 ## Implications
 
-Candidate profile changes (not applied; need a decision and the ranking test): weight B05, B09,
-B10, T01; lower B14; drop B03; treat S01/S02 as comfort assumptions; compute scales over good
-layouts. Present optima as near-tie families. Open: a skipgram comfort measurement
-([open questions](../OPEN-QUESTIONS.md)).
+Applied 2026-10-22 (`context/objective.md`, Default profile and E01; `context/decisions/scoring.md`):
+the default profile weights B05, B09, B10, T01, M05 and effort, lowers B14, SFB and SFS, and
+drops B03 (B03/S03 retired). Scales are now spread over the 9 references without QWERTY. The
+`learned` profile is removed. E01 is the timing model as a judge metric. `gecko judge`,
+`gecko features`, `gecko sweep`, `compare --robust` and the `optimize` near-tie note implement
+the analysis tools ([sweep of the new default](../../bench/sweep-2026-10-22/README.md)). SFS
+stays a comfort assumption: [skipgram timing](2026-10-22-skipgram-timing.md) finds no cost in any
+split, and a comfort measurement is open ([open questions](../OPEN-QUESTIONS.md)). The numbers
+above describe the 2026-10-21 default profile.

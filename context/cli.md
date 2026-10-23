@@ -1,7 +1,7 @@
 # CLI
 
 One binary, `gecko` (`crates/gecko-cli`). Built for agents first: deterministic, scriptable, JSON output.
-Code: `main.rs` (clap entry) dispatches to `cmd/<group>.rs` (score, optimize, bench, explore,
+Code: `main.rs` (clap entry) dispatches to `cmd/<group>.rs` (score, judge, optimize, bench, explore,
 magic, certify, corpus, geometry, layouts, profile, list); `ctx.rs` holds the shared inputs, loading
 and output helpers, `fmt.rs` the text tables, `serve.rs` the HTTP server.
 
@@ -11,6 +11,15 @@ and output helpers, `fmt.rs` the text tables, `serve.rs` the HTTP server.
 gecko score    <layout> [-g geometry] [-p profile] [-c corpus]   # per-metric breakdown
 gecko compare  [<layout>...] [--corpora a,b,c]                   # rank layouts (all references if none);
                                                                   #   --corpora: score/rank per corpus (L05)
+               [--robust [--sigma 0.5] [--draws 2000] [--seed 1]] #   --robust: rank confidence under weight noise
+gecko judge    [<layout>...] [--community]                        # independent judges: E01 typing time, E05/E04
+                                                                  #   Engram, home row, effort, SFB; cmini percentiles
+gecko features [<layout>...] [--community] [--random N] [--seed 1] # unit-weight cost of every metric, JSON lines
+                                                                  #   (no layouts: stdin specs, or all references)
+gecko sweep    [--evals 5000000] [--seeds 1] [--draws 20] [--sigma 0.5] [--seed 1] [--threads N]
+               [--family-keys 10] [--from <layout>] [--pin ...] [--out report.json]
+                                                                  # re-optimize under perturbed weights: families,
+                                                                  #   regret, per-weight sensitivity, judges
 gecko analyze  <layout> [--top 10] [--words]                      # finger loads, worst SFB/SFS/LSB/scissors; JSON adds all bigrams/skipgrams with a `kind`;
                                                                   #   --words: worst real words per metric (needs -c shai or mt-10k)
 gecko optimize [--algo sa|hc|ga|memetic|bls|tabu|explore|qd|nsga2|rwsa] [--time 30s | --evals N] [--seed 1] [--threads N]
@@ -69,8 +78,8 @@ gecko layouts likes [--top 10] [--dups] [--no-angle] [-g -p -c]        # GECKO r
 gecko corpus nav <corpus> [--share 0.03] [--seed 1] --out <name>        # add modelled arrow keys
 gecko profile normalize [-p profile] [--layouts a,b] [--out name]   # weights → spread units
 gecko profile fit [--target E05] [--layouts a,b] [--out name]       # fit weights to a judge metric
-gecko profile fit --target likes [--seed 1] [--out learned] --json  # pairwise fit, 20% layout holdout
-gecko list     layouts|geometries|profiles|corpora|runs|metrics
+gecko profile fit --target likes [--seed 1] [--out <name>] --json   # pairwise fit, 20% layout holdout; ranking aid only
+gecko list     layouts|geometries|profiles|corpora|runs|metrics     # metrics: retired ones marked (JSON `retired`)
 gecko serve    [--port 7777] [--web web/dist]                          # serves embedded web UI (with embed-web) or filesystem dist; API inputs are store names only (no file paths)
 ```
 
@@ -219,5 +228,38 @@ When `--algo nsga2` or `--algo rwsa` is selected, `best.json` contains the non-d
 Its schema-1 JSON has `fit` (weights/scales, seed, input hashes, training/held-out layout
 names, pair counts, logistic loss, training/test accuracy and default/Engram baselines) and
 `profile`. Prediction ties count half, like ties are excluded; absent test pairs report null.
-`--out learned` writes an opt-in profile; defaults are unchanged. See
-`research/experiments/2026-10-21-profile-ranking.md` for fitting rules, measured accuracy and limitations.
+JSON adds `warning`, and text output prints it: the fit ranks existing layouts, but optimizing it
+games it (home row 8 %, SFB 5.4 %), so it is not an optimization target and no fitted profile is
+bundled. See `research/experiments/2026-10-21-profile-ranking.md` for fitting rules, measured
+accuracy and limitations.
+
+### Judges, features, robustness
+
+A score is linear in the weights: `score = Σ (weight / scale) · u`, with `u` the metric's signed
+cost at unit weight (rewards negative). `gecko features` prints `u` for every metric and layout,
+one JSON object per line: `{"layout", "chars", "score", "costs": {"B01": …}}` (`score` under
+`-p`). Layout specs come from the arguments, `--community` (every cmini layout that fits the
+board), `--random N` (shuffles of the reference layout's symbols), or stdin one per line.
+
+`gecko judge` reports judges no bundled profile optimizes toward: E01 typing time (% of a median
+keystroke interval), E05 / E04 Engram discomfort, M05 home row, M01 effort and B01 SFB, sorted by
+score. `--community` adds each judge's percentile among the cmini layouts (0 = best). JSON:
+`{"layouts": [{"layout", "score", "judges": {"E01": {"value", "percentile"}, …}}], "community": n}`.
+
+`gecko compare --robust` multiplies every weight by `exp(σ·z)` per draw and re-ranks the
+layouts from their unit costs (no re-scoring). Per layout: unperturbed rank, `p_rank` (share of
+draws keeping it), `p_beats_next` (still ahead of the next layout), `rank_lo`/`rank_hi` (5th and
+95th percentile rank), `p_first`, `mean_rank`. Not combinable with `--corpora`.
+
+`gecko sweep` re-optimizes (SA, `--evals` per search, best of `--seeds`) under the profile and
+under each weight dropped, halved and doubled, plus `--draws` log-normal draws. It reports the
+optimum's families (single linkage at `--family-keys` keys, mirror-invariant), each vector's
+regret (what keeping the base optimum costs under that vector), keys moved, base-profile cost and
+judges (E01, E05, B01, M05), per-weight sensitivity, and median / p90 regret over the draws.
+`--out` writes the full report with input hashes. Deterministic for a seed and thread count.
+Measured: `bench/sweep-2026-10-22/`.
+
+`gecko optimize` adds a near-tie note when other results are within 0.4 of #1 but differ in more
+than 4 keys (mirror-invariant): weight uncertainty moves scores more than that (halving one
+default weight costs its optimum up to 0.4). JSON: `near_ties: [{"rank", "gap", "keys",
+"chars"}]` next to `run`; `best.json` is unchanged.

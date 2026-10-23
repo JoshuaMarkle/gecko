@@ -23,6 +23,7 @@ pub mod optimize;
 pub mod profile;
 pub mod report;
 pub mod rng;
+pub mod robust;
 pub mod run;
 pub mod scorer;
 pub mod select;

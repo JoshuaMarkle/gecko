@@ -4,7 +4,8 @@ The master list of ways to judge a layout. IDs are stable so code, profiles, and
 docs can refer to them (e.g. `B01`). **Order** = the n-gram data the metric needs,
 which decides how it folds into the scorer (see `context/objective.md`).
 **Dir:** `−` penalize, `+` reward, `±` target value.
-**Pri:** P0 = MVP, P1 = soon after, P2 = later, P3 = research.
+**Pri:** P0 = MVP, P1 = soon after, P2 = later, P3 = research, retired = kept only so old runs
+and profiles still score (`retired` in `gecko list metrics`).
 
 Notation: `f(x)` corpus frequency; keys `i,j,k`; fingers LP LR LM LI LT | RT RI RM RR RP.
 "Same hand, different finger" is SH. Rates are reported per 1000 keystrokes or as %.
@@ -29,14 +30,14 @@ Notation: `f(x)` corpus frequency; keys `i,j,k`; fingers LP LR LM LI LT | RT RI 
 |---|---|---|---|---|
 | B01 | SFB | − | P0 | Same finger, different key. The single most important modern metric. |
 | B02 | Same-key repeat (SFR) | info | P0 | Same key twice. Mostly unavoidable; report, don't optimize. |
-| B03 | SFB distance (finger speed) | − | P0 | Σ f·dist(i,j)^p / strength(finger). Fspeed in Oxeylyzer/genkey. Lateral distance can get its own multiplier. |
+| B03 | SFB distance (finger speed) | − | retired | Σ f·dist(i,j)^p / strength(finger). Fspeed in Oxeylyzer/genkey. Retired 2026-10-22: keystroke timing shows no distance effect beyond B01. Still scored for old runs, hidden in the UI. |
 | B04 | LSB (lateral stretch) | − | P0 | Adjacent fingers on same hand with horizontal spread ≥ threshold (usually index center column + middle). Kühlmak weights by inverse finger distance (WLSB). |
 | B05 | Full scissor | − | P1 | Adjacent fingers, 2-row jump (QWERTY `ex`, `cr`). |
 | B06 | Half scissor | − | P1 | Adjacent fingers, 1-row jump where the shorter finger reaches up (e.g. pinky top, ring bottom). Implemented (length order pinky < index < ring < middle). |
 | B07 | Bigram roll in / out | + | P1 | SH bigram, direction pinky→index (in) or index→pinky (out). In usually preferred. Implemented as inward rolls only; outward = same-hand − SFB − in. |
 | B08 | Hand alternation | + | P1 | Consecutive keys on different hands. |
 | B09 | Weak-finger pair | − | P1 | Pinky–ring adjacency and other awkward finger pairs. Implemented: pinky–ring bigrams on one hand. |
-| B10 | Row jump (same hand) | − | P1 | Vertical distance between SH keys. Implemented: 100·\|Δy\| (key units) per bigram, thumbs excluded. |
+| B10 | Row jump (same hand) | − | P1 | Vertical distance between SH keys. Implemented: 100·\|Δlift\| per bigram, thumbs excluded; lift = y minus the y of the finger's home keys (the hand's when the finger has none), so a column stagger along finger length is no jump. In the default profile. |
 | B11 | Movement pattern cost | − | P2 | KLO-style cost per same-hand finger pair: `pair · direction · (0.1 + rows² + lateral)`. Pair = KLO `finger_switch_factor`, ring pairs × Häger-Ross coupling; direction ×(1+2·Δlength) for short-up/long-down scissors; lateral = columns beyond finger spacing (LSB). Implemented; default weight 0.5 on top of B14. Generalizes B04–B10. |
 | B12 | Predicted bigram time | − | P2 | Empirical inter-key interval (IKI) model per key/finger pair, fit from timing data. |
 | B14 | Geometric stretch | − | P0 | Oxeylyzer 2 formula on key positions + finger length offsets; covers LSB, scissors, crossings on any geometry. Implemented; replaces B04/B05 in the default profile. |
@@ -48,7 +49,7 @@ Notation: `f(x)` corpus frequency; keys `i,j,k`; fingers LP LR LM LI LT | RT RI 
 |---|---|---|---|---|
 | S01 | SFS / DSFB | − | P0 | Same finger with one key between. Oxeylyzer default weight 0.11 vs SFB per frequency unit. |
 | S02 | Decayed skipgrams | − | P1 | Same finger at gaps 2 and 3 with decaying weights (Oxeylyzer fspeed). |
-| S03 | SFS distance | − | P1 | Distance-weighted S01, like B03. |
+| S03 | SFS distance | − | retired | Distance-weighted S01, like B03. Retired with B03. |
 | S04 | Skip stretch (skip LSB / scissor) | − | P2 | B14 stretch on keys 1 and 3 of a trigram (Kühlmak's disjoint bigrams). Implemented; default weight 0.19 spread units (B14's per-unit weight × the S01/B01 ratio 0.12). |
 | S05 | Secondary bigram comfort | − | P2 | Movement cost of 1st→3rd key in a trigram (KLO). Implemented with B14 stretch as the movement cost (any geometry); also covers most of S04. |
 
@@ -85,11 +86,11 @@ stats summing to 100% and makes reports easy to read.
 
 | ID | Metric | Dir | Pri | Definition |
 |---|---|---|---|---|
-| E01 | Predicted typing time | − | P2 | Σ predicted IKI over corpus, from a fitted timing model (finger pair, distance, hand). |
+| E01 | Predicted typing time | − | P2 | Σ predicted extra interval over bigrams, % of a median keystroke interval, from a geometric model fitted to fast touch typists (SFB, same hand, adjacent fingers, rows, scissor, pinky–ring, key effort). Implemented; a judge, weight 0 in bundled profiles (`gecko judge`; `context/objective.md`). |
 | E02 | Personal timing cost | − | P3 | Same, fit to the user's own keystroke logs. |
 | E04 | Engram formula discomfort | − | P1 | Mean (1 − comfort) over bigrams from Engram's hand-built pair formula. Implemented. |
 | E05 | Engram measured discomfort | − | P1 | Same, from a Bradley–Terry fit of Engram's raw pairwise choices (74% held-out accuracy vs 59% for the formula). Implemented; in the default profile. |
-| E03 | Learned weights | − | P3 | Profile weights fit so the weighted sum predicts measured speed/comfort. |
+| E03 | Learned weights | − | P3 | Profile weights fit so the weighted sum predicts measured speed/comfort. `gecko profile fit --target E05` / `likes` fits judges or likes; a likes fit is a ranking aid only (its optimum games it). |
 
 ## 7. Layout-level (no frequencies)
 
@@ -137,6 +138,7 @@ stats summing to 100% and makes reports easy to read.
 
 ## Starting profile (P0)
 
+Historical; the current default is in `context/objective.md` (Default profile).
 `M01 M02 M04 M05 B01 B03 B04 S01` with weights tuned until the scorer ranks well-known
 modern layouts (Graphite, Canary, Colemak-DH, Sturdy) clearly above QWERTY, Dvorak, and
 Colemak, and matches public SFB numbers (e.g. QWERTY ≈ 6.6%, Colemak ≈ 1.37%,

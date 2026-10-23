@@ -22,7 +22,8 @@ pub enum ProfileCmd {
         inputs: Inputs,
     },
     /// Fit non-negative spread-unit weights to a judge metric (e.g. E05), or use
-    /// --target likes for pairwise cmini ranking with 20% of layouts held out.
+    /// --target likes for pairwise cmini ranking with 20% of layouts held out. A likes fit is a
+    /// ranking aid: optimizing it finds degenerate layouts (home row 8% in the 2026-10-22 study).
     Fit {
         #[arg(long, default_value = "E05")]
         target: String,
@@ -72,6 +73,10 @@ fn normalize(ctx: &Ctx, layouts: Vec<String>, out: Option<&str>, inputs: &Inputs
     emit_profile(ctx, &p, out)
 }
 
+/// Printed with every likes fit: the fit ranks existing layouts, its optimum games it.
+const LIKES_WARNING: &str =
+    "not an optimization target; its optimum games the fit (home row 8%, SFB 5.4% in the 2026-10-22 study). Use it to rank existing layouts.";
+
 fn fit_likes(ctx: &Ctx, out: Option<String>, seed: u64, inputs: &Inputs) -> Result<()> {
     let l = ctx.load(inputs)?;
     let bundle = ctx.store.community()?;
@@ -80,7 +85,7 @@ fn fit_likes(ctx: &Ctx, out: Option<String>, seed: u64, inputs: &Inputs) -> Resu
     let mut p = l.profile.clone();
     p.name = out.clone().unwrap_or_else(|| "fit-likes".into());
     p.description = format!(
-        "Pairwise cmini likes fit, seed {seed}, {} train/{} held-out layouts; held-out accuracy {accuracy}. Opt-in popularity model.",
+        "Pairwise cmini likes fit, seed {seed}, {} train/{} held-out layouts; held-out accuracy {accuracy}. Ranking aid only: {LIKES_WARNING}",
         fit.training_layouts.len(),
         fit.held_out_layouts.len(),
     );
@@ -88,9 +93,10 @@ fn fit_likes(ctx: &Ctx, out: Option<String>, seed: u64, inputs: &Inputs) -> Resu
     p.scale = fit.scales.clone();
     p.scale_basis = format!("cmini training layouts; seed {seed}; {}", fit.input_hashes["community"]);
     if ctx.json {
-        ctx.print(json!({"schema": SCHEMA, "fit": fit, "profile": p}));
+        ctx.print(json!({"schema": SCHEMA, "fit": fit, "profile": p, "warning": LIKES_WARNING}));
     } else {
         eprintln!("likes: {} training pairs, {} held-out pairs; accuracy {accuracy}", fit.training_pairs, fit.held_out_pairs);
+        eprintln!("warning: {LIKES_WARNING}");
     }
     emit_profile(ctx, &p, out.as_deref())
 }

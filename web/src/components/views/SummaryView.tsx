@@ -26,9 +26,8 @@ export function SummaryView({ inputs: i, meta, geometry: g, corpus, profile: p, 
   const targets = e ? fingerTargets(e, g) : p.finger_target;
   const start = layouts.find(l => l.id === s.start);
   const memetic = s.algo === "memetic";
-  const distance = weighted("B03", "S03");
   const custom = i.customBoards.some(b => b.id === g.id);
-  const sfb = p.sfb ?? { distance: "linear", lateral: 1, finger_factor: [2, 1.538, 1.111, 1, 1], skip_decay: 0.5 };
+  const skipDecay = p.sfb?.skip_decay ?? 0.5;
   const active = meta.metrics.filter(m => m.dir !== "info" && weighted(m.id)).length;
   const searchRows: Row[] = [
     ["Algorithm", algoName(s.algo), true, "Search strategy"],
@@ -53,10 +52,7 @@ export function SummaryView({ inputs: i, meta, geometry: g, corpus, profile: p, 
   const profileRows: Row[] = [
     ["Profile", p.name, true, "Current edits included"],
     ["Trigram coverage", `${number(p.trigram_coverage * 100)}%`, true, "Most frequent trigrams retained"],
-    ["Distance transform", sfb.distance, distance, "B03 / S03"],
-    ["Lateral multiplier", sfb.lateral, distance, "B03 / S03"],
-    ...sfb.finger_factor.map((v, n): Row => [`Distance · ${["pinky", "ring", "middle", "index", "thumb"][n]}`, v, distance && v !== 0, "B03 / S03"]),
-    ["Skip decay", sfb.skip_decay, weighted("S02"), "Gap 2 × decay; gap 3 × decay²"],
+    ["Skip decay", skipDecay, weighted("S02"), "Gap 2 × decay; gap 3 × decay²"],
     ["Symmetric finger effort", e?.symmetric ?? false, !!e, "Left costs mirrored to right when on"],
     ["Thumb target", `${number(e ? targets[4] + targets[5] : p.thumb_target ?? 18)}%`, weighted("M09"), e ? "Derived from typing effort" : "Profile target"],
     ["Familiarity reference", p.familiar_to ?? "None", weighted("L02") && !!p.familiar_to, "L02 requires QWERTY reference"],

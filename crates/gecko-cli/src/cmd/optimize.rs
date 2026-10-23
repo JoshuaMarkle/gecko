@@ -143,12 +143,62 @@ pub fn run(ctx: &Ctx, a: OptimizeArgs) -> Result<()> {
             eprint!("\r  {:>6.1}s  {:>12} evals  best {:.4}  {}", p.elapsed_ms as f64 / 1000.0, p.evals, p.best, p.best_chars);
         }
     })?;
+    let ties = near_ties(&res, &l);
     if ctx.json {
-        ctx.print(json!({"schema": SCHEMA, "run": res}));
+        ctx.print(json!({"schema": SCHEMA, "run": res, "near_ties": ties}));
         return Ok(());
     }
     eprintln!();
-    print_result(&res, &l)
+    print_result(&res, &l)?;
+    if !ties.is_empty() {
+        println!("\nnear-tie: {} other result(s) within {NEAR_TIE} of #1 but a different arrangement:", ties.len());
+        for t in &ties {
+            println!("  #{:<2} +{:.3}  {:>2} keys differ  {}", t.rank, t.gap, t.keys, t.chars);
+        }
+        println!("  Weight uncertainty moves scores more than this; treat them as one tier (gecko sweep, compare --robust).");
+    }
+    Ok(())
+}
+
+/// Score gap under which two optima count as tied. Default profile, `gecko sweep`
+/// (`bench/sweep-2026-10-22/`): halving any one weight costs the optimum up to 0.4, and
+/// σ = 0.5 log-normal weight draws a median 1.1.
+const NEAR_TIE: f64 = 0.4;
+
+/// Keys two results may differ in and still be the same arrangement (a swap or two).
+const SAME_KEYS: usize = 4;
+
+#[derive(serde::Serialize)]
+struct NearTie {
+    rank: usize,
+    /// Score above #1.
+    gap: f64,
+    /// Keys that differ from #1 (mirror-invariant).
+    keys: usize,
+    chars: String,
+}
+
+/// Results within [`NEAR_TIE`] of the best that differ from it in more than [`SAME_KEYS`] keys.
+fn near_ties(res: &RunResult, l: &Loaded) -> Vec<NearTie> {
+    let Some(first) = res.best.first() else { return Vec::new() };
+    let mirror = gecko_core::robust::mirror_slots(&l.geometry);
+    let a: Vec<char> = first.chars.chars().collect();
+    let mirror = mirror.filter(|m| m.len() == a.len());
+    res.best
+        .iter()
+        .skip(1)
+        .filter(|r| r.score - first.score <= NEAR_TIE)
+        .filter_map(|r| {
+            let b: Vec<char> = r.chars.chars().collect();
+            let keys = if a.len() == b.len() { gecko_core::robust::key_distance(&a, &b, mirror.as_deref()) } else { usize::MAX };
+            (keys > SAME_KEYS && keys != usize::MAX).then(|| NearTie {
+                rank: r.rank,
+                gap: r.score - first.score,
+                keys,
+                chars: r.chars.clone(),
+            })
+        })
+        .collect()
 }
 
 fn print_result(res: &RunResult, l: &Loaded) -> Result<()> {

@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use gecko_core::report::{analyze as analyze_layout, breakdown, worst_words};
+use gecko_core::robust::{self, UnitCosts};
 use gecko_core::{Layout, SCHEMA};
 use serde_json::json;
 
@@ -22,6 +23,19 @@ pub struct CompareArgs {
     /// Robustness report: score and rank on each of these corpora (comma-separated).
     #[arg(long, value_delimiter = ',')]
     corpora: Vec<String>,
+    /// Rank confidence: how often each layout keeps its rank when every weight is multiplied by
+    /// a log-normal factor (see --sigma, --draws).
+    #[arg(long)]
+    robust: bool,
+    /// --robust: log-normal σ of the weight noise.
+    #[arg(long, default_value_t = 0.5)]
+    sigma: f64,
+    /// --robust: number of weight draws.
+    #[arg(long, default_value_t = 2000)]
+    draws: usize,
+    /// --robust: random seed.
+    #[arg(long, default_value_t = 1)]
+    seed: u64,
     #[command(flatten)]
     inputs: Inputs,
 }
@@ -71,8 +85,14 @@ fn layouts_or_all(ctx: &Ctx, names: Vec<String>) -> Vec<String> {
 }
 
 pub fn compare(ctx: &Ctx, a: CompareArgs) -> Result<()> {
+    if a.robust && !a.corpora.is_empty() {
+        anyhow::bail!("--robust and --corpora are separate reports; use one");
+    }
     if !a.corpora.is_empty() {
         return robustness(ctx, a);
+    }
+    if a.robust {
+        return rank_confidence(ctx, a);
     }
     let l = ctx.load(&a.inputs)?;
     let mut rows = Vec::new();
@@ -103,6 +123,37 @@ pub fn compare(ctx: &Ctx, a: CompareArgs) -> Result<()> {
         }
         println!();
     }
+    Ok(())
+}
+
+/// `compare --robust`: rank confidence under log-normal weight noise.
+fn rank_confidence(ctx: &Ctx, a: CompareArgs) -> Result<()> {
+    let l = ctx.load(&a.inputs)?;
+    let names = layouts_or_all(ctx, a.layouts);
+    let mut unit = UnitCosts::new(&l.geometry, &l.corpus, &l.profile);
+    let costs = names.iter().map(|n| Ok(unit.of(&ctx.layout(n, &l)?)?)).collect::<Result<Vec<_>>>()?;
+    let rows = robust::rank_confidence(&names, &costs, &l.profile, a.sigma, a.draws, a.seed);
+    if ctx.json {
+        ctx.print(json!({"schema": SCHEMA, "geometry": l.geometry.name, "profile": l.profile.name, "corpus": l.corpus.name,
+            "sigma": a.sigma, "draws": a.draws, "seed": a.seed, "layouts": rows}));
+        return Ok(());
+    }
+    println!("rank confidence: {} draws, every weight × exp(σ·z), σ = {}", a.draws, a.sigma);
+    println!("{:<4} {:<16} {:>8} {:>9} {:>11} {:>10} {:>9}", "#", "layout", "score", "P(rank)", "P(>next)", "rank 5–95", "P(first)");
+    for r in &rows {
+        let next = r.p_beats_next.map_or("-".into(), |p| format!("{:.0}%", 100.0 * p));
+        println!(
+            "{:<4} {:<16} {:>8.3} {:>8.0}% {:>11} {:>10} {:>8.0}%",
+            r.rank,
+            r.layout,
+            r.score,
+            100.0 * r.p_rank,
+            next,
+            format!("{}–{}", r.rank_lo, r.rank_hi),
+            100.0 * r.p_first
+        );
+    }
+    println!("P(>next): share of draws in which the layout still beats the one ranked below it.");
     Ok(())
 }
 

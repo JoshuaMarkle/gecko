@@ -222,7 +222,7 @@ A board is only useful if it can be built. Every candidate is checked for \emph{
 \texttt{gecko build stl run:<id>} turns key poses into a printable board: a switch plate with MX or Choc cutouts and clip pockets, webs and junctions between neighbouring keys, walls down to the desk, a bottom plate, screw bosses, stabilizer cutouts for long keys, and openings for the controller, USB, and the cable between halves. Each part is a list of closed convex shells, so any slicer can print it directly, and the parts are checked against switch travel and keycap clearance. The web UI's Export tab renders the same case, from the same core, and downloads the files. Corne, Kyria, Dactyl-Manuform, and a 3D-optimized Corne all union into single manifold solids.
 
 \section{Using GECKO}\label{sec:use}
-Each use below is a question, the commands that answer it, and what they returned on the bundled data (ANSI-30 or Corne, English, default profile unless stated). Runs and scripts are in \texttt{bench/software-paper-2026-10-21/}.
+Each use below is a question, the commands that answer it, and what they returned on the bundled data (ANSI-30 or Corne, English, the 2026-10-21 default profile unless stated; the 2026-10-22 retune is reported in the cost-validity paper). Runs and scripts are in \texttt{bench/software-paper-2026-10-21/}.
 
 \begin{papertable}{Uses at a glance.}
 \footnotesize
@@ -298,7 +298,7 @@ K\"uhlmak & bigram classes, balance & threshold annealing & fixed 2D\\
 Engram & measured pair comfort & exhaustive, B\&B & fixed 2D\\
 Integer programming & ergonomics, familiarity & IP with bounds & fixed 2D\\
 Cosmos, ergogen & none (generate boards) & manual, parametric & any\\
-GECKO & 48 metrics, hand model & 9 optimizers, QD, B\&B, CMA-ES & 2D, 3D, free-form; STL\\
+GECKO & 47 metrics, hand model & 9 optimizers, QD, B\&B, CMA-ES & 2D, 3D, free-form; STL\\
 \bottomrule
 \end{tabular*}
 \end{papertable}

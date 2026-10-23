@@ -7,6 +7,7 @@ mod certify;
 mod corpus;
 mod explore;
 mod geometry;
+mod judge;
 mod layouts;
 mod list;
 mod magic;
@@ -28,6 +29,14 @@ pub enum Cmd {
     Score(score::ScoreArgs),
     /// Rank several layouts side by side (all reference layouts when none are given).
     Compare(score::CompareArgs),
+    /// Independent judges per layout: E01 typing time, E05/E04 Engram comfort, home row, effort,
+    /// SFB; with --community, percentiles among the cmini layouts.
+    Judge(judge::JudgeArgs),
+    /// Unit-weight cost of every metric per layout, as JSON lines (score = Σ weight/scale × cost).
+    Features(judge::FeaturesArgs),
+    /// How far the optimum moves with the weights: re-optimize with each weight dropped, halved
+    /// and doubled and under random log-normal draws; families, regret, per-weight sensitivity.
+    Sweep(judge::SweepArgs),
     /// Finger loads, heat, and the worst same-finger and stretch n-grams.
     Analyze(score::AnalyzeArgs),
     /// Search for better layouts. Always writes a run directory.
@@ -104,6 +113,9 @@ impl Cmd {
             Cmd::Score(a) => score::score(&ctx, a),
             Cmd::Compare(a) => score::compare(&ctx, a),
             Cmd::Analyze(a) => score::analyze(&ctx, a),
+            Cmd::Judge(a) => judge::judge(&ctx, a),
+            Cmd::Features(a) => judge::features(&ctx, a),
+            Cmd::Sweep(a) => judge::sweep(&ctx, a),
             Cmd::Optimize(a) => optimize::run(&ctx, a),
             Cmd::Explore(a) => explore::explore(&ctx, a),
             Cmd::Qd(a) => explore::qd(&ctx, a),

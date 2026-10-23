@@ -92,11 +92,12 @@ terms containing *a* or *b*.
 
 A metric (`gecko-core/src/metrics/`) is a *table builder*: given a geometry it returns a mono
 `[N]`, pair `[N×N]` or triple `[N×N×N]` cost, plus a rule to report a raw value (%, per-1000).
-About 45 metrics are implemented across families: same-finger (SFB, SFS, far SFS, distance),
+About 45 metrics are implemented across families: same-finger (SFB, SFS, far SFS),
 stretch and scissors (B14 geometric stretch, B11 finger-pair movement), rolls and alternation
-(a dozen trigram classes including thumbs), load and balance (M-series), comfort judges (Engram
-E04/E05), hand-model costs (G01 reach, G03 wrist, G05 press angle), and symbol/layer metrics
-(Y-series: layer switches, code bigrams, paired brackets, home-row-mod misfires).
+(a dozen trigram classes including thumbs), load and balance (M-series), comfort and timing
+judges (Engram E04/E05, E01 typing time fitted to 136M keystrokes), hand-model costs (G01 reach,
+G03 wrist, G05 press angle), and symbol/layer metrics (Y-series: layer switches, code bigrams,
+paired brackets, home-row-mod misfires).
 (`gecko list metrics`; `context/metrics-catalog.md`.)
 
 ### 3.2 Folding
@@ -195,7 +196,7 @@ default (`bench/memetic-2026-10-21/leaderboard.json`; lower is better; backgroun
 | Memetic | 17.650 | 18.027 ± 0.352 |
 | Tabu | 18.281 | 18.960 ± 0.256 |
 
-A 20 s SA under the current default profile reaches 15.704 from different seeds
+A 20 s SA under the 2026-10-21 default profile reaches 15.704 from different seeds
 (`context/algorithms/simulated-annealing.md`). Larger neighbourhoods give better optima per
 descent but cost 3–60× more evaluations, so swap-only stays the default
 (`context/algorithms/README.md`). `TODO(run)`: budget grid with 30 seeds, performance profiles and
@@ -210,8 +211,8 @@ in the same pipeline and the results are checked against published numbers (QWER
 `gecko compare`). The web UI is the same core compiled to WebAssembly, so a number shown while
 dragging a key equals the CLI's. If WASM fails, it falls back to `POST /api/score`.
 
-Current ranking of reference layouts under the default profile (`gecko compare`, ansi-30,
-english; lower is better):
+Ranking of reference layouts under the 2026-10-21 default profile (`gecko compare`, ansi-30,
+english; lower is better; the 2026-10-22 retune keeps this order, `context/objective.md`):
 
 | # | Layout | Score | SFB % | Scissors % | Rolls-in % |
 |---|---|---|---|---|---|

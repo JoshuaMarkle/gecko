@@ -427,6 +427,18 @@ impl Scorer {
             logical.fill(true);
             moved.fill(true);
         }
+        // B10 measures from each finger's (or hand's) home keys: a moved home key moves its hand.
+        // Key effort (M01, E01) reads the home row and home keys board-wide.
+        let home_moved: Vec<crate::Hand> =
+            (0..n).filter(|&i| moved[i] && (vg.key[i].home || old[i].home)).map(|i| vg.key[i].hand()).collect();
+        for i in 0..n {
+            if home_moved.contains(&vg.key[i].hand()) {
+                moved[i] = true;
+            }
+        }
+        if (0..n).any(|i| logical[i] && (vg.key[i].home || old[i].home)) {
+            logical.fill(true);
+        }
         self.geometry = vg;
         let count = moved.iter().filter(|&&c| c).count();
         if count == 0 {

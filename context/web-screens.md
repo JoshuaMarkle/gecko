@@ -90,9 +90,10 @@ bigrams, trigrams, skipgrams (`corpus_stats`). Local languages cannot be used fo
 ## Profile
 Sidebar: profile picker + reset, then every parameter in sections (Finger load with
 relative effort inputs, Rows and reach, Hand model (G01/G05/G03 weights; visual: G01 per key for the
-profile's hand, ringed keys out of reach), Same-finger with SFB distance settings, Stretches and scissors,
-Rolls and alternation, Redirects, Measured comfort, Layers, Shortcuts and familiarity,
-Precision); each field has a tooltip. Scroll-spy marks the focused section (click a title to
+profile's hand, ringed keys out of reach), Same-finger with skip decay, Stretches and scissors,
+Rolls and alternation, Redirects, Measured comfort and timing (E01 is a judge, weight 0 by
+default), Layers, Shortcuts and familiarity,
+Precision); each field has a tooltip. Retired metrics (B03, S03) are not shown. Scroll-spy marks the focused section (click a title to
 jump). Main: a visual of the focused section on the current layout (finger heat + finger
 load, effort heat, SFB/SFS arcs, stretch arcs, roll arcs, a redirect example, layer keys,
 Z X C V and keys moved from QWERTY). Bottom: what it measures, why, how weights act, and the
@@ -142,7 +143,8 @@ a run finishes its best board becomes the board (`run:<id>`) and its layout the 
 
 ## Summary
 Last input tab: a full-width, scrollable reference sheet with paired parameter tables,
-a complete metric table (weight, scale, effective weight, direction and description),
+a complete metric table (weight, scale, effective weight, direction and description; retired
+metrics left out),
 finger costs / generated targets, and per-key geometry. Reads the live shared inputs;
 all sections stay expanded. Gray rows identify zero-weight metrics, missing comfort tables
 or familiarity references, other algorithms' settings, and saved-only board / stop-confidence

@@ -56,8 +56,8 @@ pub fn fit_preferences(g: &Geometry, corpus: &Corpus, profile: &Profile, bundle:
     let mut features = Vec::new();
     for (i, d) in METRICS.iter().enumerate() {
         let sd = stdev(train_rows.iter().map(|r| r[i]));
-        // Comfort stays an independent judge; info metrics never contribute to scores.
-        if d.dir != Dir::Info && !d.id.starts_with('E') && sd > 1e-8 {
+        // Comfort and timing (E*) stay independent judges; info and retired metrics never score.
+        if d.dir != Dir::Info && !d.retired && !d.id.starts_with('E') && sd > 1e-8 {
             scales.insert(d.id.to_string(), sd as f32);
             features.push(i);
         }

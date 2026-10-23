@@ -318,6 +318,7 @@ pub fn likes_report<'a>(
     let metrics = METRICS
         .iter()
         .enumerate()
+        .filter(|(_, d)| !d.retired)
         .filter_map(|(i, d)| {
             let sign = if d.dir == Dir::Max { 1.0 } else { -1.0 };
             let x: Vec<f64> = values.iter().map(|v| sign * v[i]).collect();

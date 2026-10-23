@@ -43,10 +43,10 @@ const SECTIONS: Section[] = [
     what: "Reach, press angle and wrist posture from the hand model: each key's cost for this hand, with the hand resting on the home keys (set the hand and arms on the Hand tab).",
     why: "Keys the fingertips reach with little joint deviation, and press head-on, are faster and kinder; straight, less-pronated wrists strain less. The costs follow the board's shape and the hand's size.",
     how: "Reach pulls frequent symbols onto keys this hand reaches easily; Press angle and Wrist posture mostly separate boards (keywells, splits and tents win). Turning on Use hand in optimization adds all three at the hand profile's weights." },
-  { id: "sfb", title: "Same-finger", ids: ["B01", "B02", "B03", "S01", "S02", "S03", "T02", "T08"],
-    what: "Consecutive (SFB) and one-apart (SFS) keystrokes on the same finger, and how far that finger travels.",
+  { id: "sfb", title: "Same-finger", ids: ["B01", "B02", "S01", "S02", "T02", "T08"],
+    what: "Consecutive (SFB) and one-apart (SFS) keystrokes on the same finger.",
     why: "A finger cannot start the next key until it lifts from the last; same-finger pairs are the biggest single speed cost.",
-    how: "SFB carries the largest default weight. Distance shapes how travel counts (linear, squared, Fitts); finger factors make pinky SFBs costlier." },
+    how: "SFB carries the largest default weight: in keystroke timing an SFB costs about half a keystroke more, and how far the finger travels adds nothing measurable. SFS has no measured timing cost; its weight is a comfort assumption. Skip decay sets how much SFS two or three keys apart count." },
   { id: "stretch", title: "Stretches and scissors", ids: ["B04", "B05", "B06", "B09", "B14", "S04", "S05", "T09"],
     what: "Pairs that spread or cross adjacent fingers: lateral stretches (LSB), scissors (adjacent fingers on rows two apart), pinky–ring pairs.",
     why: "Adjacent fingers share tendons; forcing them apart vertically or sideways strains the hand.",
@@ -59,10 +59,10 @@ const SECTIONS: Section[] = [
     what: "One-hand trigrams that change direction (e.g. ring → index → middle); bad redirects avoid the index finger entirely.",
     why: "Changing direction mid-roll breaks rhythm and needs fine finger control.",
     how: "Raise Redirects to discourage direction changes; Bad redirects separately penalises the worst ones." },
-  { id: "comfort", title: "Measured comfort", ids: ["E04", "E05"],
-    what: "Key-pair discomfort from Engram's formula and its measured typing data.",
-    why: "Measured comfort catches pairs the geometric metrics miss.",
-    how: "A light weight nudges ties toward measured-comfortable pairs; it rarely changes the optimum on its own." },
+  { id: "comfort", title: "Measured comfort and timing", ids: ["E01", "E04", "E05"],
+    what: "Key-pair discomfort from Engram's formula and its measured typing data, and typing time predicted from 136M keystrokes of fast touch typists.",
+    why: "Measured comfort and timing catch pairs the geometric metrics miss, and check that the other weights point the right way.",
+    how: "A light weight nudges ties toward measured-comfortable pairs. Typing time is a judge, unweighted by default: weighting it makes the score chase the model that checks it." },
   { id: "layers", title: "Layers", ids: ["Y01", "Y02", "Y03", "Y04"],
     what: "Layer switches, symbol bigrams across layers, paired brackets and home-row-mod misfires.",
     why: "On small boards symbols live on layers; each switch is an extra key press.",
@@ -226,7 +226,8 @@ export function ProfileView(p: Props) {
     setFocus(id);
   };
   const sec = SECTIONS.find((s) => s.id === focus)!;
-  const metrics = p.a?.breakdown.metrics.filter((m) => sectionOf(m.id) === focus && m.dir !== "info") ?? [];
+  const shown = new Set(p.meta.metrics.map((d) => d.id));
+  const metrics = p.a?.breakdown.metrics.filter((m) => sectionOf(m.id) === focus && m.dir !== "info" && shown.has(m.id)) ?? [];
 
   return (
     <Frame
@@ -274,13 +275,6 @@ export function ProfileView(p: Props) {
                   <div className="hint">Combined thumb target: {(targets[4] + targets[5]).toFixed(1)}%</div>
                 </>}
                 {s.id === "sfb" && pr.sfb && <>
-                  <div className="row">
-                    <label title="How same-finger travel distance counts toward Finger speed.">Distance</label>
-                    <select value={pr.sfb.distance} onChange={(e) => p.setProfile({ ...pr, sfb: { ...pr.sfb!, distance: e.target.value as "linear" | "squared" | "fitts" } })}>
-                      <option value="linear">Linear</option><option value="squared">Squared</option><option value="fitts">Fitts</option>
-                    </select><span />
-                  </div>
-                  <Num label="Lateral factor" help="Multiplier on sideways same-finger travel." value={pr.sfb.lateral} step={0.1} onChange={(v) => p.setProfile({ ...pr, sfb: { ...pr.sfb!, lateral: v } })} />
                   <Num label="Skip decay" help="Weight of an SFS relative to an SFB for each key between." value={pr.sfb.skip_decay} step={0.05} onChange={(v) => p.setProfile({ ...pr, sfb: { ...pr.sfb!, skip_decay: v } })} />
                 </>}
                 {s.id === "precision" && (

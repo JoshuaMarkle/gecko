@@ -23,7 +23,7 @@ Metrics, profiles, the scorer, corpora, layouts, layers and adaptive keys. Newes
 - 2026-10-20 — Layers flatten onto a virtual geometry, one slot per (layer, key); holder keys `①②③` never move. — Keeps the hot loop flat and allocation-free; Y01/Y02 add the layer costs.
 - 2026-10-20 — Layered layouts live in `data/layouts/layered/`. — `compare` keeps ranking like-for-like layouts only.
 - 2026-10-21 — B11 = KLO's `finger_switch_factor` table plus a lateral term; Häger-Ross coupling scales ring pairs only. — KLO already encodes the other pairs; the coupling data is the physical basis for ring.
-- 2026-10-21 — B11 weighs 0.5 spread units, on top of B14. — At 0.5 the reference order is unchanged; at 1 Halmak and Colemak swap.
+- 2026-10-21 — B11 weighs 0.5 spread units, on top of B14 (superseded 2026-10-22: 0.25 in the retune). — At 0.5 the reference order is unchanged; at 1 Halmak and Colemak swap.
 - 2026-10-21 — Y04 HRM misfire = same-hand, different-finger bigrams starting on a mod key; unweighted. — A mod misfires only while held and another same-hand key goes down.
 - 2026-10-21 — cmini layouts live in one bundle (`cmini:<name>`), 30-key core only; layouts that don't map are skipped with the reason kept. — Keeps references curated and the repo tidy; skipping beats guessing a remap.
 - 2026-10-21 — Skipgrams (S01–S03) count any middle token, space included. — The finger still travels from `x` to `z`; cmini's narrower SFS reads lower.
@@ -49,9 +49,17 @@ Metrics, profiles, the scorer, corpora, layouts, layers and adaptive keys. Newes
 - 2026-10-21 — Magic rules live on `Layout.magic` and in run `config.json`, not the char string. — Char-string paths stay unchanged.
 - 2026-10-21 — `gecko magic` searches by lazy greedy with exact re-scoring, then prunes. — Top-follower candidate lists missed key rules (`eu`, `ao`).
 - 2026-10-21 — Trigram costs are cached in `State` by stable sparse-entry ID. — 16.3% faster; CSR indirection was slower, and premultiplied frequencies change rounding.
-- 2026-10-21 — Likes are fit by pairwise logistic loss with one layout per duplicate group and a 20% whole-layout holdout, saved as opt-in `learned`. — Prevents pair leakage; 53.8% held-out accuracy is too low for a default.
+- 2026-10-21 — Likes are fit by pairwise logistic loss with one layout per duplicate group and a 20% whole-layout holdout, saved as opt-in `learned` (superseded 2026-10-22: `learned` removed). — Prevents pair leakage; 53.8% held-out accuracy is too low for a default.
 - 2026-10-21 — L01/L02 use a new `Order::Place` (symbol-on-slot table); QWERTY is built in; weighted only in `familiar`. — A per-slot table can't say which symbol sits there; existing scores stay unchanged.
 - 2026-10-21 — Web finger capacity = inverse relative effort over the fingers on the board; optional in core profiles. — Higher cost always means harder; optional keeps legacy runs and calibration.
 - 2026-10-22 — Angle mod is a separate geometry, `ansi-30-angle` (same positions, left bottom row one finger over); a re-fingered key takes its new finger's natural bottom-row effort (ring 2.8, middle 2.4, index 1.8; V = mirrored N, 2.6); `layouts likes` scores cmini angle boards on `<g>-angle`. — Fingering already lives in the geometry; keeping ansi-30's efforts would charge the ring finger for a pinky reach, and derived efforts (G4) run lower than the hand-entered ones beside them.
 - 2026-10-23 — Swap-delta trigram loops read slots from a 256-entry table indexed by `u8` (safe code, no `unsafe`); per-symbol cached cost sums rejected. — +7.5% deltas/s with identical results; the cached-cost read is ≤5% of delta time.
 - 2026-10-22 — Shift counts ship as a new `english-cased` corpus; `english` stays the frozen default. — 156 runs, including the paper's cited runs, verify against `english`'s hash; rankings of the reference layouts are identical on both.
+- 2026-10-22 — Default profile retuned to the timing and comfort evidence (SFB, B14, S01 down; scissors, pinky–ring, row jump, home row, effort, rolls, alternates up; B03 dropped). — Agreement with the time judge on good layouts 0.44 → 0.87 with the reference order kept; keeping SFB at 8.28 gave a worse optimum (`context/objective.md`).
+- 2026-10-22 — Bundled scales are stdev over the 9 references without QWERTY. — QWERTY alone set every spread; weights now compare among decent layouts. Same objective (renormalized).
+- 2026-10-22 — B03/S03 retired, not deleted: flagged `retired`, still scored, hidden in the UI, skipped by fits. — Timing shows no SFB-distance effect; old runs and profiles must still verify.
+- 2026-10-22 — E01 typing time is a fitted bigram table used as a judge (weight 0), not an objective. — Optimizing the judge would remove the independent check on the score.
+- 2026-10-22 — E01 uses the 7-feature model (no SFB distance, no roll direction). — Both fit ≈ 0; cross-validated R² 0.669 vs 0.655 with them.
+- 2026-10-22 — `learned` profile removed; likes fits print a warning. — Its optimum games the fit (home row 8 %); a likes fit is a ranking aid. Old runs embed their profile.
+- 2026-10-22 — B10 measures each key from its finger's home keys (the hand's if none). — Raw y made column stagger along finger length a "jump"; on row-stagger boards values are unchanged.
+- 2026-10-22 — The trigram coverage cut keeps its index tie-break. — Ties make scores depend on symbol order by ~3e-5, but changing it would break `gecko verify` of saved runs; tests compare with the run's own symbol order.

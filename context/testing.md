@@ -47,7 +47,8 @@ comfort tables and profile defaults, then invokes the real CLI to get expected r
 Metric unit tests (`tests/metrics.rs`): every implemented metric on a 6-key board (plus a
 2-key crossed-finger board for B14 and a 6-key layered board for Y01/Y02 and thumb loads)
 with explicit n-gram counts; each expected value is commented with its arithmetic and checked
-through both `breakdown` and the folded `Scorer::full`.
+through both `breakdown` and the folded `Scorer::full` (E01's model and B10's home-relative row
+jump included).
 delta == full (proptest), folding == breakdown, brute-force optimum on a 6-key board for
 HC/SA/GA/memetic, determinism with an eval budget, pins respected, ranking sanity + QWERTY SFB,
 corpus counting (incl. skip-2/3, word imports) + binary round-trip + `GKCORP1` compatibility,
@@ -116,7 +117,8 @@ pairs as the 2D one; tilted keys meeting at their tops, a convex column's switch
 stacked key collide while a 15° keywell does not. Bilevel and alternate searches with `--evals`
 reproduce exactly, end collision-free, inside the bounds and no worse than the start board; the
 run directory's `geometry.toml` loads, equals `geometry.param.toml`, and scores the reported
-layout. Progress
+layout (scored with the run's own symbol order: the trigram coverage cut breaks frequency ties by
+symbol number). Progress
 events carry the reported board (values, layout) ending at the chosen board; paused time does
 not use the time budget; a run's board loads as `run:<id>` (keys and parameters) and is listed
 with `kind = "geometry"`.
@@ -236,3 +238,11 @@ unreviewed changes just fail.
 ## Overnight harness
 
 `scripts/overnight.sh` (`make overnight`, `make overnight-dry`) works through open issues in `context/roadmap.md` order, skipping any with open GitHub blockers, an open PR, or an existing `fix/issue-<n>` branch. Each issue gets a headless `claude -p` run in the worktree `../gecko-overnight` (your checkout is never touched). The run resumes its session after usage limits. Then comes the gate: release build, `cargo test`, clippy, wasm, web typecheck and tests, with one repair round. If the gate passes, the harness commits, pushes `fix/issue-<n>` and opens a PR. Failed work is saved as a patch. Logs and `summary.tsv` go in `~/.local/state/gecko-overnight/<stamp>/`; `touch ~/.local/state/gecko-overnight/STOP` stops it after the current issue. Agents see only what is on `origin/main`.
+
+Weight robustness (`tests/robust.rs`): unit costs times `weight / scale` reproduce the scorer's
+score (default, hand, familiar; three layouts); QWERTY and its mirror are 0 keys apart
+(mirror-invariant) and one swap 2; families join a swap and a mirror and keep a scramble apart;
+rank confidence with σ = 0 keeps every rank, QWERTY stays last at σ = 0.5; a small sweep runs
+1 + 3·weights + draws searches with base regret 0 and E01 judges on every optimum. `select`
+re-scores runs with a fresh scorer, so it allows 1e-4 relative (trigram tie-break by symbol
+order, see above).

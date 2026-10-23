@@ -47,6 +47,7 @@ gecko/
 | `scorer` | Folded tables and evaluation: `build` (fold metrics × weights, re-weight, re-cost a moved geometry), `eval` (hot loop: full, delta, `apply`), `load` (finger-load costs), `qap` (QAP terms for bounds) |
 | `bound` | Gilmore–Lawler lower bound and optimality gap |
 | `calibrate` | Spread-normalized and judge-fitted profile weights; rank agreement |
+| `robust` | Unit metric costs (score linear in weights), rank confidence under weight noise, weight sweeps, mirror-invariant families |
 | `report` | Per-metric breakdown, finger loads, heat, worst n-grams, worst words |
 | `optimize` | `Optimizer` trait, threaded runner, top-K; `hill_climb`, `anneal`, `genetic`, `memetic`, `bls`, `tabu`, `map_elites`, `nsga2` |
 | `explore` | Landscape probe, local-optima archive, atlas files, distances/symmetry, atlas statistics, MAP-Elites grid |
