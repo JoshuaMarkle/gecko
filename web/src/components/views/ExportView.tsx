@@ -5,7 +5,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Geometry } from "../../api";
-import { boardSvg, kleJson, layerChars, layoutJson, layoutTextExport, layoutToml, slug, statsCsv, statsMarkdown, type ExportInfo, type ImageOptions, type KeyColor } from "../../export";
+import { boardSvg, ergogenYaml, kleJson, layerChars, layoutJson, layoutTextExport, layoutToml, slug, statsCsv, statsMarkdown, type ExportInfo, type ImageOptions, type KeyColor } from "../../export";
 import { fmt, scoredMetrics, verdict } from "../../format";
 import { Case3D } from "../../three/Case3D";
 import { buildCase, exportLayout, wasmReady, type CaseModel, type CaseParams, type Switch } from "../../wasm";
@@ -103,6 +103,7 @@ export function ExportView({ info, label, onError }: { info: ExportInfo; label: 
     ]],
     ["Other tools", [
       { id: "kle", title: "KLE", help: "keyboard-layout-editor.com: board, legends (layers as extra legends) and the image's key colors", ext: "kle.json", mime: "application/json", make: (x) => kleJson(x, opts.color) },
+      { id: "ergogen", title: "Ergogen", help: "ergogen.xyz config: every key's position and rotation in mm (one zone per key) and a switch plate outline, to build a PCB or case from", ext: "ergogen.yaml", mime: "application/yaml", make: ergogenYaml },
       community("oxeylyzer", "Oxeylyzer", "Oxeylyzer .dof: the 30 alpha keys", "dof.json"),
       community("genkey", "Genkey", "Genkey layout file: the 30 alpha keys", "genkey.txt"),
       community("cmini", "cmini", "cmini JSON: the 30 alpha keys", "cmini.json"),

@@ -70,6 +70,7 @@ gecko build stl [run:<id>|<geometry>] [--switch mx|choc] [--plate 3] [--wall 2.5
 gecko layouts import <file> [--from oxeylyzer|genkey|cmini|auto] [--out <name>] [--force]
                [--name N] [-g geometry]          # → layout TOML (stdout, or data/layouts/<out>.toml)
 gecko layouts export <layout> --to oxeylyzer|genkey|cmini [-g geometry]   # 30 alpha keys → stdout
+                                                                  #   (ergogen and KLE-with-legends: web Export tab only)
 gecko layouts svg <layout> [--color plain|fingers|heat] [--base-only] [--no-title] [--out f.svg] [-g -p -c]
                                                                   # the web Export tab's image: every layer,
                                                                   #   title + score; PNG: rsvg-convert f.svg
