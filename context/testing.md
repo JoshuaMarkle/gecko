@@ -141,6 +141,14 @@ on ansi-30, corne-36 with Shift, the 3D Dactyl and a layered corne: after each
 the hand on a 3D one); delta == full after `refresh`; a different key set is rejected.
 Bench group `tables` (`build`, `rebuild_one_key`); `gecko perf` prints both.
 
+Adaptive fidelity (`tests/fidelity.rs`): ladder sizes; a coarse scorer keeps delta == full;
+SA and BLS runs with `fidelity` report exact scores, end on exact local optima and reproduce
+for a seed. Fingering (`tests/fingering.rs`): choosing every `ansi-30-alt` option gives
+`ansi-30-angle`'s fingers, options survive `with_fingering` and the TOML round trip, bad
+`alt`s are rejected and missing efforts derived; a finger reassignment re-costed by
+`set_geometry` equals `Scorer::new` (all metrics weighted; this caught the inverted
+pose-only check); the fingering search never worsens and is deterministic.
+
 Bundled splits (`tests/boards.rs`): every flat split's key (Corne/Sweep/Lily58/Kyria/ErgoDox)
 matches pinned QMK-derived KLE inputs (the 3D Dactyl keeps their slots only); counts, stagger, alpha fingers, fills, reference fits,
 TOML round-trips, and all-symbol score deltas (including ErgoDox above 64 slots) are checked.
@@ -190,6 +198,14 @@ invariance and that tenting lowers G03. Web: `hand.test.ts` covers `withHand` / 
 check allows 3e-5 relative: f32 pair tables valued 0–100 can leave a few ULP after cancelling
 (seen on Y02 when the per-metric test weights shift).
 
+Weight robustness (`tests/robust.rs`): unit costs times `weight / scale` reproduce the scorer's
+score (default, hand, familiar; three layouts); QWERTY and its mirror are 0 keys apart
+(mirror-invariant) and one swap 2; families join a swap and a mirror and keep a scramble apart;
+rank confidence with σ = 0 keeps every rank, QWERTY stays last at σ = 0.5; a small sweep runs
+1 + 3·weights + draws searches with base regret 0 and E01 judges on every optimum. `select`
+re-scores runs with a fresh scorer, so it allows 1e-4 relative (trigram tie-break by symbol
+order, see above).
+
 ## Cross-language checks
 
 The web reimplements or consumes some Rust code; these keep the two sides equal.
@@ -234,15 +250,3 @@ unreviewed changes just fail.
 ## Rule
 
 `cargo test` and `cargo clippy -- -D warnings` pass before any change is considered done.
-
-## Overnight harness
-
-`scripts/overnight.sh` (`make overnight`, `make overnight-dry`) works through open issues in `context/roadmap.md` order, skipping any with open GitHub blockers, an open PR, or an existing `fix/issue-<n>` branch. Each issue gets a headless `claude -p` run in the worktree `../gecko-overnight` (your checkout is never touched). The run resumes its session after usage limits. Then comes the gate: release build, `cargo test`, clippy, wasm, web typecheck and tests, with one repair round. If the gate passes, the harness commits, pushes `fix/issue-<n>` and opens a PR. Failed work is saved as a patch. Logs and `summary.tsv` go in `~/.local/state/gecko-overnight/<stamp>/`; `touch ~/.local/state/gecko-overnight/STOP` stops it after the current issue. Agents see only what is on `origin/main`.
-
-Weight robustness (`tests/robust.rs`): unit costs times `weight / scale` reproduce the scorer's
-score (default, hand, familiar; three layouts); QWERTY and its mirror are 0 keys apart
-(mirror-invariant) and one swap 2; families join a swap and a mirror and keep a scramble apart;
-rank confidence with σ = 0 keeps every rank, QWERTY stays last at σ = 0.5; a small sweep runs
-1 + 3·weights + draws searches with base regret 0 and E01 judges on every optimum. `select`
-re-scores runs with a fresh scorer, so it allows 1e-4 relative (trigram tie-break by symbol
-order, see above).

@@ -49,6 +49,9 @@ pub struct PerfArgs {
 }
 
 pub fn bench(ctx: &Ctx, a: BenchArgs) -> Result<()> {
+    if a.seeds == 0 {
+        bail!("seeds must be positive (got 0)");
+    }
     let l = ctx.load(&a.inputs)?;
     let start = ctx.start(None, &l)?;
     let time_ms = parse_duration(&a.time)?;
@@ -209,4 +212,37 @@ pub fn perf(ctx: &Ctx, a: PerfArgs) -> Result<()> {
         println!("recorded in {}", p.display());
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+    use gecko_core::store::Store;
+    use std::path::Path;
+
+    #[derive(Parser)]
+    struct CliBench {
+        #[command(flatten)]
+        args: BenchArgs,
+    }
+
+    #[test]
+    fn bench_rejects_zero_seeds_before_loading_inputs() {
+        let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+        let ctx = Ctx {
+            store: Store::open(root).unwrap(),
+            json: false,
+        };
+        let cli = CliBench::try_parse_from([
+            "gecko-bench",
+            "--seeds",
+            "0",
+            "-g",
+            "nonexistent-geometry-should-not-load",
+        ])
+        .unwrap();
+        let err = bench(&ctx, cli.args).unwrap_err();
+        assert_eq!(err.to_string(), "seeds must be positive (got 0)");
+    }
 }
