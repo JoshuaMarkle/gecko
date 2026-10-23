@@ -201,3 +201,22 @@ prices pressing a steep key (that is G05), so use `-p hand` or tighter `col_curv
 (−33.8%), split tent 28°, row curve 30° (bound), every key ≤ 50°, thumbs ≈ 26°. Earlier 3D
 results above predate the fix (3D boards now score their out-of-plane stretch), so their
 numbers are not comparable.
+
+**Build guide (#77, 2026-10-23)**: `corne-36.param`, `--free '3d,fingers.row_curve=0:20,split.tent=0:30'`,
+thumb keys pinned, `-p data/examples/my-hand.toml` (a 205 mm hand), `--evals 4000 --seed 1 --threads 8`
+([../build-guide.md](../build-guide.md)).
+
+| run | case check | start → best | cap hits | shape |
+|---|---|---|---|---|
+| `20261023-120734-geom-6864b5ad` | off, thumbs free, 800 boards | 5.61 → 2.90 | 0 | layout put space/enter/bspc on letter keys: unusable |
+| `20261023-120749-geom-0306cb88` | off | 10.47 → 6.60 (−37.0%) | 8 (inner index columns, 2 thumbs) | row curve 20° (bound), tent 30° (bound) |
+| `20261023-120955-geom-c671f1cc` | off, column lift fixed | 10.47 → 6.63 | 4 thumbs, 1 blocked switch | |
+| `20261023-120955-geom-a9081ea6` | off, `--margin 0.1` | 10.47 → 8.45 | | no collision-free board: the start Corne collides at 0.1 u |
+| `20261023-121212-geom-e91bdfbb` | `mx` | 10.47 → 6.62 (−36.8%) | 0 | row curve 20° (bound), col 6.8°, tent 27°, thumbs tilt −21° |
+
+- The case check costs 0.2% of score and ~30% more time (41 s vs 31 s); the unchecked board is
+  not printable as is, so the guide turns it on.
+- Pin the thumb tokens: an unpinned 3D search moves them onto letter keys (G01 favours the
+  home row for frequent keys, and space is the most frequent).
+- The `20261022-174*` H10 runs above no longer load as boards (keycap overlap under the
+  current 2D/3D check); their numbers stand, their `run:<id>` boards do not.

@@ -343,5 +343,9 @@ fn run_boards_load_by_id() {
     let listed = gecko_core::run::list(&st.runs);
     assert_eq!((listed[0].kind.as_str(), listed[0].geometry.as_str()), ("geometry", g.name.as_str()));
     assert!(st.geometry("run:../x").is_err() && st.param_geometry("run:").is_err());
+    // `run:<id>` as a layout is the best board's layout, on that board.
+    let l = st.layout(&id, &g.name).unwrap();
+    assert_eq!((l.geometry.as_str(), l.chars.iter().collect::<String>()), (g.name.as_str(), res.best.chars.clone()));
+    assert!(st.layout(&format!("{id}#2"), &g.name).is_err());
     let _ = std::fs::remove_dir_all(&st.runs);
 }

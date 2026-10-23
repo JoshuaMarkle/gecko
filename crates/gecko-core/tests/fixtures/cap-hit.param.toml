@@ -1,0 +1,127 @@
+# corne-36 3D search result (#77 build guide, run 20261023-120749-geom-0306cb88) whose MX
+# keycaps hit the case at the inner index columns and two thumbs: the [build] case check's test.
+name = "corne-36-opt-0306cb88"
+description = "corne-36 (geometry run 20261023-120749-geom-0306cb88)"
+
+[comfort]
+
+[split]
+axis = 5.0
+spread = 3.0
+angle = 11.250210788404022
+pivot = [4.5, 1.7]
+tent = 30.0
+tilt = -0.08234643181341994
+lift = 0.0
+
+[[zone]]
+name = "fingers"
+anchor = [0.5, 0.5]
+rotate = 0.0
+mirror = true
+rows = [0, 1, 2]
+row_pitch = 1.0
+home_row = 1
+home_stretch = true
+col_start = 0
+row_curve = 20.0
+col_curve = 4.684737140470709
+center_col = 0.0
+tent = 0.0
+tilt = 0.0
+lift = 0.0
+
+[[zone.column]]
+finger = "LP"
+spread = 1.0
+stagger = 1.0393271571303992
+splay = 2.63029194452562
+lift = -0.4023376574391635
+size = [1.0, 1.0]
+stretch = false
+
+[[zone.column]]
+finger = "LR"
+spread = 1.1359525064652334
+stagger = 0.2109747297200485
+splay = 1.2988541979816262
+lift = -0.4073593938748325
+size = [1.0, 1.0]
+stretch = false
+
+[[zone.column]]
+finger = "LM"
+spread = 1.0031309056616247
+stagger = -0.16014885935158507
+splay = 4.2800516796128285
+lift = -0.035073874351121415
+size = [1.0, 1.0]
+stretch = false
+
+[[zone.column]]
+finger = "LI"
+spread = 1.0
+stagger = 0.38417977236090917
+splay = 9.479171899483593
+lift = 0.17812577580998734
+size = [1.0, 1.0]
+stretch = false
+
+[[zone.column]]
+finger = "LI"
+spread = 1.0
+stagger = 0.47331689337281824
+splay = 9.433041966577612
+lift = -0.2951280151815946
+size = [1.0, 1.0]
+stretch = true
+
+[[zone]]
+name = "thumbs"
+anchor = [2.5865015295406524, 4.268307443903433]
+rotate = 8.252023375447159
+mirror = true
+rows = [3]
+row_pitch = 1.0
+home_row = 1
+home_stretch = false
+col_start = 0
+row_curve = 0.0
+col_curve = 0.173738837387571
+center_col = 0.0
+tent = -13.866233203306926
+tilt = -19.262002122898444
+lift = 1.0
+
+[[zone.column]]
+finger = "LT"
+spread = 1.0
+stagger = -0.5353371948442555
+splay = 0.0
+lift = 0.0
+size = [1.0, 1.0]
+stretch = false
+fill = "esc"
+mirror_fill = "none"
+
+[[zone.column]]
+finger = "LT"
+spread = 1.0
+stagger = -0.626794168340951
+splay = 0.0
+lift = 0.0
+size = [1.0, 1.0]
+stretch = false
+fill = "space"
+mirror_fill = "bspc"
+
+[[zone.column]]
+finger = "LT"
+spread = 1.0
+stagger = -0.2601232953006649
+splay = 0.0
+lift = 0.0
+size = [1.0, 1.5]
+stretch = false
+fill = "tab"
+mirror_fill = "enter"

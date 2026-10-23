@@ -201,13 +201,18 @@ off; a profile without it keeps its hash). Physical keys only.
 | `piece_gap` | 1.25 u | The two hands are separate pieces when their nearest switches are at least this far apart |
 | `max_column_keys` | 6 | Finger keys sharing hand and `col` |
 | `max_columns` | 0 (off) | Distinct `col` of finger keys per hand; board files label columns loosely |
+| `case` | off | `"mx"` / `"choc"`: build the default case ([below](#plate-and-case-stl-j4)) and count keys whose cap hits it (`cap_hit`) or whose cutout it blocks (`blocked`), 0.25 u each |
 
 Each violation (`kind`, `keys`, `value`, `limit`, `excess`) has an excess in u-equivalents
 (angles: 45° = 1 u; counts: 1 key = 1 u). The geometry search adds the violations to its
 collision count and the excess to its collision depth, so they share `penalty` and `hard_fail`
 ([algorithms/geometry-search.md](algorithms/geometry-search.md)). A profile without `[build]`
 still gets the default limits on 3D candidates (flat ones are unchanged). Every bundled board passes
-the defaults (`tests/manufacture.rs`). `gecko build stl` reports the same violations beside the STL.
+the defaults, and the MX case check (Choc: all but the Dactyl, whose MX keywell puts Choc caps
+into its webs; `tests/manufacture.rs`). `gecko build stl` reports the same violations beside
+the STL (the case check's keys as the case report's warnings). The case check costs a case build
+(a few ms) per candidate, ~30% of a 3D search's time; without it, 5 of 17 earlier geometry runs
+had keycaps that hit their case.
 
 ## Plate and case STL (J4)
 

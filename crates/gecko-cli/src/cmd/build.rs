@@ -67,7 +67,8 @@ fn stl(ctx: &Ctx, a: StlArgs) -> Result<()> {
         }
     }
     let case = g.case(&p, limits.piece_gap)?;
-    let manufacture = g.manufacture(&limits);
+    // The case report below already lists cap hits and blocked cutouts.
+    let manufacture = g.manufacture(&BuildLimits { case: None, ..limits.clone() });
     let dir = a.out.unwrap_or_else(|| match spec.strip_prefix("run:") {
         Some(id) => ctx.store.runs.join(id).join("stl"),
         None => ctx.store.root.join("build").join(&g.name),
