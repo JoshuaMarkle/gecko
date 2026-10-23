@@ -1,0 +1,54 @@
+name = "timefit"
+description = "Balanced modern profile: low SFB/SFS, low stretch, good rolls, even finger load."
+scale_basis = "stdev over the 10 reference layouts on english / ansi-30 (gecko profile normalize)"
+
+# Target % per finger: LP LR LM LI LT RT RI RM RR RP
+finger_target = [8.0, 11.0, 15.0, 16.0, 0.0, 0.0, 16.0, 15.0, 11.0, 8.0]
+
+# M01 effort added off the home row per finger (pinky ring middle index), [above, below] home.
+# KLO's key costs: the top row is easy for middle/ring, the bottom row easy for index.
+row_offset = [[0.0, 0.0], [-0.1, 0.1], [-0.2, 0.2], [0.2, -0.2]]
+
+# Weights are in spread units: the scorer applies weight / scale, and each scale is the metric's
+# standard deviation over the reference layouts, so weight 1 = "one reference spread" and weights
+# compare directly. Direction comes from the metric (rewards like rolls subtract). Larger = care
+# more. Ids: context/metrics-catalog.md. Rescale with `gecko profile normalize`.
+[weights]
+S01 = 1.06
+S02 = 0.31
+B01 = 3.7276
+B14 = 0.0399
+S04 = 0.0792
+M01 = 0.7883
+M04 = 0.0162
+T04 = 0.1334
+T01 = 1.5807
+T06 = 0.6197
+T07 = 0.2658
+B10 = 0.9777
+E04 = 2.2382
+B09 = 1.7850
+M05 = 0.3345
+B05 = 1.6479
+B06 = 0.3986
+T10 = 0.3736
+
+[scale]
+S01 = 1.765
+S02 = 0.5204
+B01 = 1.6550
+B14 = 2.4760
+S04 = 1.9640
+M01 = 0.1395
+M04 = 1.7480
+T01 = 5.8800
+T04 = 4.2000
+T06 = 3.0740
+T07 = 0.6511
+B10 = 13.3153
+E04 = 4.9306
+B09 = 2.1978
+M05 = 15.1009
+B05 = 2.0667
+B06 = 1.8077
+T10 = 2.5871

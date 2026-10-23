@@ -40,6 +40,8 @@ search effort unless the judge is part of the objective.
 - Pre-register the analysis (cluster definition, cutoffs) before running.
 
 ## Existing evidence
+Timing validity, comfort agreement, weight robustness and a 600-run weight sweep: the experiment
+report `docs/papers/cost-validity/` (`research/experiments/2026-10-22-cost-function-validity.md`).
 Held-out pairwise accuracy 53.78 % (learned) vs 51.96 % (default) vs 49.40 % (Engram E05)
 (`research/experiments/2026-10-21-profile-ranking.md`; no CIs yet). An earlier optimum (8.396)
 ranked last on E05 after the profile changed; B11 at weight 1 re-sorts Halmak and Colemak

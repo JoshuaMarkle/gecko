@@ -40,7 +40,7 @@ all files are collected in [`../OPEN-QUESTIONS.md`](../OPEN-QUESTIONS.md).
 
 | File | Take | Status |
 |---|---|---|
-| [dhakal-136m-keystrokes.md](dhakal-136m-keystrokes.md) | IKI by hand/alternation; rollover ≈ 50 % for fast typists (Aalto site down; Kaggle mirror checked against the paper, within 3.5 %) | secondary |
+| [dhakal-136m-keystrokes.md](dhakal-136m-keystrokes.md) | IKI by hand/alternation; rollover ≈ 50 % for fast typists (data site unreachable) | secondary |
 | [feit-how-we-type.md](feit-how-we-type.md) | Consistent finger mapping, preparation, low hand motion predict speed | read |
 | [finger-force-and-fatigue.md](finger-force-and-fatigue.md) | Typing is low-force (≈ 10 % MVC) and shows potentiation, not fatigue, over 6 h; key force and pace matter more than which finger | secondary |
 | [fitts-and-movement-models.md](fitts-and-movement-models.md) | Fitts only for same-finger travel and thumbs | secondary |
