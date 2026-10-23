@@ -1,0 +1,13 @@
+verify 20261023-164134-bls-19a06712  (re-running)
+ok   geometry  7ab925ac13918c0b
+ok   corpus    1539a821f307a698
+ok   profile   f27f38d09f540ead
+ok   holdout   d0b7c4a10bb8bcfd
+ok   evals     25003700
+ok   ranked    3
+ok   best#1    9.8628276858 wbmxzjfuo,dstrlpheaicgvnqky/;.⎋␣⇥⏎⌫·
+ok   best#2    9.8987720468 bwmzqjfuo,sdtrlpheaigcvnxky/;.⎋␣⇥⏎⌫·
+ok   best#3    9.9068466866 wgvxzjfuo,dstnlpheaicbmrqky/;.⎋␣⇥⏎⌫·
+ok   objectives []
+ok   front     0
+reproduced

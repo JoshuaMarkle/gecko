@@ -1,0 +1,1530 @@
+{
+  "schema": 1,
+  "id": "20261023-163812-bls-40c2f158",
+  "geometry": "corne-36",
+  "evals": 25010730,
+  "elapsed_ms": 74499,
+  "evals_per_sec": 335718.54705476837,
+  "params": {
+    "algo": "bls",
+    "seed": 1,
+    "threads": 4,
+    "time_ms": null,
+    "evals": 25000000,
+    "top": 3,
+    "sa": {
+      "steps": 0,
+      "accept0": 0.5,
+      "t_end_ratio": 0.002
+    },
+    "ga": {
+      "pop_size": 128,
+      "tournament": 3,
+      "elitism": 4,
+      "crossover_rate": 0.9,
+      "mutation_rate": 1.0
+    },
+    "memetic": {
+      "ga": {
+        "pop_size": 24,
+        "tournament": 3,
+        "elitism": 2,
+        "crossover_rate": 0.9,
+        "mutation_rate": 1.0
+      },
+      "local_search": "hc",
+      "local_steps": 12,
+      "islands": 0,
+      "migration_interval": 5,
+      "migrants": 2,
+      "collapse_generations": 3
+    },
+    "bls": {
+      "kick_min": 2,
+      "kick_max": 0,
+      "accept_worse": 0.1,
+      "stagnation": 150,
+      "column_kick": 0.2,
+      "exclusion": 0.5,
+      "exclusion_dist": 8
+    },
+    "explore": {
+      "samples": 2000,
+      "walks": 64,
+      "walk_len": 400,
+      "max_optima": 100000,
+      "snapshot_ms": 2000,
+      "within": 0.01
+    },
+    "tabu": {
+      "tenure_min": 0.9,
+      "tenure_max": 1.1,
+      "diversify": 5.0,
+      "stagnation": 100.0,
+      "refresh": 1000
+    },
+    "moves": {
+      "columns": false,
+      "cycle3": false,
+      "depth2": false,
+      "depth2_width": 32
+    },
+    "qd": {
+      "axes": [
+        "roll_ratio",
+        "index_load"
+      ],
+      "bins": 16,
+      "seeds": 64,
+      "kick_min": 2,
+      "kick_max": 6,
+      "descent": 0,
+      "snapshot_ms": 2000
+    },
+    "nsga2": {
+      "objectives": [
+        "B01",
+        "T03",
+        "M01"
+      ],
+      "pop_size": 128,
+      "generations": 0,
+      "archive_size": 512,
+      "crossover_rate": 0.9,
+      "mutation_rate": 1.0
+    }
+  },
+  "best": [
+    {
+      "rank": 1,
+      "score": 10.387497521734113,
+      "chars": "jqouzvgdwxieahkfstnry;'.,bcpml⎋␣⇥⏎⌫·",
+      "rows": [
+        "jqouzvgdwx",
+        "ieahkfstnr",
+        "y;'.,bcpml",
+        "⎋␣⇥⏎⌫·"
+      ],
+      "hash": "c94e8cfe",
+      "breakdown": {
+        "metrics": [
+          {
+            "dir": "min",
+            "id": "B01",
+            "name": "SFB",
+            "unit": "%",
+            "value": 0.6816237440968598,
+            "weight": 2.867000102996826,
+            "weighted": 2.471187856697885
+          },
+          {
+            "dir": "min",
+            "id": "S01",
+            "name": "SFS",
+            "unit": "%",
+            "value": 4.455806709982824,
+            "weight": 0.5138999819755554,
+            "weighted": 1.893994247900625
+          },
+          {
+            "dir": "min",
+            "id": "B03",
+            "name": "Finger speed",
+            "unit": "u",
+            "value": 0.9217656718283146,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "S02",
+            "name": "Far SFS",
+            "unit": "%",
+            "value": 3.6565950542836845,
+            "weight": 0.181099995970726,
+            "weighted": 1.545412747856254
+          },
+          {
+            "dir": "min",
+            "id": "S03",
+            "name": "SFS distance",
+            "unit": "u",
+            "value": 6.269532395322156,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "B04",
+            "name": "LSB",
+            "unit": "%",
+            "value": 0.3728084753994665,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "B05",
+            "name": "Scissors",
+            "unit": "%",
+            "value": 0.09935928860009824,
+            "weight": 0.40470001101493835,
+            "weighted": 0.07591222565267028
+          },
+          {
+            "dir": "min",
+            "id": "B06",
+            "name": "Half scissors",
+            "unit": "%",
+            "value": 0.5745914637728333,
+            "weight": 0.2703999876976013,
+            "weighted": 0.2265192110293299
+          },
+          {
+            "dir": "max",
+            "id": "B07",
+            "name": "Bigram rolls in",
+            "unit": "%",
+            "value": 8.831857855819681,
+            "weight": 0.0,
+            "weighted": -0.0
+          },
+          {
+            "dir": "min",
+            "id": "B09",
+            "name": "Pinky–ring pairs",
+            "unit": "%",
+            "value": 0.8617964061933492,
+            "weight": 1.2549999952316284,
+            "weighted": 1.197867404849111
+          },
+          {
+            "dir": "min",
+            "id": "B10",
+            "name": "Row jump",
+            "unit": "u",
+            "value": 9.003488092664208,
+            "weight": 0.3684000074863434,
+            "weighted": 0.9854085395321935
+          },
+          {
+            "dir": "min",
+            "id": "S05",
+            "name": "Skip stretch",
+            "unit": "u",
+            "value": 4.965391674683532,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "B14",
+            "name": "Stretch",
+            "unit": "u",
+            "value": 1.5515427752906976,
+            "weight": 0.5313000082969666,
+            "weighted": 0.6263941535192206
+          },
+          {
+            "dir": "min",
+            "id": "B11",
+            "name": "Movement",
+            "unit": "u",
+            "value": 28.15865600288666,
+            "weight": 0.24779999256134033,
+            "weighted": 0.38465903387299627
+          },
+          {
+            "dir": "min",
+            "id": "S04",
+            "name": "Skip stretch",
+            "unit": "u",
+            "value": 4.965391674683532,
+            "weight": 0.08195000141859055,
+            "weighted": 0.3034406212503529
+          },
+          {
+            "dir": "min",
+            "id": "M01",
+            "name": "Effort",
+            "unit": "",
+            "value": 1.5696108713679682,
+            "weight": 0.16339999437332153,
+            "weighted": 6.751103115234249
+          },
+          {
+            "dir": "min",
+            "id": "M02",
+            "name": "Finger load error",
+            "unit": "%",
+            "value": 2.2263453101202764,
+            "weight": 0.06071000173687935,
+            "weighted": 0.14911597263463114
+          },
+          {
+            "dir": "min",
+            "id": "M03",
+            "name": "Finger balance",
+            "unit": "%",
+            "value": 36.08478687167425,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "M07",
+            "name": "Peak finger load",
+            "unit": "%",
+            "value": 130.3457180027229,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "M04",
+            "name": "Left hand",
+            "unit": "%",
+            "value": 56.67441487817672,
+            "weight": 0.08906000107526779,
+            "weighted": 0.22176792963324593
+          },
+          {
+            "dir": "min",
+            "id": "M09",
+            "name": "Thumb load",
+            "unit": "%",
+            "value": 17.434196303278526,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "G01",
+            "name": "Reach",
+            "unit": "",
+            "value": 0.3609074706708347,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "G05",
+            "name": "Press angle",
+            "unit": "",
+            "value": 0.33221094121463807,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "G03",
+            "name": "Wrist posture",
+            "unit": "",
+            "value": 1.6104370327799036,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "G06",
+            "name": "Thumb arc fit",
+            "unit": "",
+            "value": 0.0037542748619621424,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "max",
+            "id": "M05",
+            "name": "Home row",
+            "unit": "%",
+            "value": 51.75488912500441,
+            "weight": 0.10939999669790268,
+            "weighted": -1.5846585168502856
+          },
+          {
+            "dir": "min",
+            "id": "M06",
+            "name": "Center columns",
+            "unit": "%",
+            "value": 5.466528638498858,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "max",
+            "id": "B08",
+            "name": "Hand alternation",
+            "unit": "%",
+            "value": 66.82779104570255,
+            "weight": 0.0,
+            "weighted": -0.0
+          },
+          {
+            "dir": "max",
+            "id": "T01",
+            "name": "Alternates",
+            "unit": "%",
+            "value": 18.973309048533338,
+            "weight": 0.5493000149726868,
+            "weighted": -1.9035688215244195
+          },
+          {
+            "dir": "min",
+            "id": "T02",
+            "name": "Alternate SFS",
+            "unit": "%",
+            "value": 2.7061195860824228,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "max",
+            "id": "T03",
+            "name": "Rolls in",
+            "unit": "%",
+            "value": 11.390619591202267,
+            "weight": 0.314300000667572,
+            "weighted": -1.6895100435538266
+          },
+          {
+            "dir": "max",
+            "id": "T04",
+            "name": "Rolls out",
+            "unit": "%",
+            "value": 9.930123085950981,
+            "weight": 0.6057999730110168,
+            "weighted": -1.4893954107372973
+          },
+          {
+            "dir": "info",
+            "id": "T05",
+            "name": "One-hand rolls",
+            "unit": "%",
+            "value": 0.8341458347331354,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "T06",
+            "name": "Redirects",
+            "unit": "%",
+            "value": 0.7853296387111186,
+            "weight": 0.40070000290870667,
+            "weighted": 0.11777005425087292
+          },
+          {
+            "dir": "min",
+            "id": "T07",
+            "name": "Bad redirects",
+            "unit": "%",
+            "value": 0.2605934354960482,
+            "weight": 0.259799987077713,
+            "weighted": 0.10407712613255012
+          },
+          {
+            "dir": "min",
+            "id": "T08",
+            "name": "SFT",
+            "unit": "%",
+            "value": 0.0017966536688618362,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "max",
+            "id": "T12",
+            "name": "Thumb rolls",
+            "unit": "%",
+            "value": 24.553372263790152,
+            "weight": 0.0,
+            "weighted": -0.0
+          },
+          {
+            "dir": "max",
+            "id": "T13",
+            "name": "Thumb alternates",
+            "unit": "%",
+            "value": 25.794976494762523,
+            "weight": 0.0,
+            "weighted": -0.0
+          },
+          {
+            "dir": "min",
+            "id": "T09",
+            "name": "Contortions",
+            "unit": "u",
+            "value": 0.19433629371639558,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "T10",
+            "name": "Irregular trigrams",
+            "unit": "%",
+            "value": 0.017066128293663496,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "E04",
+            "name": "Engram formula",
+            "unit": "%",
+            "value": 0.0,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "E05",
+            "name": "Engram measured",
+            "unit": "%",
+            "value": 0.0,
+            "weight": 0.6216999888420105,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "E01",
+            "name": "Typing time",
+            "unit": "%",
+            "value": 5.173228481250159,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "info",
+            "id": "B02",
+            "name": "Same-key repeats",
+            "unit": "%",
+            "value": 1.8036159869780022,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "Y01",
+            "name": "Layer switches",
+            "unit": "%",
+            "value": 0.0,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "Y02",
+            "name": "Symbol bigrams",
+            "unit": "%",
+            "value": 48.55063632130623,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "Y03",
+            "name": "Paired symbols",
+            "unit": "%",
+            "value": 0.0,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "Y04",
+            "name": "HRM misfires",
+            "unit": "%",
+            "value": 15.400907909412354,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "L01",
+            "name": "Shortcut placement",
+            "unit": "%",
+            "value": 81.29126405715942,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "L02",
+            "name": "Familiarity",
+            "unit": "%",
+            "value": 0.0,
+            "weight": 0.0,
+            "weighted": 0.0
+          }
+        ],
+        "score": 10.387497447380358
+      },
+      "holdout": 10.814485358515425
+    },
+    {
+      "rank": 2,
+      "score": 10.449381065983609,
+      "chars": "jqouzvgcmxieahkptsnry;'.,bdfwl⎋␣⇥⏎⌫·",
+      "rows": [
+        "jqouzvgcmx",
+        "ieahkptsnr",
+        "y;'.,bdfwl",
+        "⎋␣⇥⏎⌫·"
+      ],
+      "hash": "df2ff3b9",
+      "breakdown": {
+        "metrics": [
+          {
+            "dir": "min",
+            "id": "B01",
+            "name": "SFB",
+            "unit": "%",
+            "value": 0.6653149371029121,
+            "weight": 2.867000102996826,
+            "weighted": 2.4120612107297745
+          },
+          {
+            "dir": "min",
+            "id": "S01",
+            "name": "SFS",
+            "unit": "%",
+            "value": 4.7390759171307195,
+            "weight": 0.5138999819755554,
+            "weighted": 2.0144012322842797
+          },
+          {
+            "dir": "min",
+            "id": "B03",
+            "name": "Finger speed",
+            "unit": "u",
+            "value": 0.9326693802636982,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "S02",
+            "name": "Far SFS",
+            "unit": "%",
+            "value": 3.8492028516458276,
+            "weight": 0.181099995970726,
+            "weighted": 1.6268159497315244
+          },
+          {
+            "dir": "min",
+            "id": "S03",
+            "name": "SFS distance",
+            "unit": "u",
+            "value": 6.681841527031868,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "B04",
+            "name": "LSB",
+            "unit": "%",
+            "value": 0.474910780631177,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "B05",
+            "name": "Scissors",
+            "unit": "%",
+            "value": 0.09123638268100365,
+            "weight": 0.40470001101493835,
+            "weighted": 0.06970618416652874
+          },
+          {
+            "dir": "min",
+            "id": "B06",
+            "name": "Half scissors",
+            "unit": "%",
+            "value": 0.5133673377159198,
+            "weight": 0.2703999876976013,
+            "weighted": 0.20238303497250074
+          },
+          {
+            "dir": "max",
+            "id": "B07",
+            "name": "Bigram rolls in",
+            "unit": "%",
+            "value": 9.524513005329528,
+            "weight": 0.0,
+            "weighted": -0.0
+          },
+          {
+            "dir": "min",
+            "id": "B09",
+            "name": "Pinky–ring pairs",
+            "unit": "%",
+            "value": 0.8617964061933492,
+            "weight": 1.2549999952316284,
+            "weighted": 1.197867404849111
+          },
+          {
+            "dir": "min",
+            "id": "B10",
+            "name": "Row jump",
+            "unit": "u",
+            "value": 9.035749981641972,
+            "weight": 0.3684000074863434,
+            "weighted": 0.9889395200336317
+          },
+          {
+            "dir": "min",
+            "id": "S05",
+            "name": "Skip stretch",
+            "unit": "u",
+            "value": 4.591603725932624,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "B14",
+            "name": "Stretch",
+            "unit": "u",
+            "value": 1.4959670044303108,
+            "weight": 0.5313000082969666,
+            "weighted": 0.6039569133098762
+          },
+          {
+            "dir": "min",
+            "id": "B11",
+            "name": "Movement",
+            "unit": "u",
+            "value": 21.092163322950327,
+            "weight": 0.24779999256134033,
+            "weighted": 0.28812778441079695
+          },
+          {
+            "dir": "min",
+            "id": "S04",
+            "name": "Skip stretch",
+            "unit": "u",
+            "value": 4.591603725932624,
+            "weight": 0.08195000141859055,
+            "weighted": 0.2805980229588296
+          },
+          {
+            "dir": "min",
+            "id": "M01",
+            "name": "Effort",
+            "unit": "",
+            "value": 1.5651576752595868,
+            "weight": 0.16339999437332153,
+            "weighted": 6.731949332173458
+          },
+          {
+            "dir": "min",
+            "id": "M02",
+            "name": "Finger load error",
+            "unit": "%",
+            "value": 2.7720104022731924,
+            "weight": 0.06071000173687935,
+            "weighted": 0.2311685914844724
+          },
+          {
+            "dir": "min",
+            "id": "M03",
+            "name": "Finger balance",
+            "unit": "%",
+            "value": 36.46849127487882,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "M07",
+            "name": "Peak finger load",
+            "unit": "%",
+            "value": 130.3457180027229,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "M04",
+            "name": "Left hand",
+            "unit": "%",
+            "value": 56.67441487817672,
+            "weight": 0.08906000107526779,
+            "weighted": 0.22176792963324593
+          },
+          {
+            "dir": "min",
+            "id": "M09",
+            "name": "Thumb load",
+            "unit": "%",
+            "value": 17.434196303278526,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "G01",
+            "name": "Reach",
+            "unit": "",
+            "value": 0.3588076562210659,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "G05",
+            "name": "Press angle",
+            "unit": "",
+            "value": 0.32121196782764766,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "G03",
+            "name": "Wrist posture",
+            "unit": "",
+            "value": 1.6104370327799036,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "G06",
+            "name": "Thumb arc fit",
+            "unit": "",
+            "value": 0.0037542748619621424,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "max",
+            "id": "M05",
+            "name": "Home row",
+            "unit": "%",
+            "value": 51.72656630165875,
+            "weight": 0.10939999669790268,
+            "weighted": -1.583791313693352
+          },
+          {
+            "dir": "min",
+            "id": "M06",
+            "name": "Center columns",
+            "unit": "%",
+            "value": 5.4382058151531965,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "max",
+            "id": "B08",
+            "name": "Hand alternation",
+            "unit": "%",
+            "value": 66.82779104570255,
+            "weight": 0.0,
+            "weighted": -0.0
+          },
+          {
+            "dir": "max",
+            "id": "T01",
+            "name": "Alternates",
+            "unit": "%",
+            "value": 18.76556144661663,
+            "weight": 0.5493000149726868,
+            "weighted": -1.882725759476385
+          },
+          {
+            "dir": "min",
+            "id": "T02",
+            "name": "Alternate SFS",
+            "unit": "%",
+            "value": 2.9138671879991307,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "max",
+            "id": "T03",
+            "name": "Rolls in",
+            "unit": "%",
+            "value": 12.478540022038942,
+            "weight": 0.314300000667572,
+            "weighted": -1.8508754969226338
+          },
+          {
+            "dir": "max",
+            "id": "T04",
+            "name": "Rolls out",
+            "unit": "%",
+            "value": 8.815277422490908,
+            "weight": 0.6057999730110168,
+            "weighted": -1.3221823761690765
+          },
+          {
+            "dir": "info",
+            "id": "T05",
+            "name": "One-hand rolls",
+            "unit": "%",
+            "value": 0.656062923508216,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "T06",
+            "name": "Redirects",
+            "unit": "%",
+            "value": 1.1252221368067694,
+            "weight": 0.40070000290870667,
+            "weighted": 0.1687412082313661
+          },
+          {
+            "dir": "min",
+            "id": "T07",
+            "name": "Bad redirects",
+            "unit": "%",
+            "value": 0.12637328991331742,
+            "weight": 0.259799987077713,
+            "weighted": 0.05047160458611443
+          },
+          {
+            "dir": "min",
+            "id": "T08",
+            "name": "SFT",
+            "unit": "%",
+            "value": 0.0007519907740061171,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "max",
+            "id": "T12",
+            "name": "Thumb rolls",
+            "unit": "%",
+            "value": 24.553372263790152,
+            "weight": 0.0,
+            "weighted": -0.0
+          },
+          {
+            "dir": "max",
+            "id": "T13",
+            "name": "Thumb alternates",
+            "unit": "%",
+            "value": 25.82348714990985,
+            "weight": 0.0,
+            "weighted": -0.0
+          },
+          {
+            "dir": "min",
+            "id": "T09",
+            "name": "Contortions",
+            "unit": "u",
+            "value": 0.22874289707189402,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "T10",
+            "name": "Irregular trigrams",
+            "unit": "%",
+            "value": 0.01563982277730247,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "E04",
+            "name": "Engram formula",
+            "unit": "%",
+            "value": 0.0,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "E05",
+            "name": "Engram measured",
+            "unit": "%",
+            "value": 0.0,
+            "weight": 0.6216999888420105,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "E01",
+            "name": "Typing time",
+            "unit": "%",
+            "value": 5.109849396029283,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "info",
+            "id": "B02",
+            "name": "Same-key repeats",
+            "unit": "%",
+            "value": 1.8036159869780022,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "Y01",
+            "name": "Layer switches",
+            "unit": "%",
+            "value": 0.0,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "Y02",
+            "name": "Symbol bigrams",
+            "unit": "%",
+            "value": 48.55063632130623,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "Y03",
+            "name": "Paired symbols",
+            "unit": "%",
+            "value": 0.0,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "Y04",
+            "name": "HRM misfires",
+            "unit": "%",
+            "value": 15.40044827598308,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "L01",
+            "name": "Shortcut placement",
+            "unit": "%",
+            "value": 81.29126405715942,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "L02",
+            "name": "Familiarity",
+            "unit": "%",
+            "value": 0.0,
+            "weight": 0.0,
+            "weighted": 0.0
+          }
+        ],
+        "score": 10.449380977294062
+      },
+      "holdout": 10.93278435168271
+    },
+    {
+      "rank": 3,
+      "score": 10.497413431301181,
+      "chars": "wbmzqjfo'ucstrlphaeidgvnxky.;,⎋␣⇥⏎⌫·",
+      "rows": [
+        "wbmzqjfo'u",
+        "cstrlphaei",
+        "dgvnxky.;,",
+        "⎋␣⇥⏎⌫·"
+      ],
+      "hash": "3226d603",
+      "breakdown": {
+        "metrics": [
+          {
+            "dir": "min",
+            "id": "B01",
+            "name": "SFB",
+            "unit": "%",
+            "value": 0.6587004263792551,
+            "weight": 2.867000102996826,
+            "weighted": 2.388080680826203
+          },
+          {
+            "dir": "min",
+            "id": "S01",
+            "name": "SFS",
+            "unit": "%",
+            "value": 4.127692328465571,
+            "weight": 0.5138999819755554,
+            "weighted": 1.7545252826389917
+          },
+          {
+            "dir": "min",
+            "id": "B03",
+            "name": "Finger speed",
+            "unit": "u",
+            "value": 0.9243448398810081,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "S02",
+            "name": "Far SFS",
+            "unit": "%",
+            "value": 3.8988038631295296,
+            "weight": 0.181099995970726,
+            "weighted": 1.6477791776294777
+          },
+          {
+            "dir": "min",
+            "id": "S03",
+            "name": "SFS distance",
+            "unit": "u",
+            "value": 6.182433735099748,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "B04",
+            "name": "LSB",
+            "unit": "%",
+            "value": 1.176199994493743,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "B05",
+            "name": "Scissors",
+            "unit": "%",
+            "value": 0.43550269367704786,
+            "weight": 0.40470001101493835,
+            "weighted": 0.3327316370774127
+          },
+          {
+            "dir": "min",
+            "id": "B06",
+            "name": "Half scissors",
+            "unit": "%",
+            "value": 0.581953956559289,
+            "weight": 0.2703999876976013,
+            "weighted": 0.22942170116770835
+          },
+          {
+            "dir": "max",
+            "id": "B07",
+            "name": "Bigram rolls in",
+            "unit": "%",
+            "value": 6.10845938956146,
+            "weight": 0.0,
+            "weighted": -0.0
+          },
+          {
+            "dir": "min",
+            "id": "B09",
+            "name": "Pinky–ring pairs",
+            "unit": "%",
+            "value": 0.8737628121372687,
+            "weight": 1.2549999952316284,
+            "weighted": 1.2145002981060338
+          },
+          {
+            "dir": "min",
+            "id": "B10",
+            "name": "Row jump",
+            "unit": "u",
+            "value": 8.48739007522184,
+            "weight": 0.3684000074863434,
+            "weighted": 0.9289229432400509
+          },
+          {
+            "dir": "min",
+            "id": "S05",
+            "name": "Skip stretch",
+            "unit": "u",
+            "value": 3.698331326461343,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "B14",
+            "name": "Stretch",
+            "unit": "u",
+            "value": 1.9075255222371372,
+            "weight": 0.5313000082969666,
+            "weighted": 0.7701127251191452
+          },
+          {
+            "dir": "min",
+            "id": "B11",
+            "name": "Movement",
+            "unit": "u",
+            "value": 19.80743825124179,
+            "weight": 0.24779999256134033,
+            "weighted": 0.2705779018871012
+          },
+          {
+            "dir": "min",
+            "id": "S04",
+            "name": "Skip stretch",
+            "unit": "u",
+            "value": 3.698331326461343,
+            "weight": 0.08195000141859055,
+            "weighted": 0.22600915070060337
+          },
+          {
+            "dir": "min",
+            "id": "M01",
+            "name": "Effort",
+            "unit": "",
+            "value": 1.5633314666667293,
+            "weight": 0.16339999437332153,
+            "weighted": 6.724094568457682
+          },
+          {
+            "dir": "min",
+            "id": "M02",
+            "name": "Finger load error",
+            "unit": "%",
+            "value": 2.2754133853740255,
+            "weight": 0.06071000173687935,
+            "weighted": 0.15576136074739735
+          },
+          {
+            "dir": "min",
+            "id": "M03",
+            "name": "Finger balance",
+            "unit": "%",
+            "value": 36.290606505967936,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "M07",
+            "name": "Peak finger load",
+            "unit": "%",
+            "value": 138.04407562729259,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "M04",
+            "name": "Left hand",
+            "unit": "%",
+            "value": 57.420842757378836,
+            "weight": 0.08906000107526779,
+            "weighted": 0.2741440366258761
+          },
+          {
+            "dir": "min",
+            "id": "M09",
+            "name": "Thumb load",
+            "unit": "%",
+            "value": 17.434196303278526,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "G01",
+            "name": "Reach",
+            "unit": "",
+            "value": 0.3923860305847714,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "G05",
+            "name": "Press angle",
+            "unit": "",
+            "value": 0.3519287686009449,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "G03",
+            "name": "Wrist posture",
+            "unit": "",
+            "value": 1.6104370123431235,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "G06",
+            "name": "Thumb arc fit",
+            "unit": "",
+            "value": 0.0037542748619621424,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "max",
+            "id": "M05",
+            "name": "Home row",
+            "unit": "%",
+            "value": 51.42886247485876,
+            "weight": 0.10939999669790268,
+            "weighted": -1.5746760607653034
+          },
+          {
+            "dir": "min",
+            "id": "M06",
+            "name": "Center columns",
+            "unit": "%",
+            "value": 6.236647139303386,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "max",
+            "id": "B08",
+            "name": "Hand alternation",
+            "unit": "%",
+            "value": 61.17462251894264,
+            "weight": 0.0,
+            "weighted": -0.0
+          },
+          {
+            "dir": "max",
+            "id": "T01",
+            "name": "Alternates",
+            "unit": "%",
+            "value": 18.416718591788594,
+            "weight": 0.5493000149726868,
+            "weighted": -1.8477267837909315
+          },
+          {
+            "dir": "min",
+            "id": "T02",
+            "name": "Alternate SFS",
+            "unit": "%",
+            "value": 2.4307227169629186,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "max",
+            "id": "T03",
+            "name": "Rolls in",
+            "unit": "%",
+            "value": 6.886459116367405,
+            "weight": 0.314300000667572,
+            "weighted": -1.0214318675528262
+          },
+          {
+            "dir": "max",
+            "id": "T04",
+            "name": "Rolls out",
+            "unit": "%",
+            "value": 14.817294134991243,
+            "weight": 0.6057999730110168,
+            "weighted": -2.2224105072195246
+          },
+          {
+            "dir": "info",
+            "id": "T05",
+            "name": "One-hand rolls",
+            "unit": "%",
+            "value": 0.7813414218162507,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "T06",
+            "name": "Redirects",
+            "unit": "%",
+            "value": 1.3541003917907801,
+            "weight": 0.40070000290870667,
+            "weighted": 0.20306438053713896
+          },
+          {
+            "dir": "min",
+            "id": "T07",
+            "name": "Bad redirects",
+            "unit": "%",
+            "value": 0.1100008937100938,
+            "weight": 0.259799987077713,
+            "weighted": 0.04393271406689861
+          },
+          {
+            "dir": "min",
+            "id": "T08",
+            "name": "SFT",
+            "unit": "%",
+            "value": 0.008142108890751842,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "max",
+            "id": "T12",
+            "name": "Thumb rolls",
+            "unit": "%",
+            "value": 31.17682359470564,
+            "weight": 0.0,
+            "weighted": -0.0
+          },
+          {
+            "dir": "max",
+            "id": "T13",
+            "name": "Thumb alternates",
+            "unit": "%",
+            "value": 19.277597875270658,
+            "weight": 0.0,
+            "weighted": -0.0
+          },
+          {
+            "dir": "min",
+            "id": "T09",
+            "name": "Contortions",
+            "unit": "u",
+            "value": 0.4086178294130218,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "T10",
+            "name": "Irregular trigrams",
+            "unit": "%",
+            "value": 0.09040435138558678,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "E04",
+            "name": "Engram formula",
+            "unit": "%",
+            "value": 0.0,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "E05",
+            "name": "Engram measured",
+            "unit": "%",
+            "value": 0.0,
+            "weight": 0.6216999888420105,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "E01",
+            "name": "Typing time",
+            "unit": "%",
+            "value": 5.305174424953703,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "info",
+            "id": "B02",
+            "name": "Same-key repeats",
+            "unit": "%",
+            "value": 1.8036159869780022,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "Y01",
+            "name": "Layer switches",
+            "unit": "%",
+            "value": 0.0,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "Y02",
+            "name": "Symbol bigrams",
+            "unit": "%",
+            "value": 0.37819852368556894,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "Y03",
+            "name": "Paired symbols",
+            "unit": "%",
+            "value": 0.0,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "Y04",
+            "name": "HRM misfires",
+            "unit": "%",
+            "value": 13.753765788680994,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "L01",
+            "name": "Shortcut placement",
+            "unit": "%",
+            "value": 43.81204271316528,
+            "weight": 0.0,
+            "weighted": 0.0
+          },
+          {
+            "dir": "min",
+            "id": "L02",
+            "name": "Familiarity",
+            "unit": "%",
+            "value": 0.0,
+            "weight": 0.0,
+            "weighted": 0.0
+          }
+        ],
+        "score": 10.497413339499138
+      },
+      "holdout": 10.447343210826267
+    }
+  ],
+  "bound": {
+    "method": "gilmore-lawler+dual-ascent",
+    "symbols": 30,
+    "iters": 20,
+    "total": {
+      "lower": -2.4980854038739593,
+      "gilmore_lawler": -3.53283186334402,
+      "value": 10.387497521734113,
+      "gap_pct": 124.04896269430756
+    },
+    "pair": {
+      "lower": 6.39550835308667,
+      "gilmore_lawler": 5.5146320935956465,
+      "value": 14.877240644248893,
+      "gap_pct": 57.011461291654335
+    },
+    "elapsed_ms": 3524
+  },
+  "holdout": {
+    "corpus": "english",
+    "start": 57.79783092641506,
+    "best": 10.814485358515425,
+    "start_search": 57.93498872621367,
+    "best_search": 10.387497521734113,
+    "retained": 0.9881351124467578,
+    "rank_corr": -0.5
+  }
+}

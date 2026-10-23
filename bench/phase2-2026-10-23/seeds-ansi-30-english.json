@@ -1,0 +1,916 @@
+{
+ "board": "ansi-30",
+ "corpus": "english",
+ "holdout": "shai",
+ "algo": "bls",
+ "threads": 4,
+ "pins": "",
+ "budgets": {
+  "1000000": [
+   {
+    "seed": 1,
+    "run": "20261023-163446-bls-9870b996",
+    "score": 12.917246232167019,
+    "chars": "cgnwxjyou,dsrtvpheiafblmqzk/;.",
+    "holdout": 13.914713699799849,
+    "evals": 1009940,
+    "elapsed_ms": 1540,
+    "bound": -5.531519275172164
+   },
+   {
+    "seed": 2,
+    "run": "20261023-163449-bls-11eecaf3",
+    "score": 12.631889236906451,
+    "chars": "qwdgvzuo,jrntscyhaielmpfbxk.;/",
+    "holdout": 12.89441753236993,
+    "evals": 1014726,
+    "elapsed_ms": 1003,
+    "bound": -5.5315192751721645
+   },
+   {
+    "seed": 3,
+    "run": "20261023-163452-bls-1c93f18b",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 1008651,
+    "elapsed_ms": 1312,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 4,
+    "run": "20261023-163455-bls-74866b13",
+    "score": 12.759549474110054,
+    "chars": "mflbzjquo.dsrnpgteaicvwhxky/;,",
+    "holdout": 14.208256611222565,
+    "evals": 1008631,
+    "elapsed_ms": 1118,
+    "bound": -5.53151927517216
+   },
+   {
+    "seed": 5,
+    "run": "20261023-163458-bls-30f157c6",
+    "score": 12.15781642393616,
+    "chars": "lwdgbjquo.rntsfpheaixzmcvky/;,",
+    "holdout": 13.25205234990574,
+    "evals": 1019126,
+    "elapsed_ms": 1125,
+    "bound": -5.53151927517216
+   },
+   {
+    "seed": 6,
+    "run": "20261023-163500-bls-aab205b3",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 1015258,
+    "elapsed_ms": 1054,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 7,
+    "run": "20261023-163502-bls-f805475c",
+    "score": 12.37240162405298,
+    "chars": "xzmpbjquo.rhtcfgseailndwvyk/;,",
+    "holdout": 13.271728881119033,
+    "evals": 1009373,
+    "elapsed_ms": 1045,
+    "bound": -5.5315192751721565
+   },
+   {
+    "seed": 8,
+    "run": "20261023-163504-bls-5c2341fa",
+    "score": 12.258659037585256,
+    "chars": ",uoyjbwdlxaiehpgstrn.;/kzfcvqm",
+    "holdout": 12.899642339646682,
+    "evals": 1017309,
+    "elapsed_ms": 1048,
+    "bound": -5.531519275172157
+   },
+   {
+    "seed": 9,
+    "run": "20261023-163507-bls-2c2eeff4",
+    "score": 12.231828109838936,
+    "chars": "lwdgbjyou,rntsfpheiaqxmcvzk/;.",
+    "holdout": 12.892627903888581,
+    "evals": 1004262,
+    "elapsed_ms": 1001,
+    "bound": -5.5315192751721645
+   },
+   {
+    "seed": 10,
+    "run": "20261023-163509-bls-503238be",
+    "score": 12.288991828537322,
+    "chars": "wgvqzjfuo.dstnlpheaicbmrxky/;,",
+    "holdout": 13.332530344469063,
+    "evals": 1012577,
+    "elapsed_ms": 1053,
+    "bound": -5.531519275172162
+   },
+   {
+    "seed": 11,
+    "run": "20261023-163511-bls-93c74c0c",
+    "score": 12.15781642393616,
+    "chars": "lwdgbjquo.rntsfpheaixzmcvky/;,",
+    "holdout": 13.25205234990574,
+    "evals": 1021241,
+    "elapsed_ms": 1062,
+    "bound": -5.53151927517216
+   },
+   {
+    "seed": 12,
+    "run": "20261023-163514-bls-17462854",
+    "score": 12.48039108353284,
+    "chars": "lndwbjquo.rhtcfgseaixzmpvyk/;,",
+    "holdout": 13.563306757196957,
+    "evals": 1009079,
+    "elapsed_ms": 1037,
+    "bound": -5.531519275172162
+   },
+   {
+    "seed": 13,
+    "run": "20261023-163516-bls-c9f2e6ac",
+    "score": 12.231828109838936,
+    "chars": "lwdgbjyou,rntsfpheiaqxmcvzk/;.",
+    "holdout": 12.892627903888581,
+    "evals": 1011198,
+    "elapsed_ms": 799,
+    "bound": -5.5315192751721645
+   },
+   {
+    "seed": 14,
+    "run": "20261023-163518-bls-b7b19a8f",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 1022550,
+    "elapsed_ms": 974,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 15,
+    "run": "20261023-163520-bls-30c6b3a9",
+    "score": 12.209055205179906,
+    "chars": "lmdgbjquo.rntsfpheaixzvcwky/;,",
+    "holdout": 13.180428686130494,
+    "evals": 1007817,
+    "elapsed_ms": 1012,
+    "bound": -5.531519275172159
+   },
+   {
+    "seed": 16,
+    "run": "20261023-163523-bls-3bd4d283",
+    "score": 12.37240162405298,
+    "chars": "xzmpbjquo.rhtcfgseailndwvyk/;,",
+    "holdout": 13.271728881119033,
+    "evals": 1013404,
+    "elapsed_ms": 1062,
+    "bound": -5.5315192751721565
+   },
+   {
+    "seed": 17,
+    "run": "20261023-163525-bls-312fabeb",
+    "score": 12.379206206137068,
+    "chars": "xqmpbzjuo.rhtcfgseailndwvyk/;,",
+    "holdout": 13.2572002342026,
+    "evals": 1010403,
+    "elapsed_ms": 965,
+    "bound": -5.531519275172164
+   },
+   {
+    "seed": 18,
+    "run": "20261023-163527-bls-e1d13724",
+    "score": 12.37240162405298,
+    "chars": "xzmpbjquo.rhtcfgseailndwvyk/;,",
+    "holdout": 13.271728881119033,
+    "evals": 1020826,
+    "elapsed_ms": 683,
+    "bound": -5.5315192751721565
+   },
+   {
+    "seed": 19,
+    "run": "20261023-163530-bls-77b217d9",
+    "score": 12.770471148331628,
+    "chars": "wfgvqjyou,dstnlpheiacbmrxzk/;.",
+    "holdout": 13.614749417428659,
+    "evals": 1013831,
+    "elapsed_ms": 699,
+    "bound": -5.531519275172165
+   },
+   {
+    "seed": 20,
+    "run": "20261023-163532-bls-c7e0272a",
+    "score": 12.29208624759672,
+    "chars": "wldfbjquo.nrtsgpheaimxvczky/;,",
+    "holdout": 13.165749002373595,
+    "evals": 1008681,
+    "elapsed_ms": 888,
+    "bound": -5.531519275172155
+   },
+   {
+    "seed": 21,
+    "run": "20261023-163535-bls-273789f1",
+    "score": 12.231828109838936,
+    "chars": "lwdgbjyou,rntsfpheiaqxmcvzk/;.",
+    "holdout": 12.892627903888581,
+    "evals": 1006880,
+    "elapsed_ms": 1004,
+    "bound": -5.5315192751721645
+   },
+   {
+    "seed": 22,
+    "run": "20261023-163537-bls-587556bf",
+    "score": 12.69544567552032,
+    "chars": "qxcgvjfuo.rnstdpheailwbmzky/;,",
+    "holdout": 13.454711746765527,
+    "evals": 1006077,
+    "elapsed_ms": 1303,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 23,
+    "run": "20261023-163541-bls-11ab8544",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 1009043,
+    "elapsed_ms": 1128,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 24,
+    "run": "20261023-163544-bls-fffbeb55",
+    "score": 12.288991828537322,
+    "chars": "wgvqzjfuo.dstnlpheaicbmrxky/;,",
+    "holdout": 13.332530344469063,
+    "evals": 1014753,
+    "elapsed_ms": 976,
+    "bound": -5.531519275172162
+   },
+   {
+    "seed": 25,
+    "run": "20261023-163547-bls-0c7cc1ed",
+    "score": 12.340907047439428,
+    "chars": "lwtcfjyou,rndsgpheiaxqmbvzk/;.",
+    "holdout": 13.107686671682384,
+    "evals": 1010423,
+    "elapsed_ms": 837,
+    "bound": -5.531519275172164
+   },
+   {
+    "seed": 26,
+    "run": "20261023-163549-bls-877b9118",
+    "score": 12.759549474110054,
+    "chars": "mflbzjquo.dsrnpgteaicvwhxky/;,",
+    "holdout": 14.208256611222565,
+    "evals": 1012521,
+    "elapsed_ms": 812,
+    "bound": -5.53151927517216
+   },
+   {
+    "seed": 27,
+    "run": "20261023-163552-bls-dff5b762",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 1005584,
+    "elapsed_ms": 582,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 28,
+    "run": "20261023-163554-bls-89bbb202",
+    "score": 12.64547478320938,
+    "chars": "lnfdvjguo.hrstkpceaixzbmqyw/;,",
+    "holdout": 13.62733056087955,
+    "evals": 1013832,
+    "elapsed_ms": 633,
+    "bound": -5.531519275172162
+   },
+   {
+    "seed": 29,
+    "run": "20261023-163555-bls-bc5cafbf",
+    "score": 12.569014608523227,
+    "chars": "wgvqzjfou,dstnlyheiacbmrxkp/;.",
+    "holdout": 13.349043280110882,
+    "evals": 1016053,
+    "elapsed_ms": 1116,
+    "bound": -5.531519275172169
+   },
+   {
+    "seed": 30,
+    "run": "20261023-163558-bls-29b4f8af",
+    "score": 12.48039108353284,
+    "chars": "lndwbjquo.rhtcfgseaixzmpvyk/;,",
+    "holdout": 13.563306757196957,
+    "evals": 1008213,
+    "elapsed_ms": 1060,
+    "bound": -5.531519275172162
+   }
+  ],
+  "5000000": [
+   {
+    "seed": 1,
+    "run": "20261023-163600-bls-ffabc261",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5008003,
+    "elapsed_ms": 5225,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 2,
+    "run": "20261023-163608-bls-92179491",
+    "score": 12.258659037585256,
+    "chars": ",uoyjbwdlxaiehpgstrn.;/kzfcvqm",
+    "holdout": 12.899642339646682,
+    "evals": 5010646,
+    "elapsed_ms": 4672,
+    "bound": -5.531519275172157
+   },
+   {
+    "seed": 3,
+    "run": "20261023-163614-bls-9bce9fe7",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5010323,
+    "elapsed_ms": 4498,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 4,
+    "run": "20261023-163620-bls-d2e3fbeb",
+    "score": 12.379206206137068,
+    "chars": "xqmpbzjuo.rhtcfgseailndwvyk/;,",
+    "holdout": 13.2572002342026,
+    "evals": 5015478,
+    "elapsed_ms": 4662,
+    "bound": -5.531519275172164
+   },
+   {
+    "seed": 5,
+    "run": "20261023-163626-bls-f6f038ec",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5005401,
+    "elapsed_ms": 5195,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 6,
+    "run": "20261023-163632-bls-92124cb1",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5016840,
+    "elapsed_ms": 5205,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 7,
+    "run": "20261023-163639-bls-9477ec93",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5015746,
+    "elapsed_ms": 6854,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 8,
+    "run": "20261023-163647-bls-497b816f",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5011237,
+    "elapsed_ms": 4501,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 9,
+    "run": "20261023-163653-bls-88bf3656",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5007907,
+    "elapsed_ms": 3125,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 10,
+    "run": "20261023-163659-bls-163119e4",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5024168,
+    "elapsed_ms": 5682,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 11,
+    "run": "20261023-163707-bls-f224dce4",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5018076,
+    "elapsed_ms": 6962,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 12,
+    "run": "20261023-163717-bls-b3b8cd8c",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5004288,
+    "elapsed_ms": 3718,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 13,
+    "run": "20261023-163722-bls-b1532daa",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5006760,
+    "elapsed_ms": 3336,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 14,
+    "run": "20261023-163727-bls-1eeca35a",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5008114,
+    "elapsed_ms": 4923,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 15,
+    "run": "20261023-163733-bls-4eb683a7",
+    "score": 12.209055205179906,
+    "chars": "lmdgbjquo.rntsfpheaixzvcwky/;,",
+    "holdout": 13.180428686130494,
+    "evals": 5012021,
+    "elapsed_ms": 3969,
+    "bound": -5.531519275172159
+   },
+   {
+    "seed": 16,
+    "run": "20261023-163739-bls-bb0f80e0",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5008303,
+    "elapsed_ms": 4593,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 17,
+    "run": "20261023-163744-bls-b158758a",
+    "score": 12.224178985596913,
+    "chars": "xzdgvjquo.rntscpheailwmfbky/;,",
+    "holdout": 13.236463994601541,
+    "evals": 5022429,
+    "elapsed_ms": 5032,
+    "bound": -5.531519275172159
+   },
+   {
+    "seed": 18,
+    "run": "20261023-163751-bls-2ae069da",
+    "score": 12.231828109838936,
+    "chars": "lwdgbjyou,rntsfpheiaqxmcvzk/;.",
+    "holdout": 12.892627903888581,
+    "evals": 5009707,
+    "elapsed_ms": 4867,
+    "bound": -5.5315192751721645
+   },
+   {
+    "seed": 19,
+    "run": "20261023-163757-bls-f5ec5b51",
+    "score": 12.231828109838936,
+    "chars": "lwdgbjyou,rntsfpheiaqxmcvzk/;.",
+    "holdout": 12.892627903888581,
+    "evals": 5012399,
+    "elapsed_ms": 5137,
+    "bound": -5.5315192751721645
+   },
+   {
+    "seed": 20,
+    "run": "20261023-163803-bls-2fcae0e9",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5012890,
+    "elapsed_ms": 4338,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 21,
+    "run": "20261023-163809-bls-1163622e",
+    "score": 12.231828109838936,
+    "chars": "lwdgbjyou,rntsfpheiaqxmcvzk/;.",
+    "holdout": 12.892627903888581,
+    "evals": 5004144,
+    "elapsed_ms": 9189,
+    "bound": -5.5315192751721645
+   },
+   {
+    "seed": 22,
+    "run": "20261023-163823-bls-3911224f",
+    "score": 12.292046452099477,
+    "chars": ",uoyjvgdnwaiehpfstlr.;/kzbcmqx",
+    "holdout": 13.238055651372884,
+    "evals": 5007601,
+    "elapsed_ms": 15323,
+    "bound": -5.531519275172166
+   },
+   {
+    "seed": 23,
+    "run": "20261023-163844-bls-4732f5ed",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5006080,
+    "elapsed_ms": 17203,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 24,
+    "run": "20261023-163909-bls-9451d775",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5008021,
+    "elapsed_ms": 10568,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 25,
+    "run": "20261023-163922-bls-24e21a4f",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5013717,
+    "elapsed_ms": 8639,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 26,
+    "run": "20261023-163936-bls-ea5d7dc2",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5012277,
+    "elapsed_ms": 13389,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 27,
+    "run": "20261023-163955-bls-76e74588",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5016259,
+    "elapsed_ms": 13848,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 28,
+    "run": "20261023-164013-bls-f6528c61",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 5012760,
+    "elapsed_ms": 8432,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 29,
+    "run": "20261023-164025-bls-f65dce99",
+    "score": 12.292046452099477,
+    "chars": ",uoyjvgdnwaiehpfstlr.;/kzbcmqx",
+    "holdout": 13.238055651372884,
+    "evals": 5005910,
+    "elapsed_ms": 11288,
+    "bound": -5.531519275172166
+   },
+   {
+    "seed": 30,
+    "run": "20261023-164043-bls-cfb0477d",
+    "score": 12.209055205179906,
+    "chars": "lmdgbjquo.rntsfpheaixzvcwky/;,",
+    "holdout": 13.180428686130494,
+    "evals": 5001670,
+    "elapsed_ms": 13704,
+    "bound": -5.531519275172159
+   }
+  ],
+  "25000000": [
+   {
+    "seed": 1,
+    "run": "20261023-164100-bls-a0a25173",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25005351,
+    "elapsed_ms": 50362,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 2,
+    "run": "20261023-164155-bls-ddee8bb4",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25010660,
+    "elapsed_ms": 64108,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 3,
+    "run": "20261023-164302-bls-7cc28bff",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25008936,
+    "elapsed_ms": 64267,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 4,
+    "run": "20261023-164411-bls-ce59255f",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25013313,
+    "elapsed_ms": 52264,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 5,
+    "run": "20261023-164509-bls-570d4bce",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25016527,
+    "elapsed_ms": 54466,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 6,
+    "run": "20261023-164608-bls-b992bdc7",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25005708,
+    "elapsed_ms": 76548,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 7,
+    "run": "20261023-164728-bls-5dea49e9",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25007147,
+    "elapsed_ms": 62972,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 8,
+    "run": "20261023-164835-bls-32fb2a16",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25007134,
+    "elapsed_ms": 68607,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 9,
+    "run": "20261023-164947-bls-668c6982",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25003158,
+    "elapsed_ms": 60094,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 10,
+    "run": "20261023-165052-bls-fc431254",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25011343,
+    "elapsed_ms": 65812,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 11,
+    "run": "20261023-165201-bls-738eebe5",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25008705,
+    "elapsed_ms": 54734,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 12,
+    "run": "20261023-165300-bls-0320106f",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25004064,
+    "elapsed_ms": 56775,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 13,
+    "run": "20261023-165402-bls-5ec8844d",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25010651,
+    "elapsed_ms": 58477,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 14,
+    "run": "20261023-165504-bls-45d817f9",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25013120,
+    "elapsed_ms": 52420,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 15,
+    "run": "20261023-165602-bls-6ba01530",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25003602,
+    "elapsed_ms": 47774,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 16,
+    "run": "20261023-165655-bls-21f85286",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25005079,
+    "elapsed_ms": 61451,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 17,
+    "run": "20261023-165802-bls-8324523a",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25016458,
+    "elapsed_ms": 66436,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 18,
+    "run": "20261023-165914-bls-9c5765d7",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25007297,
+    "elapsed_ms": 65848,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 19,
+    "run": "20261023-170031-bls-bac9a521",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25008739,
+    "elapsed_ms": 81925,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 20,
+    "run": "20261023-170158-bls-f99458a0",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25003096,
+    "elapsed_ms": 59594,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 21,
+    "run": "20261023-170303-bls-2b6eb4ce",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25015506,
+    "elapsed_ms": 59650,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 22,
+    "run": "20261023-170406-bls-00059524",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25007771,
+    "elapsed_ms": 62470,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 23,
+    "run": "20261023-170512-bls-73f7bf13",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25008344,
+    "elapsed_ms": 55331,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 24,
+    "run": "20261023-170611-bls-eacaf6c4",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25010409,
+    "elapsed_ms": 57735,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 25,
+    "run": "20261023-170713-bls-14c1d8dd",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25016007,
+    "elapsed_ms": 65396,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 26,
+    "run": "20261023-170821-bls-f39e0002",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25007991,
+    "elapsed_ms": 65315,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 27,
+    "run": "20261023-170931-bls-7decbf46",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25006209,
+    "elapsed_ms": 65762,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 28,
+    "run": "20261023-171040-bls-1df5e06e",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25003997,
+    "elapsed_ms": 62659,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 29,
+    "run": "20261023-171147-bls-0f743d73",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25011698,
+    "elapsed_ms": 49087,
+    "bound": -5.531519275172161
+   },
+   {
+    "seed": 30,
+    "run": "20261023-171240-bls-36feea04",
+    "score": 12.15429305040533,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky/;,",
+    "holdout": 13.272817867314657,
+    "evals": 25004241,
+    "elapsed_ms": 46232,
+    "bound": -5.531519275172161
+   }
+  ]
+ }
+}

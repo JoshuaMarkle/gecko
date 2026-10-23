@@ -1,0 +1,313 @@
+{
+ "board": "ansi-30",
+ "corpus": "shai",
+ "holdout": "english",
+ "algo": "bls",
+ "threads": 4,
+ "pins": "",
+ "start": "raw:abcdefghijklmnopqrstuvwxyz',.;",
+ "budgets": {
+  "25000000": [
+   {
+    "seed": 1,
+    "run": "20261023-163812-bls-6e319240",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25013565,
+    "elapsed_ms": 70170,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 2,
+    "run": "20261023-163927-bls-7d43272f",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25008120,
+    "elapsed_ms": 64389,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 3,
+    "run": "20261023-164034-bls-2abaef87",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25012838,
+    "elapsed_ms": 55972,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 4,
+    "run": "20261023-164134-bls-609a1d08",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25006434,
+    "elapsed_ms": 73360,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 5,
+    "run": "20261023-164253-bls-ab192ddb",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25015207,
+    "elapsed_ms": 79910,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 6,
+    "run": "20261023-164418-bls-bb62b899",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25010568,
+    "elapsed_ms": 58444,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 7,
+    "run": "20261023-164521-bls-55ed8771",
+    "score": 12.932392925331415,
+    "chars": "xwcgvzuoyjrnstdkhaielmfpb,.';q",
+    "holdout": 13.416510276049243,
+    "evals": 25009576,
+    "elapsed_ms": 69677,
+    "bound": -5.034580567971246
+   },
+   {
+    "seed": 8,
+    "run": "20261023-164635-bls-89e98c6a",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25015990,
+    "elapsed_ms": 88297,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 9,
+    "run": "20261023-164810-bls-ad890198",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25005104,
+    "elapsed_ms": 68320,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 10,
+    "run": "20261023-164926-bls-fd9abe12",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25018112,
+    "elapsed_ms": 73325,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 11,
+    "run": "20261023-165046-bls-5022f5ba",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25003315,
+    "elapsed_ms": 72469,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 12,
+    "run": "20261023-165202-bls-411160cb",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25007616,
+    "elapsed_ms": 67736,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 13,
+    "run": "20261023-165317-bls-caa9533e",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25006928,
+    "elapsed_ms": 62025,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 14,
+    "run": "20261023-165424-bls-28cd55fb",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25015247,
+    "elapsed_ms": 60374,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 15,
+    "run": "20261023-165530-bls-8e428724",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25008987,
+    "elapsed_ms": 74049,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 16,
+    "run": "20261023-165650-bls-7df8fc65",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25015773,
+    "elapsed_ms": 56586,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 17,
+    "run": "20261023-165752-bls-3379eb92",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25008386,
+    "elapsed_ms": 66906,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 18,
+    "run": "20261023-165904-bls-e07bc98b",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25014807,
+    "elapsed_ms": 83457,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 19,
+    "run": "20261023-170039-bls-2933ccb7",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25014575,
+    "elapsed_ms": 81014,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 20,
+    "run": "20261023-170205-bls-cfeb33e8",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25009881,
+    "elapsed_ms": 70065,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 21,
+    "run": "20261023-170319-bls-78079d98",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25014261,
+    "elapsed_ms": 73022,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 22,
+    "run": "20261023-170438-bls-8ce084fe",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25012297,
+    "elapsed_ms": 67666,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 23,
+    "run": "20261023-170552-bls-3f2184cd",
+    "score": 12.906128069275118,
+    "chars": "yqou,vbpmxieahkfstlrj;'.zgcdwn",
+    "holdout": 13.31053888679262,
+    "evals": 25010990,
+    "elapsed_ms": 65846,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 24,
+    "run": "20261023-170704-bls-eff27dfe",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25019571,
+    "elapsed_ms": 74231,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 25,
+    "run": "20261023-170822-bls-140b036e",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25011400,
+    "elapsed_ms": 76031,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 26,
+    "run": "20261023-170941-bls-a2bdf373",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25014575,
+    "elapsed_ms": 65842,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 27,
+    "run": "20261023-171050-bls-5f01c9ab",
+    "score": 12.932392925331415,
+    "chars": "xwcgvzuoyjrnstdkhaielmfpb,.';q",
+    "holdout": 13.416510276049243,
+    "evals": 25013757,
+    "elapsed_ms": 65639,
+    "bound": -5.034580567971246
+   },
+   {
+    "seed": 28,
+    "run": "20261023-171203-bls-9f79752f",
+    "score": 12.906128069275118,
+    "chars": "yqou,vbpmxieahkfstlrj;'.zgcdwn",
+    "holdout": 13.31053888679262,
+    "evals": 25012816,
+    "elapsed_ms": 53010,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 29,
+    "run": "20261023-171301-bls-4ec07880",
+    "score": 12.822234298645313,
+    "chars": "zwdgvxuoyjrntsfkhaielmpcb,.';q",
+    "holdout": 13.111122657761282,
+    "evals": 25010987,
+    "elapsed_ms": 55343,
+    "bound": -5.034580567971249
+   },
+   {
+    "seed": 30,
+    "run": "20261023-171359-bls-99ccbf71",
+    "score": 12.906128069275118,
+    "chars": "yqou,vbpmxieahkfstlrj;'.zgcdwn",
+    "holdout": 13.31053888679262,
+    "evals": 25009203,
+    "elapsed_ms": 50220,
+    "bound": -5.034580567971249
+   }
+  ]
+ }
+}

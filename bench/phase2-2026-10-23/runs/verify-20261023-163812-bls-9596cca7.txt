@@ -1,0 +1,13 @@
+verify 20261023-163812-bls-9596cca7  (re-running)
+ok   geometry  0a5d29866415a60a
+ok   corpus    d0b7c4a10bb8bcfd
+ok   profile   f27f38d09f540ead
+ok   holdout   1539a821f307a698
+ok   evals     25012006
+ok   ranked    3
+ok   best#1    12.8262670730 zwdgvxuoyjrntsfkhaielmpcb,.'/q
+ok   best#2    12.9068186452 yqou,vbpmxieahkfstlrj/'.zgcdwn
+ok   best#3    12.9486307913 zwdgvxuoqjrntsfkhaeilmpcb,.'/y
+ok   objectives []
+ok   front     0
+reproduced

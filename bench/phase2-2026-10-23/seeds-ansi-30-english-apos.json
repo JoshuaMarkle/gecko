@@ -1,0 +1,313 @@
+{
+ "board": "ansi-30",
+ "corpus": "english",
+ "holdout": "shai",
+ "algo": "bls",
+ "threads": 4,
+ "pins": "",
+ "start": "raw:abcdefghijklmnopqrstuvwxyz',./",
+ "budgets": {
+  "25000000": [
+   {
+    "seed": 1,
+    "run": "20261023-163812-bls-4fb924ff",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25013538,
+    "elapsed_ms": 66754,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 2,
+    "run": "20261023-163924-bls-f16ddee8",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25007694,
+    "elapsed_ms": 57935,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 3,
+    "run": "20261023-164026-bls-02d3d598",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25019222,
+    "elapsed_ms": 44494,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 4,
+    "run": "20261023-164114-bls-12049809",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25012964,
+    "elapsed_ms": 52495,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 5,
+    "run": "20261023-164214-bls-bcbaeca5",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25013470,
+    "elapsed_ms": 61373,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 6,
+    "run": "20261023-164317-bls-ae8faafe",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25012082,
+    "elapsed_ms": 62120,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 7,
+    "run": "20261023-164423-bls-eccd6d84",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25019998,
+    "elapsed_ms": 51312,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 8,
+    "run": "20261023-164519-bls-5d928877",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25011820,
+    "elapsed_ms": 60964,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 9,
+    "run": "20261023-164624-bls-e72daa5e",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25008815,
+    "elapsed_ms": 78388,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 10,
+    "run": "20261023-164747-bls-4a052da7",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25010153,
+    "elapsed_ms": 62347,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 11,
+    "run": "20261023-164854-bls-f09a84ce",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25015787,
+    "elapsed_ms": 61388,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 12,
+    "run": "20261023-164959-bls-c99bc01b",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25008026,
+    "elapsed_ms": 56234,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 13,
+    "run": "20261023-165102-bls-865ece46",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25014654,
+    "elapsed_ms": 58438,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 14,
+    "run": "20261023-165204-bls-c6a245d5",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25006354,
+    "elapsed_ms": 60798,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 15,
+    "run": "20261023-165309-bls-fe046709",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25012627,
+    "elapsed_ms": 55463,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 16,
+    "run": "20261023-165411-bls-0ed55b12",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25011344,
+    "elapsed_ms": 57682,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 17,
+    "run": "20261023-165513-bls-a25a2428",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25012385,
+    "elapsed_ms": 62190,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 18,
+    "run": "20261023-165618-bls-5ec3dff4",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25004980,
+    "elapsed_ms": 57480,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 19,
+    "run": "20261023-165720-bls-aff468bd",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25013735,
+    "elapsed_ms": 59353,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 20,
+    "run": "20261023-165824-bls-c14d9043",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25018211,
+    "elapsed_ms": 68314,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 21,
+    "run": "20261023-165938-bls-b2cbed48",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25020328,
+    "elapsed_ms": 87068,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 22,
+    "run": "20261023-170115-bls-cac4cd2f",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25008513,
+    "elapsed_ms": 64192,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 23,
+    "run": "20261023-170223-bls-dda67165",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25011762,
+    "elapsed_ms": 61032,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 24,
+    "run": "20261023-170332-bls-cda09472",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25003013,
+    "elapsed_ms": 59073,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 25,
+    "run": "20261023-170435-bls-44dad502",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25011484,
+    "elapsed_ms": 61667,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 26,
+    "run": "20261023-170539-bls-b271c819",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25008495,
+    "elapsed_ms": 62249,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 27,
+    "run": "20261023-170644-bls-d8cde93a",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25007642,
+    "elapsed_ms": 53988,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 28,
+    "run": "20261023-170740-bls-9cec0875",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25009361,
+    "elapsed_ms": 58873,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 29,
+    "run": "20261023-170842-bls-cec664a3",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25010447,
+    "elapsed_ms": 72047,
+    "bound": -5.367504949220744
+   },
+   {
+    "seed": 30,
+    "run": "20261023-170958-bls-e0762193",
+    "score": 12.291676654925409,
+    "chars": "lwdgbzquo.rntsfpheaijxmcvky'/,",
+    "holdout": 13.561681019811564,
+    "evals": 25016299,
+    "elapsed_ms": 66393,
+    "bound": -5.367504949220744
+   }
+  ]
+ }
+}

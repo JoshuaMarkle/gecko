@@ -1,0 +1,338 @@
+{
+ "profile": "default",
+ "cmini_in_sets": {
+  "semi": 620,
+  "apos": 356,
+  "qwerty": 271
+ },
+ "boards": {
+  "ansi-30": {
+   "named": {
+    "graphite": {
+     "set": "apos",
+     "english": 14.741652862594622,
+     "shai": 14.501242823034234
+    },
+    "semimak": {
+     "set": "apos",
+     "english": 19.712457502368817,
+     "shai": 19.44108932815952
+    },
+    "sturdy": {
+     "set": "semi",
+     "english": 17.67033625071156,
+     "shai": 17.39020380007078
+    },
+    "canary": {
+     "set": "qwerty",
+     "english": 19.93343866386507,
+     "shai": 19.177931497025977
+    }
+   },
+   "best_cmini": {
+    "semi": {
+     "english": [
+      {
+       "layout": "nrts-oxey",
+       "score": 13.869590483524977
+      },
+      {
+       "layout": "graphite_wczv",
+       "score": 13.963260127462059
+      },
+      {
+       "layout": "galliumb",
+       "score": 14.051057202839754
+      },
+      {
+       "layout": "spruce",
+       "score": 14.056187799831669
+      },
+      {
+       "layout": "pineum",
+       "score": 14.087247706964057
+      }
+     ],
+     "shai": [
+      {
+       "layout": "galliumb",
+       "score": 13.62874089034655
+      },
+      {
+       "layout": "graphium",
+       "score": 13.664726002412738
+      },
+      {
+       "layout": "graphite-gallium",
+       "score": 13.666155066455662
+      },
+      {
+       "layout": "gallium",
+       "score": 13.792884408346584
+      },
+      {
+       "layout": "gallium_rowstag",
+       "score": 13.792884408346584
+      }
+     ]
+    },
+    "apos": {
+     "english": [
+      {
+       "layout": "gralmaks",
+       "score": 13.578366662297071
+      },
+      {
+       "layout": "grapheti",
+       "score": 13.899205439536335
+      },
+      {
+       "layout": "graphite_taglish",
+       "score": 14.094168049254465
+      },
+      {
+       "layout": "unoriginal",
+       "score": 14.113008908598125
+      },
+      {
+       "layout": "maya_vim",
+       "score": 14.174847302290058
+      }
+     ],
+     "shai": [
+      {
+       "layout": "grapheti",
+       "score": 13.756956109790671
+      },
+      {
+       "layout": "gralmaks",
+       "score": 13.781936312417313
+      },
+      {
+       "layout": "graphite_taglish",
+       "score": 13.876498591081635
+      },
+      {
+       "layout": "maya_vim",
+       "score": 13.961101624987764
+      },
+      {
+       "layout": "theol",
+       "score": 14.38507017577216
+      }
+     ]
+    },
+    "qwerty": {
+     "english": [
+      {
+       "layout": "galite-reference",
+       "score": 14.586535588697945
+      },
+      {
+       "layout": "gallium-stdpct",
+       "score": 14.630721835939054
+      },
+      {
+       "layout": "qi-xp",
+       "score": 14.70833059115936
+      },
+      {
+       "layout": "graphite-stdpct",
+       "score": 14.744086775304709
+      },
+      {
+       "layout": "nrtshaei-test",
+       "score": 15.382878323387972
+      }
+     ],
+     "shai": [
+      {
+       "layout": "galite-reference",
+       "score": 14.177893446581773
+      },
+      {
+       "layout": "gallium-stdpct",
+       "score": 14.30522627792336
+      },
+      {
+       "layout": "graphite-stdpct",
+       "score": 14.387696334070235
+      },
+      {
+       "layout": "qi-xp",
+       "score": 14.804460828212799
+      },
+      {
+       "layout": "nrtshaei-test",
+       "score": 15.349259071134606
+      }
+     ]
+    }
+   }
+  },
+  "corne-36": {
+   "named": {
+    "graphite": {
+     "set": "apos",
+     "english": 11.993374149898541,
+     "shai": 11.832349819009783
+    },
+    "semimak": {
+     "set": "apos",
+     "english": 14.158532770465879,
+     "shai": 14.165897186085598
+    },
+    "sturdy": {
+     "set": "semi",
+     "english": 13.129567396046832,
+     "shai": 13.390320110928318
+    },
+    "canary": {
+     "set": "qwerty",
+     "english": 14.450560840845224,
+     "shai": 14.383643448432075
+    }
+   },
+   "best_cmini": {
+    "semi": {
+     "english": [
+      {
+       "layout": "gallium_sabo",
+       "score": 11.201143645352218
+      },
+      {
+       "layout": "spruce",
+       "score": 11.261094746189343
+      },
+      {
+       "layout": "graphite_wczv",
+       "score": 11.298035219813912
+      },
+      {
+       "layout": "pineum",
+       "score": 11.317341394835248
+      },
+      {
+       "layout": "gallaya",
+       "score": 11.332636571721878
+      }
+     ],
+     "shai": [
+      {
+       "layout": "galliumb",
+       "score": 11.228584766287478
+      },
+      {
+       "layout": "graphite-gallium",
+       "score": 11.232816627326084
+      },
+      {
+       "layout": "graphium",
+       "score": 11.233998201969472
+      },
+      {
+       "layout": "spruce",
+       "score": 11.311363874956289
+      },
+      {
+       "layout": "gallaya",
+       "score": 11.345641349058946
+      }
+     ]
+    },
+    "apos": {
+     "english": [
+      {
+       "layout": "graphite_taglish",
+       "score": 11.120498404599056
+      },
+      {
+       "layout": "gralmaks",
+       "score": 11.282934563206709
+      },
+      {
+       "layout": "grapheti",
+       "score": 11.395320650005074
+      },
+      {
+       "layout": "maya_vim",
+       "score": 11.405224645895817
+      },
+      {
+       "layout": "potato",
+       "score": 11.550971612117518
+      }
+     ],
+     "shai": [
+      {
+       "layout": "graphite_taglish",
+       "score": 11.203789418256099
+      },
+      {
+       "layout": "maya_vim",
+       "score": 11.329837341908673
+      },
+      {
+       "layout": "grapheti",
+       "score": 11.35291380408063
+      },
+      {
+       "layout": "gralmaks",
+       "score": 11.394764778078416
+      },
+      {
+       "layout": "potato",
+       "score": 11.68252814563019
+      }
+     ]
+    },
+    "qwerty": {
+     "english": [
+      {
+       "layout": "gallium-stdpct",
+       "score": 11.74780847455988
+      },
+      {
+       "layout": "galite-reference",
+       "score": 11.913773019114041
+      },
+      {
+       "layout": "graphite-stdpct",
+       "score": 12.007978108512578
+      },
+      {
+       "layout": "csht-rn",
+       "score": 12.045336330923467
+      },
+      {
+       "layout": "canary-alt",
+       "score": 12.323543001962227
+      }
+     ],
+     "shai": [
+      {
+       "layout": "galite-reference",
+       "score": 11.678375023179244
+      },
+      {
+       "layout": "graphite-stdpct",
+       "score": 11.783432738059322
+      },
+      {
+       "layout": "gallium-stdpct",
+       "score": 11.84190545934714
+      },
+      {
+       "layout": "canary-alt",
+       "score": 11.94972901538466
+      },
+      {
+       "layout": "freyalowig",
+       "score": 11.993166741730482
+      }
+     ]
+    }
+   }
+  }
+ }
+}

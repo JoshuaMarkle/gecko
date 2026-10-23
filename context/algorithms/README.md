@@ -35,7 +35,8 @@ best same-finger column exchange, then the best 3-cycle, then the best pair of s
 first swap among the `depth2_width` = 32 least-worsening, 0 = all); any improvement resumes
 the swap descent. All moves are swap sequences between movable symbols (pins respected,
 delta-tracked, no allocation). Default: swap only (bench below). Hand-half mirroring: later.
-Every algorithm is compared with `gecko bench` before it becomes a default. Record
+Every algorithm is compared with `gecko bench` before it becomes a default. Whether the search
+beats the best known layouts (30 seeds × BLS, two boards, two corpora): [evaluation.md](../evaluation.md). Record
 leaderboard results at the bottom of the algorithm's file.
 
 ### Neighbourhoods vs plain swap (2026-10-21, issue #8)

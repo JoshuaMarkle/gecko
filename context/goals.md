@@ -17,7 +17,7 @@ optimization on top.
 
 Current implementation includes layout optimizers, symbol layers, the web workflow,
 2D/3D parametric bilevel search, hand IK, collision repair and manufacturability checks.
-The phase 2 “beats the best known layouts” check still needs a written evaluation.
+The phase 2 “beats the best known layouts” check is written up in [evaluation.md](evaluation.md) (#141).
 Remaining scheduled work and its priority live in [roadmap.md](roadmap.md); the phase
 list below describes the project's scope, not an execution queue.
 
