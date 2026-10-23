@@ -224,6 +224,19 @@ pub struct StepInfo {
     pub evals: u64,
 }
 
+/// What a worker is doing, read between steps for the run trace (`Progress::workers`).
+/// Counters are cumulative; the runner reports them per record.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Telemetry {
+    /// Annealing temperature, for algorithms that have one.
+    pub temp: Option<f64>,
+    /// Moves proposed, improving moves taken, worsening moves proposed and accepted.
+    pub proposed: u64,
+    pub improving: u64,
+    pub worse: u64,
+    pub worse_accepted: u64,
+}
+
 pub trait Optimizer {
     fn init(&mut self, ctx: &Ctx, rng: &mut Rng);
     /// Do a bounded batch of work.
@@ -234,6 +247,14 @@ pub trait Optimizer {
     /// Best layout so far for progress reports (may be mid-search, not yet in `top`).
     fn live_best(&self) -> Option<(f64, &[u8])> {
         self.top().best().map(|s| (s.score, s.sym.as_slice()))
+    }
+    /// The layout the search is at now (SA's current state, BLS's current optimum); defaults
+    /// to the best.
+    fn current(&self) -> Option<(f64, &[u8])> {
+        self.live_best()
+    }
+    fn telemetry(&self) -> Telemetry {
+        Telemetry::default()
     }
 }
 
@@ -341,6 +362,63 @@ pub struct Progress {
     /// Atlas counters during an explore run.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub explore: Option<ExploreProgress>,
+    /// Per-worker trace (independent-worker algorithms; `context/representation.md`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub workers: Vec<WorkerTrace>,
+}
+
+/// One worker at one progress record. Move counts are since the previous record.
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
+pub struct WorkerTrace {
+    pub evals: u64,
+    /// Score of the layout the worker is at (on the worker's fidelity level).
+    pub current: f64,
+    /// The worker's best so far.
+    pub best: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub temp: Option<f64>,
+    pub proposed: u64,
+    pub improving: u64,
+    pub worse: u64,
+    pub worse_accepted: u64,
+    /// The current layout as slot-ordered chars.
+    pub chars: String,
+}
+
+/// A worker's latest state, written after each step and read by the progress thread.
+#[derive(Clone, Default)]
+struct Live {
+    evals: u64,
+    current: f64,
+    best: f64,
+    sym: Vec<u8>,
+    tel: Telemetry,
+    ready: bool,
+}
+
+/// Turn the workers' latest states into trace records; `prev` holds the counters last reported.
+fn traces(live: &[Mutex<Live>], prev: &mut [Telemetry], chars: &[char]) -> Vec<WorkerTrace> {
+    let mut out = Vec::with_capacity(live.len());
+    for (l, p) in live.iter().zip(prev.iter_mut()) {
+        let l = l.lock().unwrap().clone();
+        if !l.ready {
+            continue;
+        }
+        let t = l.tel;
+        out.push(WorkerTrace {
+            evals: l.evals,
+            current: l.current,
+            best: l.best,
+            temp: t.temp,
+            proposed: t.proposed.saturating_sub(p.proposed),
+            improving: t.improving.saturating_sub(p.improving),
+            worse: t.worse.saturating_sub(p.worse),
+            worse_accepted: t.worse_accepted.saturating_sub(p.worse_accepted),
+            chars: l.sym.iter().map(|&x| chars[x as usize]).collect(),
+        });
+        *p = t;
+    }
+    out
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -502,6 +580,7 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mu
     let (tx, rx) = mpsc::channel::<(usize, f64, Vec<u8>)>();
     let stop = AtomicBool::new(false);
 
+    let live: Vec<Mutex<Live>> = (0..threads).map(|_| Mutex::new(Live::default())).collect();
     let mut merged = TopK::new(params.top);
     let level_sizes: Vec<usize> = levels.iter().map(|c| c.scorer.trigram_count()).collect();
     let mut fidelity: Option<FidelityReport> = None;
@@ -509,7 +588,7 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mu
         let mut handles = Vec::new();
         for w in 0..threads {
             let tx = tx.clone();
-            let (total_evals, stop) = (&total_evals, &stop);
+            let (total_evals, stop, live) = (&total_evals, &stop, &live[w]);
             handles.push(scope.spawn(move || {
                 let mut rng = crate::rng::Rng::for_worker(params.seed, w as u64);
                 let mut opt = make(params.algo, params);
@@ -543,6 +622,13 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mu
                     let info = opt.step(&wctx, &mut rng);
                     evals += info.evals;
                     total_evals.fetch_add(info.evals, Ordering::Relaxed);
+                    if let (Some((c, sym)), Some((b, _))) = (opt.current(), opt.live_best()) {
+                        // Once per step (thousands of evaluations): the lock is uncontended.
+                        let mut l = live.lock().unwrap();
+                        l.sym.clear();
+                        l.sym.extend_from_slice(sym);
+                        (l.evals, l.current, l.best, l.tel, l.ready) = (evals, c, b, opt.telemetry(), true);
+                    }
                     let Some((b, sym)) = opt.live_best() else { continue };
                     if b >= last_best {
                         continue;
@@ -599,6 +685,7 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mu
         drop(tx);
         let mut best: Option<(f64, Vec<u8>)> = None;
         let mut last_emit = Instant::now().checked_sub(interval).unwrap_or_else(Instant::now);
+        let mut prev = vec![Telemetry::default(); threads];
         let mut emit = |best: &Option<(f64, Vec<u8>)>, force: bool, last_emit: &mut Instant| {
             if let Some((s, sym)) = best {
                 if force || last_emit.elapsed() >= interval {
@@ -609,6 +696,7 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mu
                         best: *s,
                         best_chars: sym.iter().map(|&x| ctx.scorer.chars[x as usize]).collect(),
                         explore: None,
+                        workers: traces(&live, &mut prev, &ctx.scorer.chars),
                     });
                 }
             }

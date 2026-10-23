@@ -27,9 +27,20 @@ pub struct BenchArgs {
     /// Depth-2 moves: first swaps tried per optimum (0 = all).
     #[arg(long)]
     depth2_width: Option<usize>,
+    /// Do not save the results to runs/bench/ (the web Bench view reads them there).
+    #[arg(long)]
+    no_save: bool,
     #[command(flatten)]
     inputs: Inputs,
 }
+
+/// Saved leaderboards, one JSON file each (`runs/bench/<id>.json`).
+pub fn bench_dir(store: &gecko_core::store::Store) -> std::path::PathBuf {
+    store.runs.join("bench")
+}
+
+/// Best-score improvements (ms, score) are sampled this often for time-to-target curves.
+const TRACE_MS: u64 = 20;
 
 #[derive(clap::Args)]
 pub struct VerifyArgs {
@@ -70,13 +81,22 @@ pub fn bench(ctx: &Ctx, a: BenchArgs) -> Result<()> {
         for mv in &variants {
             let mut scores = Vec::new();
             let mut eps = Vec::new();
+            let mut runs = Vec::new();
             for seed in 1..=a.seeds {
                 let params =
                     Params { algo, seed, threads, time_ms: Some(time_ms), evals: None, top: 1, moves: mv.clone(), ..Default::default() };
                 let c = optimize::Ctx::new(&sc, (0..sc.n).collect(), sc.identity());
-                let o = optimize::run(&c, &params, Duration::from_secs(3600), &Control::default(), |_| {});
-                scores.push(o.top.first().map(|s| s.score).unwrap_or(f64::NAN));
+                // Time-to-target: every new best with the time it was reached.
+                let mut trace: Vec<(u64, f64)> = Vec::new();
+                let o = optimize::run(&c, &params, Duration::from_millis(TRACE_MS), &Control::default(), |p| {
+                    if trace.last().is_none_or(|l| p.best < l.1) {
+                        trace.push((p.elapsed_ms, p.best));
+                    }
+                });
+                let score = o.top.first().map(|s| s.score).unwrap_or(f64::NAN);
+                scores.push(score);
                 eps.push(o.evals_per_sec);
+                runs.push(json!({"seed": seed, "score": score, "evals": o.evals, "elapsed_ms": o.elapsed_ms, "trace": trace}));
                 if !ctx.json {
                     eprintln!("  {} [{}] seed {seed}: {:.4}", algo.name(), mv.name(), scores.last().unwrap());
                 }
@@ -85,11 +105,26 @@ pub fn bench(ctx: &Ctx, a: BenchArgs) -> Result<()> {
             let mean = scores.iter().sum::<f64>() / n;
             let best = scores.iter().cloned().fold(f64::INFINITY, f64::min);
             let sd = (scores.iter().map(|s| (s - mean).powi(2)).sum::<f64>() / n).sqrt();
-            out.push(json!({"algo": algo.name(), "moves": mv.name(), "mean": mean, "best": best, "stdev": sd, "evals_per_sec": eps.iter().sum::<f64>() / n, "scores": scores}));
+            out.push(json!({"algo": algo.name(), "moves": mv.name(), "mean": mean, "best": best, "stdev": sd, "evals_per_sec": eps.iter().sum::<f64>() / n, "scores": scores, "runs": runs}));
         }
     }
+    let (stamp, created) = run::now_stamp();
+    let algos: Vec<&str> = a.algos.split(',').map(str::trim).collect();
+    let id = format!("{stamp}-{}", algos.join("-"));
+    let report = json!({"schema": SCHEMA, "id": id, "created": created, "commit": git_commit(&ctx.store.root),
+        "time_ms": time_ms, "threads": threads, "seeds": a.seeds, "geometry": l.geometry.name, "corpus": l.corpus.name,
+        "profile": l.profile.name, "results": out});
+    let saved = if a.no_save {
+        None
+    } else {
+        let dir = bench_dir(&ctx.store);
+        std::fs::create_dir_all(&dir)?;
+        let path = dir.join(format!("{id}.json"));
+        std::fs::write(&path, serde_json::to_string_pretty(&report)?)?;
+        Some(path)
+    };
     if ctx.json {
-        ctx.print(json!({"schema": SCHEMA, "time_ms": time_ms, "threads": threads, "profile": l.profile.name, "results": out}));
+        ctx.print(report);
         return Ok(());
     }
     println!("{:<5} {:<22} {:>9} {:>9} {:>8} {:>10}", "algo", "moves", "mean", "best", "stdev", "Mevals/s");
@@ -103,6 +138,9 @@ pub fn bench(ctx: &Ctx, a: BenchArgs) -> Result<()> {
             r["stdev"].as_f64().unwrap(),
             r["evals_per_sec"].as_f64().unwrap() / 1e6
         );
+    }
+    if let Some(p) = saved {
+        println!("saved {}", p.display());
     }
     Ok(())
 }

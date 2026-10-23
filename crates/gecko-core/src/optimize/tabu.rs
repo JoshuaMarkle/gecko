@@ -229,6 +229,10 @@ impl Optimizer for Tabu {
         &self.top
     }
 
+    fn current(&self) -> Option<(f64, &[u8])> {
+        self.cur.as_ref().map(|c| (c.score, c.sym.as_slice())).or_else(|| self.live_best())
+    }
+
     fn live_best(&self) -> Option<(f64, &[u8])> {
         let t = self.top.best().map(|s| (s.score, s.sym.as_slice()));
         match t {

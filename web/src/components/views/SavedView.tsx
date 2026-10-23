@@ -1,6 +1,6 @@
 // Saved view: every saved run (with a mini keyboard of its best layout) on the left; the selected
-// run's convergence (hover: best layout at that time), ranked layouts and reproducibility details
-// on the right. A board + layout run shows its board instead (`geom/GeomRunPanel`). NSGA-II /
+// run's convergence (hover: best layout at that time), process views (`runs/ProcessPanel`: workers,
+// schedule, symbol migration, settling order), ranked layouts and reproducibility details on the right. A board + layout run shows its board instead (`geom/GeomRunPanel`). NSGA-II /
 // RWSA runs add their Pareto front, qd runs their MAP-Elites grid (`runs/`).
 
 import type { Geometry, GeomRunDetail, Progress, RunDetail, RunSummary } from "../../api";
@@ -10,6 +10,7 @@ import { Convergence } from "../Charts";
 import { GeomRunPanel } from "../geom/GeomRunPanel";
 import { EliteGrid } from "../runs/EliteGrid";
 import { ParetoPanel } from "../runs/ParetoPanel";
+import { ProcessPanel } from "../runs/ProcessPanel";
 
 interface Props {
   runs: RunSummary[];
@@ -80,6 +81,7 @@ export function SavedView(p: Props) {
               <div className="pad">
                 <div className="chartbox"><Convergence progress={p.progress} reference={p.refScore} refName={p.refName} geometry={geo} /></div>
               </div>
+              <ProcessPanel progress={p.progress} geometry={geo} />
               {res?.front && res.front.length > 0 && (
                 <ParetoPanel front={res.front} objectives={res.objectives ?? []} geometry={geo}
                   picked={res.front.some((f) => f.chars === p.current) ? res.front.findIndex((f) => f.chars === p.current) : null}

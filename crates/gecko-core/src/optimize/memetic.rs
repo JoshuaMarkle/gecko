@@ -276,6 +276,7 @@ fn emit(ctx: &Ctx, top: &TopK, t0: Instant, evals: u64, control: &Control, on_pr
             best: s.score,
             best_chars: s.sym.iter().map(|&x| ctx.scorer.chars[x as usize]).collect(),
             explore: None,
+            workers: Vec::new(),
         });
     }
 }

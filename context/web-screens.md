@@ -6,7 +6,7 @@ Visual design: [design.md](design.md).
 ## Shell
 
 Navbar (see design.md "App shell"): Home | Inputs (Board, Hand, Language, Profile, Summary) |
-Optimize (Layout, Board, Both, Explore) | Saved (Runs, Export), icon tabs without labels so more
+Optimize (Layout, Board, Both, Explore) | Saved (Runs, Bench, Export), icon tabs without labels so more
 tabs fit. Play / pause / stop sit centred with run % beside, on Optimize tabs (and on any tab
 while a run is going). Working model right. The tab is remembered in `localStorage`; old names
 map (Corpus → Language, Search / Analysis / Stats / Optimize → Layout, Saved / Results → Runs).
@@ -157,6 +157,14 @@ the working model) and reproducibility facts. With a holdout corpus, the best-la
 each layout's score on it, and the Run facts show the holdout corpus, start → best on both
 corpora, the gain kept and the rank ρ.
 
+**Process** (`runs/ProcessPanel`, from the `workers` trace in `progress.jsonl`): Workers (one
+thin line per worker's current score, the best so far bold), Schedule (SA temperature on a log
+scale over the share of worsening moves accepted, blue, and of improving proposals, dashed),
+Symbol migration (slot × time raster of the best layout or of one worker's current layout,
+each symbol in the color of the finger it ends on; hover names it) and Settling order (when
+each symbol last moved in the best layout, latest first, with its move count). Older runs and
+population algorithms show only the raster and settling order.
+
 NSGA-II / RWSA runs add **Pareto front** (`components/runs/ParetoPanel`): the front as a scatter
 over any two metrics (objectives starred, the run's first two by default; the line joins the
 layouts non-dominated in that plane); hover shows a mini keyboard, click makes the layout the
@@ -172,6 +180,15 @@ generation to the polished best board), convergence, result (start vs best board
 layout polish, collisions, the weighted metrics that moved most), every free parameter (start,
 best, bounds bar) and the run facts. **Use this board** makes its best board the board and its
 layout the working model.
+
+## Bench
+Saved `gecko bench` files (`runs/bench/`, `/api/bench`), newest first, with their solvers,
+seeds and budget. The selected bench: leaderboard (mean, best, stdev, seeds that hit the
+overall best, speed), **Performance profile** (Dolan–Moré: share of seeds on which a solver
+is within τ of the best solver on that seed), **Time to target** (ECDF over seeds of the time
+to reach the overall best + 0 / 0.5 / 1 / 2 %) and **Best so far** (each seed's trace, dashed
+target). Solvers keep one series color across the three charts. No runs start from here; the
+empty state shows the CLI command.
 
 ## Export
 Last tab: the shown layout (working model, or the live best during a run) as files.
@@ -200,9 +217,20 @@ Left: atlas picker, new exploration (budget, threads, seed; other inputs from th
 (atlas profile, or the current profile with editable weights; every panel re-ranks), focus
 (best N, family radius, brush) and landscape stats. Centre, linked cards: Map (PCA of slot,
 finger or metric encodings), Fitness vs distance (+ reference layouts), Consensus keyboard,
-Families, Trade-off (any two metrics, Pareto front), Funnels, Parallel coordinates, Weight
-stability, Discovery curve, How good is good (random vs optima), Ruggedness. Right: the
-picked layout — metrics vs best, provenance, its whole swap neighbourhood; Open in editor.
+Families, Trade-off (any two metrics, Pareto front), Local optima network, Path, Funnels,
+Parallel coordinates, Weight stability, Discovery curve, How good is good (random vs optima),
+Ruggedness. Right: the picked layout — metrics vs best, provenance, its whole swap
+neighbourhood; Open in editor; Set as path start.
+
+**Local optima network** (`Lon.tsx`): the first 300 focused optima and the kick edges among
+them (`edges.bin`; repeats merged, width ∝ count), force-directed (`lon.ts`, seeded, so the
+same atlas lands the same way) or with y = score (better lower). Node size ∝ log hits, color
+= funnel (the 7 best funnels, the rest grey), funnel bottoms ringed in ink, picked in blue;
+click picks. **Path** (`PathPanel.tsx`): path relinking from the path start (the best unless
+set in the right pane) to the picked layout, each step the cheapest swap that puts one more
+symbol where the target has it (WASM `Engine.path` when the scorer matches, else
+`/api/path`). Score along the path, its barrier above the worse end, and the layout at the
+hovered step (grey keys still differ from the target).
 
 All atlas statistics run in WASM (`AtlasView`) on the binary files; the live atlas reloads
 on each snapshot (throttled 2.5 s). Reference layouts are scored via `/api/score`. Swap

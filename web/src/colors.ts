@@ -43,3 +43,8 @@ export function heatColor(t: number): string {
 
 /** Legend text color that stays readable on `heatColor(t)`. */
 export const heatText = (t: number) => (t > 0.5 ? "#ffffff" : INK);
+
+/** Series colors for comparing a few solvers or workers in one chart (bench views): ink first,
+ *  then the finger hues, never the accent (reserved for selection). */
+export const SERIES = ["#141414", "#4f8fd6", "#e0a030", "#3fae6c", "#8f6ad0", "#ff832b", "#9a9a9a", "#d04a8a"];
+export const seriesColor = (i: number) => SERIES[i % SERIES.length];

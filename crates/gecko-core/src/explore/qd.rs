@@ -424,7 +424,7 @@ pub fn run(
     let t0 = Instant::now();
     let start_chars: String = ctx.start.chars(sc).iter().collect();
     let phase = |phase: &str| Some(ExploreProgress { phase: phase.into(), ..Default::default() });
-    on_progress(&Progress { elapsed_ms: 0, evals: 0, best: ctx.start.score, best_chars: start_chars, explore: phase("seed") });
+    on_progress(&Progress { elapsed_ms: 0, evals: 0, best: ctx.start.score, best_chars: start_chars, explore: phase("seed"), workers: Vec::new() });
 
     // Seeds: the start layout plus random layouts, each descended to a local optimum.
     let threads = params.threads.max(1);
@@ -494,7 +494,7 @@ pub fn run(
         }
         let (filled, offspring) = grid.counts();
         let explore = Some(ExploreProgress { phase: "search".into(), optima: filled as u64, hits: offspring, edges: 0, version });
-        on_progress(&Progress { elapsed_ms, evals, best: pg.best, best_chars: pg.best_chars.clone(), explore });
+        on_progress(&Progress { elapsed_ms, evals, best: pg.best, best_chars: pg.best_chars.clone(), explore, workers: Vec::new() });
     });
     out.elapsed_ms += seed_ms;
     out.evals += seed_evals;

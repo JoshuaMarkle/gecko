@@ -1,7 +1,7 @@
 // Loads the gecko-wasm scorer (same Rust code as the CLI). Built by `npm run wasm`.
 
 import init, { AtlasView, CaseBuild, Engine, corpus_from_text, corpus_stats, export_layout as exportLayoutRaw, flat2d as flat2dRaw, hand_costs, param_board, profile_hash } from "./wasm/pkg/gecko_wasm.js";
-import type { Analysis, Flat, Geometry, ParamGeometry, Profile } from "./api";
+import type { Analysis, Flat, Geometry, ParamGeometry, PathResult, Profile } from "./api";
 import type { HandSpec } from "./hand";
 
 let ready: Promise<unknown> | null = null;
@@ -23,6 +23,11 @@ export class Scorer {
   /** Score change for swapping each pair of slots (`m[i * n + j]`). */
   swapMatrix(chars: string, profile: Profile): Float32Array {
     return this.engine.swap_matrix(chars, JSON.stringify(profile));
+  }
+
+  /** Path relinking from `from` to `to` (same symbols): the cheapest swap at each step. */
+  path(from: string, to: string, profile: Profile): PathResult {
+    return JSON.parse(this.engine.path(from, to, JSON.stringify(profile))) as PathResult;
   }
 
   free() {

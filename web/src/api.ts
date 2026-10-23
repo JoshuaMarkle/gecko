@@ -104,7 +104,14 @@ export interface Analysis {
 export interface ScoreResponse { schema: number; chars: string; rows: string[]; analysis: Analysis }
 
 export interface ExploreProgress { phase: "probe" | "search"; optima: number; hits: number; edges: number; version: number }
-export interface Progress { elapsed_ms: number; evals: number; best: number; best_chars: string; explore?: ExploreProgress }
+/** One worker at one progress record (gecko-core `optimize::WorkerTrace`); move counts are since the previous record. */
+export interface WorkerTrace {
+  evals: number; current: number; best: number; temp?: number;
+  proposed: number; improving: number; worse: number; worse_accepted: number;
+  /** The worker's current layout, slot-ordered. */
+  chars: string;
+}
+export interface Progress { elapsed_ms: number; evals: number; best: number; best_chars: string; explore?: ExploreProgress; workers?: WorkerTrace[] }
 
 /** `atlas.json` of an explore run (gecko-core `explore::atlas::Summary`). */
 export interface AtlasBest { score: number; chars: string; d_best: number }
@@ -171,6 +178,23 @@ export interface RunSummary {
   kind: "layout" | "geometry";
 }
 export interface RunDetail { kind?: undefined; config: RunConfig; result: RunResult | null; progress: Progress[]; running: boolean; paused?: boolean }
+
+// ---- bench (`gecko bench`, saved in runs/bench/) ----
+
+/** One seed of one solver: final score and every new best with its time (ms). */
+export interface BenchRun { seed: number; score: number; evals: number; elapsed_ms: number; trace: [number, number][] }
+export interface BenchResult {
+  algo: string; moves: string; mean: number; best: number; stdev: number; evals_per_sec: number; scores: number[];
+  /** Left out by the list route. */
+  runs?: BenchRun[];
+}
+export interface Bench {
+  schema: number; id: string; created: string; commit: string; time_ms: number; threads: number; seeds: number;
+  geometry: string; corpus: string; profile: string; results: BenchResult[];
+}
+
+/** Path relinking between two layouts (gecko-core `explore::path`): slots swapped and the score after each step. */
+export interface PathResult { start: number; steps: { a: number; b: number; score: number }[]; barrier: number }
 
 // ---- geometry runs (board + layout search, gecko-core `geomsearch`) ----
 
@@ -241,6 +265,9 @@ export const api = {
   score: (body: ScoreRequest) => post<ScoreResponse>("/api/score", body),
   startRun: (body: RunRequest) => post<{ id: string; config: RunConfig | GeomRunConfig }>("/api/runs", body),
   startGeomRun: (body: RunRequest & { geom: GeomRequest }) => post<{ id: string; config: GeomRunConfig }>("/api/runs", body),
+  path: (body: ScoreRequest & { to: string }) => post<PathResult>("/api/path", body),
+  benches: () => req<Bench[]>("/api/bench"),
+  bench: (id: string) => req<Bench>(`/api/bench/${encodeURIComponent(id)}`),
   swapMatrix: (body: ScoreRequest) => post<{ n: number; score: number; matrix: number[] }>("/api/swap-matrix", body),
   qd: (id: string) => req<QdSummary>(`/api/runs/${encodeURIComponent(id)}/qd`),
   atlas: (id: string) => req<AtlasSummary>(`/api/runs/${encodeURIComponent(id)}/atlas`),

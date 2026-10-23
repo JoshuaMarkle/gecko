@@ -8,7 +8,7 @@ import type { View } from "../../tabs";
 /** One box: its title, up to three short lines and a state mark (left edge). */
 export interface FlowBox { title: string; lines: string[]; state?: "ok" | "warn" | "off" }
 
-type Id = Exclude<View, "home"> | "cost" | "freq" | "score";
+type Id = Exclude<View, "home" | "bench"> | "cost" | "freq" | "score";
 const W = 1120, H = 470;
 
 /** Box positions [x, y, w, h]; the column order is the data flow. */

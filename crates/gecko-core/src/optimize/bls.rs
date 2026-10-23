@@ -6,7 +6,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::{steepest_descent, Ctx, Kick, Optimizer, StepInfo, TopK};
+use super::{steepest_descent, Ctx, Kick, Optimizer, StepInfo, Telemetry, TopK};
 use crate::rng::Rng;
 use crate::scorer::State;
 
@@ -49,6 +49,8 @@ pub struct Bls {
     restarts: u64,
     /// Movable slots grouped by geometry column (only groups with a same-size partner).
     columns: Vec<Vec<usize>>,
+    /// Kicks proposed / improving / worsening, counted per kick + descent.
+    tel: Telemetry,
 }
 
 impl Bls {
@@ -66,6 +68,7 @@ impl Bls {
             stale: 0,
             restarts: 0,
             columns: Vec::new(),
+            tel: Telemetry::default(),
         }
     }
 
@@ -185,6 +188,8 @@ impl Optimizer for Bls {
         }
         self.top.offer(nx.score, &nx.sym);
         let cur = self.cur.as_mut().unwrap();
+        self.tel.proposed += 1;
+        self.tel.worse += (nx.score > cur.score + 1e-9) as u64;
         if nx.sym == cur.sym {
             // Fell back into the same basin: kick harder.
             self.k += 1;
@@ -192,6 +197,8 @@ impl Optimizer for Bls {
                 self.cur = None;
             }
         } else if nx.score < cur.score - 1e-9 || rng.f64() < self.p.accept_worse {
+            self.tel.improving += (nx.score < cur.score - 1e-9) as u64;
+            self.tel.worse_accepted += (nx.score > cur.score + 1e-9) as u64;
             std::mem::swap(cur, &mut nx);
             self.cur_id = id;
             self.k = self.p.kick_min.max(1);
@@ -215,6 +222,14 @@ impl Optimizer for Bls {
 
     fn top(&self) -> &TopK {
         &self.top
+    }
+
+    fn current(&self) -> Option<(f64, &[u8])> {
+        self.cur.as_ref().map(|c| (c.score, c.sym.as_slice())).or_else(|| self.live_best())
+    }
+
+    fn telemetry(&self) -> Telemetry {
+        self.tel
     }
 }
 

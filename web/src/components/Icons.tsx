@@ -30,4 +30,5 @@ export const IconOptLayout = () => <Svg><rect x="1.5" y="2.5" width="5" height="
 export const IconOptBoard = () => <Svg><rect x="1.5" y="6" width="9.5" height="7.5" rx="1.5" /><path d="M10 2.5h3.5V6M13.5 2.5 9.5 6.5" /></Svg>;
 /** Optimize both: a case with a key and a resize arrow. */
 export const IconOptBoth = () => <Svg><rect x="1.5" y="6" width="9.5" height="7.5" rx="1.5" /><rect x="4" y="8.5" width="2.6" height="2.6" rx=".5" fill="currentColor" stroke="none" /><path d="M10 2.5h3.5V6M13.5 2.5 9.5 6.5" /></Svg>;
+export const IconBench = () => <Svg><path d="M2.5 13.5h11" /><path d="M3 11.5c2-6 4-8 10-9" /><path d="M3 11.5c3-3 5-4 10-4.5" strokeDasharray="1.6 1.4" /></Svg>;
 export const IconExport =() => <Svg><path d="M8 10V2.5M5 5.3 8 2.3l3 3" /><path d="M2.5 9.5v3a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3" /></Svg>;

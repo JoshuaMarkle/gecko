@@ -16,7 +16,7 @@ web/src/
   inputs.ts            the one input store (board, custom boards, constraints, hand, language,
                        profile, layout, pins, search, working model) + usePref
   api.ts               API client + types mirroring the Rust serde shapes (checked by test:contract)
-  wasm.ts              gecko-wasm loader (Scorer, flat2d, export_layout, corpus stats / build, profileHash,
+  wasm.ts              gecko-wasm loader (Scorer (analyze, swapMatrix, path), flat2d, export_layout, corpus stats / build, profileHash,
                        paramBoard: a parametric board at given parameter values + collisions,
                        buildCase: plate / walls / bottom triangles and STL files)
   format.ts            pure helpers (rows, swaps, layers, verdicts, validation, cap)
@@ -31,11 +31,17 @@ web/src/
                        Home's inputs → physical cost / frequencies → scoring → optimize diagram
     hand/              Hand tab parts: rigs (hand placement), Hands3D, HandMesh (skinned hands,
                        assets/: WebXR generic-hand glTF, MIT), Panels (bottom tabs)
-    explore/           Explore tab: ExploreView, Panels, Board, Scatter, Picked
-    runs/              Saved view panels for multi-objective (ParetoPanel) and qd (EliteGrid) runs
+    explore/           Explore tab: ExploreView, Panels, Board, Scatter, Picked, Lon (local optima
+                       network), PathPanel (path between two layouts)
+    runs/              Saved view panels for multi-objective (ParetoPanel) and qd (EliteGrid) runs,
+                       and every run's process views (ProcessPanel)
+    views/BenchView    Saved › Bench: saved `gecko bench` leaderboards
     geom/              board + layout search: GeomSearch (Board / Both tab parts, `useGeomVars`),
                        GeomRunPanel (Saved), GeomBoard (`useParamBoard`, 2D overlay)
   runViews.ts          metric columns of ranked layouts, 2-axis projection of a qd grid
+  process.ts           worker lines, schedule, layout frames and settling order from progress records
+  bench.ts             performance-profile gaps, time-to-target ECDFs of a bench
+  lon.ts               local optima network subgraph + deterministic force layout
   geom.ts              free-parameter groups, `--free` spec, labels, progress → chart shape
   three/Keyboard3D.tsx 3D keyboard (auto-rotate, click position, scene children)
   three/Case3D.tsx     Export tab: printable case from WASM `CaseBuild`, switches and keycaps
@@ -117,6 +123,8 @@ be scored, layout-optimized or shape-searched again.
 | `GET /api/runs/{id}/qd` | qd run grid and elites (`qd.json`) |
 | `GET /api/runs/{id}/atlas/{optima\|edges\|samples}` | atlas binary files (for WASM `AtlasView`) |
 | `POST /api/swap-matrix` | score inputs + `chars` → Δ score of every slot-pair swap |
+| `POST /api/path` | score inputs + `chars` + `to` → path relinking `{start, steps: [{a, b, score}], barrier}` (fallback for WASM `Engine.path`) |
+| `GET /api/bench` · `/api/bench/{id}` | saved `gecko bench` files (`runs/bench/`), newest first without per-seed traces / one in full |
 | `POST /api/runs/{id}/pause` · `/resume` | pause / resume a running run; paused time does not count against `time_ms` or toward `elapsed_ms` |
 
 ## Dev
