@@ -1,0 +1,13 @@
+verify 20261023-164100-bls-a0a25173  (re-running)
+ok   geometry  0a5d29866415a60a
+ok   corpus    1539a821f307a698
+ok   profile   f27f38d09f540ead
+ok   holdout   d0b7c4a10bb8bcfd
+ok   evals     25005351
+ok   ranked    3
+ok   best#1    12.1542930504 lwdgbzquo.rntsfpheaijxmcvky/;,
+ok   best#2    12.1578164239 lwdgbjquo.rntsfpheaixzmcvky/;,
+ok   best#3    12.2090552052 lmdgbjquo.rntsfpheaixzvcwky/;,
+ok   objectives []
+ok   front     0
+reproduced
