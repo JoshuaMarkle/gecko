@@ -207,6 +207,66 @@ ax.set_xticklabels([r[0] for r in runs], fontsize=6)
 ax.legend(frameon=False, fontsize=6.2, loc='upper right', ncol=2)
 save(fig, 'geomsearch')
 
+# 12. The web UI's Home flowchart (web/src/components/views/FlowChart.tsx): same boxes, positions
+#     and links, drawn at text width. Box lines show the bundled defaults, not live state.
+FW, FH = 1120, 470
+POS = {'board': (16, 16, 196, 84), 'hand': (16, 116, 196, 84), 'profile': (16, 216, 196, 84), 'language': (16, 364, 196, 84),
+       'cost': (268, 102, 200, 112), 'freq': (268, 364, 200, 84), 'score': (520, 216, 190, 112), 'summary': (520, 380, 190, 68),
+       'layout': (764, 16, 176, 84), 'shape': (764, 116, 176, 84), 'both': (764, 216, 176, 84), 'explore': (764, 316, 176, 84),
+       'runs': (984, 102, 120, 84), 'export': (984, 242, 120, 84)}
+BOX = {'board': ('Board', ['corne-36 · 36 keys', 'Parametric: shape moves'], 'ok'),
+       'hand': ('Hand', ['Size preset or measured', 'Used in optimization'], 'ok'),
+       'profile': ('Profile', ['hand · weights in spreads', '48 metrics available'], 'ok'),
+       'language': ('Language', ['english', 'or a mix of corpora'], 'ok'),
+       'cost': ('Physical cost', ['Effort per key · finger load', 'Reach · press angle · wrist', 'Movement · rolls · trigrams'], None),
+       'freq': ('Frequencies', ['Characters · bigrams', 'Trigrams · skipgrams'], None),
+       'score': ('Scoring model', ['Frequency × physical cost', 'Profile weights', 'Lower is better'], None),
+       'summary': ('Summary', ['Every input of the next run'], None),
+       'layout': ('Layout', ['Layout for the board', 'SA, BLS, tabu, GA, …'], 'ok'),
+       'shape': ('Board', ['Board for the layout', 'CMA-ES over shape'], 'ok'),
+       'both': ('Both', ['Board and layout', 'together (bilevel)'], 'ok'),
+       'explore': ('Explore', ['Map of good layouts', 'atlas · QD · fronts'], 'ok'),
+       'runs': ('Runs', ['Saved', 'Verifiable'], None),
+       'export': ('Export', ['Image · files', 'STL'], None)}
+SOFT, OK = token('soft'), token('success')
+fig = plt.figure(figsize=(6.77, 6.77 * FH / FW))
+ax = fig.add_axes((0, 0, 1, 1)); ax.set_xlim(0, FW); ax.set_ylim(FH, 0); ax.axis('off')
+def fpath(pts, arrow=True, dashed=False):
+    xs, ys = zip(*pts)
+    ax.plot(xs, ys, color=MUTED, lw=.7, ls=(0, (2, 2)) if dashed else '-', solid_joinstyle='round', zorder=1)
+    if arrow:
+        ax.annotate('', pts[-1], (pts[-1][0] - 6, pts[-1][1]) if pts[-1][1] == pts[-2][1] else (pts[-1][0], pts[-1][1] - 6),
+                    arrowprops=dict(arrowstyle='-|>,head_length=.35,head_width=.18', color=MUTED, lw=.7, shrinkA=0, shrinkB=0))
+cy = lambda k: POS[k][1] + POS[k][3] / 2
+rt = lambda k: POS[k][0] + POS[k][2]
+fpath([(rt('board'), cy('board')), (240, cy('board')), (240, 140), (268, 140)])
+fpath([(rt('hand'), cy('hand')), (268, cy('hand'))])
+fpath([(rt('profile'), cy('profile')), (240, cy('profile')), (240, 188), (268, 188)])
+fpath([(rt('language'), cy('language')), (268, cy('language'))])
+fpath([(rt('cost'), cy('cost')), (494, cy('cost')), (494, 256), (520, 256)])
+fpath([(rt('freq'), cy('freq')), (494, cy('freq')), (494, 292), (520, 292)])
+b1, b2, OPTS = 737, 962, ['layout', 'shape', 'both', 'explore']
+fpath([(rt('score'), cy('score')), (b1, cy('score'))], arrow=False)
+fpath([(b1, cy('layout')), (b1, cy('explore'))], arrow=False)
+for o in OPTS:
+    fpath([(b1, cy(o)), (POS[o][0], cy(o))])
+    fpath([(rt(o), cy(o)), (b2, cy(o))], arrow=False)
+fpath([(b2, cy('layout')), (b2, cy('explore'))], arrow=False)
+fpath([(b2, cy('runs')), (POS['runs'][0], cy('runs'))])
+fpath([(POS['runs'][0] + 60, POS['runs'][1] + POS['runs'][3]), (POS['runs'][0] + 60, POS['export'][1])])
+fpath([(POS['score'][0] + 95, POS['score'][1] + POS['score'][3]), (POS['score'][0] + 95, POS['summary'][1])], arrow=False, dashed=True)
+for k, (x, y, w, h) in POS.items():
+    title, lines, state = BOX[k]
+    derived = k in ('cost', 'freq', 'score')
+    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle='round,pad=0,rounding_size=6', fc=SOFT if derived else 'white', ec=HAIR, lw=.7, zorder=2))
+    if state: ax.add_patch(plt.Rectangle((x, y + 6), 3, h - 12, fc=OK, ec='none', zorder=3))
+    ax.text(x + 12, y + 21, title, fontsize=6.6, fontweight='bold', color=INK, va='baseline', zorder=3)
+    for i, l in enumerate(lines[:int((h - 30) // 17)]):
+        ax.text(x + 12, y + 40 + i * 17, l, fontsize=5.6, color=MUTED, va='baseline', zorder=3)
+for x, t in [(16, 'Inputs'), (268, 'Compiled'), (520, 'Score'), (764, 'Optimize'), (984, 'Saved')]:
+    ax.text(x, FH - 4, t, fontsize=5.8, color=token('faint'), va='baseline')
+save(fig, 'flowchart')
+
 # ---- Template figures: layout of a planned result, illustrative shapes only, watermarked. ----
 def template(ax):
     ax.text(.5, .5, 'TEMPLATE\nillustrative, not data', transform=ax.transAxes, ha='center', va='center',

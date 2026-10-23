@@ -29,7 +29,8 @@ web/src/
     views/             one file per tab (Home, Board, Hand, Language, Profile, Summary, Layout,
                        BoardSearch (Board and Both), Saved (Runs), Export); FlowChart is
                        Home's inputs → physical cost / frequencies → scoring → optimize diagram
-    hand/              Hand tab parts: rigs (hand placement), Hands3D, Panels (bottom tabs)
+    hand/              Hand tab parts: rigs (hand placement), Hands3D, HandMesh (skinned hands,
+                       assets/: WebXR generic-hand glTF, MIT), Panels (bottom tabs)
     explore/           Explore tab: ExploreView, Panels, Board, Scatter, Picked
     runs/              Saved view panels for multi-objective (ParetoPanel) and qd (EliteGrid) runs
     geom/              board + layout search: GeomSearch (Board / Both tab parts, `useGeomVars`),
@@ -59,11 +60,19 @@ of them; width and opacity ∝ √(frequency / most frequent visible pair); colo
 violet, other same-hand ink, alternation faint; same-hand and alternate start hidden; legend chips toggle each class and show its %).
 `spin` (Board tab) resets the camera and auto-rotates until the first interaction; children
 render in board-centred coordinates (`boardBounds`, `place`, `CAP_H`; the Hand tab's
-skeletal hands; a `focus` region makes the camera frame board and hands; `pressed`, a per-key depth array read each frame, sinks and tints keys without re-rendering). A 3D toggle (default on) switches between the orbit camera and a flat top-down view with rotation
+hands; a `focus` region makes the camera frame board and hands; `pressed`, a per-key depth array read each frame, sinks and tints keys without re-rendering). A 3D toggle (default on) switches between the orbit camera and a flat top-down view with rotation
 locked; both presets fit the board to the viewport. A floor grid (1u cells, 5u sections) sits under the case. Flat and curved boards use the same code path.
 Boards with keys below the case top (tented or tilted halves pivot about their inner edge) are
 raised until every keycap clears it. `colors` overrides key colors (collisions); `ghost` outlines
 another board's keys in the same coordinates (a geometry run's start board).
+
+Hand tab hands: a Skin toggle (default on) shows skinned meshes (WebXR generic hand, 25 bones),
+else the joint skeletons. Each frame the bones are set from the solved joints (`HandPose`): the
+wrist frame from the knuckles, finger metacarpals carried by the wrist, every other bone swung
+from its parent onto its posed segment and stretched to its length; uniform scale from palm size.
+The model's tip joint sits above the pad, so the mesh poses from targets lifted per finger
+(`padLift`, fit by `HandMesh.test.ts`). Finger skin tints by state; the forearm is clipped 30 mm
+behind the wrist.
 
 ## Board + layout search
 

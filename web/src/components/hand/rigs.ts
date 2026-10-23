@@ -80,8 +80,12 @@ export function strokesFor(text: string, g: Geometry, chars: string, rigs: Rig[]
 
 export interface Frame3 { pose: HandPose; states: Record<FingerName, FingerState> }
 
-/** Both hands at time `t` of the plan (`t` < 0: resting). The hand follows its fingers' excursions; resting fingers ride along. */
-export function framesAt(rigs: Rig[], plan: Plan | null, d: HandDims, t: number): Frame3[] {
+/**
+ * Both hands at time `t` of the plan (`t` < 0: resting). The hand follows its fingers' excursions;
+ * resting fingers ride along. `lift` (world units) raises each fingertip target, for a mesh whose
+ * tip joint sits above its pad.
+ */
+export function framesAt(rigs: Rig[], plan: Plan | null, d: HandDims, t: number, lift?: Record<FingerName, number>): Frame3[] {
   return rigs.map((r) => {
     const states = {} as Record<FingerName, FingerState>;
     const pos = {} as Record<FingerName, V3>;
@@ -94,7 +98,10 @@ export function framesAt(rigs: Rig[], plan: Plan | null, d: HandDims, t: number)
     }
     const off = handShift(ex, r.follow);
     const targets = {} as Record<FingerName, V3>;
-    for (const f of FINGER_NAMES) targets[f] = states[f] === "rest" ? [r.home[f][0] + off[0], r.home[f][1], r.home[f][2] + off[2]] : pos[f];
+    for (const f of FINGER_NAMES) {
+      const p: V3 = states[f] === "rest" ? [r.home[f][0] + off[0], r.home[f][1], r.home[f][2] + off[2]] : pos[f];
+      targets[f] = lift ? [p[0], p[1] + lift[f], p[2]] : p;
+    }
     return { pose: poseHand(r.side, r.place, targets, d, MM, off), states };
   });
 }

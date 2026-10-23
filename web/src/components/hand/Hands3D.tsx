@@ -9,6 +9,7 @@ import type { Geometry } from "../../api";
 import { ACCENT } from "../../colors";
 import { FINGER_NAMES, keysDown, handLayout, type FingerState, type HandDims, type Plan, type V3 } from "../../hand";
 import { boardBounds, type Focus, type ViewMode } from "../../three/Keyboard3D";
+import { HandMeshes, padLift } from "./HandMesh";
 import { framesAt, LOOP_GAP, type Frame3, type Rig } from "./rigs";
 
 // ---------- 3D ----------
@@ -17,10 +18,13 @@ const BONE = "#3a3a3a";
 const MOVE = "#5b8def";
 const STATE_COLOR: Record<FingerState, string> = { rest: BONE, move: MOVE, ready: MOVE, press: ACCENT };
 
-/** Hands as line segments with square joints, colored per finger state; the palm as a translucent outline. */
-export function Hands({ rigs, dims, plan, clock, keys, playing, loop, onEnd, labels }: {
+/**
+ * Hands as skinned meshes (`skin`) or as line segments with square joints, colored per finger
+ * state, the palm a translucent outline.
+ */
+export function Hands({ rigs, dims, plan, clock, keys, playing, loop, onEnd, labels, skin }: {
   rigs: Rig[]; dims: HandDims; plan: Plan | null; clock: MutableRefObject<number>; keys: MutableRefObject<Float32Array>;
-  playing: boolean; loop: boolean; onEnd: () => void; labels: boolean;
+  playing: boolean; loop: boolean; onEnd: () => void; labels: boolean; skin: boolean;
 }) {
   const nh = rigs.length;
   const outlineN = handLayout(dims).outline.length;
@@ -29,9 +33,12 @@ export function Hands({ rigs, dims, plan, clock, keys, playing, loop, onEnd, lab
   const points = useRef<THREE.Points>(null);
   const palmFill = useRef<THREE.Mesh>(null);
   const color = useMemo(() => new THREE.Color(), []);
-  const rest = useMemo(() => framesAt(rigs, null, dims, -1), [rigs, dims]);
+  const lift = useMemo(() => (skin ? padLift(dims) : undefined), [skin, dims]);
+  const rest = useMemo(() => framesAt(rigs, null, dims, -1, lift), [rigs, dims, lift]);
+  const last = useRef<Frame3[]>(rest);
 
   const draw = (frames: Frame3[]) => {
+    last.current = frames;
     const [ls, ps, pf] = [lines.current, points.current, palmFill.current];
     if (!ls || !ps || !pf) return;
     const lp = ls.geometry.attributes.position as THREE.BufferAttribute, lc = ls.geometry.attributes.color as THREE.BufferAttribute;
@@ -78,11 +85,13 @@ export function Hands({ rigs, dims, plan, clock, keys, playing, loop, onEnd, lab
     if (!loop && next > plan.end) { onEnd(); return; }
     clock.current = loop ? next % (plan.end + LOOP_GAP) : next;
     keysDown(plan, clock.current, keys.current);
-    draw(framesAt(rigs, plan, dims, clock.current));
+    draw(framesAt(rigs, plan, dims, clock.current, lift));
   });
 
   return (
     <group key={`${nh}|${outlineN}`}>
+      {skin && <HandMeshes sides={rigs.map((r) => r.side)} frames={last} />}
+      <group visible={!skin}>
       <lineSegments ref={lines} renderOrder={10}>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" args={[new Float32Array(segN * 3), 3]} />
@@ -101,6 +110,7 @@ export function Hands({ rigs, dims, plan, clock, keys, playing, loop, onEnd, lab
         <bufferGeometry><bufferAttribute attach="attributes-position" args={[new Float32Array(nh * outlineN * 9), 3]} /></bufferGeometry>
         <meshStandardMaterial color="#9a9a9a" transparent opacity={0.22} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>
+      </group>
       {labels && !playing && rest.map(({ pose }, h) => pose.fingers.map((ch, fi) => ch.slice(0, -1).map((a, si) => {
         const b = ch[si + 1];
         return (

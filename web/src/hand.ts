@@ -417,6 +417,8 @@ export interface HandPose {
   fingers: V3[][];
   /** Closed palm outline (see `HandLayout.outline`). */
   palm: V3[];
+  /** Centre of the wrist crease. */
+  wrist: V3;
 }
 
 /** Pose a placed hand (shifted by `offset`, world units) so each fingertip reaches its target. */
@@ -429,7 +431,7 @@ export function poseHand(side: Side, pl: Placement, targets: Record<FingerName, 
   const local = sub3(targets.thumb, offset);
   const fingers: V3[][] = [thumb.joints(thumb.solve(toLocal(side, pl, u, local)).q).map(W)];
   FOUR.forEach((f, i) => fingers.push(fingerChain(knuckles[i], targets[f], L(d[f]))));
-  return { fingers, palm: lay.outline.map(W) };
+  return { fingers, palm: lay.outline.map(W), wrist: W([0, 0, 0]) };
 }
 
 // ---------- thumb ----------
