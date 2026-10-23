@@ -347,6 +347,7 @@ Typeset figures are `software/assets/*.pdf`, made by `software/figures.py` from 
 
 | # | Figure (name in `software.tex`) | Source | Status |
 |---|---|---|---|
+| 0 | Web UI Home flowchart, full width (`flowchart`) | `web/src/components/views/FlowChart.tsx` (positions and links copied; bundled defaults as box text) | done; redraw if the Home chart changes |
 | 1 | Architecture and data flow (`architecture`) | `context/architecture.md` | done |
 | 2 | Swap-delta rate vs metrics enabled (`metricsweep`) | `bench/software-paper-2026-10-21/metrics_scaling.py` | done |
 | 3 | Search throughput vs threads (`threads`) | `bench/software-paper-2026-10-21/thread_scaling.sh` | done (8-thread points noisy; rerun idle) |

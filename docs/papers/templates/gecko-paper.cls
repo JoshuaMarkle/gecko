@@ -100,6 +100,14 @@
   \captionof{figure}{#2}
   \end{minipage}\par\addvspace{9pt}}
 
+% \paperwidefigure{name}{caption}: assets/name.pdf at text width. Breaks the two columns
+% (they balance above it) and resumes them below. Use inside paperbody, between paragraphs.
+\newcommand{\paperwidefigure}[2]{%
+  \end{multicols}\par\addvspace{6pt}\noindent\begin{minipage}{\linewidth}
+  \includegraphics[width=\linewidth]{assets/#1.pdf}
+  \captionof{figure}{#2}
+  \end{minipage}\par\addvspace{6pt}\begin{multicols}{2}\raggedright}
+
 % Clickable, compact citations without an extra PDF-link package.
 % \papercite{key} in text; \citetarget{key} at the start of each \bibitem.
 \newcommand{\papercite}[1]{%

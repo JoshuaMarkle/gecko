@@ -13,13 +13,13 @@ if ! command -v xelatex >/dev/null 2>&1; then
   echo 'XeLaTeX is required (TeX Live package: xetex).' >&2
   exit 1
 fi
-# Every \paperfigure{name} needs assets/name.pdf (made by the paper's figure script).
+# Every \paperfigure{name} or \paperwidefigure{name} needs assets/name.pdf (made by the paper's figure script).
 while read -r figure; do
   if [[ ! -f "assets/$figure.pdf" ]]; then
     echo "Missing vector figure assets/$figure.pdf. Generate it first (see the figure script)." >&2
     exit 1
   fi
-done < <(grep -v '^[[:space:]]*%' "$job.tex" | grep -o '\\paperfigure{[^}]*}' | sed 's/.*{\(.*\)}/\1/')
+done < <(grep -v '^[[:space:]]*%' "$job.tex" | grep -oE '\\paper(wide)?figure{[^}]*}' | sed 's/.*{\(.*\)}/\1/')
 paper_build_dir=$(mktemp -d "${TMPDIR:-/tmp}/gecko-paper.XXXXXX")
 trap 'rm -rf -- "$paper_build_dir"' EXIT
 export TEXINPUTS="$templates:${TEXINPUTS:-}"

@@ -52,6 +52,7 @@ export function HandView(p: Props) {
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(true);
   const [labels, setLabels] = useState(false);
+  const [skin, setSkin] = useState(true);
   const [mode, setMode] = useState<ViewMode>("3d");
   const clock = useRef(-1);
   /** Press state per board key, written by the typing animation, read by the keycaps. */
@@ -145,7 +146,7 @@ export function HandView(p: Props) {
       main={
         <div className="viewport hand-viewport">
           <Keyboard3D geometry={p.geometry} chars={p.chars} heat={reachHeat && costs ? costs.reach.map((r) => Math.min(r, 4)) : []} arcs={[]} overlay={reachHeat && costs ? "heat" : "none"} mode={mode} selected={null} onKey={() => {}} focus={focus} pressed={keys}>
-            <Hands rigs={rigs} dims={d} plan={plan} clock={clock} keys={keys} playing={playing} loop={loop} onEnd={() => setPlaying(false)} labels={labels} />
+            <Hands rigs={rigs} dims={d} plan={plan} clock={clock} keys={keys} playing={playing} loop={loop} onEnd={() => setPlaying(false)} labels={labels} skin={skin} />
           </Keyboard3D>
           <div className="viewlabel">
             <span>Hands on {p.geometry.name}</span>
@@ -154,6 +155,7 @@ export function HandView(p: Props) {
           </div>
           <div className="viewctl">
             <div className="seg inline"><button className={reachHeat ? "on" : ""} onClick={() => setReachHeat(!reachHeat)} title="Color keys by this hand's reach cost (G01): darker = harder to reach from the home keys">Reach</button></div>
+            <div className="seg inline"><button className={skin ? "on" : ""} onClick={() => setSkin(!skin)} title="Skinned hand meshes (off: joint skeletons)">Skin</button></div>
             <div className="seg inline"><button className={labels ? "on" : ""} onClick={() => setLabels(!labels)} title="Segment lengths (mm) on the resting hands">Lengths</button></div>
             <div className="seg inline"><button className={mode === "3d" ? "on" : ""} onClick={() => setMode(mode === "3d" ? "top" : "3d")} title="3D view (off: flat top-down)">3D</button></div>
           </div>

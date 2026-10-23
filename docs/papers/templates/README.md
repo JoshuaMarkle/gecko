@@ -48,7 +48,7 @@ Rebuild from the repository root:
   colours, sizes, headings, captions, footer, and the macros below.
 - `journal.tex` (the specimen) and `skeleton.tex` (blank starter) hold content only.
 - `build_pdf.sh [paper.tex]` builds any paper, in any folder, using this folder's `.cls`;
-  it checks that every `\paperfigure{name}` has `assets/name.pdf` beside the paper.
+  it checks that every `\paperfigure{name}` (or `\paperwidefigure`) has `assets/name.pdf` beside the paper.
 
 | Macro / environment | Use |
 |---|---|
@@ -56,6 +56,7 @@ Rebuild from the repository root:
 | `\papertitle \papersubtitle \paperauthor \paperaffil \papernotice` then `\makepapertitle` | title block |
 | `paperabstract`, `paperbody` | full-width abstract; two-column body (put the bibliography inside) |
 | `\paperfigure{name}{caption}`, `papertable{caption}` | figure from `assets/name.pdf`; captioned table |
+| `\paperwidefigure{name}{caption}` | text-width figure; breaks and resumes the two columns |
 | `papercode` | small monospaced verbatim block (short lines) |
 | `\papercite{key}`, `\citetarget{key}`, `\paperbibstyle` | linked citations and bibliography style |
 
