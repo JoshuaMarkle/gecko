@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { flatKeys } from "./format";
 import type { Analysis, Finger, Geometry, Key } from "./api";
-import { boardSvg, kleJson, layerChars, layoutJson, layoutTextExport, layoutToml, slug, statsCsv, statsMarkdown, type ExportInfo } from "./export";
+import { boardSvg, ergogenYaml, kleJson, layerChars, layoutJson, layoutTextExport, layoutToml, slug, statsCsv, statsMarkdown, type ExportInfo } from "./export";
 
 const key = (x: number, row: number, finger: Finger, rot = 0): Key => ({ pos: [x, row, 0], rot: [0, 0, rot], size: [1, 1], finger, row, col: x, home: false, stretch: false, effort: 1 });
 // Two letters, then a thumb row: layer-1 hold key and space. Layer 1 skips the holding thumb.
@@ -45,6 +46,24 @@ describe("export", () => {
     expect(k[3][0].r).toBe(15);
     expect(k[3][1]).toBe("L1");
     expect(k[4][1]).toBe("Space");
+  });
+  it("writes ergogen zones at the key centers", () => {
+    const y = ergogenYaml(info);
+    expect(y).toContain("points:\n  zones:\n");
+    expect(y).toContain("outlines:\n  plate:\n    - what: rectangle\n      where: true\n      size: 14\n");
+    const zones = [...y.matchAll(/^ {4}(k\d+): (\{.*\})$/gm)].map((m) => [m[1], JSON.parse(m[2])] as const);
+    expect(zones.map(([n]) => n)).toEqual(["k0", "k1", "k2", "k3"]);
+    flatKeys(g).forEach((k, i) => {
+      const z = zones[i][1];
+      // Back from ergogen (mm, y up, counter-clockwise) to the 2D drawing (u, y down, clockwise).
+      expect(z.anchor.shift[0] / 19.05 - k.w / 2).toBeCloseTo(k.x, 4);
+      expect(-z.anchor.shift[1] / 19.05 - k.h / 2).toBeCloseTo(k.y, 4);
+      expect(-z.anchor.rotate).toBeCloseTo(k.rot, 4);
+      expect(z.key.width).toBeCloseTo(k.w * 19.05, 3);
+      expect(z.key.finger).toBe(g.key[i].finger);
+    });
+    expect(zones[0][1].key).toMatchObject({ name: "k0", label: "a", layers: ["<"] });
+    expect(zones[2][1].key.label).toBe("L1");
   });
   it("writes stats", () => {
     const csv = statsCsv(info).trim().split("\n");

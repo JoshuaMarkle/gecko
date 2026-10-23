@@ -20,7 +20,7 @@ web/src/
                        paramBoard: a parametric board at given parameter values + collisions,
                        buildCase: plate / walls / bottom triangles and STL files)
   format.ts            pure helpers (rows, swaps, layers, verdicts, validation, cap)
-  export.ts            Export tab file builders (image SVG, layout TOML/text/JSON, KLE, stats)
+  export.ts            Export tab file builders (image SVG, layout TOML/text/JSON, KLE, ergogen, stats)
   board.ts hand.ts handCosts.ts estimate.ts explore.ts fingerEffort.ts languages.ts
                        per-view logic; pure parts unit-tested (*.test.ts); hand.ts is checked
                        against Rust by hand.parity.test.ts
@@ -77,6 +77,18 @@ Hovering a key (`Keyboard3D` `onHover`) sends the finger that types it there whi
 stopped (`reachFor`, then `framesAt`'s `over`): the fingertip eases toward the key top
 (exponential, 12/s, lifting up to 10 mm on the way), the hand follows by its wrist-movement
 share, and the IK poses the rest. Leaving the key eases the finger back home.
+
+## Export
+
+The Export tab turns the working layout into files (`export.ts`, pure builders tested in
+`export.test.ts`): an SVG/PNG image; **Files** (GECKO layout TOML, text, JSON); **Other tools**
+(KLE, ergogen, and Oxeylyzer/Genkey/cmini through WASM `export_layout`); **Stats** (metrics CSV,
+Markdown). It also previews and downloads the printable case (STL: `three/Case3D`).
+KLE and ergogen both use the board's 2D drawing (`flatKeys`). The ergogen file (`ergogenYaml`)
+holds one single-key zone per key, anchored at the key center in mm (1u = 19.05 mm). Its y axis
+points up and its rotation is counter-clockwise, so both are negated. Each key gets keycap
+`width`/`height`, and its legends, finger, row and column as custom key attributes. A `plate`
+outline adds 14 mm switch cutouts. Load the file at ergogen.xyz to build a PCB or case.
 
 ## Board + layout search
 

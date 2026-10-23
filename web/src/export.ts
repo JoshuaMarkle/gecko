@@ -125,6 +125,33 @@ export function kleJson(e: ExportInfo, color: KeyColor = "plain"): string {
   return `[\n${rows.map((r) => JSON.stringify(r)).join(",\n")}\n]\n`;
 }
 
+const UNIT_MM = 19.05;
+const mm = (u: number) => Math.round(u * UNIT_MM * 1e3) / 1e3;
+
+/** Ergogen config (docs.ergogen.xyz, v4): the board's 2D drawing (`flatKeys`, as KLE) as one
+ *  single-key zone per key, anchored at the key's center in mm (1u = 19.05 mm; ergogen's y
+ *  points up and its rotation is counter-clockwise, so both flip) with keycap `width`/`height`,
+ *  plus a `plate` outline of 14 mm switch cutouts. Each key carries its base legend, layer
+ *  legends, finger, row and column as custom key attributes. Each zone is one line of JSON
+ *  flow mapping (valid YAML). */
+export function ergogenYaml(e: ExportInfo): string {
+  const g = e.geometry;
+  const layers = layerChars(g, e.chars);
+  const zones = flatKeys(g).map((k, i) => {
+    const gk = g.key[i];
+    const legends = layers.map((l) => TOKEN_LEGEND[l[i]] ?? l[i]);
+    const key: Record<string, unknown> = { name: `k${i}`, width: mm(k.w), height: mm(k.h), label: legends[0], finger: gk.finger, gecko_row: gk.row, gecko_col: gk.col };
+    if (legends.length > 1) key.layers = legends.slice(1);
+    const zone = { anchor: { shift: [mm(k.x + k.w / 2), mm(-(k.y + k.h / 2))], rotate: r4(-k.rot) || 0 }, key, columns: { c: {} }, rows: { r: {} } };
+    return `    k${i}: ${JSON.stringify(zone)}`;
+  });
+  return `# ${e.name} on ${g.name}, exported from GECKO. Load at ergogen.xyz or with the ergogen CLI.\n`
+    + `# One zone per key at its center (mm, y up, rotation counter-clockwise); 1u = 19.05 mm.\n`
+    + `meta:\n  name: ${JSON.stringify(e.name)}\n`
+    + `points:\n  zones:\n${zones.join("\n")}\n`
+    + `outlines:\n  plate:\n    - what: rectangle\n      where: true\n      size: 14\n`;
+}
+
 const csvCell = (v: string | number) => (typeof v === "number" ? `${v}` : /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 
 /** Every metric as CSV: value, weight and weighted contribution (and the reference's value). */
