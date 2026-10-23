@@ -85,6 +85,25 @@ describe("wrist adjustments", () => {
     expect(tilted.fingers[1][0][1]).toBeGreaterThan(flat.fingers[1][0][1]); // index knuckle up
     expect(tilted.fingers[4][0][1]).toBeLessThan(flat.fingers[4][0][1]); // pinky knuckle down
   });
+  it("rolls the fingers' flexion planes with the hand", () => {
+    const base = placeHand("R", h.R, AVERAGE, U);
+    const flat = poseHand("R", base, h.R, AVERAGE, U), tilted = poseHand("R", adjustPlacement("R", base, { ...WRIST0, tilt: 20 }, U), h.R, AVERAGE, U);
+    // Each flexion axis (toward the pinky) dips by about the 20° roll (sin 20° ≈ 0.34).
+    FOUR.forEach((_, i) => expect(tilted.axes[i][1]).toBeLessThan(flat.axes[i][1] - 0.25));
+  });
+  it("leans the pinky in toward the thumb side, the index barely", () => {
+    for (const side of ["L", "R"] as const) {
+      const pose = poseHand(side, placeHand(side, h[side], AVERAGE, U), h[side], AVERAGE, U);
+      expect(pose.axes[3][1]).toBeLessThan(-0.2); // pinky plane leaned ~15°
+      expect(pose.axes[0][1]).toBeGreaterThan(-0.1);
+      // The pinky's PIP bows out to the pinky side of its knuckle → tip chord.
+      const [k, , pip, tip] = pose.fingers[4];
+      const c = tip.map((v, j) => v - k[j]), q = pip.map((v, j) => v - k[j]);
+      const t = (q[0] * c[0] + q[1] * c[1] + q[2] * c[2]) / (c[0] ** 2 + c[1] ** 2 + c[2] ** 2);
+      const out = side === "R" ? 1 : -1;
+      expect(out * (q[0] - t * c[0])).toBeGreaterThan(0);
+    }
+  });
 });
 
 describe("typing plan", () => {

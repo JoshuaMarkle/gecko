@@ -14,7 +14,7 @@ row_offset = [[0.0, 0.0], [-0.1, 0.1], [-0.2, 0.2], [0.2, -0.2]]
 # Hand for G01/G03/G05 and B14's relaxed spread: size = "small" | "average" | "large", or explicit
 # [hand.dims] in mm (thumb, index, middle, ring, pinky segments; palm_width, palm_length, span,
 # reach), as the web's Hand tab edits them. Optional [hand.body] elbow_width / forearm (mm) for
-# G03; default scaled with the hand (465 / 255 for average). context/hand-model.md.
+# G03; default scaled with the hand (490 / 255 for average). context/hand-model.md.
 [hand]
 size = "average"
 
