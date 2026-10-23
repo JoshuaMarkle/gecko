@@ -82,7 +82,8 @@ pub fn flat2d(geometry_json: &str) -> Result<String, JsError> {
 }
 
 /// A parametric board (`param_json`, as `/api/geometries` serves it in `param`) with free
-/// parameters `names` (JSON array, `geomsearch` names such as `fingers.2.stagger`) set to
+/// parameters `names` (JSON array, `geomsearch` names such as `fingers.2.stagger`, or free-form
+/// key poses such as `key.3.rx`) set to
 /// `values`, as JSON `{geometry, flat, collisions: [{a, b, depth}]}`: the keys, their 2D drawing
 /// and the keycap collisions the geometry search penalizes (2D when flat, 3D volumes otherwise).
 #[wasm_bindgen]
@@ -94,7 +95,7 @@ pub fn param_board(param_json: &str, names_json: &str, values: &[f64]) -> Result
     }
     let vars: Vec<gecko_core::geomsearch::Var> =
         names.into_iter().map(|name| gecko_core::geomsearch::Var { name, lo: 0.0, hi: 0.0, start: 0.0 }).collect();
-    let g = gecko_core::geomsearch::best_params(&params, &vars, values, true).map_err(js)?.generate_unchecked().map_err(js)?;
+    let g = gecko_core::geomsearch::board_at(&params, &vars, values, true).map_err(js)?;
     let collisions = if g.is_flat() { g.collisions(0.0) } else { g.collisions_3d(0.0) };
     let collisions: Vec<serde_json::Value> = collisions.iter().map(|c| serde_json::json!({"a": c.a, "b": c.b, "depth": c.depth})).collect();
     let v = serde_json::json!({"geometry": g, "flat": g.flat2d(), "collisions": collisions});

@@ -34,7 +34,10 @@ pub enum GeometryCmd {
 pub struct OptimizeArgs {
     /// Free parameters: 2d, 3d, groups (stagger, splay, spread, lift, row_pitch, row_curve,
     /// col_curve, angle, tent, tilt, thumb, thumb3d) or split.<f> / <zone>.<f> /
-    /// <zone>.<col>.<f>; `=lo:hi` sets bounds, e.g. "3d,tent=0:30".
+    /// <zone>.<col>.<f>; `=lo:hi` sets bounds, e.g. "3d,tent=0:30". Free-form (I1): keys
+    /// (every key's x, y, z, rx, ry, rz), keys2d (x, y, rz) or keys.<c>, with `=lo:hi` relative
+    /// to each key's start, e.g. "keys,keys.z=-0.3:0.3"; start from a run's best board
+    /// (-g run:<id>).
     #[arg(long, default_value = "2d")]
     free: String,
     /// bilevel (layout search per candidate), alternate (board step ↔ layout step) or board
@@ -85,6 +88,13 @@ pub struct OptimizeArgs {
     /// Keep the file's hand-entered key efforts instead of deriving them from positions.
     #[arg(long)]
     keep_effort: bool,
+    /// Free-form: penalty per unit of roughness (squared move differences of neighbouring
+    /// keys, u and radians), in units of |start board score| + 1.
+    #[arg(long)]
+    smooth: Option<f64>,
+    /// Free-form: collision repair passes per colliding candidate (0: penalty only).
+    #[arg(long)]
+    repair_passes: Option<usize>,
     /// Thumb keys per thumb zone side: a count, or `auto` for as many as fit along the thumb's
     /// operational arc for the profile's hand (3 for the average hand). Shrinking keeps the keys
     /// with typed fills, then the cheapest; growing adds empty 1 u keys.
@@ -168,6 +178,8 @@ fn optimize(ctx: &Ctx, a: OptimizeArgs) -> Result<()> {
     set(&mut s.penalty, a.penalty);
     set(&mut s.hard_fail, a.hard_fail);
     set(&mut s.rounds, a.rounds);
+    set(&mut s.smooth, a.smooth);
+    set(&mut s.repair_passes, a.repair_passes);
     let hand = ["G01", "G03", "G05", "G06"].iter().any(|m| l.profile.weights.get(*m).is_some_and(|w| *w != 0.0));
     if !hand {
         eprintln!(
@@ -228,10 +240,15 @@ fn print_result(res: &GeomResult, dir: &std::path::Path) {
         res.layout_evals as f64 / 1e6,
         res.elapsed_ms as f64 / 1000.0
     );
-    println!("\n{:<24} {:>9} {:>9}   bounds", "parameter", "start", "best");
-    for (v, b) in res.vars.iter().zip(&res.best.values) {
-        let moved = if (b - v.start).abs() > 1e-6 { "" } else { "  (unchanged)" };
-        println!("{:<24} {:>9.3} {:>9.3}   [{}, {}]{moved}", v.name, v.start, b, v.lo, v.hi);
+    let freeform = geomsearch::is_freeform(&res.vars);
+    if freeform {
+        print_key_moves(res);
+    } else {
+        println!("\n{:<24} {:>9} {:>9}   bounds", "parameter", "start", "best");
+        for (v, b) in res.vars.iter().zip(&res.best.values) {
+            let moved = if (b - v.start).abs() > 1e-6 { "" } else { "  (unchanged)" };
+            println!("{:<24} {:>9.3} {:>9.3}   [{}, {}]{moved}", v.name, v.start, b, v.lo, v.hi);
+        }
     }
     let gain = res.start.score - res.best.score;
     println!(
@@ -250,5 +267,29 @@ fn print_result(res: &GeomResult, dir: &std::path::Path) {
         );
     }
     println!("\nstart board layout\n  {}\nbest board layout\n  {}", res.start.rows.join("\n  "), res.best.rows.join("\n  "));
-    println!("\nwrote {}/geometry.toml (use with -g) and geometry.param.toml", dir.display());
+    let param = if freeform { "" } else { " and geometry.param.toml" };
+    println!("\nwrote {}/geometry.toml (use with -g){param}", dir.display());
+}
+
+/// Free-form runs have six variables per key: summarize the moves instead of listing them.
+fn print_key_moves(res: &GeomResult) {
+    let comps = gecko_core::geomsearch::freeform::COMPONENTS;
+    println!("\n{} key variables (roughness {:.4}); largest moves from the start board:", res.vars.len(), res.best.rough);
+    println!("  {:<4} {:>8} {:>8}  at bound", "", "max |Δ|", "mean |Δ|");
+    for c in comps {
+        let d: Vec<(f64, bool)> = res
+            .vars
+            .iter()
+            .zip(&res.best.values)
+            .filter(|(v, _)| v.name.rsplit('.').next() == Some(c))
+            .map(|(v, &b)| ((b - v.start).abs(), b <= v.lo + 1e-6 || b >= v.hi - 1e-6))
+            .collect();
+        if d.is_empty() {
+            continue;
+        }
+        let max = d.iter().map(|x| x.0).fold(0.0, f64::max);
+        let mean = d.iter().map(|x| x.0).sum::<f64>() / d.len() as f64;
+        let unit = if c.starts_with('r') { "°" } else { " u" };
+        println!("  {c:<4} {max:>6.3}{unit} {mean:>6.3}{unit}  {}/{}", d.iter().filter(|x| x.1).count(), d.len());
+    }
 }

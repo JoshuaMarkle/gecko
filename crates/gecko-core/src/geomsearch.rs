@@ -16,6 +16,12 @@
 //! violations and their excess (u) to the collisions.
 //! Both modes end with an equal SA polish of the best and the start board, so the reported
 //! gain compares like with like.
+//!
+//! Free-form (I1, `freeform`): with `key.<i>.<c>` variables (`--free keys`) every key's pose is
+//! free instead of the parameters, with a smoothness penalty between neighbouring keys and a
+//! collision repair of each candidate.
+
+pub mod freeform;
 
 use std::collections::BTreeMap;
 use std::io::Write;
@@ -73,6 +79,12 @@ pub struct GeomParams {
     /// Keep the parameter file's hand-entered key efforts; by default they are dropped and
     /// derived from key positions on every candidate (`derive.rs`), so M01 follows moved keys.
     pub keep_effort: bool,
+    /// Free-form: objective added per unit of roughness (squared move differences of
+    /// neighbouring keys, u and radians), in units of (|start score| + 1).
+    pub smooth: f64,
+    /// Free-form: [`Geometry::repair`] passes on a colliding candidate before it is scored
+    /// (0: penalty only).
+    pub repair_passes: usize,
 }
 
 impl Default for GeomParams {
@@ -94,6 +106,8 @@ impl Default for GeomParams {
             hard_fail: 2.0,
             rounds: 4,
             keep_effort: false,
+            smooth: 0.05,
+            repair_passes: 20,
         }
     }
 }
@@ -218,7 +232,20 @@ fn default_bounds(name: &str, thumb: bool, s: f64) -> (f64, f64) {
 ///   lift and column curve;
 /// - explicit `split.<f>`, `<zone>.<f>` (a column field expands to every column of the zone)
 ///   or `<zone>.<col>.<f>`.
+///
+/// Free-form (I1): `keys` (every key's x, y, z, rx, ry, rz), `keys2d` (x, y, rz) or
+/// `keys.<c>`, where `=lo:hi` is relative to each key's start value; these cannot be mixed
+/// with board parameters. See [`freeform::parse`].
 pub fn parse_free(p: &ParametricGeometry, spec: &str) -> Result<Vec<Var>> {
+    let raw: Vec<&str> = spec.split(',').map(str::trim).filter(|t| !t.is_empty()).collect();
+    let keys = raw.iter().filter(|t| freeform::is_keys_term(t.split_once('=').map_or(**t, |x| x.0).trim())).count();
+    if keys > 0 {
+        if keys < raw.len() {
+            return Err(Error::invalid("free parameter", "key poses (keys…) cannot be mixed with board parameters"));
+        }
+        let terms = raw.iter().map(|t| parse_term(t)).collect::<Result<Vec<_>>>()?;
+        return freeform::parse(&p.generate_unchecked()?, &terms);
+    }
     let mut names: Vec<(String, Option<(f64, f64)>)> = Vec::new();
     let finger: Vec<&crate::geometry::parametric::Zone> = p.zone.iter().filter(|z| is_finger_zone(z)).collect();
     let thumbs: Vec<&crate::geometry::parametric::Zone> = p.zone.iter().filter(|z| !is_finger_zone(z)).collect();
@@ -263,18 +290,8 @@ pub fn parse_free(p: &ParametricGeometry, spec: &str) -> Result<Vec<Var>> {
             }
         })
     };
-    for raw in spec.split(',').map(str::trim).filter(|t| !t.is_empty()) {
-        let (term, range) = match raw.split_once('=') {
-            Some((t, r)) => {
-                let (lo, hi) = r
-                    .split_once(':')
-                    .and_then(|(a, b)| Some((a.trim().parse::<f64>().ok()?, b.trim().parse::<f64>().ok()?)))
-                    .filter(|(lo, hi)| lo.is_finite() && hi.is_finite() && lo < hi)
-                    .ok_or_else(|| Error::invalid("free parameter", format!("'{raw}': bounds must be lo:hi with lo < hi")))?;
-                (t.trim(), Some((lo, hi)))
-            }
-            None => (raw, None),
-        };
+    for raw in raw {
+        let (term, range) = parse_term(raw)?;
         let terms: Vec<&str> = match term {
             "2d" => vec!["stagger", "splay", "spread", "thumb"],
             "3d" => vec!["stagger", "splay", "spread", "thumb", "row_curve", "col_curve", "lift", "angle", "tent", "tilt", "thumb3d"],
@@ -312,6 +329,26 @@ pub fn parse_free(p: &ParametricGeometry, spec: &str) -> Result<Vec<Var>> {
         .collect()
 }
 
+/// A `--free` term and its `=lo:hi` bounds.
+fn parse_term(raw: &str) -> Result<(&str, Option<(f64, f64)>)> {
+    Ok(match raw.split_once('=') {
+        Some((t, r)) => {
+            let (lo, hi) = r
+                .split_once(':')
+                .and_then(|(a, b)| Some((a.trim().parse::<f64>().ok()?, b.trim().parse::<f64>().ok()?)))
+                .filter(|(lo, hi)| lo.is_finite() && hi.is_finite() && lo < hi)
+                .ok_or_else(|| Error::invalid("free parameter", format!("'{raw}': bounds must be lo:hi with lo < hi")))?;
+            (t.trim(), Some((lo, hi)))
+        }
+        None => (raw, None),
+    })
+}
+
+/// The variables are key poses (free-form, I1) rather than board parameters.
+pub fn is_freeform(vars: &[Var]) -> bool {
+    vars.first().is_some_and(|v| freeform::is_key_var(&v.name))
+}
+
 /// Everything a geometry search needs.
 pub struct GeomSpec<'a> {
     pub params: &'a ParametricGeometry,
@@ -337,10 +374,17 @@ pub struct GeomPoint {
     pub collisions: usize,
     /// Total collision depth, u.
     pub depth: f64,
+    /// Free-form: roughness, the squared move differences of neighbouring keys (u, radians).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub rough: f64,
     pub chars: String,
     pub rows: Vec<String>,
     /// Per-metric breakdown of the layout on this board.
     pub breakdown: serde_json::Value,
+}
+
+fn is_zero(v: &f64) -> bool {
+    *v == 0.0
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -405,6 +449,8 @@ struct Cand {
     collisions: usize,
     depth: f64,
     sym: Vec<u8>,
+    /// Free-form: the point after collision repair, which is the board scored.
+    x: Option<Vec<f64>>,
 }
 
 struct Problem<'a> {
@@ -420,6 +466,8 @@ struct Problem<'a> {
     build: Option<crate::geometry::manufacture::BuildLimits>,
     /// Limits for non-flat candidates when the profile has no `[build]`.
     default_build: crate::geometry::manufacture::BuildLimits,
+    /// Free-form: key variables instead of board parameters.
+    keys: Option<freeform::KeyModel>,
 }
 
 impl Problem<'_> {
@@ -432,6 +480,9 @@ impl Problem<'_> {
     }
 
     fn geometry_at(&self, x: &[f64]) -> Result<Geometry> {
+        if let Some(km) = &self.keys {
+            return Ok(km.board(x));
+        }
         let mut g = self.params_at(x)?.generate_unchecked()?;
         g.comfort_tables = self.comfort.clone();
         Ok(g)
@@ -449,22 +500,50 @@ impl Problem<'_> {
 
     fn rejected(&self, collisions: usize, depth: f64, sym: &[u8]) -> Cand {
         let f = self.start_score + self.unit * (10.0 + self.p.penalty * depth);
-        Cand { f, collisions, depth, sym: sym.to_vec() }
+        Cand { f, collisions, depth, sym: sym.to_vec(), x: None }
+    }
+
+    /// Collision and (free-form) smoothness penalties of board `g` with total depth `depth`.
+    fn penalties(&self, g: &Geometry, depth: f64) -> f64 {
+        let rough = self.keys.as_ref().map_or(0.0, |km| km.roughness(g));
+        self.unit * (self.p.penalty * depth + self.p.smooth * rough)
+    }
+
+    /// Free-form: push a colliding candidate's keys apart ([`Geometry::repair`]) and take the
+    /// repaired point when it collides less. Keys only translate; on a mirrored split the
+    /// left half is read back and mirrored again, so the board stays symmetric.
+    fn repaired(&self, g: Geometry, collisions: usize, depth: f64) -> (Geometry, Option<Vec<f64>>, usize, f64) {
+        let Some(km) = self.keys.as_ref().filter(|_| depth > 0.0 && self.p.repair_passes > 0) else {
+            return (g, None, collisions, depth);
+        };
+        let mut fixed = g.clone();
+        if fixed.repair(self.p.margin, self.p.repair_passes).passes == 0 {
+            return (g, None, collisions, depth);
+        }
+        let x2 = km.values(&fixed);
+        let g2 = km.board(&x2);
+        let (c2, d2) = self.collisions(&g2);
+        if d2 < depth {
+            (g2, Some(x2), c2, d2)
+        } else {
+            (g, None, collisions, depth)
+        }
     }
 
     /// Score board `x`: rebuild `sc` for it, then (with `inner`) search layouts from `sym`.
     fn evaluate(&self, sc: &mut Scorer, x: &[f64], sym: &[u8], inner: bool, seed: u64) -> Cand {
         let Ok(g) = self.geometry_at(x) else { return self.rejected(0, self.p.hard_fail, sym) };
         let (collisions, depth) = self.collisions(&g);
+        let (g, fixed, collisions, depth) = self.repaired(g, collisions, depth);
         if depth > self.p.hard_fail || sc.set_geometry(&g).is_err() {
-            return self.rejected(collisions, depth, sym);
+            return Cand { x: fixed, ..self.rejected(collisions, depth, sym) };
         }
         let st = if inner {
             inner_search(sc, &self.movable, sym, self.p.inner_evals, self.p.inner_accept0, &mut Rng::new(seed))
         } else {
             sc.state_from_sym(sym.to_vec())
         };
-        Cand { f: st.score + self.p.penalty * self.unit * depth, collisions, depth, sym: st.sym }
+        Cand { f: st.score + self.penalties(&g, depth), collisions, depth, sym: st.sym, x: fixed }
     }
 
     /// Score a generation in parallel (one scorer per thread); results do not depend on the
@@ -518,7 +597,7 @@ impl Problem<'_> {
         // SA restarts from random layouts; keep the warm start if it is still the best.
         let best = out.top.into_iter().next().map(|s| sc.state_from_sym(s.sym)).filter(|b| b.score < ctx.start.score).unwrap_or(ctx.start);
         let (collisions, depth) = self.collisions(&g);
-        Ok((Cand { f: best.score + self.p.penalty * self.unit * depth, collisions, depth, sym: best.sym }, out.evals))
+        Ok((Cand { f: best.score + self.penalties(&g, depth), collisions, depth, sym: best.sym, x: None }, out.evals))
     }
 }
 
@@ -578,6 +657,7 @@ struct Track {
 
 impl Track {
     fn offer(&mut self, x: &[f64], c: &Cand) {
+        let x = c.x.as_deref().unwrap_or(x);
         if c.f < self.best.1.f {
             self.best = (x.to_vec(), c.clone());
         }
@@ -620,8 +700,8 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
     if spec.vars.is_empty() {
         return Err(Error::invalid("geometry search", "no free parameters"));
     }
-    if !(0.0..1.0).contains(&p.polish_frac) || p.sigma0 <= 0.0 || p.hard_fail <= 0.0 || p.penalty < 0.0 {
-        return Err(Error::invalid("geometry search", "need 0 ≤ polish_frac < 1, sigma0 > 0, hard_fail > 0, penalty ≥ 0"));
+    if !(0.0..1.0).contains(&p.polish_frac) || p.sigma0 <= 0.0 || p.hard_fail <= 0.0 || p.penalty < 0.0 || p.smooth < 0.0 {
+        return Err(Error::invalid("geometry search", "need 0 ≤ polish_frac < 1, sigma0 > 0, hard_fail > 0, penalty ≥ 0, smooth ≥ 0"));
     }
     let clock = Clock::new(control);
     let mut base = spec.params.clone();
@@ -648,7 +728,11 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
         start_score,
         build: spec.profile.build.clone(),
         default_build: Default::default(),
+        keys: None,
     };
+    if is_freeform(spec.vars) {
+        pr.keys = Some(freeform::KeyModel::new(&start_geometry, spec.vars, p.keep_effort)?);
+    }
     pr.movable = Ctx::new(&pr.scorer, pr.movable.clone(), pr.scorer.identity()).movable;
     let threads = p.threads.max(1);
     let mut scorers: Vec<Scorer> = vec![pr.scorer.clone(); threads];
@@ -834,6 +918,7 @@ pub fn search(spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&G
             f: c.f,
             collisions: c.collisions,
             depth: c.depth,
+            rough: pr.keys.as_ref().map_or(0.0, |km| km.roughness(&g)),
             chars: st.chars(&sc).iter().collect(),
             rows: layout.all_rows(&sc.base_geometry()),
             breakdown: serde_json::to_value(breakdown(&sc, &st)).unwrap(),
@@ -872,6 +957,19 @@ pub fn best_params(params: &ParametricGeometry, vars: &[Var], values: &[f64], ke
         *field(&mut p, &v.name)? = value;
     }
     Ok(p)
+}
+
+/// The keys of a result's board: [`best_params`] generated, or for free-form variables the
+/// start board's keys with `values` applied (efforts re-derived unless kept).
+pub fn board_at(params: &ParametricGeometry, vars: &[Var], values: &[f64], keep_effort: bool) -> Result<Geometry> {
+    if !is_freeform(vars) {
+        return best_params(params, vars, values, keep_effort)?.generate_unchecked();
+    }
+    let mut start = params.clone();
+    if !keep_effort {
+        start.zone.iter_mut().flat_map(|z| z.column.iter_mut()).for_each(|c| c.effort.clear());
+    }
+    Ok(freeform::KeyModel::new(&start.generate_unchecked()?, vars, keep_effort)?.board(values))
 }
 
 /// Most thumb keys per zone side [`resize_thumbs`] accepts.
@@ -1066,8 +1164,9 @@ pub fn best_name(params_name: &str, id: &str) -> String {
 }
 
 /// Search into a prepared directory: `progress.jsonl`, `best.json`, and the best board as
-/// `geometry.param.toml` (parameters) and `geometry.toml` (keys). When no collision-free board
-/// was found, `geometry-repaired.toml` holds the best board's keys pushed apart (I3).
+/// `geometry.param.toml` (parameters; not for free-form runs, whose board has no parameters)
+/// and `geometry.toml` (keys). When no collision-free board was found, `geometry-repaired.toml`
+/// holds the best board's keys pushed apart (I3).
 pub fn execute(prep: &GeomPrep, spec: &GeomSpec, control: &Control, mut on_progress: impl FnMut(&GeomProgress)) -> Result<GeomResult> {
     let dir = &prep.dir;
     let mut log = std::io::BufWriter::new(std::fs::File::create(dir.join("progress.jsonl"))?);
@@ -1077,14 +1176,19 @@ pub fn execute(prep: &GeomPrep, spec: &GeomSpec, control: &Control, mut on_progr
     })?;
     log.flush()?;
     res.id = prep.id.clone();
-    let mut best = best_params(spec.params, spec.vars, &res.best.values, spec.search.keep_effort)?;
-    best.name = best_name(&spec.params.name, &res.id);
-    best.description = format!("{} (geometry run {})", spec.params.name, res.id);
-    std::fs::write(
-        dir.join("geometry.param.toml"),
-        toml::to_string(&best).map_err(|e| Error::invalid("parametric geometry", e.to_string()))?,
-    )?;
-    let mut keys = best.generate_unchecked()?;
+    let (name, description) = (best_name(&spec.params.name, &res.id), format!("{} (geometry run {})", spec.params.name, res.id));
+    let mut keys = if is_freeform(spec.vars) {
+        board_at(spec.params, spec.vars, &res.best.values, spec.search.keep_effort)?
+    } else {
+        let mut best = best_params(spec.params, spec.vars, &res.best.values, spec.search.keep_effort)?;
+        (best.name, best.description) = (name.clone(), description.clone());
+        std::fs::write(
+            dir.join("geometry.param.toml"),
+            toml::to_string(&best).map_err(|e| Error::invalid("parametric geometry", e.to_string()))?,
+        )?;
+        best.generate_unchecked()?
+    };
+    (keys.name, keys.description) = (name, description);
     keys.comfort_tables = spec.board.comfort_tables.clone();
     std::fs::write(dir.join("geometry.toml"), keys.to_toml())?;
     if !res.feasible {
