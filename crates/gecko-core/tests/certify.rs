@@ -51,7 +51,14 @@ fn synthetic(charset: &str, seed: u64) -> Corpus {
 /// The 6-key board of `tests/scorer.rs`.
 fn tiny() -> Geometry {
     let mut s = String::from("name = \"tiny\"\n");
-    let keys = [("LM", 0.0, 0.0, 1.5), ("LI", 1.0, 0.0, 1.2), ("LI", 1.0, 1.0, 1.0), ("RI", 3.0, 1.0, 1.0), ("RI", 3.0, 0.0, 1.2), ("RM", 4.0, 0.0, 1.5)];
+    let keys = [
+        ("LM", 0.0, 0.0, 1.5),
+        ("LI", 1.0, 0.0, 1.2),
+        ("LI", 1.0, 1.0, 1.0),
+        ("RI", 3.0, 1.0, 1.0),
+        ("RI", 3.0, 0.0, 1.2),
+        ("RM", 4.0, 0.0, 1.5),
+    ];
     for (i, (f, x, y, e)) in keys.iter().enumerate() {
         s += &format!(
             "[[key]]\npos = [{x}, {y}, 0.0]\nfinger = \"{f}\"\nrow = {}\ncol = {i}\neffort = {e}\nhome = {}\n",
@@ -225,7 +232,11 @@ fn equals_brute_force_with_ten_free_on_english() {
                     let mut i = 0;
                     while i < k {
                         if cnt[i] < i {
-                            if i % 2 == 0 { rest.swap(0, i) } else { rest.swap(cnt[i], i) }
+                            if i % 2 == 0 {
+                                rest.swap(0, i)
+                            } else {
+                                rest.swap(cnt[i], i)
+                            }
                             eval(&rest, &mut s);
                             cnt[i] += 1;
                             i = 0;

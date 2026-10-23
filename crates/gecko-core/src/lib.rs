@@ -5,8 +5,8 @@
 #![allow(clippy::needless_range_loop)]
 
 pub mod bound;
-pub mod certify;
 pub mod calibrate;
+pub mod certify;
 pub mod cmaes;
 pub mod corpus;
 pub mod error;

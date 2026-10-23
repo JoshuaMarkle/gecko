@@ -34,7 +34,8 @@ fn profile_build_section() {
 
 fn search(build: Option<BuildLimits>) -> geomsearch::GeomResult {
     let st = Store::open(std::path::Path::new(ROOT)).unwrap();
-    let p = ParametricGeometry::from_toml(&std::fs::read_to_string(format!("{ROOT}/data/geometries/corne-36.param.toml")).unwrap()).unwrap();
+    let p =
+        ParametricGeometry::from_toml(&std::fs::read_to_string(format!("{ROOT}/data/geometries/corne-36.param.toml")).unwrap()).unwrap();
     let board = st.geometry("corne-36.param").unwrap();
     let corpus = st.corpus("english").unwrap();
     let profile = Profile { build, ..st.profile("default").unwrap() };

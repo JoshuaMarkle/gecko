@@ -1071,7 +1071,10 @@ pub fn verify(store: &crate::store::Store, dir: &Path) -> Result<crate::run::Ver
         name: name.into(),
         expected: format!("{:.6} {} {:?}", a.score, a.chars, a.values),
         actual: format!("{:.6} {} {:?}", b.score, b.chars, b.values),
-        ok: a.chars == b.chars && close(a.score, b.score) && a.values.len() == b.values.len() && a.values.iter().zip(&b.values).all(|(x, y)| close(*x, *y)),
+        ok: a.chars == b.chars
+            && close(a.score, b.score)
+            && a.values.len() == b.values.len()
+            && a.values.iter().zip(&b.values).all(|(x, y)| close(*x, *y)),
     };
     checks.push(check("candidates", recorded.candidates.to_string(), res.candidates.to_string()));
     checks.push(point("start", &recorded.start, &res.start));

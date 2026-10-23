@@ -148,7 +148,9 @@ pub fn metric_cols(ids: &[String], profile: &Profile) -> Result<Vec<&'static met
     let defs: Vec<&metrics::MetricDef> = if ids.is_empty() {
         metrics::METRICS.iter().filter(|d| profile.weight(d.id) > 0.0 && d.dir != Dir::Info).collect()
     } else {
-        ids.iter().map(|i| metrics::def(i).ok_or_else(|| Error::invalid("select", format!("unknown metric id '{i}'")))).collect::<Result<_>>()?
+        ids.iter()
+            .map(|i| metrics::def(i).ok_or_else(|| Error::invalid("select", format!("unknown metric id '{i}'"))))
+            .collect::<Result<_>>()?
     };
     if let Some(d) = defs.iter().find(|d| d.dir == Dir::Info) {
         return Err(Error::invalid("select", format!("{} is informational (no better direction)", d.id)));
@@ -180,7 +182,10 @@ pub fn select(
         let mut set = layout.chars.clone();
         set.extend(layout.layers.iter().flat_map(|l| l.chars.iter().copied()));
         set.sort_unstable();
-        let key = (set.into_iter().collect::<String>() + &layout.layers.len().to_string(), serde_json::to_string(&layout.magic).unwrap_or_default());
+        let key = (
+            set.into_iter().collect::<String>() + &layout.layers.len().to_string(),
+            serde_json::to_string(&layout.magic).unwrap_or_default(),
+        );
         let st = match scorers.get(&key) {
             Some(sc) if layout.layers.is_empty() && sc.n == layout.chars.len() => {
                 let mut free: BTreeMap<char, Vec<u8>> = BTreeMap::new();
