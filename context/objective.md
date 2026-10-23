@@ -102,6 +102,13 @@ not shared across layout positions: frequencies are symbol-specific and costs sl
 Caching frequency-weighted contributions would change f32 rounding, so the cache retains
 the exact unweighted f32 cost and preserves the existing arithmetic. Future work: SIMD.
 
+Measured 2026-10-23 (ansi-30 / english / default: 30 symbols, 3,414 trigrams, ~330 per
+symbol, so a swap reads ~660 trigrams but only ~120 pair terms). The trigram loops index a
+256-entry copy of the new slots, so `u8` symbol indices need no bounds check: 652k → 702k
+deltas/s (+7.5%, three runs each, same results bit for bit (`gecko verify`)). Dropping the
+cached-cost read entirely (an upper bound for keeping per-symbol cost sums instead) gave
+≤5% more, so that is not worth its `apply` cost and drift risk.
+
 ## Geometry rebuild (G2)
 
 Geometry search needs a scorer per candidate board. `Scorer::set_geometry(board)` (or

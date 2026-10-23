@@ -153,17 +153,26 @@ impl Scorer {
         }
 
         if self.has_tri {
+            // Trigrams dominate the delta (hundreds per symbol). A 256-entry slot table lets
+            // `u8` symbol indices skip bounds checks.
+            let mut slot = [0u8; 256];
+            slot[..n].copy_from_slice(new);
+            let (c3, cost) = (&self.c3[..], &st.tri_cost[..]);
+            let tri = |e: &TriEntry| {
+                let i = (slot[e.x as usize] as usize * n + slot[e.y as usize] as usize) * n + slot[e.z as usize] as usize;
+                e.f * (c3[i] - cost[e.id as usize])
+            };
             let mut acc = 0.0f64;
             let ra = self.tri_start[a] as usize..self.tri_start[a + 1] as usize;
             for e in &self.tri_entries[ra] {
-                acc += (e.f * (self.trigram_cost(new, e) - st.tri_cost[e.id as usize])) as f64;
+                acc += tri(e) as f64;
             }
             let (a8, rb) = (a as u8, self.tri_start[b] as usize..self.tri_start[b + 1] as usize);
             for e in &self.tri_entries[rb] {
                 if e.x == a8 || e.y == a8 || e.z == a8 {
                     continue; // already counted with `a`
                 }
-                acc += (e.f * (self.trigram_cost(new, e) - st.tri_cost[e.id as usize])) as f64;
+                acc += tri(e) as f64;
             }
             d += acc;
         }
