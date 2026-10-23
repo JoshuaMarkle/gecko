@@ -44,6 +44,16 @@ impl Geometry {
                 }
             }
         }
+        // Alternative fingers: the effort the key would derive with that finger on it.
+        for i in 0..self.len() {
+            for a in 0..self.key[i].alt.len() {
+                if self.key[i].alt[a].effort.is_nan() {
+                    let mut g = self.clone();
+                    g.key[i].finger = self.key[i].alt[a].finger;
+                    self.key[i].alt[a].effort = g.derived_efforts()[i];
+                }
+            }
+        }
     }
 
     /// Key centres in each hand's measuring frame ([`Geometry::metric_points`] plus half the

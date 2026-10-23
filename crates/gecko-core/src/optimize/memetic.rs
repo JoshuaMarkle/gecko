@@ -264,6 +264,7 @@ pub(super) fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Cont
         evals_per_sec: evals as f64 / elapsed.as_secs_f64().max(1e-9),
         objectives: Vec::new(),
         front: Vec::new(),
+        fidelity: None,
     }
 }
 

@@ -144,6 +144,20 @@ pub struct Key {
     /// Physical key (index into the base keys) of a virtual layer key.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub phys: Option<u16>,
+    /// Other fingers that may press this key (C11 alternative fingering), each with the
+    /// effort it has there. A fingering search picks one option per key
+    /// ([`Geometry::with_fingering`]); scoring always uses `finger` and `effort`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub alt: Vec<AltFinger>,
+}
+
+/// An alternative finger for a key. Missing effort is derived like a key's (distance to that
+/// finger's home key) when the board loads.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AltFinger {
+    pub finger: Finger,
+    #[serde(default = "missing_effort")]
+    pub effort: f32,
 }
 
 fn missing_effort() -> f32 {
@@ -268,6 +282,11 @@ impl Geometry {
             if let Some(f) = &k.fill {
                 out += &format!("fill = {}\n", q(f));
             }
+            if !k.alt.is_empty() {
+                let alt: Vec<String> =
+                    k.alt.iter().map(|a| format!("{{ finger = \"{}\", effort = {} }}", a.finger.name(), num(a.effort))).collect();
+                out += &format!("alt = [{}]\n", alt.join(", "));
+            }
         }
         if !self.comfort.is_empty() {
             out += "\n[comfort]\n";
@@ -321,6 +340,18 @@ impl Geometry {
         }
         if self.comfort_tables.values().any(|t| t.len() != self.len() * self.len()) {
             return Err(Error::invalid("geometry", "comfort tables must have N×N entries"));
+        }
+        for (i, k) in self.key.iter().enumerate() {
+            let fingers: Vec<Finger> = std::iter::once(k.finger).chain(k.alt.iter().map(|a| a.finger)).collect();
+            if !k.alt.is_empty() && k.home {
+                return Err(Error::invalid("geometry", format!("'{}': key {i} is a home key; it cannot have alternative fingers", self.name)));
+            }
+            if (1..fingers.len()).any(|j| fingers[..j].contains(&fingers[j])) || k.alt.iter().any(|a| !a.effort.is_finite()) {
+                return Err(Error::invalid(
+                    "geometry",
+                    format!("'{}': key {i}: alternative fingers must differ from each other and the key's finger, with finite effort", self.name),
+                ));
+            }
         }
         let mut fills = std::collections::BTreeSet::new();
         for k in &self.key {
@@ -389,6 +420,29 @@ impl Geometry {
     /// Slots `i` and `j` are the same physical key (possibly on different layers).
     pub fn same_key(&self, i: usize, j: usize) -> bool {
         self.phys(i) == self.phys(j)
+    }
+
+    /// Fingering options of key `i` (C11): its finger and effort first, then its alternatives.
+    pub fn finger_options(&self, i: usize) -> Vec<AltFinger> {
+        let k = &self.key[i];
+        std::iter::once(AltFinger { finger: k.finger, effort: k.effort }).chain(k.alt.iter().copied()).collect()
+    }
+
+    /// The board with option `choice[i]` of [`Geometry::finger_options`] on each key (0 = as
+    /// given; missing entries 0). The chosen finger and effort move into `finger`/`effort` and
+    /// the other options, the original included, become `alt`, so the option set is kept.
+    pub fn with_fingering(&self, choice: &[u8]) -> Result<Geometry> {
+        let mut g = self.clone();
+        for (i, &c) in choice.iter().enumerate().filter(|(_, &c)| c != 0) {
+            let mut opts = self.finger_options(i);
+            if c as usize >= opts.len() {
+                return Err(Error::invalid("fingering", format!("key {i} has {} finger options, not {}", opts.len(), c + 1)));
+            }
+            let pick = opts.remove(c as usize);
+            let k = &mut g.key[i];
+            (k.finger, k.effort, k.alt) = (pick.finger, pick.effort, opts);
+        }
+        Ok(g)
     }
 
     /// Slot `i` is a home-row mod key (Y04): a base-layer key with `hrm = true`, or, when

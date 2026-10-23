@@ -14,7 +14,7 @@ Three groups: what **describes** a keyboard, what **steers** optimization, and w
 | `rot` | [f32; 3] | Rotation about x, y, z in degrees (tilt, tent, splay). 2D uses only z |
 | `size` | [f32; 2] | Width, height in units (1u, 1.25u, 1.5u, 2u…) |
 | `hand` | L / R | |
-| `finger` | LP…RP, LT, RT | Default finger; may be overridden by a fingering profile |
+| `finger` | LP…RP, LT, RT | Default finger; `alt` lists other fingers that `optimize --fingering` may choose |
 | `row`, `col` | i8 | Logical grid for reporting and some metrics |
 | `home` | bool | Home position for its finger |
 | `homing` | bool | Has a homing bump |
@@ -28,7 +28,7 @@ Three groups: what **describes** a keyboard, what **steers** optimization, and w
 | `stagger` | Row stagger (ANSI/ISO/JIS) or column stagger, or none (ortho) |
 | `split`, `split_angle` | Split boards, angle between halves |
 | `angle_mod` | Alternate fingering for bottom-left (ANSI angle mod): a separate geometry, `ansi-30-angle` |
-| `fingering` | Map from key to finger; several can exist per geometry |
+| `alt` | Per-key alternative fingers with efforts (C11); the fingering search picks one per key ([objective](objective.md#fingering-search-c11)) |
 | `layers` | Count and how they are reached (hold, one-shot, toggle) |
 
 ### Finger model (2D)

@@ -40,7 +40,7 @@ pub enum Cmd {
     /// Finger loads, heat, and the worst same-finger and stretch n-grams.
     Analyze(score::AnalyzeArgs),
     /// Search for better layouts. Always writes a run directory.
-    Optimize(optimize::OptimizeArgs),
+    Optimize(Box<optimize::OptimizeArgs>),
     /// Map the space of good layouts: landscape probe + breakout local search with exclusion
     /// restarts, archiving every local optimum. Writes an atlas run directory.
     Explore(explore::ExploreArgs),
@@ -116,7 +116,7 @@ impl Cmd {
             Cmd::Judge(a) => judge::judge(&ctx, a),
             Cmd::Features(a) => judge::features(&ctx, a),
             Cmd::Sweep(a) => judge::sweep(&ctx, a),
-            Cmd::Optimize(a) => optimize::run(&ctx, a),
+            Cmd::Optimize(a) => optimize::run(&ctx, *a),
             Cmd::Explore(a) => explore::explore(&ctx, a),
             Cmd::Qd(a) => explore::qd(&ctx, a),
             Cmd::Landscape(a) => explore::landscape(&ctx, a),

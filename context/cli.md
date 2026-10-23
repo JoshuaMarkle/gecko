@@ -29,6 +29,8 @@ gecko optimize [--algo sa|hc|ga|memetic|bls|tabu|explore|qd|nsga2|rwsa] [--time 
                [--objectives B01,T03,M01] [--nsga-generations N] [--front-size N]
                [--moves swap|columns,cycle3,depth2|all] [--depth2-width 32]
                [--holdout shai]                                   # also score results on a corpus the search never sees (L06)
+               [--fidelity K]                                     # search on the K most frequent trigrams, confirm on all (B8)
+               [--fingering] [--fingering-evals 300000]           # then search the board's alternative fingers (C11)
 gecko bench    [--algos hc,sa,ga,bls,tabu] [--seeds 3] [--time 5s]         # algorithm leaderboard
                [--moves "swap/cycle3/depth2"] [--depth2-width N]      # one row per algo × variant
 gecko explore  [--time 60s | --evals N] [--seed 1] [--threads N] [--pin ...] [--from <layout>]
@@ -215,6 +217,15 @@ When `--algo nsga2` or `--algo rwsa` is selected, `best.json` contains the non-d
   the Spearman correlation of the top-K scores on the two corpora. Each ranked layout's
   `holdout` score is in `best.json`, with the summary under `holdout`. `config.json` records the
   corpus (name + hash) and `verify` checks it. Holding out the search corpus itself is an error.
+- `optimize --fidelity K` sets the profile's `fidelity.top_k` (0 = exact) and prints
+  `fidelity: levels 300 → 1200 → 4758 trigrams; 95 cheap bests confirmed, 19 rejected; workers
+  ended on level 1,1,1,full`. Scores in `best.json` are always exact (`fidelity` there holds the
+  counts). Used by hc, sa, ga, bls, tabu; memetic, explore, qd, nsga2 and rwsa search exactly.
+- `optimize --fingering` (boards with `alt` keys, e.g. `ansi-30-alt`) runs a fingering descent
+  after the layout search and prints each reassigned key. If any finger changed, every result is
+  scored on the chosen fingering, which is written to the run's `geometry.toml`; `best.json`'s
+  `geometry` is then `run:<id>`, so `-g run:<id>` and layout `run:<id>` use it. `fingering` in
+  `best.json` holds the choice and the scores before and after. Not with explore, qd, nsga2, rwsa.
 - `--evals` budgets are deterministic for a given seed and thread count; `--time` is not.
   Budgets must be positive (`--time 0s`, `--evals 0` and negative or non-finite durations
   are errors); `--threads 0` means all cores, like leaving it out.

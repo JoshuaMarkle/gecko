@@ -261,6 +261,7 @@ pub fn import(name: &str, text: &str) -> Result<Geometry> {
                 hrm: None,
                 layer: 0,
                 phys: None,
+                alt: Vec::new(),
             });
         }
     }

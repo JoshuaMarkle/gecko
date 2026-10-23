@@ -105,6 +105,7 @@ fn curved() -> Geometry {
                 hrm: None,
                 layer: 0,
                 phys: None,
+                alt: Vec::new(),
             });
         };
         for row in 0..3i8 {

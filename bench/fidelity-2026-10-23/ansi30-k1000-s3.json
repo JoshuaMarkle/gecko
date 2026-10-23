@@ -1,0 +1,135 @@
+{
+ "run": {
+  "best": [
+   {
+    "rank": 1,
+    "score": 15.977382855451557,
+    "chars": "ujo.qwbkmxieanhgctsry/;,zpdfvl",
+    "hash": "50966f05"
+   },
+   {
+    "rank": 2,
+    "score": 15.977453970084616,
+    "chars": "u/o.qwbkmxieanhgctsryj;,zpdfvl",
+    "hash": "2bbdd21c"
+   },
+   {
+    "rank": 3,
+    "score": 15.992380056081315,
+    "chars": "y/a.zwbkmxieonhgctsruj;,qpdfvl",
+    "hash": "92ffe8e0"
+   }
+  ],
+  "elapsed_ms": 9874,
+  "evals": 20088730,
+  "evals_per_sec": 2034333.9482076662,
+  "fidelity": {
+   "confirmed": 87,
+   "final_level": [
+    0,
+    1,
+    0,
+    1
+   ],
+   "levels": [
+    1000,
+    4000,
+    4758
+   ],
+   "rejected": 10
+  },
+  "geometry": "ansi-30",
+  "id": "20261023-153125-sa-ca904ce9",
+  "params": {
+   "algo": "sa",
+   "bls": {
+    "accept_worse": 0.1,
+    "column_kick": 0.2,
+    "exclusion": 0.5,
+    "exclusion_dist": 8,
+    "kick_max": 0,
+    "kick_min": 2,
+    "stagnation": 150
+   },
+   "evals": 20000000,
+   "explore": {
+    "max_optima": 100000,
+    "samples": 2000,
+    "snapshot_ms": 2000,
+    "walk_len": 400,
+    "walks": 64,
+    "within": 0.01
+   },
+   "ga": {
+    "crossover_rate": 0.9,
+    "elitism": 4,
+    "mutation_rate": 1.0,
+    "pop_size": 128,
+    "tournament": 3
+   },
+   "memetic": {
+    "collapse_generations": 3,
+    "ga": {
+     "crossover_rate": 0.9,
+     "elitism": 2,
+     "mutation_rate": 1.0,
+     "pop_size": 24,
+     "tournament": 3
+    },
+    "islands": 0,
+    "local_search": "hc",
+    "local_steps": 12,
+    "migrants": 2,
+    "migration_interval": 5
+   },
+   "moves": {
+    "columns": false,
+    "cycle3": false,
+    "depth2": false,
+    "depth2_width": 32
+   },
+   "nsga2": {
+    "archive_size": 512,
+    "crossover_rate": 0.9,
+    "generations": 0,
+    "mutation_rate": 1.0,
+    "objectives": [
+     "B01",
+     "T03",
+     "M01"
+    ],
+    "pop_size": 128
+   },
+   "qd": {
+    "axes": [
+     "roll_ratio",
+     "index_load"
+    ],
+    "bins": 16,
+    "descent": 0,
+    "kick_max": 6,
+    "kick_min": 2,
+    "seeds": 64,
+    "snapshot_ms": 2000
+   },
+   "sa": {
+    "accept0": 0.5,
+    "steps": 1250000,
+    "t_end_ratio": 0.002
+   },
+   "seed": 3,
+   "tabu": {
+    "diversify": 5.0,
+    "refresh": 1000,
+    "stagnation": 100.0,
+    "tenure_max": 1.1,
+    "tenure_min": 0.9
+   },
+   "threads": 4,
+   "time_ms": null,
+   "top": 10
+  },
+  "schema": 1
+ },
+ "schema": 1
+}

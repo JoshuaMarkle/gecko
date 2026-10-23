@@ -11,6 +11,7 @@ pub mod cmaes;
 pub mod corpus;
 pub mod error;
 pub mod explore;
+pub mod fingering;
 pub mod geometry;
 pub mod geomsearch;
 pub mod hand;

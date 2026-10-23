@@ -5,6 +5,7 @@ use gecko_core::optimize::memetic::LocalSearch;
 use gecko_core::optimize::{Algo, Control, Params};
 use gecko_core::report::breakdown;
 use gecko_core::run::{self, RunResult, RunSpec};
+use gecko_core::profile::Fidelity;
 use gecko_core::{Layout, SCHEMA};
 use serde_json::json;
 
@@ -73,6 +74,16 @@ pub struct OptimizeArgs {
     /// Depth-2 moves: first swaps tried per optimum (0 = all).
     #[arg(long)]
     depth2_width: Option<usize>,
+    /// Adaptive fidelity: search on the K most frequent trigrams, confirm on the full tables
+    /// (overrides the profile's `fidelity.top_k`; 0 = exact search).
+    #[arg(long)]
+    fidelity: Option<usize>,
+    /// Also search the board's alternative fingers (keys' `alt`) after the layout search.
+    #[arg(long)]
+    fingering: bool,
+    /// Fingering search: SA swaps per candidate fingering (default 300000).
+    #[arg(long)]
+    fingering_evals: Option<u64>,
     /// Also score the results on this corpus, which the search never sees (L06).
     #[arg(long)]
     holdout: Option<String>,
@@ -117,13 +128,18 @@ impl OptimizeArgs {
             p.moves = parse_moves(m)?;
         }
         set(&mut p.moves.depth2_width, &self.depth2_width);
+        p.fingering.search = self.fingering;
+        set(&mut p.fingering.evals, &self.fingering_evals);
         Ok(p)
     }
 }
 
 pub fn run(ctx: &Ctx, a: OptimizeArgs) -> Result<()> {
     let params = a.params()?;
-    let l = ctx.load(&a.inputs)?;
+    let mut l = ctx.load(&a.inputs)?;
+    if let Some(k) = a.fidelity {
+        l.profile.fidelity = (k > 0).then(|| l.profile.fidelity.map_or(Fidelity::new(k), |f| Fidelity { top_k: k, ..f }));
+    }
     let holdout = a.holdout.as_ref().map(|h| ctx.store.corpus(h)).transpose()?;
     let start = ctx.start(a.from.as_deref(), &l)?;
     let spec = RunSpec {
@@ -143,6 +159,10 @@ pub fn run(ctx: &Ctx, a: OptimizeArgs) -> Result<()> {
             eprint!("\r  {:>6.1}s  {:>12} evals  best {:.4}  {}", p.elapsed_ms as f64 / 1000.0, p.evals, p.best, p.best_chars);
         }
     })?;
+    if res.geometry.starts_with("run:") {
+        // The fingering search changed fingers: show the results on the chosen board.
+        l.geometry = ctx.store.geometry(&res.geometry)?;
+    }
     let ties = near_ties(&res, &l);
     if ctx.json {
         ctx.print(json!({"schema": SCHEMA, "run": res, "near_ties": ties}));
@@ -209,6 +229,28 @@ fn print_result(res: &RunResult, l: &Loaded) -> Result<()> {
             res.front.len(),
             res.objectives.iter().map(|o| o.id.as_str()).collect::<Vec<_>>().join(", ")
         );
+    }
+    if let Some(f) = &res.fidelity {
+        let last = f.levels.len().saturating_sub(1);
+        println!(
+            "fidelity: levels {} trigrams; {} cheap bests confirmed, {} rejected; workers ended on level {}",
+            f.levels.iter().map(|k| k.to_string()).collect::<Vec<_>>().join(" → "),
+            f.confirmed,
+            f.rejected,
+            f.final_level.iter().map(|&l| if l == last { "full".to_string() } else { l.to_string() }).collect::<Vec<_>>().join(",")
+        );
+    }
+    if let Some(f) = &res.fingering {
+        println!(
+            "fingering: {} candidates, {} reassignment(s); best layout {:.3} on the given fingering → {:.3}",
+            f.candidates, f.steps, f.base_score, f.score
+        );
+        for c in &f.changes {
+            println!("  key {} (row {}, col {}): {} → {} (effort {})", c.key, c.row, c.col, c.from.name(), c.to.name(), c.effort);
+        }
+        if !f.changes.is_empty() {
+            println!("  results are scored on that fingering: geometry {}", res.geometry);
+        }
     }
     for r in res.best.iter().take(5) {
         let held = r.holdout.map_or(String::new(), |h| format!("  (holdout {h:.3})"));

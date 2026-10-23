@@ -17,6 +17,8 @@ export interface Key {
   effort: number;
   /** Symbol (token name or one char) this key gets when a layout lists only the other keys. */
   fill?: string;
+  /** Other fingers that may press this key, for the fingering search (gecko-core `AltFinger`). */
+  alt?: { finger: Finger; effort: number }[];
 }
 
 /** A key in the board's 2D drawing (gecko-core `Geometry::flat2d`): top-left corner, rotation in degrees about its center. */
@@ -49,6 +51,8 @@ export interface Profile {
   /** Target thumb share % for M09 (default 18 when absent). */
   thumb_target?: number;
   trigram_coverage: number;
+  /** Adaptive fidelity: search on the `top_k` most frequent trigrams, confirm on the full tables. */
+  fidelity?: { top_k: number; grow: number; misses: number };
   /** Metric id → reference spread; the scorer uses weight / scale (weights in spread units). */
   scale?: Record<string, number>;
   scale_basis?: string;
@@ -129,6 +133,13 @@ export interface RunResult {
   schema: number; id: string; geometry: string; evals: number; elapsed_ms: number; evals_per_sec: number; best: Ranked[]; bound?: BoundReport; holdout?: HoldoutReport;
   /** Multi-objective runs (nsga2, rwsa) only. */
   objectives?: Objective[]; front?: ParetoRanked[];
+  /** Adaptive-fidelity search (gecko-core `optimize::FidelityReport`). */
+  fidelity?: { levels: number[]; confirmed: number; rejected: number; final_level: number[] };
+  /** CLI `optimize --fingering` (gecko-core `fingering::FingeringReport`); a change makes `geometry` `run:<id>`. */
+  fingering?: {
+    choice: number[]; base_score: number; score: number; candidates: number; steps: number;
+    changes: { key: number; row: number; col: number; from: Finger; to: Finger; effort: number }[];
+  };
 }
 /** `qd.json` of a MAP-Elites run (gecko-core `explore::qd::QdSummary`). */
 export interface QdAxis { name: string; lo: number; hi: number; bins: number; auto: boolean }

@@ -1,0 +1,136 @@
+{
+ "run": {
+  "best": [
+   {
+    "rank": 1,
+    "score": 15.049908278056595,
+    "chars": "\u00b7\u00b7.\u00b7\u00b7zbflmie\u2423aqdstrny@\u00b7o\u00b7wvkxh_u\u2460pc\u2461\\~\u00b7\u00b7\u00b7\u00b7|#=&;,(\u23ce!+/){}[$\u00b7<^?>%*]`:\"\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7j\u00b76381\u00b7\u00b7g245\u00b7\u232b\u00b7\u00b7\u00b7\u00b70\u238b\u00b7\u00b797\u00b7",
+    "hash": "6ef99852"
+   },
+   {
+    "rank": 2,
+    "score": 15.058522093250108,
+    "chars": "\u00b7\u00b7.\u00b7\u00b7zvflmie\u2423aqdstrny@\u00b7o\u232bwbkxh_u\u2460pc\u2461%\\\u00b7\u00b7\u00b7\u00b7+#=&;,(\u23ce!?/){}[$\u00b7<~^>|*]`:\"\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b76381\u00b7\u00b7g245\u00b7\u00b7\u00b7\u00b7\u00b7\u00b70\u238b\u00b7j97\u00b7",
+    "hash": "13fa9a9b"
+   },
+   {
+    "rank": 3,
+    "score": 15.059154789477518,
+    "chars": "\u00b7\u00b7.\u00b7\u00b7zvflmie\u2423aqdstrny@\u00b7o\u232bwbkxh_u\u2460pc\u2461%\\\u00b7\u00b7\u00b7\u00b7+#=&;,(\u23ce!?/){}[$\u00b7<^~>|*]`:\"\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b76381\u00b7\u00b7g245\u00b7\u00b7\u00b7\u00b7\u00b7\u00b70\u238b\u00b7j97\u00b7",
+    "hash": "ade4aed0"
+   }
+  ],
+  "elapsed_ms": 44391,
+  "evals": 41819600,
+  "evals_per_sec": 942056.995745194,
+  "fidelity": {
+   "confirmed": 213,
+   "final_level": [
+    2,
+    1,
+    2,
+    1
+   ],
+   "levels": [
+    1000,
+    4000,
+    16000,
+    24778
+   ],
+   "rejected": 25
+  },
+  "geometry": "corne-36",
+  "id": "20261023-153330-sa-1d23eeb6",
+  "params": {
+   "algo": "sa",
+   "bls": {
+    "accept_worse": 0.1,
+    "column_kick": 0.2,
+    "exclusion": 0.5,
+    "exclusion_dist": 8,
+    "kick_max": 0,
+    "kick_min": 2,
+    "stagnation": 150
+   },
+   "evals": 40000000,
+   "explore": {
+    "max_optima": 100000,
+    "samples": 2000,
+    "snapshot_ms": 2000,
+    "walk_len": 400,
+    "walks": 64,
+    "within": 0.01
+   },
+   "ga": {
+    "crossover_rate": 0.9,
+    "elitism": 4,
+    "mutation_rate": 1.0,
+    "pop_size": 128,
+    "tournament": 3
+   },
+   "memetic": {
+    "collapse_generations": 3,
+    "ga": {
+     "crossover_rate": 0.9,
+     "elitism": 2,
+     "mutation_rate": 1.0,
+     "pop_size": 24,
+     "tournament": 3
+    },
+    "islands": 0,
+    "local_search": "hc",
+    "local_steps": 12,
+    "migrants": 2,
+    "migration_interval": 5
+   },
+   "moves": {
+    "columns": false,
+    "cycle3": false,
+    "depth2": false,
+    "depth2_width": 32
+   },
+   "nsga2": {
+    "archive_size": 512,
+    "crossover_rate": 0.9,
+    "generations": 0,
+    "mutation_rate": 1.0,
+    "objectives": [
+     "B01",
+     "T03",
+     "M01"
+    ],
+    "pop_size": 128
+   },
+   "qd": {
+    "axes": [
+     "roll_ratio",
+     "index_load"
+    ],
+    "bins": 16,
+    "descent": 0,
+    "kick_max": 6,
+    "kick_min": 2,
+    "seeds": 64,
+    "snapshot_ms": 2000
+   },
+   "sa": {
+    "accept0": 0.5,
+    "steps": 2500000,
+    "t_end_ratio": 0.002
+   },
+   "seed": 2,
+   "tabu": {
+    "diversify": 5.0,
+    "refresh": 1000,
+    "stagnation": 100.0,
+    "tenure_max": 1.1,
+    "tenure_min": 0.9
+   },
+   "threads": 4,
+   "time_ms": null,
+   "top": 10
+  },
+  "schema": 1
+ },
+ "schema": 1
+}
