@@ -13,6 +13,7 @@ geometry scores as well as possible under the hand-model costs, with no intersec
    smooth surrogate of the cost tables) → fix geometry → re-optimize layout. Repeat until stable.
 3. **Free-form:** per-key poses (high dimension). CMA-ES with restarts, or gradient-based
    if the hand-model cost is made differentiable. Collision as a penalty plus a repair step.
+   Implemented as `--free keys` (below).
 
 **Parameters:** `sigma0`, `popsize`, `inner_budget`, `collision_margin`, which parameters are free.
 
@@ -90,6 +91,29 @@ moved keys, CMA-ES and the bilevel driver below.
 - **Pause** (`Control`): the search waits at the next generation and paused time does not count
   against the budget or toward `elapsed_ms`. Restarts left without budget are not listed in
   `cma_runs`.
+
+## Free-form keys (I1)
+
+`gecko geom optimize -g run:<id> --free keys -p hand` (`geomsearch::freeform`): every key's pose
+is a variable instead of the board parameters, starting from a parametric board, usually a
+geometry run's best (`-g run:<id>` loads its `geometry.param.toml`).
+
+- **Variables**: `keys` (x, y, z, rx, ry, rz per key), `keys2d` (x, y, rz) or `keys.<c>`, named
+  `key.<i>.<c>`; default range ±0.5 u / ±15° around each key's start, `=lo:hi` relative to it
+  (`keys,keys.z=-0.2:0.2`). They cannot be mixed with board parameters. On a mirror-symmetric
+  split only the left half is free and the right half mirrors it (x reflected about the split,
+  ry and rz negated), so Corne has 108 variables, not 216.
+- **Smoothness**: objective += `smooth` · (|start score| + 1) · roughness, where roughness sums,
+  over neighbouring keys (same hand, both thumb or both finger keys, row/col labels one apart),
+  the squared difference of their moves from the start board (u, radians). `--smooth 0.05`
+  default; it penalizes bending relative to the start, not the start's own shape.
+- **Repair**: a colliding candidate gets `Geometry::repair(margin, repair_passes)` (default 20
+  passes, I3) and is scored at the repaired point when that collides less; the repaired point
+  is what CMA-ES's incumbent and the reported best carry (not fed back into the CMA-ES update).
+  Remaining depth takes the usual penalty.
+- Everything else (bilevel/alternate/board modes, budget split, `[build]` limits, efforts
+  derived per candidate, `verify`) is as above. The run writes `geometry.toml` only: the board
+  has no parameters. `best.json` carries `rough`; the CLI summarizes moves per component.
 
 ## CMA-ES (`gecko_core::cmaes`, G5)
 
@@ -254,3 +278,27 @@ pinned. "G06" is the best board's G06 per keystroke under `hand` (G06 weight 1.0
 - With `{none}` pinned, every count starts at the same score (12.31) and ends within 0.14 of
   the others (one seed): empty keys carry no keystrokes, so the score cannot choose the count.
   Hence `--thumb-keys auto` sizes the cluster from the arc's capacity instead.
+
+**Free-form keys (I1, #70, 2026-10-23)**: from the post-fix 3D `-p hand` best
+(`run:20261022-232628-geom-0a6a57dd`), `-p hand -c english --evals 1500 --seed 1 --threads 5`, thumb
+tokens pinned, four runs in parallel (≈ 75 s each). Score after the equal final polish; "other" =
+everything but G01/G03/G05/G06.
+
+| run | free | start → best | G01 / G05 | other | roughness | largest moves |
+|---|---|---|---|---|---|---|
+| `20261023-165958-geom-e3882601` | `3d` (parametric, continued) | 7.33 → 7.28 (−0.7%) | 0.76 → 0.72 / 0.43 → 0.48 | 6.04 → 5.84 | | |
+| `20261023-165958-geom-9904e465` | `keys2d` | 7.33 → 6.54 (−10.9%) | 0.76 → 0.67 / 0.43 → 0.27 | 6.04 → 5.51 | 0.95 | 0.29 u, 8° |
+| `20261023-165958-geom-4759ead3` | `keys` | 7.33 → 6.05 (−17.5%) | 0.76 → 0.54 / 0.43 → 0.12 | 6.04 → 5.33 | 2.07 | 0.34 u, 9.5° |
+| `20261023-165958-geom-64cd2623` | `keys`, `--smooth 0` | 7.33 → 5.32 (−27.5%) | 0.76 → 0.49 / 0.43 → 0.15 | 6.04 → 4.63 | 10.45 | 0.48 u, 14° |
+
+- The parametric optimum is a local one for the parameter space only: the same budget gains
+  0.7% more in it and 17.5% with free keys, under the same hand model and collision checks.
+  Of the 1.29 gain, 0.53 is hand model (G05 press angle −0.31, G01 reach −0.22) and 0.71 is
+  the other metrics, which the moved keys and the new layout share.
+- Smoothness trades score for regularity: without it the search gains another 10 percentage
+  points but the board is 5× rougher, with neighbouring keys moved up to 14° apart, which is
+  where the uncalibrated model is least trustworthy (no finger-vs-neighbouring-cap clearance
+  beyond the access volumes). No move reached its bound in any run, so the ranges did not bind.
+- `gecko verify` reproduces the `keys2d` run (1486 boards, start and best). The boards load
+  as `-g run:<id>`. The smoke run without pins (`20261023-165806-geom-982dab2d`) put space and
+  enter on letter keys, as in the parametric case: pin the thumb tokens.

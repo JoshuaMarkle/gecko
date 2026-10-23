@@ -60,10 +60,11 @@ gecko corpus mix <corpus>[:weight]... --out <name>                     # weighte
 gecko corpus import <cmini corpus dir> --out <name> [--charset ...] [--fold]   # words.json or n-gram JSON; --fold: é→e; also writes <name>.words.tsv
 gecko geometry import-kle <file.json> --out <name> [--force]       # KLE board → data/geometries/<name>.toml
                                                                   #   (fingers/rows/home/effort guessed; edit after)
-gecko geometry optimize -g <name>.param [--free 2d|3d|<list>] [--mode bilevel|alternate|board]   # alias: gecko geom
+gecko geometry optimize -g <name>.param [--free 2d|3d|keys|keys2d|<list>] [--mode bilevel|alternate|board]   # alias: gecko geom
                [--time 60s | --evals N] [--seed --threads --pin --from] [--inner-evals 20000]
                [--polish-evals 1000000] [--sigma0 0.1] [--popsize] [--margin 0] [--penalty 10]
                [--hard-fail 2] [--rounds 4] [--keep-effort] [--thumb-keys N|auto] [-p -c]
+               [--smooth 0.05] [--repair-passes 20]                 # free-form only (I1)
                                                                   # board + layout search (G6) → runs/<id>/;
                                                                   #   its best board loads as -g run:<id>
 gecko build stl [run:<id>|<geometry>] [--switch mx|choc] [--plate 3] [--wall 2.5] [--clearance 4]
