@@ -2,7 +2,8 @@
 //! under the default `[build]` limits, a profile's `[build]` section parses, and the geometry
 //! search penalizes boards past it.
 
-use gecko_core::geometry::manufacture::BuildLimits;
+use gecko_core::geometry::case::{CaseParams, Switch};
+use gecko_core::geometry::manufacture::{BuildLimits, CASE_EXCESS};
 use gecko_core::geomsearch::{self, GeomParams, GeomSpec};
 use gecko_core::store::Store;
 use gecko_core::{Geometry, ParametricGeometry, Profile};
@@ -65,4 +66,33 @@ fn geometry_search_applies_build_limits() {
     assert!(!tight.feasible);
     assert!(tight.best.collisions >= 2 && tight.best.depth > 1.0, "{} {}", tight.best.collisions, tight.best.depth);
     assert!(tight.best.f > tight.best.score);
+}
+
+#[test]
+fn case_check() {
+    // Bundled boards build a clean case: the check adds nothing. The Dactyl's MX-sized keywell
+    // (row curvature on 18.4 mm rows) puts Choc caps into the webs, so it is MX only.
+    let mx = BuildLimits { case: Some(Switch::Mx), ..Default::default() };
+    let choc = BuildLimits { case: Some(Switch::Choc), ..Default::default() };
+    for b in BOARDS {
+        let g = Geometry::from_toml(&std::fs::read_to_string(format!("{ROOT}/data/geometries/{b}.toml")).unwrap()).unwrap();
+        for lim in [&mx, &choc] {
+            let r = g.manufacture(lim);
+            let dactyl_choc = b == "dactyl-manuform-5x6" && lim.case == Some(Switch::Choc);
+            assert_eq!(r.feasible(), !dactyl_choc, "{b}: {:?}", r.violations.iter().map(|v| (&v.kind, &v.keys)).collect::<Vec<_>>());
+        }
+    }
+    // A searched 3D board whose MX caps hit its case: one violation per key, off by default.
+    let text = std::fs::read_to_string(format!("{ROOT}/crates/gecko-core/tests/fixtures/cap-hit.param.toml")).unwrap();
+    let g = ParametricGeometry::from_toml(&text).unwrap().generate().unwrap();
+    assert!(g.manufacture(&BuildLimits::default()).feasible());
+    let r = g.manufacture(&mx);
+    let hits: Vec<usize> = r.violations.iter().filter(|v| v.kind == "cap_hit").flat_map(|v| v.keys.clone()).collect();
+    assert_eq!(hits, g.case(&CaseParams::for_switch(Switch::Mx), mx.piece_gap).unwrap().report.cap_hits);
+    assert!(!hits.is_empty());
+    assert!((r.excess - r.violations.len() as f64 * CASE_EXCESS).abs() < 1e-9);
+    // The field round-trips through a profile and stays out of profiles without it.
+    let p = Profile::from_toml("name = \"t\"\n[build]\ncase = \"choc\"\n").unwrap();
+    assert_eq!(p.build.unwrap().case, Some(Switch::Choc));
+    assert!(!toml::to_string(&BuildLimits::default()).unwrap().contains("case"));
 }

@@ -18,6 +18,7 @@ The design reference for GECKO. Which file to read for a task: the table in
 | [web.md](web.md) | Web stack, code layout, rendering, API |
 | [web-screens.md](web-screens.md) | What each web tab shows and does |
 | [design.md](design.md) | Visual design system |
+| [build-guide.md](build-guide.md) | Walkthrough: hand measurements → optimized board → STL |
 | [testing.md](testing.md) | Tests, benchmarks, CI |
 | [conventions.md](conventions.md) | Code style, crates, tooling |
 | [decisions.md](decisions.md) | Past decisions by area, in [decisions/](decisions/) |

@@ -2,12 +2,14 @@
 //! height, plate (print bed) size and column counts, from a profile's `[build]` section. Each
 //! violation has an excess in u-equivalents (angles: 45° = 1 u; counts: 1 key = 1 u), so the
 //! geometry search adds their total to its collision depth: the same penalty and hard fail.
-//! STL generation (#75) reuses the same limits. See `context/geometry.md`.
+//! STL generation (#75) reuses the same limits; `case` also builds the case and counts keycaps
+//! that hit it. See `context/geometry.md`.
 
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::geometry::case::{CaseParams, Switch};
 use crate::geometry::flat2d::V3;
 use crate::geometry::pose::{add, apply, rotation, CAP_HEIGHT};
 use crate::geometry::{Hand, Key};
@@ -15,6 +17,10 @@ use crate::{Error, Geometry, Result};
 
 /// Degrees of angle excess that count as 1 u of excess.
 pub const DEG_PER_U: f64 = 45.0;
+
+/// Excess per key whose cap hits the case or whose switch cutout is blocked, u. The case check
+/// has no depth, so each key counts a quarter key: a few hits already cost like a collision.
+pub const CASE_EXCESS: f64 = 0.25;
 
 /// Build limits (key units, degrees). A limit of 0 is off.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -39,6 +45,11 @@ pub struct BuildLimits {
     /// Most columns per hand (distinct `col` of finger keys). Off by default: board files label
     /// columns loosely (ergodox's right hand has 13 labels); parametric boards label them exactly.
     pub max_columns: usize,
+    /// Build the default case for this switch (`mx` or `choc`) and count keys whose cap hits it
+    /// within its travel (`cap_hit`) or whose cutout it blocks (`blocked`). Off by default: it
+    /// costs a case build (a few ms) per check.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub case: Option<Switch>,
 }
 
 impl Default for BuildLimits {
@@ -51,6 +62,7 @@ impl Default for BuildLimits {
             piece_gap: 1.25,
             max_column_keys: 6,
             max_columns: 0,
+            case: None,
         }
     }
 }
@@ -68,7 +80,7 @@ impl BuildLimits {
 /// One broken limit.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Violation {
-    /// `pitch`, `key_angle`, `height`, `plate`, `column_keys`, `columns`.
+    /// `pitch`, `key_angle`, `height`, `plate`, `column_keys`, `columns`, `cap_hit`, `blocked`, `case`.
     pub kind: String,
     /// Keys involved (physical key indices); for `plate` and `columns`, every key of the piece
     /// or hand.
@@ -216,6 +228,20 @@ impl Geometry {
             }
         }
 
+        if let Some(switch) = lim.case {
+            match self.case(&CaseParams::for_switch(switch), lim.piece_gap) {
+                Ok(c) => {
+                    for &k in &c.report.cap_hits {
+                        push("cap_hit", vec![k], 1.0, 0.0, CASE_EXCESS);
+                    }
+                    for &k in &c.report.blocked {
+                        push("blocked", vec![k], 1.0, 0.0, CASE_EXCESS);
+                    }
+                }
+                Err(_) => push("case", keys.clone(), 1.0, 0.0, 1.0),
+            }
+        }
+
         let excess = out.iter().map(|v| v.excess).sum();
         BuildReport { violations: out, excess }
     }
@@ -350,6 +376,7 @@ mod tests {
             piece_gap: 0.0,
             max_column_keys: 0,
             max_columns: 0,
+            case: None,
         };
         let mut k = key(0.1, 0.0, Finger::LI, 0);
         k.rot = [89.0, 0.0, 0.0];

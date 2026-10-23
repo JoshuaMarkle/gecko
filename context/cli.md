@@ -90,7 +90,7 @@ Global flags: `--json`, `--root <dir with gecko.toml>`.
 paths (`corne-36.param` also selects that named model). See [geometry.md](geometry.md).
 
 `<layout>` is a reference name (`data/layouts/<name>.toml`), a `.toml` path,
-`run:<id>[#rank]`, `cmini:<name>` (imported community layout), or `raw:<slot-ordered symbols>` (e.g. `raw:qwertyuiopasdfghjkl;zxcvbnm,./`).
+`run:<id>[#rank]` (a geometry run: its best board's layout, rank 1 only; use `-g run:<id>`), `cmini:<name>` (imported community layout), or `raw:<slot-ordered symbols>` (e.g. `raw:qwertyuiopasdfghjkl;zxcvbnm,./`).
 A 30-key layout on a board with thumb keys (`--geometry corne-36`) gets the geometry's thumb
 fills. Tokens can be written `{space}`, `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `{left}`, `{down}`,
 `{up}`, `{right}`, `{none}` in

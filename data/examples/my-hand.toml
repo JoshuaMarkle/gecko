@@ -1,0 +1,84 @@
+name = "my-hand"
+description = "Example for context/build-guide.md: the hand profile with one measured hand (205 mm long, 88 mm palm). Copy it and put in your own measurements."
+scale_basis = "stdev over 9 layouts (canary, colemak, colemak-dh, dvorak, graphite, halmak, semimak, sturdy, workman) on english / ansi-30"
+
+# Target % per finger: LP LR LM LI LT RT RI RM RR RP
+finger_target = [8.0, 11.0, 15.0, 16.0, 0.0, 0.0, 16.0, 15.0, 11.0, 8.0]
+
+# M01 effort added off the home row per finger (pinky ring middle index), [above, below] home.
+# KLO's key costs: the top row is easy for middle/ring, the bottom row easy for index.
+row_offset = [[0.0, 0.0], [-0.1, 0.1], [-0.2, 0.2], [0.2, -0.2]]
+
+# Weights and scales: the default profile's (see data/profiles/default.toml for what they mean),
+# plus the terms below.
+# Hand for G01/G03/G05 and B14's relaxed spread: size = "small" | "average" | "large", or explicit
+# [hand.dims] in mm (thumb, index, middle, ring, pinky segments; palm_width, palm_length, span,
+# reach), as the web's Hand tab edits them. Optional [hand.body] elbow_width / forearm (mm) for
+# G03; default scaled with the hand (465 / 255 for average). context/hand-model.md.
+[hand]
+# One measured hand, mm (context/build-guide.md, step 1). Segments base -> tip.
+[hand.dims]
+thumb = [48, 33, 24]
+index = [42, 24, 19]
+middle = [47, 28, 20]
+ring = [44, 27, 20]
+pinky = [35, 19, 18]
+palm_width = 88
+palm_length = 110
+span = 209
+reach = 42
+
+# Build limits (context/geometry.md, G07): the defaults, plus a case check so the search rejects
+# boards whose MX keycaps would hit the printed case.
+[build]
+case = "mx"
+
+[weights]
+B01 = 2.867   # SFB %; the strongest timing effect (+0.55 median keystroke interval)
+S01 = 0.5139  # SFS %, one key between; no measured timing cost, kept as a comfort assumption
+S02 = 0.1811  # far SFS %, 2–3 keys between (decayed); same per-% weight as S01
+B14 = 0.5313  # geometric stretch (LSB, scissors, crossings)
+B11 = 0.2478  # finger-pair movement (KLO table + ring coupling)
+S04 = 0.08195 # skip stretch (B14 on keys 1–3 of a trigram)
+B05 = 0.4047  # full scissors: measured +0.10 interval on top of the row jump
+B06 = 0.2704  # half scissors
+B09 = 1.255   # pinky–ring pairs: measured +0.13 interval
+B10 = 0.3684  # same-hand row jump: timing and Engram comfort both track it
+M01 = 0.0817  # key effort, halved: G01 carries reach, M01 keeps finger strength
+M05 = 0.1094  # home row share
+M02 = 0.06071 # finger load error (mean squared %)
+M04 = 0.08906 # hand balance
+T01 = 0.5493  # alternates
+T03 = 0.3143  # rolls in
+T04 = 0.6058  # rolls out (in and out measure equally fast)
+T06 = 0.4007  # redirects
+T07 = 0.2598  # bad redirects (+3.8% third-keystroke time)
+E05 = 0.6217  # measured key-pair discomfort (Engram)
+G01 = 0.4272  # hand-model reach
+G05 = 0.3056  # hand-model press angle; mostly separates boards, mild on flat ones
+G03 = 1.0     # wrist posture, NATURAL units (no scale): a board metric (ANSI 2.1, split 1.7,
+              # tented 1.0); its spread over layouts on one board is ~0.002, so it barely moves search
+
+[scale]
+B01 = 0.7908
+S01 = 1.209
+S02 = 0.4285
+B14 = 1.316
+B11 = 18.14
+S04 = 1.341
+B05 = 0.5297
+B06 = 0.6859
+B09 = 0.9029
+B10 = 3.366
+M01 = 0.03799
+M05 = 3.573
+M02 = 2.018
+M04 = 1.789
+T01 = 5.475
+T03 = 2.119
+T04 = 4.039
+T06 = 2.672
+T07 = 0.6505
+E05 = 1.206
+G01 = 0.08472
+G05 = 0.03651

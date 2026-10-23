@@ -232,6 +232,15 @@ impl Store {
             if id.is_empty() || id.contains(['/', '\\']) || id.contains("..") {
                 return Err(Error::invalid("layout", format!("bad run id '{id}'")));
             }
+            // A geometry run has one result: the best board's layout (on `run:<id>`).
+            if crate::geomsearch::is_run(&self.runs.join(id)) {
+                if rank != 1 {
+                    return Err(Error::invalid("layout", format!("geometry run {id} has only rank 1")));
+                }
+                let res = crate::geomsearch::load_result(&self.runs.join(id))?;
+                let board = self.geometry(&format!("run:{id}"))?;
+                return Layout::from_chars(&format!("{id}#1"), &board.name, &format!("run:{id}"), res.best.chars.chars().collect());
+            }
             let res = crate::run::load_result(&self.runs.join(id))?;
             let l = res.best.get(rank.saturating_sub(1)).ok_or_else(|| Error::invalid("layout", format!("run {id} has no rank {rank}")))?;
             let magic = crate::run::load_config(&self.runs.join(id)).map(|c| c.magic).unwrap_or_default();
