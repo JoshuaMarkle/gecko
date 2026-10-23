@@ -42,7 +42,7 @@ Every command takes `--json`. See [context/cli.md](context/cli.md).
 | `context/` | Design docs: start at [context/README.md](context/README.md) |
 | `research/` | Evidence behind the metrics and parameters |
 
-Contributors and agents: read [AGENTS.md](AGENTS.md).
+Human contributors: see [CONTRIBUTING.md](CONTRIBUTING.md). AI agents: follow [AGENTS.md](AGENTS.md).
 
 ## License
 
