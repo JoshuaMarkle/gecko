@@ -160,6 +160,14 @@ impl Store {
         crate::ParametricGeometry::from_toml(&read(&p)?)
     }
 
+    /// Load the comfort tables a geometry names (`data/comfort/<table>.csv`).
+    pub fn load_comfort(&self, g: &mut Geometry) -> Result<()> {
+        for (metric, table) in g.comfort.clone() {
+            g.load_comfort(&metric, &read(&self.dir("comfort").join(format!("{table}.csv")))?)?;
+        }
+        Ok(())
+    }
+
     /// A parametric board and its generated keys with comfort tables loaded (what a geometry
     /// search starts from).
     pub fn param_board(&self, name: &str) -> Result<(crate::ParametricGeometry, Geometry)> {

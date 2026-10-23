@@ -30,7 +30,6 @@ Sizes are relative effort (S/M/L). Dependencies below list only unfinished work;
 | [#100](https://github.com/JoshuaMarkle/gecko/issues/100) | Local-optima / trajectory networks, symbol migration and scored paths between layouts | L | #53 for telemetry-dependent views |
 | [#103](https://github.com/JoshuaMarkle/gecko/issues/103) | Optimize mean or worst-case cost over hand sizes; compare with single-hand optima | M | Ready |
 | [#70](https://github.com/JoshuaMarkle/gecko/issues/70) | Free per-key 6-DoF search with neighbour smoothness and collision repair | L | Ready |
-| [#71](https://github.com/JoshuaMarkle/gecko/issues/71) | G06 thumb-IK metric; search thumb key count and poses | M | Ready |
 | [#74](https://github.com/JoshuaMarkle/gecko/issues/74) | Optional differentiable reach surrogate; compare refinement time-to-quality with CMA-ES | L | Ready |
 
 ## Path to a printable board
@@ -38,5 +37,5 @@ Sizes are relative effort (S/M/L). Dependencies below list only unfinished work;
 `gecko build stl` and the Export tab's case preview produce a printable parametric board, and
 the Export tab writes an ergogen config. [`context/build-guide.md`](build-guide.md) walks from
 hand measurements to an optimized board and its STL ([#77](https://github.com/JoshuaMarkle/gecko/issues/77)).
-Free-form search (#70) and thumb-cluster search (#71) extend the design space;
-they are not prerequisites.
+Free-form search (#70) extends the design space; it is not a prerequisite. Thumb clusters
+follow the thumb's arc with G06 and `--thumb-keys` (#71).

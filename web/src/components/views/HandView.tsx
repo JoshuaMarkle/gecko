@@ -1,7 +1,7 @@
 // Hand tab (web-screens.md "Hand"): hand settings | 3D hands placed over the board's home keys
 // (mirrored skeletons, finger IK), with a typing simulation whose fingers move in parallel |
 // reach (the scorer's per-key hand costs), measurements, typing timeline and stats, size
-// distribution, similarity. "Use hand in optimization" sends this hand to the scorer (G01, G03, G05,
+// distribution, similarity. "Use hand in optimization" sends this hand to the scorer (G01, G03, G05, G06,
 // B14 spread); the wrist and typing simulation stay view-only.
 
 import { useMemo, useRef, useState } from "react";
@@ -91,8 +91,8 @@ export function HandView(p: Props) {
       side={
         sideTab === "hand" ? <>
           <div className="pad">
-            <Toggle label="Use in optimization" help="Score and optimize with this hand: its reach (G01), press angle (G05) and wrist posture (G03) per key, and B14's stretch allowance scaled by its span. Adds G01 / G03 / G05 to the profile at the hand profile's weights unless the profile sets them." value={h.use} onChange={(use) => p.setHand({ ...h, use })} />
-            {off ? <div className="hint">Off: the scorer uses the average hand for G01 / G03 / G05, at the profile's weights (0 in the default). The views on the right still preview this hand.</div>
+            <Toggle label="Use in optimization" help="Score and optimize with this hand: its reach (G01), press angle (G05), wrist posture (G03) and thumb arc fit (G06) per key, and B14's stretch allowance scaled by its span. Adds G01 / G03 / G05 / G06 to the profile at the hand profile's weights unless the profile sets them." value={h.use} onChange={(use) => p.setHand({ ...h, use })} />
+            {off ? <div className="hint">Off: the scorer uses the average hand for G01 / G03 / G05 / G06, at the profile's weights (0 in the default). The views on the right still preview this hand.</div>
               : <div className="hint">On: runs and scores use this hand. Reach, Press angle and Wrist posture are in the Profile tab's Hand model section.</div>}
           </div>
           <fieldset className="plain" disabled={off}>

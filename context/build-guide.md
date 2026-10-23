@@ -59,6 +59,10 @@ inner columns or thumbs hit the case.
   uncalibrated and pushes both to their limits (30° rows, ~38° tent) when free.
 - `--pin`: keep space, enter, backspace, tab and escape on the thumbs. Without it the layout
   search moves them onto letter keys.
+- Optional `--thumb-keys auto` sizes each thumb cluster to the keys that fit along your thumb's
+  natural arc (3 for an average hand, 4 for a large one), or `--thumb-keys N`. Add `{none}` to
+  `--pin` to keep letters off the empty keys it adds. Add `G06 = 1.0` under `[weights]` in your
+  profile to pull the thumb keys onto the arc ([hand-model.md](hand-model.md)).
 - `--evals 4000 --seed 1 --threads 8`: a fixed budget, so the run is reproducible (≈ 40 s on
   20 cores). `--time 5m` searches longer but cannot be re-run exactly.
 

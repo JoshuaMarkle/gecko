@@ -85,6 +85,11 @@ pub struct OptimizeArgs {
     /// Keep the file's hand-entered key efforts instead of deriving them from positions.
     #[arg(long)]
     keep_effort: bool,
+    /// Thumb keys per thumb zone side: a count, or `auto` for as many as fit along the thumb's
+    /// operational arc for the profile's hand (3 for the average hand). Shrinking keeps the keys
+    /// with typed fills, then the cheapest; growing adds empty 1 u keys.
+    #[arg(long)]
+    thumb_keys: Option<String>,
     #[command(flatten)]
     inputs: Inputs,
 }
@@ -120,8 +125,21 @@ fn import_kle(ctx: &Ctx, file: PathBuf, out: String, force: bool) -> Result<()> 
 
 fn optimize(ctx: &Ctx, a: OptimizeArgs) -> Result<()> {
     let name = a.inputs.geometry.clone().unwrap_or_else(|| ctx.store.defaults.geometry.clone());
-    let params = ctx.store.param_geometry(&name)?;
-    let l = ctx.load(&a.inputs)?;
+    let mut params = ctx.store.param_geometry(&name)?;
+    let mut l = ctx.load(&a.inputs)?;
+    if let Some(tk) = &a.thumb_keys {
+        let hand = l.profile.hand.clone().unwrap_or_default();
+        let n = if tk == "auto" {
+            gecko_core::hand::thumb_slots(&hand.dims())
+        } else {
+            tk.parse().with_context(|| format!("bad --thumb-keys '{tk}' (a count or auto)"))?
+        };
+        params = geomsearch::resize_thumbs(&params, &l.geometry, &l.corpus, &hand, n)?;
+        params.description = format!("{} ({n} thumb keys per side)", params.description);
+        l.geometry = params.generate_unchecked()?;
+        ctx.store.load_comfort(&mut l.geometry)?;
+        eprintln!("thumb keys: {n} per side");
+    }
     let start = ctx.start(a.from.as_deref(), &l)?;
     let vars = geomsearch::parse_free(&params, &a.free)?;
     let mut s = GeomParams {
@@ -150,10 +168,10 @@ fn optimize(ctx: &Ctx, a: OptimizeArgs) -> Result<()> {
     set(&mut s.penalty, a.penalty);
     set(&mut s.hard_fail, a.hard_fail);
     set(&mut s.rounds, a.rounds);
-    let hand = ["G01", "G03", "G05"].iter().any(|m| l.profile.weights.get(*m).is_some_and(|w| *w != 0.0));
+    let hand = ["G01", "G03", "G05", "G06"].iter().any(|m| l.profile.weights.get(*m).is_some_and(|w| *w != 0.0));
     if !hand {
         eprintln!(
-            "warning: profile '{}' weights no hand-model metric (G01/G03/G05); board shape only moves distance metrics. Try -p hand.",
+            "warning: profile '{}' weights no hand-model metric (G01/G03/G05/G06); board shape only moves distance metrics. Try -p hand.",
             l.profile.name
         );
     }

@@ -234,10 +234,10 @@ describe("hand in the scored profile", () => {
   const base: Profile = { name: "p", description: "", weights: { B01: 1 }, finger_target: [], trigram_coverage: 0.99, scale: { B01: 2 } };
   const on: HandSettings = { use: true, preset: "large", custom: null };
 
-  it("adds the hand and G01 / G03 / G05 at the hand profile's weights when on", () => {
+  it("adds the hand and G01 / G03 / G05 / G06 at the hand profile's weights when on", () => {
     const p = withHand(base, on);
     expect(p.hand).toEqual({ size: "large" });
-    expect(p.weights).toEqual({ B01: 1, G01: HAND_WEIGHTS.G01[0], G03: HAND_WEIGHTS.G03[0], G05: HAND_WEIGHTS.G05[0] });
+    expect(p.weights).toEqual({ B01: 1, G01: HAND_WEIGHTS.G01[0], G03: HAND_WEIGHTS.G03[0], G05: HAND_WEIGHTS.G05[0], G06: HAND_WEIGHTS.G06[0] });
     expect(p.scale?.G01).toBe(HAND_WEIGHTS.G01[1]);
     expect(base.weights.G01).toBeUndefined();
   });

@@ -322,6 +322,8 @@ pub struct Thumb {
     l: [f64; 3],
     /// Rest pose: the tip on the rest point, MCP and IP near their light curl.
     pub neutral: [f64; 4],
+    /// Operational workspace along the natural arc (mm).
+    workspace: f64,
 }
 
 /// Rest flexion of the thumb's MCP and IP joints (≈ 17°).
@@ -331,6 +333,15 @@ const THUMB_CURL: f64 = 0.3;
 const THUMB_LIMIT: [[f64; 2]; 4] = [[-0.6, 0.6], [-0.5, 0.7], [-0.2, 1.05], [-0.3, 1.4]];
 /// Deviation from rest that costs 1 per joint (radians): CMC 26°, MCP 34°, IP 46°.
 const THUMB_SCALE: [f64; 4] = [0.45, 0.45, 0.6, 0.8];
+/// Points sampled across the CMC's flexion range for the natural arc (68°, ≈ 0.3° apart).
+const ARC_POINTS: usize = 241;
+/// G06: distance off the thumb's natural arc that costs 1 (mm), squared like the miss term.
+const ARC: f64 = 10.0;
+/// Operational thumb workspace along its flexion/extension sweep for the average thumb (mm):
+/// typing-like use covers 73 ± 18 mm of the 131 mm the tip can sweep (Tang 2008,
+/// `research/sources/thumb-biomechanics.md`). Scaled with thumb length (an assumption: the
+/// study gives no hand-size scaling).
+const WORKSPACE: f64 = 73.1;
 
 /// `v` rotated by `a` radians about unit `axis` (Rodrigues).
 fn rotate(axis: V3, a: f64, v: V3) -> V3 {
@@ -361,7 +372,16 @@ impl Thumb {
         let pad0 = perp(add(scaled(across, 0.8), scaled(down, 0.6)), d0);
         let flex = norm(cross(d0, across));
         let abd = norm(cross(d0, down));
-        let mut t = Thumb { base, d0, pad0, flex, abd, l: d.segments(4), neutral: [0.0, 0.0, THUMB_CURL, THUMB_CURL] };
+        let mut t = Thumb {
+            base,
+            d0,
+            pad0,
+            flex,
+            abd,
+            l: d.segments(4),
+            neutral: [0.0, 0.0, THUMB_CURL, THUMB_CURL],
+            workspace: thumb_workspace(d),
+        };
         // Pose the thumb from its light curl so the tip lands on the rest point (the CMC aims it,
         // MCP/IP set its length); re-centring each pass removes the pull toward the last guess.
         for _ in 0..4 {
@@ -454,6 +474,61 @@ impl Thumb {
         }
         let miss = sub(self.joints(&q)[3], target);
         (q, dot(miss, miss).sqrt())
+    }
+
+    /// G01 for a thumb key at `p`: mean over the 4 joints of ((angle − rest) / scale)² plus the
+    /// miss terms. Returns the cost, the pose and the shortfall (mm; 0 when reachable).
+    pub fn reach(&self, p: V3) -> (f64, [f64; 4], f64) {
+        let (q, miss) = self.solve(p);
+        let joints = (0..4).map(|j| ((q[j] - self.neutral[j]) / THUMB_SCALE[j]).powi(2)).sum::<f64>() / 4.0;
+        let shortfall = if miss < MISS_TOL { 0.0 } else { miss };
+        let mm = shortfall / MISS;
+        (joints + 2.0 * mm + mm * mm, q, shortfall)
+    }
+
+    /// The thumb's natural arc (G06): the tip as the CMC sweeps its flexion range with the other
+    /// joints at rest, cut to the operational workspace (`WORKSPACE` of path, measured on the key
+    /// plane, centred on the rest point), from the outer end (away from the fingers) inward.
+    pub fn arc(&self) -> Vec<V3> {
+        let [lo, hi] = self.limits(0);
+        let sweep: Vec<V3> = (0..ARC_POINTS)
+            .map(|i| {
+                let mut q = self.neutral;
+                q[0] = lo + (hi - lo) * i as f64 / (ARC_POINTS - 1) as f64;
+                self.joints(&q)[3]
+            })
+            .collect();
+        // Path length on the key plane (viewer x, z) from the rest point, the middle sample.
+        let flat = |a: V3, b: V3| (a[0] - b[0]).hypot(a[2] - b[2]);
+        let mid = ARC_POINTS / 2;
+        let mut s = vec![0.0; ARC_POINTS];
+        for i in (0..mid).rev() {
+            s[i] = s[i + 1] + flat(sweep[i], sweep[i + 1]);
+        }
+        for i in mid + 1..ARC_POINTS {
+            s[i] = s[i - 1] + flat(sweep[i], sweep[i - 1]);
+        }
+        let half = self.workspace / 2.0;
+        sweep.into_iter().zip(s).filter(|&(_, s)| s <= half).map(|(p, _)| p).collect()
+    }
+
+    /// Distance (mm) from `p` to the natural arc ([`Thumb::arc`] as a polyline) within the key
+    /// plane (viewer x, z: the hand frame's plane on 3D boards): how far a key sits to the side
+    /// of, or beyond the ends of, the path the thumb sweeps in normal use without abducting or
+    /// curling. Height is left to G01: the resting thumb hovers above the keycaps and curls down
+    /// onto them.
+    pub fn arc_gap(&self, p: V3) -> f64 {
+        let flat = |v: V3| [v[0], 0.0, v[2]];
+        let a: Vec<V3> = self.arc().into_iter().map(flat).collect();
+        let p = flat(p);
+        a.windows(2)
+            .map(|s| {
+                let (d, v) = (sub(s[1], s[0]), sub(p, s[0]));
+                let t = (dot(v, d) / dot(d, d).max(1e-12)).clamp(0.0, 1.0);
+                let e = sub(v, scaled(d, t));
+                dot(e, e).sqrt()
+            })
+            .fold(f64::MAX, f64::min)
     }
 
     /// The thumb's press misalignment with a key of inward normal `into` (radians): the CMC's two
@@ -664,6 +739,9 @@ pub struct HandCosts {
     /// G03 wrist posture cost per key: the hand's resting posture, with the extra ulnar or
     /// radial deviation of reaching sideways for a key the planted hand falls short of.
     pub wrist: Vec<f32>,
+    /// G06 thumb arc fit per key: (distance off the thumb's natural arc / 10 mm)²; 0 on finger
+    /// keys.
+    pub arc: Vec<f32>,
     /// Fingertip shortfall per key (mm; 0 when reachable).
     pub miss: Vec<f32>,
     /// Hands that could be placed (both home rows present).
@@ -704,6 +782,7 @@ pub fn costs_with(g: &Geometry, d: &HandDims, body: &Body) -> HandCosts {
         reach: vec![0.0; n],
         align: vec![0.0; n],
         wrist: vec![0.0; n],
+        arc: vec![0.0; n],
         miss: vec![0.0; n],
         placed: [false; 2],
         posture: [Posture::default(); 2],
@@ -756,13 +835,11 @@ pub fn costs_with(g: &Geometry, d: &HandDims, body: &Body) -> HandCosts {
             let (p, nrm) = target(i);
             let (p, nrm) = (local(p), local(nrm));
             let (reach, align, shortfall, gap) = if f.is_thumb() {
-                let (q, miss) = thumb.solve(p);
-                let joints = (0..4).map(|j| ((q[j] - thumb.neutral[j]) / THUMB_SCALE[j]).powi(2)).sum::<f64>() / 4.0;
-                let shortfall = if miss < MISS_TOL { 0.0 } else { miss };
-                let mm = shortfall / MISS;
+                let (reach, q, shortfall) = thumb.reach(p);
                 let angle = thumb.press_angle(&q, scaled(nrm, -1.0));
                 let gap = sub(p, thumb.joints(&q)[3]);
-                (joints + 2.0 * mm + mm * mm, (angle / std::f64::consts::FRAC_PI_4).powi(2), shortfall, gap)
+                out.arc[i] = (thumb.arc_gap(p) / ARC).powi(2) as f32;
+                (reach, (angle / std::f64::consts::FRAC_PI_4).powi(2), shortfall, gap)
             } else {
                 let ord = f.ord() as usize;
                 let l = d.segments(ord as u8);
@@ -805,10 +882,24 @@ pub fn costs_with(g: &Geometry, d: &HandDims, body: &Body) -> HandCosts {
             out.reach[i] = out.reach[p];
             out.align[i] = out.align[p];
             out.wrist[i] = out.wrist[p];
+            out.arc[i] = out.arc[p];
             out.miss[i] = out.miss[p];
         }
     }
     out
+}
+
+/// The thumb's operational workspace along its natural arc (mm): `WORKSPACE` scaled with
+/// thumb length.
+pub fn thumb_workspace(d: &HandDims) -> f64 {
+    let len = |t: [f32; 3]| t.iter().map(|&v| v as f64).sum::<f64>();
+    WORKSPACE * len(d.thumb) / len(AVERAGE.thumb)
+}
+
+/// How many 1 u thumb keys fit side by side along the natural arc's operational workspace,
+/// ⌊workspace / 1 u⌋ (I2): 3 for the average hand (73 mm), 4 from a thumb 4.3% longer.
+pub fn thumb_slots(d: &HandDims) -> usize {
+    (thumb_workspace(d) / MM_PER_U).floor() as usize
 }
 
 /// Parity with the web's TypeScript port (`web/src/hand.ts`): this test writes the skeleton,

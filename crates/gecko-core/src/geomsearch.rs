@@ -874,6 +874,117 @@ pub fn best_params(params: &ParametricGeometry, vars: &[Var], values: &[f64], ke
     Ok(p)
 }
 
+/// Most thumb keys per zone side [`resize_thumbs`] accepts.
+pub const MAX_THUMB_KEYS: usize = 8;
+
+/// The parametric board with `n` columns in each thumb zone (I2, #71), for searching thumb key
+/// count by running one geometry search per count. Shrinking keeps columns whose fill the corpus
+/// types (space, enter, …) first, then the cheapest by G01 + G06 on `board` (the board `params`
+/// generates) for `hand`; kept columns keep their positions, so dropped fills leave the board.
+/// Growing clones the cheaper end column outward as 1 u keys with an empty fill, so a layout
+/// that fits the start board fits the new one; the search then moves them. Kept columns stay
+/// exactly in place on straight zones and when shrinking an `arc_radius` zone, approximately
+/// otherwise (`col_curve`, or growing an arc's front).
+pub fn resize_thumbs(
+    params: &ParametricGeometry,
+    board: &Geometry,
+    corpus: &Corpus,
+    hand: &crate::hand::HandSpec,
+    n: usize,
+) -> Result<ParametricGeometry> {
+    if !(1..=MAX_THUMB_KEYS).contains(&n) {
+        return Err(Error::invalid("thumb keys", format!("need 1 to {MAX_THUMB_KEYS} thumb keys per zone, got {n}")));
+    }
+    let costs = crate::hand::costs_with(board, &hand.dims(), &hand.body());
+    let typed = |fill: &Option<String>| {
+        let c = fill.as_ref().and_then(|f| crate::Key { fill: Some(f.clone()), ..board.key[0].clone() }.fill_symbol());
+        c.and_then(|c| corpus.index_of(c)).is_some_and(|i| corpus.mono[i] > 0)
+    };
+    let mut out = params.clone();
+    let mut found = false;
+    for z in out.zone.iter_mut().filter(|z| !is_finger_zone(z)) {
+        found = true;
+        let m = z.column.len();
+        // Mean G01 + G06 of a column's keys (both halves of a mirrored zone).
+        let cost = |ci: usize| {
+            let labels: Vec<i8> = std::iter::once(ci).chain(z.mirror.then_some(2 * m - 1 - ci)).map(|c| z.col_start + c as i8).collect();
+            let ks: Vec<usize> = (0..board.len())
+                .filter(|&i| board.key[i].phys.is_none() && z.rows.contains(&board.key[i].row) && labels.contains(&board.key[i].col))
+                .collect();
+            ks.iter().map(|&i| (costs.reach[i] + costs.arc[i]) as f64).sum::<f64>() / ks.len().max(1) as f64
+        };
+        if n < m {
+            let mut order: Vec<usize> = (0..m).collect();
+            let typed_col = |ci: usize| typed(&z.column[ci].fill) || typed(&z.column[ci].mirror_fill);
+            order.sort_by(|&a, &b| typed_col(b).cmp(&typed_col(a)).then(cost(a).total_cmp(&cost(b))));
+            let mut keep: Vec<usize> = order[..n].to_vec();
+            keep.sort_unstable();
+            // Baseline distance of each column, so kept columns keep their spacing.
+            let dist: Vec<f64> = (0..m)
+                .scan(0.0, |d, ci| {
+                    if ci > 0 {
+                        *d += z.column[ci].spread;
+                    }
+                    Some(*d)
+                })
+                .collect();
+            let first = keep[0];
+            if first > 0 {
+                // Move the zone origin onto the first kept column's baseline point.
+                let d = dist[first];
+                let (base, tangent) = match z.arc_radius {
+                    Some(r) => ([r * (d / r).sin(), r * (1.0 - (d / r).cos())], (d / r).to_degrees()),
+                    None => ([d, 0.0], 0.0),
+                };
+                let (s, c) = z.rotate.to_radians().sin_cos();
+                z.anchor = [z.anchor[0] + base[0] * c - base[1] * s, z.anchor[1] + base[0] * s + base[1] * c];
+                z.rotate += tangent;
+                z.center_col -= first as f64;
+            }
+            let cols: Vec<_> = keep
+                .iter()
+                .enumerate()
+                .map(|(k, &ci)| {
+                    let mut col = z.column[ci].clone();
+                    if k > 0 {
+                        col.spread = dist[ci] - dist[keep[k - 1]];
+                    }
+                    col
+                })
+                .collect();
+            z.column = cols;
+        } else if n > m {
+            // Grow outward from the cheaper end.
+            let front = cost(0) < cost(m - 1);
+            let end = if front { 0 } else { m - 1 };
+            let mut col = z.column[end].clone();
+            col.size = [1.0, 1.0];
+            col.spread = 1.0;
+            col.stretch = false;
+            col.effort.clear();
+            col.fill = Some("none".into());
+            col.mirror_fill = z.mirror.then(|| "none".into());
+            for _ in m..n {
+                if front {
+                    // The new first column sits 1 u before the old one on the baseline.
+                    let (s, c) = z.rotate.to_radians().sin_cos();
+                    z.anchor = [z.anchor[0] - c, z.anchor[1] - s];
+                    z.center_col += 1.0;
+                    z.column[0].spread = 1.0;
+                    z.column.insert(0, col.clone());
+                } else {
+                    z.column.push(col.clone());
+                }
+            }
+        }
+    }
+    if !found {
+        return Err(Error::invalid("thumb keys", format!("'{}' has no thumb zone (a zone without the home row)", params.name)));
+    }
+    out.generate_unchecked()?;
+    Ok(out)
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GeomRunConfig {
     pub schema: u32,

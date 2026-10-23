@@ -80,7 +80,7 @@ export function Reach({ geometry, chars, costs, body }: { geometry: Geometry; ch
         Mean reach over all {all.length} keys {avg.toFixed(2)}{costs.placed.includes(false) ? " · a hand without four home keys is not placed (its keys cost 0)" : ""}.
         Reach = joint deviation from the natural curl + sideways splay + fingertip shortfall (hand fixed on the home keys); 0 at rest, about 1 for a comfortable off-home key.
         Posture: forearms from elbows {bodyText} apart; split halves are assumed turned to line up with the forearm (no resting deviation), a tent lowers pronation. Neutral is 0° deviation and extension, 30° pronation.
-        The layout's G01 / G03 / G05 (per keystroke) are in the Profile tab's Hand model section and in Analysis.
+        The layout's G01 / G03 / G05 / G06 (per keystroke) are in the Profile tab's Hand model section and in Analysis.
       </div>
     </div>
   );
