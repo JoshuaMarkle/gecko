@@ -35,7 +35,10 @@ fn rank_sum_over_runs() {
     // Seed 1 twice: its layouts are merged, each with two sources.
     let total: usize = sources.iter().map(|r| r.layouts).sum();
     assert!(cands.len() <= total - sources[0].layouts);
-    assert!(cands.iter().filter(|c| c.sources.iter().any(|s| s.starts_with(&ids[0]))).all(|c| c.sources.iter().any(|s| s.starts_with(&ids[2]))));
+    assert!(cands
+        .iter()
+        .filter(|c| c.sources.iter().any(|s| s.starts_with(&ids[0])))
+        .all(|c| c.sources.iter().any(|s| s.starts_with(&ids[2]))));
 
     let ids_m: Vec<String> = ["B01", "T03", "M01"].map(String::from).to_vec();
     let defs = select::metric_cols(&ids_m, &p).unwrap();

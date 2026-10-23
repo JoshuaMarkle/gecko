@@ -459,9 +459,8 @@ mod tests {
             let v = &h.v;
             vec![sub(v[1], v[0]), sub(v[3], v[0]), sub(v[4], v[0]), sub(v[5], v[1]), sub(v[6], v[2]), sub(v[7], v[3])]
         };
-        let proj = |h: &Hull, ax: V3| {
-            h.v.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), &p| (lo.min(dot(p, ax)), hi.max(dot(p, ax))))
-        };
+        let proj =
+            |h: &Hull, ax: V3| h.v.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), &p| (lo.min(dot(p, ax)), hi.max(dot(p, ax))));
         let mut axes = normals(a);
         axes.extend(normals(b));
         for ea in edges(a) {

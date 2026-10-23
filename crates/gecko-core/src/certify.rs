@@ -120,9 +120,8 @@ pub fn certify(sc: &Scorer, st: &State, free: &[usize], kind: Kind, limits: Limi
     // Branch on frequent symbols first: their placement fixes the most cost.
     let mut order = free.to_vec();
     order.sort_by(|&a, &b| sc.f1()[b].total_cmp(&sc.f1()[a]).then(a.cmp(&b)));
-    let terms = sc
-        .qap_terms(kind == Kind::Full)
-        .ok_or_else(|| Error::invalid("certify", "a load metric has a negative weight (no bound)"))?;
+    let terms =
+        sc.qap_terms(kind == Kind::Full).ok_or_else(|| Error::invalid("certify", "a load metric has a negative weight (no bound)"))?;
     let asc = bound::ascent(&terms, &order, &st.pos, bound::ASCENT_ITERS);
     let start = kind.value(sc, st);
     let tol = 1e-9 * start.abs().max(1.0);
@@ -202,7 +201,13 @@ pub enum FreeSpec {
 
 /// Certify the best layout of run directory `dir`. Its inputs are loaded by name from `store`
 /// and must hash as recorded.
-pub fn certify_run(store: &crate::store::Store, dir: &std::path::Path, free: &FreeSpec, kind: Kind, limits: Limits) -> Result<RunCertificate> {
+pub fn certify_run(
+    store: &crate::store::Store,
+    dir: &std::path::Path,
+    free: &FreeSpec,
+    kind: Kind,
+    limits: Limits,
+) -> Result<RunCertificate> {
     if crate::geomsearch::is_run(dir) {
         return Err(Error::invalid("certify", "a geometry run: certify needs a fixed board (use a layout run)"));
     }
@@ -229,7 +234,8 @@ pub fn certify_run(store: &crate::store::Store, dir: &std::path::Path, free: &Fr
         FreeSpec::Symbols(cs) => cs
             .iter()
             .map(|c| {
-                let x = sc.chars.iter().position(|y| y == c).ok_or_else(|| Error::invalid("symbols", format!("'{c}' is not on the layout")))?;
+                let x =
+                    sc.chars.iter().position(|y| y == c).ok_or_else(|| Error::invalid("symbols", format!("'{c}' is not on the layout")))?;
                 if pinned.contains(c) {
                     return Err(Error::invalid("symbols", format!("'{c}' is pinned in the run")));
                 }

@@ -163,7 +163,13 @@ pub fn board_svg(g: &Geometry, layout: &Layout, heat: &[Vec<f64>], o: &SvgOption
                     None => format!("Layer {l}"),
                 }
             };
-            let _ = write!(body, r#"<text x="{}" y="{}" font-size="13" font-weight="600" fill="{INK}">{}</text>"#, r4(ox), r4(oy + 14.0), esc(&cap));
+            let _ = write!(
+                body,
+                r#"<text x="{}" y="{}" font-size="13" font-weight="600" fill="{INK}">{}</text>"#,
+                r4(ox),
+                r4(oy + 14.0),
+                esc(&cap)
+            );
             oy += CAP;
         }
         for (i, &[kx, ky, kw, kh, rot]) in ks.iter().enumerate() {
