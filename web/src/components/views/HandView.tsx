@@ -16,7 +16,7 @@ import { cap } from "../../format";
 import { useHandCosts } from "../../handCosts";
 import { Hands, handFocus } from "../hand/Hands3D";
 import { Measurements, Reach, Similarity, SizeDistribution, Typing } from "../hand/Panels";
-import { buildRigs, framesAt, MM, strokesFor } from "../hand/rigs";
+import { buildRigs, framesAt, MM, reachFor, strokesFor } from "../hand/rigs";
 
 
 interface Props {
@@ -54,6 +54,8 @@ export function HandView(p: Props) {
   const [labels, setLabels] = useState(false);
   const [skin, setSkin] = useState(true);
   const [mode, setMode] = useState<ViewMode>("3d");
+  /** Key under the pointer: its finger reaches for it (-1: hands at rest). */
+  const [hover, setHover] = useState(-1);
   const clock = useRef(-1);
   /** Press state per board key, written by the typing animation, read by the keycaps. */
   const keys = useRef(new Float32Array(0));
@@ -68,6 +70,7 @@ export function HandView(p: Props) {
   const wristKey = Object.values(w).join(",");
   const setWrist = (patch: Partial<Wrist>) => p.setHand({ ...h, wrist: { ...w, ...patch } });
   const { rigs, keyTop, keyNormal } = useMemo(() => buildRigs(p.geometry, d, w), [p.geometry, dimsKey, wristKey]);
+  const reach = useMemo(() => (hover >= 0 ? reachFor(p.geometry, rigs, keyTop, hover) : null), [hover, p.geometry, rigs, keyTop]);
   const focus = useMemo(() => handFocus(p.geometry, rigs, d, mode), [p.geometry, rigs, mode]);
   // Fingers that cannot reach their home key in the resting pose (wrist adjusted too far), with the gap in mm.
   const unreachable = useMemo(() => framesAt(rigs, null, d, -1).flatMap(({ pose }, hi) => FINGER_NAMES.map((f, fi) => {
@@ -145,13 +148,13 @@ export function HandView(p: Props) {
       }
       main={
         <div className="viewport hand-viewport">
-          <Keyboard3D geometry={p.geometry} chars={p.chars} heat={reachHeat && costs ? costs.reach.map((r) => Math.min(r, 4)) : []} arcs={[]} overlay={reachHeat && costs ? "heat" : "none"} mode={mode} selected={null} onKey={() => {}} focus={focus} pressed={keys}>
-            <Hands rigs={rigs} dims={d} plan={plan} clock={clock} keys={keys} playing={playing} loop={loop} onEnd={() => setPlaying(false)} labels={labels} skin={skin} />
+          <Keyboard3D geometry={p.geometry} chars={p.chars} heat={reachHeat && costs ? costs.reach.map((r) => Math.min(r, 4)) : []} arcs={[]} overlay={reachHeat && costs ? "heat" : "none"} mode={mode} selected={null} onKey={() => {}} onHover={(i, on) => setHover((h) => (on ? i : h === i ? -1 : h))} focus={focus} pressed={keys}>
+            <Hands rigs={rigs} dims={d} plan={plan} clock={clock} keys={keys} playing={playing} loop={loop} onEnd={() => setPlaying(false)} labels={labels} skin={skin} reach={reach} />
           </Keyboard3D>
           <div className="viewlabel">
             <span>Hands on {p.geometry.name}</span>
             {unreachable.length > 0 && <span className="err" title="These fingertips cannot reach their home key from this wrist position; they point at it, fully extended.">out of reach: {unreachable.map((x) => `${x.name} ${x.gap.toFixed(0)} mm`).join(", ")}</span>}
-            <span className="muted">{playing && plan ? `typing · ${plan.stats.wpm.toFixed(0)} of ${wpm} wpm reached · ${(100 * plan.stats.early).toFixed(0)}% of keys started early` : "fingertips on the home keys (IK)"}</span>
+            <span className="muted">{playing && plan ? `typing · ${plan.stats.wpm.toFixed(0)} of ${wpm} wpm reached · ${(100 * plan.stats.early).toFixed(0)}% of keys started early` : reach ? `${reach.side === "L" ? "left" : "right"} ${reach.finger} reaching (IK)` : "fingertips on the home keys (IK) · hover a key to reach it"}</span>
           </div>
           <div className="viewctl">
             <div className="seg inline"><button className={reachHeat ? "on" : ""} onClick={() => setReachHeat(!reachHeat)} title="Color keys by this hand's reach cost (G01): darker = harder to reach from the home keys">Reach</button></div>

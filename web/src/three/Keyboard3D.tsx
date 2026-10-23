@@ -29,6 +29,8 @@ interface Props {
   selected: number | null;
   /** Clicked key (-1: background) and the click's client coordinates. */
   onKey: (slot: number, at?: { x: number; y: number }) => void;
+  /** The pointer entered (`on`) or left a key. */
+  onHover?: (slot: number, on: boolean) => void;
   /** Changing this resets the camera and starts a slow rotation; any interaction eases it to a stop. 0 = never rotate. */
   spin?: number;
   /** Extra scene content in board-centred coordinates (see `boardBounds`, `place`). */
@@ -180,9 +182,9 @@ export function keyTop(k: Key, cx: number, cy: number): { p: [number, number, nu
   return { p: [p[0] + n.x * h, p[1] + h + n.y * h, p[2] + n.z * h], n: [n.x, n.y, n.z] };
 }
 
-function Keycap({ k, cx, cy, ch, color, text, selected, onClick, bind }: {
+function Keycap({ k, cx, cy, ch, color, text, selected, onClick, onHover, bind }: {
   k: Key; cx: number; cy: number; ch: string; color: string; text: string; selected: boolean; onClick: (at: { x: number; y: number }) => void;
-  bind?: (g: THREE.Group | null) => void;
+  onHover?: (on: boolean) => void; bind?: (g: THREE.Group | null) => void;
 }) {
   const [hover, setHover] = useState(false);
   const { p, r } = place(k, cx, cy);
@@ -196,8 +198,8 @@ function Keycap({ k, cx, cy, ch, color, text, selected, onClick, bind }: {
       <mesh
         geometry={capGeometry(w, h)}
         onClick={(e) => { e.stopPropagation(); onClick({ x: e.nativeEvent.clientX, y: e.nativeEvent.clientY }); }}
-        onPointerOver={(e) => { e.stopPropagation(); setHover(true); document.body.style.cursor = "pointer"; }}
-        onPointerOut={() => { setHover(false); document.body.style.cursor = ""; }}
+        onPointerOver={(e) => { e.stopPropagation(); setHover(true); onHover?.(true); document.body.style.cursor = "pointer"; }}
+        onPointerOut={() => { setHover(false); onHover?.(false); document.body.style.cursor = ""; }}
       >
         <meshStandardMaterial color={color} roughness={0.75} metalness={0} />
         {selected && <Edges color={ACCENT} lineWidth={2} threshold={30} />}
@@ -282,7 +284,7 @@ function GhostKey({ k, cx, cy }: { k: Key; cx: number; cy: number }) {
   );
 }
 
-export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, selected, onKey, spin = 0, children, focus, pressed, colors, ghost }: Props) {
+export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, selected, onKey, onHover, spin = 0, children, focus, pressed, colors, ghost }: Props) {
   const keys = geometry.key;
   const groups = useRef<(THREE.Group | null)[]>([]);
   const bounds = useMemo(() => boardBounds(keys), [keys]);
@@ -325,6 +327,7 @@ export function Keyboard3D({ geometry, chars, heat, muted, arcs, overlay, mode, 
         const text = overlay === "heat" ? heatText(t) : INK;
         return (
           <Keycap key={i} k={k} cx={bounds.cx} cy={bounds.cy} ch={ch} color={color} text={text} selected={selected === i} onClick={(at) => onKey(i, at)}
+            onHover={onHover && ((on) => onHover(i, on))}
             bind={pressed ? (g) => { groups.current[i] = g; } : undefined} />
         );
       })}
