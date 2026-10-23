@@ -279,6 +279,7 @@ mod tests {
             fill: None,
             layer: 0,
             phys: None,
+            alt: Vec::new(),
         }
     }
 

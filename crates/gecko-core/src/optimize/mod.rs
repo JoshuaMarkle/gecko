@@ -99,6 +99,9 @@ pub struct Params {
     pub qd: map_elites::QdParams,
     #[serde(default)]
     pub nsga2: nsga2::NsgaParams,
+    /// C11: search the board's alternative fingers after the layout search (`run::execute`).
+    #[serde(default, skip_serializing_if = "crate::fingering::FingeringParams::is_off")]
+    pub fingering: crate::fingering::FingeringParams,
 }
 
 impl Default for Params {
@@ -119,6 +122,7 @@ impl Default for Params {
             moves: Default::default(),
             qd: Default::default(),
             nsga2: Default::default(),
+            fingering: Default::default(),
         }
     }
 }
@@ -365,6 +369,21 @@ pub struct Outcome {
     pub objectives: Vec<nsga2::Objective>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub front: Vec<nsga2::Point>,
+    /// Adaptive fidelity (profile `fidelity`), when the search used it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fidelity: Option<FidelityReport>,
+}
+
+/// How an adaptive-fidelity search went (`context/objective.md`, Adaptive fidelity).
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
+pub struct FidelityReport {
+    /// Trigrams per level, the last being the full table.
+    pub levels: Vec<usize>,
+    /// Cheap new bests the full tables confirmed / rejected.
+    pub confirmed: u64,
+    pub rejected: u64,
+    /// The level each worker ended on.
+    pub final_level: Vec<usize>,
 }
 
 /// Fill in auto parameters (SA steps = 0) from the budget. With an evaluation budget this is
@@ -462,8 +481,20 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mu
         return nsga2::run(ctx, params, interval, control, on_progress);
     }
     let threads = params.threads.max(1);
-    let params = &resolve_auto(ctx, params);
+    // Adaptive fidelity: coarse scorers with fewer trigrams, then the exact one. Observers
+    // (explore, MAP-Elites) record scores, so they always search exactly.
+    let fid = ctx.scorer.profile.fidelity.filter(|_| ctx.observer.is_none());
+    let coarse: Vec<Scorer> =
+        fid.map(|f| f.levels(ctx.scorer.trigram_count()).into_iter().map(|k| ctx.scorer.coarse(k)).collect()).unwrap_or_default();
+    let levels: Vec<Ctx> = coarse
+        .iter()
+        .map(|sc| Ctx { scorer: sc, start: sc.state_from_sym(ctx.start.sym.clone()), ..ctx.clone() })
+        .chain([ctx.clone()])
+        .map(|c| c.with_moves(params.moves.clone()))
+        .collect();
+    let params = &resolve_auto(&levels[0], params);
     let ctx = &ctx.clone().with_moves(params.moves.clone());
+    let (levels, top_level) = (&levels, levels.len() - 1);
     let t0 = Instant::now();
     let budget = params.time_ms.map(Duration::from_millis);
     let per_worker_evals = params.evals.map(|e| (e / threads as u64).max(1));
@@ -472,6 +503,8 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mu
     let stop = AtomicBool::new(false);
 
     let mut merged = TopK::new(params.top);
+    let level_sizes: Vec<usize> = levels.iter().map(|c| c.scorer.trigram_count()).collect();
+    let mut fidelity: Option<FidelityReport> = None;
     std::thread::scope(|scope| {
         let mut handles = Vec::new();
         for w in 0..threads {
@@ -480,9 +513,14 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mu
             handles.push(scope.spawn(move || {
                 let mut rng = crate::rng::Rng::for_worker(params.seed, w as u64);
                 let mut opt = make(params.algo, params);
-                opt.init(ctx, &mut rng);
+                let mut wctx = levels[0].clone();
+                opt.init(&wctx, &mut rng);
                 let mut evals = 0u64;
                 let mut last_best = f64::INFINITY;
+                // Fidelity: level, best full score so far, unconfirmed cheap bests at this level.
+                let (mut level, mut confirmed, mut misses) = (0, f64::INFINITY, 0u32);
+                let mut exact = TopK::new(params.top);
+                let mut report = FidelityReport::default();
                 loop {
                     if stop.load(Ordering::Relaxed) || control.cancelled() {
                         break;
@@ -502,21 +540,60 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mu
                             break;
                         }
                     }
-                    let info = opt.step(ctx, &mut rng);
+                    let info = opt.step(&wctx, &mut rng);
                     evals += info.evals;
                     total_evals.fetch_add(info.evals, Ordering::Relaxed);
-                    if let Some((b, sym)) = opt.live_best() {
-                        if b < last_best {
-                            last_best = b;
-                            let _ = tx.send((w, b, sym.to_vec()));
+                    let Some((b, sym)) = opt.live_best() else { continue };
+                    if b >= last_best {
+                        continue;
+                    }
+                    last_best = b;
+                    if top_level == 0 {
+                        let _ = tx.send((w, b, sym.to_vec()));
+                        continue;
+                    }
+                    // Confirm on the full tables before accepting a new best.
+                    let s = if level == top_level { b } else { ctx.scorer.state_from_sym(sym.to_vec()).score };
+                    if s < confirmed - 1e-12 {
+                        confirmed = s;
+                        exact.offer(s, sym);
+                        report.confirmed += 1;
+                        let _ = tx.send((w, s, sym.to_vec()));
+                    } else if level < top_level {
+                        report.rejected += 1;
+                        misses += 1;
+                        if misses >= fid.map_or(u32::MAX, |f| f.misses) {
+                            // The cheap score misleads here: continue one level up from the best.
+                            offer_exact(ctx.scorer, opt.top(), &mut exact);
+                            (level, misses, last_best) = (level + 1, 0, f64::INFINITY);
+                            let sc = levels[level].scorer;
+                            let from = exact.best().map_or_else(|| levels[level].start.sym.clone(), |s| s.sym.clone());
+                            wctx = Ctx { start: sc.state_from_sym(from), ..levels[level].clone() };
+                            opt = make(params.algo, params);
+                            opt.init(&wctx, &mut rng);
                         }
                     }
                 }
-                opt.finish(ctx, &mut rng);
-                if let Some(b) = opt.top().best() {
+                opt.finish(&wctx, &mut rng);
+                if top_level == 0 {
+                    if let Some(b) = opt.top().best() {
+                        let _ = tx.send((w, b.score, b.sym.clone()));
+                    }
+                    return (opt.top().clone(), None);
+                }
+                // Results are local optima of the exact objective: polish each on the full tables.
+                offer_exact(ctx.scorer, opt.top(), &mut exact);
+                for s in exact.items.clone() {
+                    let mut st = ctx.scorer.state_from_sym(s.sym);
+                    let e = steepest_descent(ctx, &mut st);
+                    total_evals.fetch_add(e, Ordering::Relaxed);
+                    exact.offer(st.score, &st.sym);
+                }
+                if let Some(b) = exact.best() {
                     let _ = tx.send((w, b.score, b.sym.clone()));
                 }
-                opt.top().clone()
+                report.final_level.push(level);
+                (exact, Some(report))
             }));
         }
         drop(tx);
@@ -549,8 +626,14 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mu
             }
         }
         for h in handles {
-            if let Ok(t) = h.join() {
+            if let Ok((t, r)) = h.join() {
                 merged.merge(&t);
+                if let Some(r) = r {
+                    let f = fidelity.get_or_insert_with(|| FidelityReport { levels: level_sizes.clone(), ..Default::default() });
+                    f.confirmed += r.confirmed;
+                    f.rejected += r.rejected;
+                    f.final_level.extend(r.final_level);
+                }
             }
         }
         stop.store(true, Ordering::Relaxed);
@@ -577,5 +660,13 @@ pub fn run(ctx: &Ctx, params: &Params, interval: Duration, control: &Control, mu
         evals_per_sec: evals as f64 / elapsed.as_secs_f64().max(1e-9),
         objectives: Vec::new(),
         front: Vec::new(),
+        fidelity,
+    }
+}
+
+/// Offer `top` (scored by a coarse scorer) to `exact` with full scores.
+fn offer_exact(full: &Scorer, top: &TopK, exact: &mut TopK) {
+    for s in &top.items {
+        exact.offer(full.state_from_sym(s.sym.clone()).score, &s.sym);
     }
 }

@@ -37,6 +37,10 @@ pub struct Profile {
     /// 1.0 = exact. Trades a little fidelity for search speed; see `context/objective.md`.
     #[serde(default = "default_trigram_coverage")]
     pub trigram_coverage: f32,
+    /// Adaptive fidelity (B8): search on the most frequent trigrams only and confirm new bests on
+    /// the full tables. Changes search speed, never the objective. Unset = exact search.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fidelity: Option<Fidelity>,
     /// How same-finger distance metrics (B03, S03) and decayed skipgrams (S02) are costed.
     #[serde(default)]
     pub sfb: SfbParams,
@@ -57,6 +61,43 @@ pub struct Profile {
     /// hard-fails boards past them like keycap collisions. Not a scoring metric.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub build: Option<crate::geometry::manufacture::BuildLimits>,
+}
+
+/// Search fidelity ladder: level 0 keeps the `top_k` most frequent trigrams, each next level
+/// `grow` times as many, the last all of them. A worker moves up a level after `misses` cheap
+/// new bests that the full tables did not confirm. See `context/objective.md`.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
+pub struct Fidelity {
+    pub top_k: usize,
+    #[serde(default = "default_grow")]
+    pub grow: usize,
+    #[serde(default = "default_misses")]
+    pub misses: u32,
+}
+
+fn default_grow() -> usize {
+    4
+}
+
+fn default_misses() -> u32 {
+    3
+}
+
+impl Fidelity {
+    pub fn new(top_k: usize) -> Self {
+        Fidelity { top_k, grow: default_grow(), misses: default_misses() }
+    }
+
+    /// Trigram counts of the levels below exact for a table of `total` trigrams (ascending).
+    pub fn levels(&self, total: usize) -> Vec<usize> {
+        let mut v = Vec::new();
+        let mut k = self.top_k.max(1);
+        while k < total {
+            v.push(k);
+            k = k.saturating_mul(self.grow.max(2));
+        }
+        v
+    }
 }
 
 /// Costs in LP LR LM LI LT RT RI RM RR RP order. Higher means harder.
@@ -175,6 +216,11 @@ impl Profile {
         }
         if !p.row_offset.iter().flatten().all(|v| v.is_finite()) {
             return Err(Error::invalid("profile", "row_offset must be finite"));
+        }
+        if let Some(f) = &p.fidelity {
+            if f.top_k == 0 || f.grow < 2 || f.misses == 0 {
+                return Err(Error::invalid("profile", "fidelity: top_k and misses must be ≥ 1, grow ≥ 2"));
+            }
         }
         if let Some(r) = &p.familiar_to {
             if r != "qwerty" {

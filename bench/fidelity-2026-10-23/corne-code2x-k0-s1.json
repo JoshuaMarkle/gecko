@@ -1,0 +1,120 @@
+{
+ "run": {
+  "best": [
+   {
+    "rank": 1,
+    "score": 15.11802462128579,
+    "chars": "\u238b\u00b7\u00b7\u00b7\u00b7zvdmxie\u2423a\u00b7btsnr@\u00b7\u00b7o\u00b7kfwhlpc\u2460yu\u2461%\\;\u00b7\u00b7~+#&|.,(\u23ce<>/)=*[$\u00b7!^?0{}]`:\"\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b762_1\u00b7\u00b7qg3j\u00b7\u00b7\u00b7\u00b7\u00b7\u00b759\u232b4\u00b778",
+    "hash": "abed50cb"
+   },
+   {
+    "rank": 2,
+    "score": 15.149710784322505,
+    "chars": "\u00b7\u00b7\u00b7\u00b7\u00b7zbdlhie\u2423a%ftsrn<>\u00b7o\u00b7qkv=myu\u2460pc\u2461\u00b7\u238b\u00b7\u00b7\u00b7\u00b7[]#^(:\u23ce,!|/{})~@\u00b7;\\+?\u00b7$&`\"*\u232b\u00b7\u00b7\u00b7\u00b7\u00b750j\u00b78._2\u00b74wgx17\u00b7\u00b76\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b739",
+    "hash": "2af5e67f"
+   },
+   {
+    "rank": 3,
+    "score": 15.178737414678501,
+    "chars": "\u00b7\u00b79\u00b7\u00b7zwflmie\u2423a6dstrn@\u00b7\u00b7o\u238bxbv0hpc\u2460yu\u2461\\~;\u00b7\u00b7\u00b7^&#*:,(\u23ce[]/)?=!%\u00b7<\u00b7$>|{}+\"`\u00b7\u00b7\u00b7\u00b7\u00b7\u232b\u00b7\u00b7\u00b7\u00b78._2\u00b7\u00b7gkjq\u00b7\u00b7\u00b7\u00b7\u00b7\u00b74517\u00b73\u00b7",
+    "hash": "b830c2c4"
+   }
+  ],
+  "elapsed_ms": 32236,
+  "evals": 20050250,
+  "evals_per_sec": 621973.0474281987,
+  "geometry": "corne-36",
+  "id": "20261023-153257-sa-24985deb",
+  "params": {
+   "algo": "sa",
+   "bls": {
+    "accept_worse": 0.1,
+    "column_kick": 0.2,
+    "exclusion": 0.5,
+    "exclusion_dist": 8,
+    "kick_max": 0,
+    "kick_min": 2,
+    "stagnation": 150
+   },
+   "evals": 20000000,
+   "explore": {
+    "max_optima": 100000,
+    "samples": 2000,
+    "snapshot_ms": 2000,
+    "walk_len": 400,
+    "walks": 64,
+    "within": 0.01
+   },
+   "ga": {
+    "crossover_rate": 0.9,
+    "elitism": 4,
+    "mutation_rate": 1.0,
+    "pop_size": 128,
+    "tournament": 3
+   },
+   "memetic": {
+    "collapse_generations": 3,
+    "ga": {
+     "crossover_rate": 0.9,
+     "elitism": 2,
+     "mutation_rate": 1.0,
+     "pop_size": 24,
+     "tournament": 3
+    },
+    "islands": 0,
+    "local_search": "hc",
+    "local_steps": 12,
+    "migrants": 2,
+    "migration_interval": 5
+   },
+   "moves": {
+    "columns": false,
+    "cycle3": false,
+    "depth2": false,
+    "depth2_width": 32
+   },
+   "nsga2": {
+    "archive_size": 512,
+    "crossover_rate": 0.9,
+    "generations": 0,
+    "mutation_rate": 1.0,
+    "objectives": [
+     "B01",
+     "T03",
+     "M01"
+    ],
+    "pop_size": 128
+   },
+   "qd": {
+    "axes": [
+     "roll_ratio",
+     "index_load"
+    ],
+    "bins": 16,
+    "descent": 0,
+    "kick_max": 6,
+    "kick_min": 2,
+    "seeds": 64,
+    "snapshot_ms": 2000
+   },
+   "sa": {
+    "accept0": 0.5,
+    "steps": 1250000,
+    "t_end_ratio": 0.002
+   },
+   "seed": 1,
+   "tabu": {
+    "diversify": 5.0,
+    "refresh": 1000,
+    "stagnation": 100.0,
+    "tenure_max": 1.1,
+    "tenure_min": 0.9
+   },
+   "threads": 4,
+   "time_ms": null,
+   "top": 10
+  },
+  "schema": 1
+ },
+ "schema": 1
+}

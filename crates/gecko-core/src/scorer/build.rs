@@ -187,42 +187,7 @@ impl Scorer {
                 }
             }
         }
-        let mut tri_start = vec![0u32; n + 1];
-        let mut tri_entries = Vec::new();
-        for sym in 0..n {
-            tri_start[sym] = tri_entries.len() as u32;
-            let s8 = sym as u8;
-            tri_entries.extend(tri_all.iter().filter(|e| e.x == s8 || e.y == s8 || e.z == s8));
-        }
-        tri_start[n] = tri_entries.len() as u32;
-        let pairs_of = |e: &TriEntry| {
-            let mut v = [(e.x, e.y), (e.x, e.z), (e.y, e.z)].map(|(a, b)| (a.min(b) as usize, a.max(b) as usize));
-            v.sort_unstable();
-            let mut out = [usize::MAX; 3];
-            for (i, &(a, b)) in v.iter().enumerate() {
-                if a != b && (i == 0 || v[i - 1] != (a, b)) {
-                    out[i] = a * n + b;
-                }
-            }
-            out
-        };
-        let mut tri_pair_start = vec![0u32; n * n + 1];
-        for e in &tri_all {
-            for k in pairs_of(e).into_iter().filter(|&k| k != usize::MAX) {
-                tri_pair_start[k + 1] += 1;
-            }
-        }
-        for k in 0..n * n {
-            tri_pair_start[k + 1] += tri_pair_start[k];
-        }
-        let mut tri_pair = vec![TriEntry { id: 0, x: 0, y: 0, z: 0, f: 0.0 }; tri_pair_start[n * n] as usize];
-        let mut fill = tri_pair_start.clone();
-        for e in &tri_all {
-            for k in pairs_of(e).into_iter().filter(|&k| k != usize::MAX) {
-                tri_pair[fill[k] as usize] = *e;
-                fill[k] += 1;
-            }
-        }
+        let (tri_start, tri_entries, tri_pair_start, tri_pair) = index_trigrams(n, &tri_all);
         let has_place = cp.iter().any(|&c| c != 0.0);
         let brackets = if cb.iter().any(|&c| c != 0.0) { bracket_all.clone() } else { Vec::new() };
         if let Some(h) = &profile.hand {
@@ -390,6 +355,28 @@ impl Scorer {
         Ok(out)
     }
 
+    /// Non-zero trigrams this scorer evaluates.
+    pub fn trigram_count(&self) -> usize {
+        self.tri_all.len()
+    }
+
+    /// A cheaper copy for search (adaptive fidelity, B8): only the `keep` most frequent
+    /// trigrams, not renormalized, so its scores are the full score minus the dropped
+    /// trigrams' share. Everything else is unchanged. Its states belong to it alone.
+    pub fn coarse(&self, keep: usize) -> Self {
+        let mut out = self.clone();
+        if keep >= self.tri_all.len() {
+            return out;
+        }
+        let mut idx: Vec<usize> = (0..self.tri_all.len()).collect();
+        idx.sort_by(|&a, &b| self.tri_all[b].f.total_cmp(&self.tri_all[a].f).then(a.cmp(&b)));
+        idx.truncate(keep);
+        idx.sort_unstable();
+        out.tri_all = idx.iter().enumerate().map(|(id, &i)| TriEntry { id: id as u32, ..self.tri_all[i] }).collect();
+        (out.tri_start, out.tri_entries, out.tri_pair_start, out.tri_pair) = index_trigrams(self.n, &out.tri_all);
+        out
+    }
+
     /// Re-cost the scorer for `board`, the physical board with keys moved (pose, size, effort,
     /// any key field) but the same keys in the same slots. Overlapping keys are allowed (a
     /// search scores them and penalizes [`Geometry::collisions`] itself). Corpus tables, symbol ids and
@@ -418,8 +405,9 @@ impl Scorer {
         // Two masks: a slot's logical fields (finger, row, home, …) changed, or anything a
         // geometric table reads (its key or metric point) did. A pose-only move leaves the
         // logical tables (trigram classes, SFB, scissors, …) untouched.
+        // `o` with `k`'s pose equals `k`: only the pose changed.
         let pose_free = |k: &crate::geometry::Key, o: &crate::geometry::Key| {
-            *k == crate::geometry::Key { pos: o.pos, rot: o.rot, size: o.size, ..k.clone() }
+            *k == crate::geometry::Key { pos: k.pos, rot: k.rot, size: k.size, ..o.clone() }
         };
         let mut logical: Vec<bool> = (0..n).map(|i| !pose_free(&vg.key[i], &old[i])).collect();
         let mut moved: Vec<bool> = (0..n).map(|i| vg.key[i] != old[i] || old_pts[i] != new_pts[i]).collect();
@@ -579,6 +567,48 @@ fn finger_targets(profile: &Profile, g: &Geometry) -> ([f64; FINGERS], f64) {
     }
     let thumb_target = if profile.finger_effort.is_some() { target[4] + target[5] } else { profile.thumb_target as f64 };
     (target, thumb_target)
+}
+
+/// The sparse trigram indexes over `tri_all`: per symbol (CSR `tri_start`/`tri_entries`) and per
+/// unordered symbol pair (CSR `tri_pair_start`/`tri_pair`, key `x * n + y` with `x < y`).
+fn index_trigrams(n: usize, tri_all: &[TriEntry]) -> (Vec<u32>, Vec<TriEntry>, Vec<u32>, Vec<TriEntry>) {
+    let mut tri_start = vec![0u32; n + 1];
+    let mut tri_entries = Vec::new();
+    for sym in 0..n {
+        tri_start[sym] = tri_entries.len() as u32;
+        let s8 = sym as u8;
+        tri_entries.extend(tri_all.iter().filter(|e| e.x == s8 || e.y == s8 || e.z == s8));
+    }
+    tri_start[n] = tri_entries.len() as u32;
+    let pairs_of = |e: &TriEntry| {
+        let mut v = [(e.x, e.y), (e.x, e.z), (e.y, e.z)].map(|(a, b)| (a.min(b) as usize, a.max(b) as usize));
+        v.sort_unstable();
+        let mut out = [usize::MAX; 3];
+        for (i, &(a, b)) in v.iter().enumerate() {
+            if a != b && (i == 0 || v[i - 1] != (a, b)) {
+                out[i] = a * n + b;
+            }
+        }
+        out
+    };
+    let mut tri_pair_start = vec![0u32; n * n + 1];
+    for e in tri_all {
+        for k in pairs_of(e).into_iter().filter(|&k| k != usize::MAX) {
+            tri_pair_start[k + 1] += 1;
+        }
+    }
+    for k in 0..n * n {
+        tri_pair_start[k + 1] += tri_pair_start[k];
+    }
+    let mut tri_pair = vec![TriEntry { id: 0, x: 0, y: 0, z: 0, f: 0.0 }; tri_pair_start[n * n] as usize];
+    let mut fill = tri_pair_start.clone();
+    for e in tri_all {
+        for k in pairs_of(e).into_iter().filter(|&k| k != usize::MAX) {
+            tri_pair[fill[k] as usize] = *e;
+            fill[k] += 1;
+        }
+    }
+    (tri_start, tri_entries, tri_pair_start, tri_pair)
 }
 
 /// Zero the least frequent entries so the rest cover `coverage` of the total.

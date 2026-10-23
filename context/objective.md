@@ -119,6 +119,42 @@ deltas/s (+7.5%, three runs each, same results bit for bit (`gecko verify`)). Dr
 cached-cost read entirely (an upper bound for keeping per-symbol cost sums instead) gave
 ≤5% more, so that is not worth its `apply` cost and drift risk.
 
+## Adaptive fidelity (B8)
+
+Profile `fidelity = { top_k = 1000 }` (optional `grow` = 4, `misses` = 3; CLI `optimize
+--fidelity K`) makes the search cheaper when trigrams dominate the delta. The runner builds coarse
+scorers that keep only the `top_k`, `top_k·grow`, … most frequent trigrams (`Scorer::coarse`,
+not renormalized), then the full one. Every worker starts on the cheapest. When its best
+improves, the layout is re-scored on the full tables, and only a lower full score counts as a
+new best. After `misses` cheap bests that the full tables reject, the worker moves up one level
+and restarts its optimizer from the best confirmed layout. At the end every kept layout gets a
+steepest descent on the full tables. So reported scores are exact and results are exact local
+optima. Used by hc, sa, ga, bls and tabu. memetic, nsga2 and rwsa ignore it, and explore and qd
+always search exactly because their archives record scores. `best.json` `fidelity` lists the
+levels, the confirmed and rejected counts and each worker's final level. `trigram_coverage`
+still applies first: it decides what "full" is.
+
+Code corpus / code profile, SA, 4 threads, seeds 1–3, the same `--evals` per run
+(`bench/fidelity-2026-10-23/`, `summary.py`). Wall times were measured while other jobs ran on
+the machine: compare within a row only.
+
+| board (trigrams) | evals | exact: time · best (mean) | K = 200 | K = 1000 |
+|---|---|---|---|---|
+| ansi-30 (4,758) | 20M | 21.2 s · 16.093 | 12.2 s · 16.104 | 10.9 s · **15.977** (all seeds) |
+| corne-36 + code layers (24,778) | 20M | 46.3 s · **15.103** | 25.1 s · 15.286 | 24.4 s · 15.209 |
+| corne-36 + code layers | exact 20M, K 40M | 37.6 s · 15.103 | | 45.3 s · 15.044 |
+
+- Each evaluation costs about half as much (1.7–1.9×).
+- ansi-30: with the same number of evaluations, K = 1000 reaches the best known layout (15.977) on
+  every seed and exact search on one of three. K = 200 escalates often (levels up to 3) and misses
+  on one seed.
+- Layered corne (102 slots): at equal evaluations the coarse search is worse (+0.1). At about
+  equal time (twice the evaluations) it is level with exact search (15.04 vs 15.10, seed spread
+  0.3). The gain here is small: the 102-slot pair delta, which fidelity does not shrink, is a
+  large share of the cost.
+- Default: unset (exact). Use K ≈ 1000 when trigrams dominate (30-key boards with trigram
+  metrics weighted). Not worth it on large layered boards.
+
 ## Geometry rebuild (G2)
 
 Geometry search needs a scorer per candidate board. `Scorer::set_geometry(board)` (or
@@ -138,7 +174,11 @@ key re-fits its hand's plane, so all of that hand's keys are "moved" (geometric 
 B10 measures each key from its finger's home keys, so a moved home key marks its whole hand
 moved; key effort (M01, E01) reads the home row, so a logical change to a home key marks every
 slot. B10 and E01 rebuild their whole table (O(N²)) on every rebuild.
-States must be `refresh`ed afterwards.
+States must be `refresh`ed afterwards. Until 2026-10-23 the pose-only check was inverted. A
+logical-only change (a finger reassignment) then left the pair and trigram tables stale, and a
+pose move also rebuilt the logical tables. Effort changes are mono, so the tests missed it;
+`tests/fingering.rs` covers it now. After the fix, a one-key pose rebuild on ansi-30 takes
+0.46 ms (`gecko perf`, under load).
 
 Measured 2026-10-21 (i9-13900H, english / default, `gecko perf`, one key nudged per rebuild):
 
@@ -296,6 +336,38 @@ all through SFB: the left index now covers C V B, so its bottom-row letters coll
 home column. Movement (B11) and stretch (B14) fall for most layouts because the bottom-left
 keys are closer to their fingers. Score a layout on the fingering it was designed for;
 compare fingerings with `gecko compare -g ansi-30` vs `-g ansi-30-angle`.
+
+## Fingering search (C11)
+
+Fingering can also be searched. A key may list other fingers that can press it, each with its
+effort (`alt` in the board file; [representation](representation.md)). `gecko optimize
+--fingering` runs the layout search, then a descent over single-key reassignments
+(`fingering::search`): each candidate re-costs the scorer (`set_geometry` rebuilds only the
+changed slot's rows and columns, ~1 ms) and runs a warm-started SA (`--fingering-evals`, default
+300k swaps) plus a steepest descent from the current layout. The given fingering gets the same
+SA first. The best improving reassignment is taken, until none improves. A changed fingering is
+written to the run's `geometry.toml` and every result is re-scored on it. Home keys have no
+options, and options are independent per key.
+
+`ansi-30-alt` is ansi-30 with the angle mod's three reassignments as options, with the efforts
+`ansi-30-angle` gives them (Z ring 2.8, X middle 2.4, C index 1.8). V keeps effort 1.8, where
+ansi-30-angle raises it to 2.6. English / default, SA 20M evals, 4 threads, seeds 1–3
+(`bench/fingering-2026-10-23/`):
+
+| board | best | fingering |
+|---|---|---|
+| ansi-30 (fixed) | 12.154 (all seeds) | standard |
+| ansi-30-angle (fixed, C10) | 11.757 (all seeds) | angle mod |
+| ansi-30-alt + `--fingering` | 11.665 (seeds 2, 3), 12.077 (seed 1) | X → middle, C → index (seed 1: X only) |
+
+- The search finds the angle-mod optimum's layout (`lmdgbjquo. rntsfpheai xvcwzky/;,`) with two
+  of the three angle reassignments. It keeps Z on the pinky: on that layout Z holds `x`, and
+  moving it to the ring finger costs +0.012 (11.665 → 11.677).
+- The 0.09 gap to ansi-30-angle is V's effort (11.744 with V at 2.6). With angle-mod efforts the
+  search's fingering is 0.012 better than the full angle mod.
+- Seed 1 stops at a local optimum (X only, 12.077). The descent is greedy, so run several seeds.
+- Runs: ansi-30 `20261023-152108-sa-195cfe32`, ansi-30-angle `20261023-152124-sa-fc9d060d`,
+  `--fingering` `20261023-152214-sa-b9912990` (seed 2).
 
 ## Multi-objective
 

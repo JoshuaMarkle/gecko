@@ -30,6 +30,7 @@ fn key(pos: [f32; 3], rot: [f32; 3]) -> Key {
         fill: None,
         layer: 0,
         phys: None,
+        alt: Vec::new(),
     }
 }
 

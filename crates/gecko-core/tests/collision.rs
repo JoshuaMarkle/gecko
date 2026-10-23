@@ -24,6 +24,7 @@ fn key(x: f32, y: f32, rz: f32) -> Key {
         fill: None,
         layer: 0,
         phys: None,
+        alt: Vec::new(),
     }
 }
 

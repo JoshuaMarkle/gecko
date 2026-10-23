@@ -84,6 +84,13 @@ pub struct RunResult {
     /// How the results do on the holdout corpus (L06); absent without `--holdout`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub holdout: Option<HoldoutReport>,
+    /// Adaptive fidelity (profile `fidelity`), when the search used it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fidelity: Option<optimize::FidelityReport>,
+    /// C11 fingering search, when on. If it changed a finger, every result is scored on the
+    /// chosen fingering, written to `geometry.toml` (`geometry` is then `run:<id>`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fingering: Option<crate::fingering::FingeringReport>,
 }
 
 /// L06 held-out corpus generalization: the start layout and the best result scored on the
@@ -167,6 +174,11 @@ pub fn prepare(runs: &Path, spec: &RunSpec) -> Result<Prepared> {
     if matches!(spec.params.algo, optimize::Algo::Nsga2 | optimize::Algo::Rwsa) {
         optimize::nsga2::validate(&spec.params.nsga2)?;
     }
+    if spec.params.fingering.search
+        && matches!(spec.params.algo, optimize::Algo::Nsga2 | optimize::Algo::Rwsa | optimize::Algo::Explore | optimize::Algo::Qd)
+    {
+        return Err(Error::invalid("fingering", "fingering search needs a single-objective algorithm without an archive (hc, sa, ga, memetic, bls, tabu)"));
+    }
     if spec.holdout.is_some_and(|h| h.hash() == spec.corpus.hash()) {
         return Err(Error::invalid("holdout", "the holdout corpus must differ from the search corpus"));
     }
@@ -238,13 +250,43 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
     };
     log.flush()?;
     drop(log);
+    let mut out = out;
+    let fingered = if spec.params.fingering.search && crate::fingering::has_alternatives(spec.geometry) {
+        let sym = out.top.first().map_or_else(|| ctx.start.sym.clone(), |s| s.sym.clone());
+        let mut rng = crate::rng::Rng::for_worker(spec.params.seed, u64::MAX);
+        Some(crate::fingering::search(&scorer, spec.geometry, &ctx.movable, &sym, &spec.params.fingering, &mut rng)?)
+    } else {
+        None
+    };
+    // A changed fingering: re-score every result on it, polished there, with the search's best.
+    let changed = fingered.as_ref().filter(|f| !f.report.changes.is_empty());
+    if let Some(f) = changed {
+        let fctx = Ctx::new(&f.scorer, ctx.movable.clone(), f.best.clone());
+        let mut top = optimize::TopK::new(spec.params.top);
+        top.offer(f.best.score, &f.best.sym);
+        for s in &out.top {
+            let mut st = f.scorer.state_from_sym(s.sym.clone());
+            optimize::steepest_descent(&fctx, &mut st);
+            top.offer(f.scorer.state_from_sym(st.sym.clone()).score, &st.sym);
+        }
+        out.top = top.items;
+        let mut board = f.board.clone();
+        board.name = format!("{}-fingering", spec.geometry.name);
+        board.description = format!("{} with the fingering found by run {}.", spec.geometry.name, prep.config.id);
+        std::fs::write(prep.dir.join("geometry.toml"), board.to_toml())?;
+    }
+    let held = match (held, changed) {
+        (Some(h), Some(f)) => Some(h.with_geometry(&f.board)?),
+        (h, _) => h,
+    };
+    let scorer = changed.map_or(&scorer, |f| &f.scorer);
     let best = out
         .top
         .iter()
         .enumerate()
         .map(|(i, s)| {
             let st = scorer.state_from_sym(s.sym.clone());
-            let chars: Vec<char> = st.chars(&scorer);
+            let chars: Vec<char> = st.chars(scorer);
             let l = Layout::from_flat("", spec.geometry, chars.clone())?.with_magic(spec.start.magic.clone())?;
             Ok(Ranked {
                 rank: i + 1,
@@ -252,7 +294,7 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
                 chars: chars.iter().collect(),
                 rows: l.all_rows(spec.geometry),
                 hash: hash::short(l.hash()),
-                breakdown: serde_json::to_value(breakdown(&scorer, &st)).unwrap(),
+                breakdown: serde_json::to_value(breakdown(scorer, &st)).unwrap(),
                 holdout: held.as_ref().map(|h| h.state_from_sym(s.sym.clone()).score),
             })
         })
@@ -278,7 +320,7 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
         .enumerate()
         .map(|(i, point)| {
             let st = scorer.state_from_sym(point.sym.clone());
-            let chars = st.chars(&scorer);
+            let chars = st.chars(scorer);
             let layout = Layout::from_flat("", spec.geometry, chars.clone())?.with_magic(spec.start.magic.clone())?;
             Ok(ParetoRanked {
                 layout: Ranked {
@@ -287,7 +329,7 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
                     chars: chars.iter().collect(),
                     rows: layout.all_rows(spec.geometry),
                     hash: hash::short(layout.hash()),
-                    breakdown: serde_json::to_value(breakdown(&scorer, &st)).unwrap(),
+                    breakdown: serde_json::to_value(breakdown(scorer, &st)).unwrap(),
                     holdout: None,
                 },
                 raw: point.raw.clone(),
@@ -298,11 +340,11 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
     let bound = out
         .top
         .first()
-        .and_then(|s| crate::bound::report(&scorer, &ctx.movable, &scorer.state_from_sym(s.sym.clone()), crate::bound::ASCENT_ITERS));
+        .and_then(|s| crate::bound::report(scorer, &ctx.movable, &scorer.state_from_sym(s.sym.clone()), crate::bound::ASCENT_ITERS));
     let res = RunResult {
         schema: SCHEMA,
         id: prep.config.id.clone(),
-        geometry: spec.geometry.name.clone(),
+        geometry: if changed.is_some() { format!("run:{}", prep.config.id) } else { spec.geometry.name.clone() },
         evals: out.evals,
         elapsed_ms: out.elapsed_ms,
         evals_per_sec: out.evals_per_sec,
@@ -312,6 +354,8 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
         front,
         bound,
         holdout,
+        fidelity: out.fidelity.clone(),
+        fingering: fingered.map(|f| f.report),
     };
     std::fs::write(prep.dir.join("best.json"), serde_json::to_string_pretty(&res).unwrap())?;
     Ok(res)

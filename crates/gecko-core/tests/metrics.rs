@@ -28,6 +28,7 @@ fn key(finger: Finger, row: i8, col: i8, x: f32, y: f32) -> Key {
         hrm: None,
         layer: 0,
         phys: None,
+        alt: Vec::new(),
     }
 }
 

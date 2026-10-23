@@ -32,6 +32,7 @@ fn tiny(shift: bool) -> (Geometry, Corpus, Layout, Profile) {
             fill: None,
             layer: 0,
             phys: None,
+            alt: Vec::new(),
         })
         .collect();
     let g = Geometry {

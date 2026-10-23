@@ -1,0 +1,180 @@
+{
+ "run": {
+  "best": [
+   {
+    "rank": 1,
+    "score": 11.66497253811935,
+    "chars": "lmdgbjquo.rntsfpheaixvcwzky/;,",
+    "hash": "d254f102"
+   },
+   {
+    "rank": 2,
+    "score": 11.823184703907966,
+    "chars": "wldgvjquo.rntsfpheaixmbczky/;,",
+    "hash": "269c8870"
+   },
+   {
+    "rank": 3,
+    "score": 12.099664769839775,
+    "chars": "lndwvjquo.rhtcfgseaixmpbzyk/;,",
+    "hash": "f50e6110"
+   }
+  ],
+  "elapsed_ms": 15939,
+  "evals": 20008265,
+  "evals_per_sec": 1255244.2656259802,
+  "fingering": {
+   "base_score": 12.15429305040533,
+   "candidates": 9,
+   "changes": [
+    {
+     "col": 1,
+     "effort": 2.4000000953674316,
+     "from": "LR",
+     "key": 21,
+     "row": 2,
+     "to": "LM"
+    },
+    {
+     "col": 2,
+     "effort": 1.7999999523162842,
+     "from": "LM",
+     "key": 22,
+     "row": 2,
+     "to": "LI"
+    }
+   ],
+   "choice": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "score": 11.66497253811935,
+   "steps": 2
+  },
+  "geometry": "run:20261023-152214-sa-b9912990",
+  "id": "20261023-152214-sa-b9912990",
+  "params": {
+   "algo": "sa",
+   "bls": {
+    "accept_worse": 0.1,
+    "column_kick": 0.2,
+    "exclusion": 0.5,
+    "exclusion_dist": 8,
+    "kick_max": 0,
+    "kick_min": 2,
+    "stagnation": 150
+   },
+   "evals": 20000000,
+   "explore": {
+    "max_optima": 100000,
+    "samples": 2000,
+    "snapshot_ms": 2000,
+    "walk_len": 400,
+    "walks": 64,
+    "within": 0.01
+   },
+   "fingering": {
+    "evals": 300000,
+    "search": true
+   },
+   "ga": {
+    "crossover_rate": 0.9,
+    "elitism": 4,
+    "mutation_rate": 1.0,
+    "pop_size": 128,
+    "tournament": 3
+   },
+   "memetic": {
+    "collapse_generations": 3,
+    "ga": {
+     "crossover_rate": 0.9,
+     "elitism": 2,
+     "mutation_rate": 1.0,
+     "pop_size": 24,
+     "tournament": 3
+    },
+    "islands": 0,
+    "local_search": "hc",
+    "local_steps": 12,
+    "migrants": 2,
+    "migration_interval": 5
+   },
+   "moves": {
+    "columns": false,
+    "cycle3": false,
+    "depth2": false,
+    "depth2_width": 32
+   },
+   "nsga2": {
+    "archive_size": 512,
+    "crossover_rate": 0.9,
+    "generations": 0,
+    "mutation_rate": 1.0,
+    "objectives": [
+     "B01",
+     "T03",
+     "M01"
+    ],
+    "pop_size": 128
+   },
+   "qd": {
+    "axes": [
+     "roll_ratio",
+     "index_load"
+    ],
+    "bins": 16,
+    "descent": 0,
+    "kick_max": 6,
+    "kick_min": 2,
+    "seeds": 64,
+    "snapshot_ms": 2000
+   },
+   "sa": {
+    "accept0": 0.5,
+    "steps": 1250000,
+    "t_end_ratio": 0.002
+   },
+   "seed": 2,
+   "tabu": {
+    "diversify": 5.0,
+    "refresh": 1000,
+    "stagnation": 100.0,
+    "tenure_max": 1.1,
+    "tenure_min": 0.9
+   },
+   "threads": 4,
+   "time_ms": null,
+   "top": 10
+  },
+  "schema": 1
+ },
+ "schema": 1
+}

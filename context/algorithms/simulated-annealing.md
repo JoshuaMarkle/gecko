@@ -97,3 +97,9 @@ objective rewards a learnable shape (ordered row, arrow cluster), and modelled a
 letters at random, so they drift to keys no frequent letter shares a finger with. Practical
 reading: prefer a number row on the layer; arrow placement needs a cluster constraint or real
 cursor-movement data before the optimizer's choice means much.
+
+Adaptive fidelity 2026-10-23 (`--fidelity K`, `bench/fidelity-2026-10-23/`, code corpus /
+code profile, 20M evals, 4 threads, seeds 1–3): about half the cost per evaluation. On ansi-30,
+K = 1000 found the best layout seen (15.977, `ujo.qwbkmx ieanhgctsr y/;,zpdfvl`) on all three
+seeds, and exact SA found it on one. On layered corne-code, at equal time it is level with exact
+search. Details: `context/objective.md` (Adaptive fidelity).

@@ -378,6 +378,7 @@ impl ParametricGeometry {
                             fill: if right { column.mirror_fill.clone() } else { column.fill.clone() },
                             layer: 0,
                             phys: None,
+                            alt: Vec::new(),
                         });
                     }
                 }
