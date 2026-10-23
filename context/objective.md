@@ -396,3 +396,79 @@ Web defaults (pinky/ring/middle/index/thumb): typing 2/1.5/1.1/1/1, lateral
 2.5/1.8/1.4/0.7/0.6, vertical 1.5/1.1/0.9/0.8/0.8. They are editable heuristics.
 Legacy profiles without this block retain their scores. Costs fold at scorer construction;
 no allocation or extra work is added to the optimization hot loop.
+
+## Validation (#140, 2026-10-23)
+
+Commit `fed6641`, cmini `0db088e`, profile `default`, ansi-30 standard fingering. Scripts and
+outputs: `bench/validation-2026-10-23/` (`cmini_compare.py` → `numbers.json`, `ranking.py` →
+`ranking-<profile>.json`, `compare-corpora.*`, `likes-shai.txt`).
+
+**Numbers vs cmini (shai, 10 references, same key rows).** Every stat reconciles exactly: once
+the differences below are applied to cmini's own analyzer code, it reproduces GECKO to < 1e-4 pp
+(`gecko_full` vs `words` columns). Raw cmini vs GECKO (QWERTY, Graphite; max |Δ| over 10):
+
+| Stat (GECKO) | QWERTY cmini / GECKO | Graphite | max Δ | Cause |
+|---|---|---|---|---|
+| SFB (B01) | 6.52 / 6.70 | 1.18 / 1.20 | 0.18 | Denominator: cmini divides by all bigrams incl. digits, capitals' symbols and other off-layout grams; GECKO by bigrams on the layout. Same numerator. |
+| SFS (S01) | 10.31 / 11.19 | 5.57 / 6.59 | 1.03 | cmini: dsfb trigram classes (no space, no repeated key). GECKO: every skip-1 pair, incl. a repeated middle (`llo`) and across a space (`x␣z`, estimated from word ends/starts). |
+| Alternate (T01) | 19.14 / 21.15 | 33.33 / 37.40 | 4.26 | cmini puts every trigram with a repeated key, incl. first = third (`ere`, `eve`), in `sfR` (~9.8 % of trigrams); GECKO classifies first = third by finger. |
+| Redirect (T06) | 5.94 / 11.96 | 1.72 / 2.51 | 6.02 | As above, plus one-hand trigrams whose ends share a finger (cmini `dsfb-red`) are redirects in GECKO (bad without an index finger). |
+| Bad redirect (T07) | 0.42 / 1.46 | 0.26 / 0.37 | 1.04 | Same. |
+| SFT (T08) | 0.20 / 0.44 | 0.03 / 0.03 | 0.23 | First = third same-finger trigrams (`ded`) are SFT in GECKO, `sfR` in cmini. |
+| Roll in/out, onehand, alt-SFS (T03/T04/T05/T02) | 19.79 / 20.54 … | | 0.98 | Denominator only. |
+
+Two further effects, both < 0.25 pp: `trigram_coverage` 0.99 (default) drops the rarest 1 % of
+trigrams (≤ 0.22 pp on T01, ≤ 0.09 on rolls); with 1.0 the match is exact. cmini's
+`trigrams.json` equals the in-word trigrams of its `words.json`, which GECKO imports. GECKO's
+ansi-30 references differ from some cmini entries off the 30-key core (cmini Graphite has
+`,` beyond column 9); the comparison uses identical rows. Second source: the Layouts Doc's
+published SFB (QWERTY 6.6, Workman 3.1, Dvorak 2.6, Colemak ≈ 1.6 %; its own English corpus)
+vs GECKO `english` 6.63 / 3.00 / 2.58 / 1.54.
+
+**Numbers vs Oxeylyzer** (`d015a16`, its own shai data, same rows, ortho/traditional fingering;
+`oxey_compare.py` → `oxeylyzer.json`). Divided by the share of n-grams on the layout (Oxeylyzer
+counts digits, `-`, `=` and its shift symbol `⇑`; 93–94 % of bigrams are on the layout), SFB,
+rolls in/out, onehand, redirect (+ sfs), bad redirect (+ sfs) and alternate + alt-sfs match
+GECKO within 0.03 pp on all 10. The rest:
+
+- Alt-sfs (+1.3 to +3.1 pp): Oxeylyzer puts same-key ends (`ere`) in alt-sfs and GECKO puts
+  them in T01. The sum matches.
+- SFT (+0.04 to +0.58 pp): Oxeylyzer's SFT also counts trigrams with an adjacent repeated key
+  (`llo`). Without those, it matches to < 0.003 pp.
+- SFS (−0.38 to +0.17 pp): this comes from skips across a space. GECKO estimates `x␣z` from word
+  ends × starts (25 % of skip pairs). Oxeylyzer counts them from text, where capitals (`⇑`) and
+  punctuation break many of them. Its values fall between GECKO's in-word-only SFS and GECKO's
+  full S01.
+
+`trigram_precision` 1000 vs 1e6 changes nothing on shai.
+
+**Ranking vs consensus.** No published community ranking exists, so two signals: tiers
+(1 = Graphite, Gallium, Sturdy, Canary, Semimak, Rain, Maya, Recurva, Nerps, APTv3; 2 = Colemak-DH;
+3 = Colemak; 4 = Dvorak, Workman, Halmak; 5 = QWERTY; sources in `ranking.py`) and cmini likes
+on the same 16 layouts. Spearman ρ of GECKO score vs consensus (shai; range over english,
+english-cased, shai, mt-450k, reddit):
+
+| Profile | ρ tier | ρ likes | cross-tier pairs agreeing |
+|---|---|---|---|
+| default | +0.85 (0.82–0.85) | +0.80 (0.67–0.80) | 70/72 (69–70) |
+| sfb | +0.87 (0.70–0.87) | +0.65 (0.38–0.76) | 72/72 (63 on mt-450k) |
+| hand | +0.85 (0.84–0.86) | +0.80 (0.66–0.84) | 70/72 (69–71) |
+| engram | +0.54 (0.48–0.62) | +0.54 (0.52–0.56) | 57/72 (55–60) |
+
+- Main disagreement (default, every corpus): **Dvorak above Colemak and Colemak-DH.** Dvorak
+  has twice the SFB (2.79 vs 1.38 %, +5.1 weighted) but wins on pinky–ring pairs (B09 1.21 vs
+  3.36 %, −3.0), alternation, redirects (2.45 vs 9.17 %), SFS and row jumps. The community
+  ranks SFB first and values Colemak's QWERTY-familiar shortcuts; likes, though, agree with
+  GECKO (Dvorak 20, Colemak-DH 19). The `sfb` profile orders every tier pair correctly.
+- mt-450k (word list, every word once) also puts Dvorak above Rain; rare words raise
+  everyone's SFB and flatten tier-1 differences.
+- Within tier 1, GECKO vs likes is weak (ρ +0.53 shai, +0.10 mt-450k): these layouts differ by
+  taste (rolls vs alternation), which no single objective settles.
+- Over all 1904 cmini layouts ρ vs likes is only +0.08 (`likes-shai.txt`): likes there track
+  exposure, memes (`inqwerted`, 76 likes, rank 1816) and near-duplicates, not quality. See
+  `research/experiments/2026-10-21-profile-ranking.md`.
+- `engram` disagrees most: Halmak and Dvorak rank 6th–7th, above Sturdy, Canary and Colemak-DH.
+
+**Corpus robustness** (`gecko compare --corpora english,english-cased,shai,mt-450k,reddit`):
+the 10 references keep their rank on every corpus except tier 1 (Graphite/Semimak/Canary/Sturdy
+swap within ranks 1–4; Semimak is first on mt-450k). Ranks 5–10 never move.

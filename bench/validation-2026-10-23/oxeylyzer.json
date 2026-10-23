@@ -1,0 +1,786 @@
+{
+ "corpus": "shai",
+ "oxeylyzer_commit": "d015a1692d3768e88e23ae4e9ae271a0f06807dc",
+ "layouts": [
+  {
+   "layout": "qwerty",
+   "rows": [
+    "qwertyuiop",
+    "asdfghjkl;",
+    "zxcvbnm,./"
+   ],
+   "sfb": {
+    "oxey": 6.264,
+    "oxey_full": 6.264,
+    "aligned": 6.702118886224758,
+    "gecko_full": 6.704494233702363,
+    "on_layout_share": 0.9346297948958727
+   },
+   "sfs": {
+    "oxey": 10.259,
+    "oxey_full": 10.259,
+    "aligned": 11.354133998693179,
+    "gecko_full": 11.185265504140318,
+    "on_layout_share": 0.9035475537967735
+   },
+   "alternate+alt-sfs": {
+    "oxey": 24.558,
+    "oxey_full": 24.558,
+    "aligned": 26.782242655560882,
+    "gecko_full": 26.79544068671973,
+    "on_layout_share": 0.9169508437300692
+   },
+   "alt-sfs": {
+    "oxey": 6.369,
+    "oxey_full": 6.369,
+    "aligned": 6.945846708741235,
+    "gecko_full": 5.643889456372264,
+    "on_layout_share": 0.9169508437300692
+   },
+   "roll-in": {
+    "oxey": 18.805,
+    "oxey_full": 18.805,
+    "aligned": 20.508187683761804,
+    "gecko_full": 20.502351487574444,
+    "on_layout_share": 0.9169508437300692
+   },
+   "roll-out": {
+    "oxey": 15.738,
+    "oxey_full": 15.738,
+    "aligned": 17.1634064220709,
+    "gecko_full": 17.1644220823989,
+    "on_layout_share": 0.9169508437300692
+   },
+   "onehand": {
+    "oxey": 2.602,
+    "oxey_full": 2.602,
+    "aligned": 2.8376657459796975,
+    "gecko_full": 2.8363947883995877,
+    "on_layout_share": 0.9169508437300692
+   },
+   "redirect": {
+    "oxey": 10.937000000000001,
+    "oxey_full": 10.937000000000001,
+    "aligned": 11.927575043727884,
+    "gecko_full": 11.92211096673148,
+    "on_layout_share": 0.9169508437300692
+   },
+   "bad-redirect": {
+    "oxey": 1.335,
+    "oxey_full": 1.335,
+    "aligned": 1.455912287041851,
+    "gecko_full": 1.4576306659620286,
+    "on_layout_share": 0.9169508437300692
+   },
+   "sft": {
+    "oxey": 0.938,
+    "oxey_full": 0.938,
+    "aligned": 1.0229555994346489,
+    "gecko_full": 0.4434893256529904,
+    "on_layout_share": 0.9169508437300692
+   }
+  },
+  {
+   "layout": "dvorak",
+   "rows": [
+    "',.pyfgcrl",
+    "aoeuidhtns",
+    ";qjkxbmwvz"
+   ],
+   "sfb": {
+    "oxey": 2.631,
+    "oxey_full": 2.631,
+    "aligned": 2.7945318085762447,
+    "gecko_full": 2.7949794770973924,
+    "on_layout_share": 0.9414815003807164
+   },
+   "sfs": {
+    "oxey": 6.377,
+    "oxey_full": 6.377,
+    "aligned": 7.0198489949286484,
+    "gecko_full": 7.102621009197918,
+    "on_layout_share": 0.9084240992373109
+   },
+   "alternate+alt-sfs": {
+    "oxey": 41.598,
+    "oxey_full": 41.598,
+    "aligned": 44.92374372793346,
+    "gecko_full": 44.90201078233751,
+    "on_layout_share": 0.9259691323128636
+   },
+   "alt-sfs": {
+    "oxey": 8.203,
+    "oxey_full": 8.203,
+    "aligned": 8.858826621477913,
+    "gecko_full": 5.807434166839531,
+    "on_layout_share": 0.9259691323128636
+   },
+   "roll-in": {
+    "oxey": 22.043,
+    "oxey_full": 22.043,
+    "aligned": 23.805329174355435,
+    "gecko_full": 23.785921677463318,
+    "on_layout_share": 0.9259691323128636
+   },
+   "roll-out": {
+    "oxey": 13.821,
+    "oxey_full": 13.821,
+    "aligned": 14.925983510355508,
+    "gecko_full": 14.945360431251764,
+    "on_layout_share": 0.9259691323128636
+   },
+   "onehand": {
+    "oxey": 0.499,
+    "oxey_full": 0.499,
+    "aligned": 0.5388948536044713,
+    "gecko_full": 0.5388235270528341,
+    "on_layout_share": 0.9259691323128636
+   },
+   "redirect": {
+    "oxey": 2.324,
+    "oxey_full": 2.324,
+    "aligned": 2.5098028853242313,
+    "gecko_full": 2.514217698972754,
+    "on_layout_share": 0.9259691323128636
+   },
+   "bad-redirect": {
+    "oxey": 0.7689999999999999,
+    "oxey_full": 0.7689999999999999,
+    "aligned": 0.8304812473383536,
+    "gecko_full": 0.8331211470950173,
+    "on_layout_share": 0.9259691323128636
+   },
+   "sft": {
+    "oxey": 0.201,
+    "oxey_full": 0.201,
+    "aligned": 0.21706987089077906,
+    "gecko_full": 0.06218631131886809,
+    "on_layout_share": 0.9259691323128636
+   }
+  },
+  {
+   "layout": "colemak",
+   "rows": [
+    "qwfpgjluy;",
+    "arstdhneio",
+    "zxcvbkm,./"
+   ],
+   "sfb": {
+    "oxey": 1.282,
+    "oxey_full": 1.282,
+    "aligned": 1.371666093892104,
+    "gecko_full": 1.3794891417919786,
+    "on_layout_share": 0.9346297948958727
+   },
+   "sfs": {
+    "oxey": 7.877,
+    "oxey_full": 7.877,
+    "aligned": 8.71785880765242,
+    "gecko_full": 8.810249962733963,
+    "on_layout_share": 0.9035475537967735
+   },
+   "alternate+alt-sfs": {
+    "oxey": 28.24,
+    "oxey_full": 28.24,
+    "aligned": 30.797725083192415,
+    "gecko_full": 30.808693523894704,
+    "on_layout_share": 0.9169508437300692
+   },
+   "alt-sfs": {
+    "oxey": 6.974,
+    "oxey_full": 6.974,
+    "aligned": 7.605642164666569,
+    "gecko_full": 5.523378975815518,
+    "on_layout_share": 0.9169508437300692
+   },
+   "roll-in": {
+    "oxey": 23.402,
+    "oxey_full": 23.402,
+    "aligned": 25.521542577792808,
+    "gecko_full": 25.501869386400244,
+    "on_layout_share": 0.9169508437300692
+   },
+   "roll-out": {
+    "oxey": 19.488,
+    "oxey_full": 19.488,
+    "aligned": 21.253047677806435,
+    "gecko_full": 21.250149918871486,
+    "on_layout_share": 0.9169508437300692
+   },
+   "onehand": {
+    "oxey": 2.254,
+    "oxey_full": 2.254,
+    "aligned": 2.45814703744744,
+    "gecko_full": 2.456665265484048,
+    "on_layout_share": 0.9169508437300692
+   },
+   "redirect": {
+    "oxey": 8.403,
+    "oxey_full": 8.403,
+    "aligned": 9.164068125852191,
+    "gecko_full": 9.16153277199463,
+    "on_layout_share": 0.9169508437300692
+   },
+   "bad-redirect": {
+    "oxey": 1.391,
+    "oxey_full": 1.391,
+    "aligned": 1.5169842631275017,
+    "gecko_full": 1.5159462160195147,
+    "on_layout_share": 0.9169508437300692
+   },
+   "sft": {
+    "oxey": 0.081,
+    "oxey_full": 0.081,
+    "aligned": 0.0883362511238876,
+    "gecko_full": 0.02250455109269467,
+    "on_layout_share": 0.9169508437300692
+   }
+  },
+  {
+   "layout": "colemak-dh",
+   "rows": [
+    "qwfpbjluy;",
+    "arstgmneio",
+    "zxcdvkh,./"
+   ],
+   "sfb": {
+    "oxey": 1.282,
+    "oxey_full": 1.282,
+    "aligned": 1.371666093892104,
+    "gecko_full": 1.3794891417919786,
+    "on_layout_share": 0.9346297948958727
+   },
+   "sfs": {
+    "oxey": 7.877,
+    "oxey_full": 7.877,
+    "aligned": 8.71785880765242,
+    "gecko_full": 8.810249962733963,
+    "on_layout_share": 0.9035475537967735
+   },
+   "alternate+alt-sfs": {
+    "oxey": 28.24,
+    "oxey_full": 28.24,
+    "aligned": 30.797725083192415,
+    "gecko_full": 30.808693523894704,
+    "on_layout_share": 0.9169508437300692
+   },
+   "alt-sfs": {
+    "oxey": 6.974,
+    "oxey_full": 6.974,
+    "aligned": 7.605642164666569,
+    "gecko_full": 5.523378975815518,
+    "on_layout_share": 0.9169508437300692
+   },
+   "roll-in": {
+    "oxey": 23.402,
+    "oxey_full": 23.402,
+    "aligned": 25.521542577792808,
+    "gecko_full": 25.501869386400244,
+    "on_layout_share": 0.9169508437300692
+   },
+   "roll-out": {
+    "oxey": 19.488,
+    "oxey_full": 19.488,
+    "aligned": 21.253047677806435,
+    "gecko_full": 21.250149918871486,
+    "on_layout_share": 0.9169508437300692
+   },
+   "onehand": {
+    "oxey": 2.254,
+    "oxey_full": 2.254,
+    "aligned": 2.45814703744744,
+    "gecko_full": 2.456665265484048,
+    "on_layout_share": 0.9169508437300692
+   },
+   "redirect": {
+    "oxey": 8.403,
+    "oxey_full": 8.403,
+    "aligned": 9.164068125852191,
+    "gecko_full": 9.16153277199463,
+    "on_layout_share": 0.9169508437300692
+   },
+   "bad-redirect": {
+    "oxey": 1.391,
+    "oxey_full": 1.391,
+    "aligned": 1.5169842631275017,
+    "gecko_full": 1.5159462160195147,
+    "on_layout_share": 0.9169508437300692
+   },
+   "sft": {
+    "oxey": 0.081,
+    "oxey_full": 0.081,
+    "aligned": 0.0883362511238876,
+    "gecko_full": 0.02250455109269467,
+    "on_layout_share": 0.9169508437300692
+   }
+  },
+  {
+   "layout": "workman",
+   "rows": [
+    "qdrwbjfup;",
+    "ashtgyneoi",
+    "zxmcvkl,./"
+   ],
+   "sfb": {
+    "oxey": 2.774,
+    "oxey_full": 2.774,
+    "aligned": 2.9680200814794824,
+    "gecko_full": 2.972189921006674,
+    "on_layout_share": 0.9346297948958727
+   },
+   "sfs": {
+    "oxey": 7.492,
+    "oxey_full": 7.492,
+    "aligned": 8.291760592475805,
+    "gecko_full": 8.331081940504248,
+    "on_layout_share": 0.9035475537967735
+   },
+   "alternate+alt-sfs": {
+    "oxey": 27.508,
+    "oxey_full": 27.508,
+    "aligned": 29.999427110072837,
+    "gecko_full": 30.004872691136697,
+    "on_layout_share": 0.9169508437300692
+   },
+   "alt-sfs": {
+    "oxey": 7.072,
+    "oxey_full": 7.072,
+    "aligned": 7.712518122816458,
+    "gecko_full": 5.549058673229723,
+    "on_layout_share": 0.9169508437300692
+   },
+   "roll-in": {
+    "oxey": 22.175,
+    "oxey_full": 22.175,
+    "aligned": 24.183411958916142,
+    "gecko_full": 24.168942961106055,
+    "on_layout_share": 0.9169508437300692
+   },
+   "roll-out": {
+    "oxey": 18.39,
+    "oxey_full": 18.39,
+    "aligned": 20.05560071812707,
+    "gecko_full": 20.059899220981947,
+    "on_layout_share": 0.9169508437300692
+   },
+   "onehand": {
+    "oxey": 2.87,
+    "oxey_full": 2.87,
+    "aligned": 3.1299387743895974,
+    "gecko_full": 3.1272623431281232,
+    "on_layout_share": 0.9169508437300692
+   },
+   "redirect": {
+    "oxey": 8.39,
+    "oxey_full": 8.39,
+    "aligned": 9.149890702832309,
+    "gecko_full": 9.150679105873394,
+    "on_layout_share": 0.9169508437300692
+   },
+   "bad-redirect": {
+    "oxey": 1.233,
+    "oxey_full": 1.233,
+    "aligned": 1.3446740448858445,
+    "gecko_full": 1.345136005496883,
+    "on_layout_share": 0.9169508437300692
+   },
+   "sft": {
+    "oxey": 0.421,
+    "oxey_full": 0.421,
+    "aligned": 0.45913039164390956,
+    "gecko_full": 0.14136430407916123,
+    "on_layout_share": 0.9169508437300692
+   }
+  },
+  {
+   "layout": "halmak",
+   "rows": [
+    "wlrbz;qudj",
+    "shnt,.aeoi",
+    "fmvc/gpxky"
+   ],
+   "sfb": {
+    "oxey": 2.736,
+    "oxey_full": 2.736,
+    "aligned": 2.9273622721441472,
+    "gecko_full": 2.9305310174637444,
+    "on_layout_share": 0.9346297948958727
+   },
+   "sfs": {
+    "oxey": 6.477,
+    "oxey_full": 6.477,
+    "aligned": 7.168410752464736,
+    "gecko_full": 7.270055863383718,
+    "on_layout_share": 0.9035475537967735
+   },
+   "alternate+alt-sfs": {
+    "oxey": 39.897000000000006,
+    "oxey_full": 39.897000000000006,
+    "aligned": 43.51051124802153,
+    "gecko_full": 43.4842625357426,
+    "on_layout_share": 0.9169508437300692
+   },
+   "alt-sfs": {
+    "oxey": 7.804,
+    "oxey_full": 7.804,
+    "aligned": 8.510816095936034,
+    "gecko_full": 5.701033523056509,
+    "on_layout_share": 0.9169508437300692
+   },
+   "roll-in": {
+    "oxey": 18.58,
+    "oxey_full": 18.58,
+    "aligned": 20.26280920841767,
+    "gecko_full": 20.267554008006528,
+    "on_layout_share": 0.9169508437300692
+   },
+   "roll-out": {
+    "oxey": 16.579,
+    "oxey_full": 16.579,
+    "aligned": 18.08057663435719,
+    "gecko_full": 18.08123049658157,
+    "on_layout_share": 0.9169508437300692
+   },
+   "onehand": {
+    "oxey": 1.817,
+    "oxey_full": 1.817,
+    "aligned": 1.9815675097790586,
+    "gecko_full": 1.9793216474631947,
+    "on_layout_share": 0.9169508437300692
+   },
+   "redirect": {
+    "oxey": 3.1149999999999998,
+    "oxey_full": 3.1149999999999998,
+    "aligned": 3.397128669764319,
+    "gecko_full": 3.409836541942468,
+    "on_layout_share": 0.9169508437300692
+   },
+   "bad-redirect": {
+    "oxey": 0.653,
+    "oxey_full": 0.653,
+    "aligned": 0.7121428639987482,
+    "gecko_full": 0.7130726983213265,
+    "on_layout_share": 0.9169508437300692
+   },
+   "sft": {
+    "oxey": 0.482,
+    "oxey_full": 0.482,
+    "aligned": 0.5256552227372077,
+    "gecko_full": 0.13878113942134007,
+    "on_layout_share": 0.9169508437300692
+   }
+  },
+  {
+   "layout": "canary",
+   "rows": [
+    "wlypkzxou;",
+    "crstbfneia",
+    "jvdgqmh/,."
+   ],
+   "sfb": {
+    "oxey": 1.056,
+    "oxey_full": 1.056,
+    "aligned": 1.1298591225819514,
+    "gecko_full": 1.1361819804548645,
+    "on_layout_share": 0.9346297948958727
+   },
+   "sfs": {
+    "oxey": 7.111,
+    "oxey_full": 7.111,
+    "aligned": 7.870089371742586,
+    "gecko_full": 7.9963935078225745,
+    "on_layout_share": 0.9035475537967735
+   },
+   "alternate+alt-sfs": {
+    "oxey": 30.846000000000004,
+    "oxey_full": 30.846000000000004,
+    "aligned": 33.63975311317824,
+    "gecko_full": 33.64386750947013,
+    "on_layout_share": 0.9169508437300692
+   },
+   "alt-sfs": {
+    "oxey": 6.769,
+    "oxey_full": 6.769,
+    "aligned": 7.382075109353027,
+    "gecko_full": 4.964807403373683,
+    "on_layout_share": 0.9169508437300692
+   },
+   "roll-in": {
+    "oxey": 21.854,
+    "oxey_full": 21.854,
+    "aligned": 23.833338667425178,
+    "gecko_full": 23.823796757893945,
+    "on_layout_share": 0.9169508437300692
+   },
+   "roll-out": {
+    "oxey": 22.534,
+    "oxey_full": 22.534,
+    "aligned": 24.574926948465222,
+    "gecko_full": 24.56254479651747,
+    "on_layout_share": 0.9169508437300692
+   },
+   "onehand": {
+    "oxey": 1.734,
+    "oxey_full": 1.734,
+    "aligned": 1.891050116652112,
+    "gecko_full": 1.891019569211494,
+    "on_layout_share": 0.9169508437300692
+   },
+   "redirect": {
+    "oxey": 6.183,
+    "oxey_full": 6.183,
+    "aligned": 6.743000502456753,
+    "gecko_full": 6.744186119297169,
+    "on_layout_share": 0.9169508437300692
+   },
+   "bad-redirect": {
+    "oxey": 0.226,
+    "oxey_full": 0.226,
+    "aligned": 0.2464690463456617,
+    "gecko_full": 0.2500738756257448,
+    "on_layout_share": 0.9169508437300692
+   },
+   "sft": {
+    "oxey": 0.071,
+    "oxey_full": 0.071,
+    "aligned": 0.07743054110859282,
+    "gecko_full": 0.033768057124916595,
+    "on_layout_share": 0.9169508437300692
+   }
+  },
+  {
+   "layout": "semimak",
+   "rows": [
+    "flhvzqwuoy",
+    "srntkcdeai",
+    "x'bmjpg,./"
+   ],
+   "sfb": {
+    "oxey": 0.815,
+    "oxey_full": 0.815,
+    "aligned": 0.865587019213243,
+    "gecko_full": 0.8704275818331553,
+    "on_layout_share": 0.9415575579457938
+   },
+   "sfs": {
+    "oxey": 5.2,
+    "oxey_full": 5.2,
+    "aligned": 5.725999753352464,
+    "gecko_full": 6.103140527474693,
+    "on_layout_share": 0.9081383555693483
+   },
+   "alternate+alt-sfs": {
+    "oxey": 37.143,
+    "oxey_full": 37.143,
+    "aligned": 40.10375754712089,
+    "gecko_full": 40.10456684899282,
+    "on_layout_share": 0.9261725651607065
+   },
+   "alt-sfs": {
+    "oxey": 6.232,
+    "oxey_full": 6.232,
+    "aligned": 6.728767655645948,
+    "gecko_full": 4.096397362437187,
+    "on_layout_share": 0.9261725651607065
+   },
+   "roll-in": {
+    "oxey": 18.869,
+    "oxey_full": 18.869,
+    "aligned": 20.373093211550607,
+    "gecko_full": 20.357752792301653,
+    "on_layout_share": 0.9261725651607065
+   },
+   "roll-out": {
+    "oxey": 20.804,
+    "oxey_full": 20.804,
+    "aligned": 22.462336698982394,
+    "gecko_full": 22.45347991347728,
+    "on_layout_share": 0.9261725651607065
+   },
+   "onehand": {
+    "oxey": 1.89,
+    "oxey_full": 1.89,
+    "aligned": 2.040656429584538,
+    "gecko_full": 2.04254406108646,
+    "on_layout_share": 0.9261725651607065
+   },
+   "redirect": {
+    "oxey": 5.876,
+    "oxey_full": 5.876,
+    "aligned": 6.344390042454362,
+    "gecko_full": 6.345847058156551,
+    "on_layout_share": 0.9261725651607065
+   },
+   "bad-redirect": {
+    "oxey": 0.358,
+    "oxey_full": 0.358,
+    "aligned": 0.38653703798479605,
+    "gecko_full": 0.38565646861457026,
+    "on_layout_share": 0.9261725651607065
+   },
+   "sft": {
+    "oxey": 0.084,
+    "oxey_full": 0.084,
+    "aligned": 0.09069584131486835,
+    "gecko_full": 0.012757635786897481,
+    "on_layout_share": 0.9261725651607065
+   }
+  },
+  {
+   "layout": "sturdy",
+   "rows": [
+    "vmlcpxfouj",
+    "strdy.naei",
+    "zkqgwbh';,"
+   ],
+   "sfb": {
+    "oxey": 0.866,
+    "oxey_full": 0.866,
+    "aligned": 0.9198268894819567,
+    "gecko_full": 0.9172426893019114,
+    "on_layout_share": 0.9414815003807164
+   },
+   "sfs": {
+    "oxey": 5.509,
+    "oxey_full": 5.509,
+    "aligned": 6.064348143807735,
+    "gecko_full": 6.381712940799389,
+    "on_layout_share": 0.9084240992373109
+   },
+   "alternate+alt-sfs": {
+    "oxey": 33.365,
+    "oxey_full": 33.365,
+    "aligned": 36.032518618262905,
+    "gecko_full": 36.00216342894572,
+    "on_layout_share": 0.9259691323128636
+   },
+   "alt-sfs": {
+    "oxey": 6.06,
+    "oxey_full": 6.06,
+    "aligned": 6.544494614916024,
+    "gecko_full": 3.9510373193661685,
+    "on_layout_share": 0.9259691323128636
+   },
+   "roll-in": {
+    "oxey": 21.325,
+    "oxey_full": 21.325,
+    "aligned": 23.02992535694459,
+    "gecko_full": 23.050482774369918,
+    "on_layout_share": 0.9259691323128636
+   },
+   "roll-out": {
+    "oxey": 23.259,
+    "oxey_full": 23.259,
+    "aligned": 25.118547895764326,
+    "gecko_full": 25.120963510702943,
+    "on_layout_share": 0.9259691323128636
+   },
+   "onehand": {
+    "oxey": 1.939,
+    "oxey_full": 1.939,
+    "aligned": 2.094022286851844,
+    "gecko_full": 2.0941882131191747,
+    "on_layout_share": 0.9259691323128636
+   },
+   "redirect": {
+    "oxey": 4.593999999999999,
+    "oxey_full": 4.593999999999999,
+    "aligned": 4.961288491901685,
+    "gecko_full": 4.9497885194634605,
+    "on_layout_share": 0.9259691323128636
+   },
+   "bad-redirect": {
+    "oxey": 0.305,
+    "oxey_full": 0.305,
+    "aligned": 0.3293846299586448,
+    "gecko_full": 0.32783996754011113,
+    "on_layout_share": 0.9259691323128636
+   },
+   "sft": {
+    "oxey": 0.063,
+    "oxey_full": 0.063,
+    "aligned": 0.06803682520457253,
+    "gecko_full": 0.016588983611320884,
+    "on_layout_share": 0.9259691323128636
+   }
+  },
+  {
+   "layout": "graphite",
+   "rows": [
+    "bldwz'fouj",
+    "nrtsgyhaei",
+    "qxmcvkp,./"
+   ],
+   "sfb": {
+    "oxey": 1.139,
+    "oxey_full": 1.139,
+    "aligned": 1.2096976869740905,
+    "gecko_full": 1.2008727605575586,
+    "on_layout_share": 0.9415575579457938
+   },
+   "sfs": {
+    "oxey": 6.013,
+    "oxey_full": 6.013,
+    "aligned": 6.621237791713146,
+    "gecko_full": 6.593093022520691,
+    "on_layout_share": 0.9081383555693483
+   },
+   "alternate+alt-sfs": {
+    "oxey": 39.198,
+    "oxey_full": 39.198,
+    "aligned": 42.32256652214535,
+    "gecko_full": 42.288934225859975,
+    "on_layout_share": 0.9261725651607065
+   },
+   "alt-sfs": {
+    "oxey": 7.458,
+    "oxey_full": 7.458,
+    "aligned": 8.052495053884384,
+    "gecko_full": 5.056511591050139,
+    "on_layout_share": 0.9261725651607065
+   },
+   "roll-in": {
+    "oxey": 20.029,
+    "oxey_full": 20.029,
+    "aligned": 21.625559591613072,
+    "gecko_full": 21.650037938329092,
+    "on_layout_share": 0.9261725651607065
+   },
+   "roll-out": {
+    "oxey": 20.935,
+    "oxey_full": 20.935,
+    "aligned": 22.603779022937722,
+    "gecko_full": 22.588124058927406,
+    "on_layout_share": 0.9261725651607065
+   },
+   "onehand": {
+    "oxey": 1.57,
+    "oxey_full": 1.57,
+    "aligned": 1.6951484626707538,
+    "gecko_full": 1.6954730125377182,
+    "on_layout_share": 0.9261725651607065
+   },
+   "redirect": {
+    "oxey": 2.378,
+    "oxey_full": 2.378,
+    "aligned": 2.567556079128059,
+    "gecko_full": 2.575318076333133,
+    "on_layout_share": 0.9261725651607065
+   },
+   "bad-redirect": {
+    "oxey": 0.356,
+    "oxey_full": 0.356,
+    "aligned": 0.3843776131915849,
+    "gecko_full": 0.3885413348569955,
+    "on_layout_share": 0.9261725651607065
+   },
+   "sft": {
+    "oxey": 0.084,
+    "oxey_full": 0.084,
+    "aligned": 0.09069584131486835,
+    "gecko_full": 0.032989032368391236,
+    "on_layout_share": 0.9261725651607065
+   }
+  }
+ ]
+}

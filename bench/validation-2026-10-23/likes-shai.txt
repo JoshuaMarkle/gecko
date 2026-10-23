@@ -1,0 +1,44 @@
+1904 cmini layouts on ansi-30 (angle board: ansi-30-angle) · default · shai
+Spearman ρ (GECKO goodness vs likes; > 0 = agree)
+  all          n=1904  ρ=+0.077
+  liked only   n=303   ρ=+0.071
+  angle        n=358   ρ=+0.111
+  mini         n=2     ρ=-
+  ortho        n=1504  ρ=+0.073
+  stagger      n=40    ρ=-0.386
+mean GECKO rank percentile: liked 45.1%, unliked 50.9% (0 = best)
+metric goodness vs likes (ρ): B06 +0.08, G01 +0.07, E01 +0.06, B11 +0.06, B14 +0.06, E04 +0.05, B09 +0.05, M01 +0.05, E05 +0.05, T09 +0.05, M07 +0.04, B10 +0.04, T06 +0.04, B08 +0.04, G03 +0.03, G05 +0.03, S05 +0.03, S04 +0.03, T07 +0.02, T01 +0.02, M06 +0.02, Y04 +0.02, L01 +0.02, B01 +0.02, M02 +0.01, T05 +0.01, Y02 +0.01, T10 +0.01, T08 -0.00, T03 -0.00, B04 -0.01, M05 -0.01, B05 -0.01, B02 -0.02, S01 -0.02, B07 -0.02, M03 -0.03, S02 -0.03, M04 -0.04, T04 -0.05, T02 -0.07
+
+best by GECKO
+      1 gralmak-old                        12.094    0 likes  ortho
+      2 gralmak-qzb-test                   12.098    0 likes  ortho
+      3 graphite-unrecoverable             12.143    0 likes  ortho
+      4 gralmak-letters                    12.152    0 likes  ortho
+      5 galliard                           12.221    0 likes  ortho
+      6 graphite-thumb                     12.464    0 likes  ortho
+      7 gralmak-thumb                      12.496    1 likes  ortho
+      8 gallium-thumb                      12.565    0 likes  ortho
+      9 Nerbs                              12.703    3 likes  angle
+     10 graphite-angle-kp                  13.440    3 likes  angle
+     11 mayarev                            13.498    0 likes  angle
+     12 e-trn                              13.586    0 likes  angle
+     13 graphite-angle                     13.610    2 likes  angle
+     14 galliumb                           13.629    2 likes  ortho
+     15 gallaya_angle                      13.653    0 likes  angle
+
+most liked (GECKO rank of 1904)
+     18 graphite                           13.676   77 likes  ortho
+   1816 inqwerted                          61.928   76 likes  ortho
+     25 gallium                            13.793   47 likes  ortho
+    484 sturdy                             17.390   36 likes  ortho
+    579 Canary                             17.784   36 likes  angle
+   1137 rain                               21.164   29 likes  ortho
+    783 Semimak-JQ                         18.699   26 likes  ortho
+    535 panke                              17.619   25 likes  angle
+     43 maya                               14.075   21 likes  angle
+    923 semimak                            19.441   20 likes  ortho
+    934 recurva                            19.529   20 likes  ortho
+   1264 Dvorak                             22.515   20 likes  ortho
+    765 kuntum                             18.634   19 likes  angle
+   1388 Colemak-DH                         24.482   19 likes  ortho
+    344 Nerps                              16.754   17 likes  ortho
