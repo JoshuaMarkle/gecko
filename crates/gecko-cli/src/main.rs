@@ -31,11 +31,25 @@ struct Cli {
 }
 
 fn main() {
+    quiet_broken_pipe();
     let cli = Cli::parse();
     if let Err(e) = real_main(cli) {
         eprintln!("error: {e:#}");
         std::process::exit(1);
     }
+}
+
+/// `gecko list runs | head` closes stdout early; `println!` then panics. Exit quietly instead,
+/// like a CLI killed by SIGPIPE. Every other panic keeps the default report.
+fn quiet_broken_pipe() {
+    let default = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let msg = info.payload().downcast_ref::<String>().map(String::as_str).unwrap_or("");
+        if msg.starts_with("failed printing to stdout") && msg.contains("Broken pipe") {
+            std::process::exit(0);
+        }
+        default(info);
+    }));
 }
 
 fn real_main(cli: Cli) -> Result<()> {

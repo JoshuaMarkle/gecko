@@ -71,7 +71,7 @@ gecko profile normalize [-p profile] [--layouts a,b] [--out name]   # weights â†
 gecko profile fit [--target E05] [--layouts a,b] [--out name]       # fit weights to a judge metric
 gecko profile fit --target likes [--seed 1] [--out learned] --json  # pairwise fit, 20% layout holdout
 gecko list     layouts|geometries|profiles|corpora|runs|metrics
-gecko serve    [--port 7777] [--web web/dist]                          # serves embedded web UI (with embed-web) or filesystem dist
+gecko serve    [--port 7777] [--web web/dist]                          # serves embedded web UI (with embed-web) or filesystem dist; API inputs are store names only (no file paths)
 ```
 
 Global flags: `--json`, `--root <dir with gecko.toml>`.
@@ -206,6 +206,8 @@ When `--algo nsga2` or `--algo rwsa` is selected, `best.json` contains the non-d
   `holdout` score is in `best.json`, with the summary under `holdout`. `config.json` records the
   corpus (name + hash) and `verify` checks it. Holding out the search corpus itself is an error.
 - `--evals` budgets are deterministic for a given seed and thread count; `--time` is not.
+  Budgets must be positive (`--time 0s`, `--evals 0` and negative or non-finite durations
+  are errors); `--threads 0` means all cores, like leaving it out.
 - `verify` loads geometry and corpus by their recorded names (the profile is stored in
   `config.json`). If a hash differs it fails without re-running. Otherwise it re-runs with the
   recorded params into a temp dir, leaving the run untouched, and compares evals and every

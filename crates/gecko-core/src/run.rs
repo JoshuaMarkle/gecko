@@ -497,8 +497,8 @@ pub fn verify(store: &crate::store::Store, dir: &Path) -> Result<Verification> {
         let same = a.chars == b.chars && close(a.score, b.score) && a.holdout.zip(b.holdout).is_none_or(|(x, y)| close(x, y));
         checks.push(Check {
             name: format!("best#{}", a.rank),
-            expected: format!("{:.6} {}", a.score, a.chars),
-            actual: format!("{:.6} {}", b.score, b.chars),
+            expected: format!("{:.10} {}", a.score, a.chars),
+            actual: format!("{:.10} {}", b.score, b.chars),
             ok: same,
         });
     }

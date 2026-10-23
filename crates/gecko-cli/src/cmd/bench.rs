@@ -52,6 +52,9 @@ pub fn bench(ctx: &Ctx, a: BenchArgs) -> Result<()> {
     let l = ctx.load(&a.inputs)?;
     let start = ctx.start(None, &l)?;
     let time_ms = parse_duration(&a.time)?;
+    if time_ms == 0 {
+        anyhow::bail!("time budget must be positive (got '{}')", a.time);
+    }
     let threads = threads(a.threads);
     let sc = Scorer::new(&l.geometry, &l.corpus, &l.profile, &start)?;
     let mut variants = a.moves.split('/').map(parse_moves).collect::<Result<Vec<_>>>()?;
