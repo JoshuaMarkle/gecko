@@ -15,7 +15,7 @@ pub use rank::{fit_preferences, RankingFit};
 
 /// `profile` with every scored metric at weight 1 and no scales, so a breakdown's `weighted`
 /// column is each metric's raw cost (the quantity a weight multiplies).
-fn unit_profile(profile: &Profile) -> Profile {
+pub(crate) fn unit_profile(profile: &Profile) -> Profile {
     let mut p = profile.clone();
     p.scale.clear();
     p.weights = METRICS.iter().filter(|d| d.dir != Dir::Info).map(|d| (d.id.to_string(), 1.0)).collect();
@@ -23,7 +23,7 @@ fn unit_profile(profile: &Profile) -> Profile {
 }
 
 /// Raw cost of every metric (aligned with `METRICS`) for `st`.
-fn costs(sc: &Scorer, st: &State) -> Vec<f64> {
+pub(crate) fn costs(sc: &Scorer, st: &State) -> Vec<f64> {
     breakdown(sc, st).metrics.iter().map(|m| m.weighted).collect()
 }
 
@@ -112,7 +112,7 @@ pub fn fit_to(g: &Geometry, corpus: &Corpus, profile: &Profile, layouts: &[Layou
     let feats: Vec<usize> = METRICS
         .iter()
         .enumerate()
-        .filter(|(i, d)| *i != ti && !d.id.starts_with('E') && scales.contains_key(d.id))
+        .filter(|(i, d)| *i != ti && !d.retired && !d.id.starts_with('E') && scales.contains_key(d.id))
         .map(|(i, _)| i)
         .collect();
     let unit = unit_profile(profile);

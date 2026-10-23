@@ -1,0 +1,38 @@
+wrote bench/sweep-2026-10-22/default.json
+base optimum (default): 12.154  E01 6.644
+  lwdgbzquo. rntsfpheai jxmcvky/;,
+
+families (layouts within 10 keys, mirror-invariant), by how many weight vectors land in them:
+   55 vectors  best 12.154  lwdgbzquo.rntsfpheaijxmcvky/;,  ← base
+   11 vectors  best 12.289  wgvqzjfuo.dstnlpheaicbmrxky/;,
+    6 vectors  best 12.372  xzmpbjquo.rhtcfgseailndwvyk/;,
+    4 vectors  best 12.589  zxfvqjguo.hrstmpceainlbdkyw/;,
+    4 vectors  best 13.116  jwdgvqyou;rntsfkhaielmpcb.,x/z
+    3 vectors  best 12.784  wgndvjquo.cshtklreaiyfmpbzx/;,
+    3 vectors  best 13.132  wvgjqbfou/dtsnrphaiecmylxk,.;z
+    2 vectors  best 12.924  xvndqjguo,rshtkpceailfbmzyw/;.
+
+50 random draws (σ 0.5): regret median 1.095, p90 2.008; keys moved median 21, p90 26
+regret = what keeping the base optimum costs if those weights were right (in their own score units)
+
+id      weight    keys moved drop/½/×2            regret drop/½/×2
+B01      2.867            26 / 25 / 20       1.816 / 0.141 / 0.791
+T03     0.3143            17 / 15 / 18       0.933 / 0.397 / 0.704
+T04     0.6058            13 / 15 / 17       0.769 / 0.070 / 1.050
+B09      1.255             13 / 5 / 11       0.337 / 0.090 / 0.353
+S01     0.5139            13 / 13 / 17       0.485 / 0.184 / 0.080
+E05     0.6217             19 / 8 / 18       0.251 / 0.037 / 0.273
+B14     0.5313             17 / 16 / 0       0.420 / 0.119 / 0.000
+M01     0.1634             15 / 15 / 4       0.352 / 0.067 / 0.017
+B06     0.2704             17 / 17 / 6       0.258 / 0.060 / 0.018
+T01     0.5493              19 / 0 / 0       0.330 / 0.000 / 0.000
+S02     0.1811             11 / 11 / 7       0.100 / 0.011 / 0.015
+B10     0.3684              0 / 0 / 12       0.000 / 0.000 / 0.125
+T06     0.4007              0 / 0 / 11       0.000 / 0.000 / 0.044
+S04    0.08195               8 / 2 / 0       0.037 / 0.002 / 0.000
+M05     0.1094               9 / 0 / 0       0.031 / 0.000 / 0.000
+B05     0.4047              11 / 0 / 6       0.008 / 0.000 / 0.002
+B11     0.2478               3 / 0 / 3       0.000 / 0.000 / 0.004
+M02    0.06071               0 / 0 / 0       0.000 / 0.000 / 0.000
+M04    0.08906               0 / 0 / 0       0.000 / 0.000 / 0.000
+T07     0.2598               0 / 0 / 0       0.000 / 0.000 / 0.000

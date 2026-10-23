@@ -238,9 +238,10 @@ fn run_directory_holds_a_loadable_board() {
     assert_eq!(regenerated.hash(), keys.hash(), "the two saved forms describe the same board");
     // The saved board scores the best layout as the run reported.
     let layout = gecko_core::Layout::from_flat("best", &keys, res.best.chars.chars().collect()).unwrap();
-    let sc = gecko_core::Scorer::new(&keys, &corpus, &profile, &layout).unwrap();
-    // A fresh scorer numbers symbols in another order, so f32 sums differ in the last bits.
-    let fresh = sc.identity().score;
+    // Built from the run's start layout, so symbols are numbered as in the search: the trigram
+    // coverage cut keeps tied trigrams by symbol order, and f32 sums differ in the last bits.
+    let sc = gecko_core::Scorer::new(&keys, &corpus, &profile, &start).unwrap();
+    let fresh = sc.state_for(&layout).unwrap().score;
     assert!((fresh - res.best.score).abs() < 1e-5 * res.best.score.abs().max(1.0), "{fresh} vs {}", res.best.score);
     let _ = std::fs::remove_dir_all(&runs);
 }

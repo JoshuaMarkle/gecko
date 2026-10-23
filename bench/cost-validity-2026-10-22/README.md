@@ -11,6 +11,7 @@ Data and code behind `docs/papers/cost-validity/` and
 | `costlab/` | Research CLI on `gecko-core`: `features` (unit-weight metric contributions per layout, stdin = layout specs), `tables` (per-metric pair tables + slots), `opt` (SA under weight vectors, stdin = JSONL `{"id","weights"}`) |
 | `scripts/lib.py`, `a1`–`a13` | One analysis each: score decomposition, rank robustness, timing (bigram, trigram), Engram pairs, Goodhart check, sweep, scales, SFB–stretch trade-off, time judge and time-fitted weights, profile judges |
 | `scripts/paper_data*.py`, `merge.py` | Recompute `results.json` from the analysis outputs |
+| `scripts/a14_skipgrams.py`, `skipgram_timing.json` | SFS timing by context, finger, distance and outcome (`research/experiments/2026-10-22-skipgram-timing.md`) |
 | `scripts/iki.py`, `iki2.py`, `iki3.py` | Scans of the Aalto 136M keystroke mirror: all-typist bigram means; bigram medians by typist group (relative IKI); trigram third-keystroke timing |
 
 ## Rerun

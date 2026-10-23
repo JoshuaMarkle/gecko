@@ -27,7 +27,8 @@ pub fn run(ctx: &Ctx, what: &str) -> Result<()> {
         }
         "metrics" => {
             for m in METRICS {
-                println!("{:<4} {:<18} {:?}  {}", m.id, m.name, m.dir, m.desc);
+                let tag = if m.retired { " (retired)" } else { "" };
+                println!("{:<4} {:<18} {:?}{tag}  {}", m.id, m.name, m.dir, m.desc);
             }
         }
         _ => {

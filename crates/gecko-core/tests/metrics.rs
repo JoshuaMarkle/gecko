@@ -270,6 +270,26 @@ fn b08_alternation() {
 }
 
 #[test]
+fn b10_row_jump() {
+    // Vertical travel from the finger's home key (LI: b; LM and LR have none, so the left hand's
+    // home row): a −1, d +1, b c 0. ac/ca 1, ad/da 2, ab 1, bc and ef 0:
+    // 8·1 + 2·1 + 6·2 + 4·2 + 15·1 = 45 per 100 bigrams.
+    check_tiny("B10", 45.0);
+}
+
+#[test]
+fn e01_typing_time() {
+    // Per pair, in median keystroke intervals: SFB 0.5522, same hand 0.0578, adjacent fingers
+    // 0.0476, 0.0373 per row, two-row scissor 0.1004, 0.0201 × the second key's effort.
+    // bc 10·(0.5522 + 2·0.0201) + cb 5·(0.5522 + 0.0201)
+    // + ac 8·(0.0578 + 0.0476 + 0.0373 + 2·0.0201) + ca 2·(0.1427 + 3·0.0201)
+    // + ad 6·(0.0578 + 0.0476 + 2·0.0373 + 0.1004 + 4·0.0201) + da 4·(0.2804 + 3·0.0201)
+    // + ae 20·0.0201 + fb 15·0.0201 + ef 10·(0.0578 + 0.0476 + 0.0201)
+    // + ab 15·(0.0578 + 0.0476 + 0.0373 + 0.0201) + bb 0 = 18.5828
+    check_tiny("E01", 18.5828);
+}
+
+#[test]
 fn b14_stretch() {
     // Oxeylyzer 2 stretch, same hand / different fingers only. y += finger length offset
     // (ring +0.35, middle +0.25, index −0.30); s = hypot(dx, dy) + overlap − 1.35 · |Δfinger|.

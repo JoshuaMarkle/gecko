@@ -54,13 +54,15 @@ export interface Profile {
   scale_basis?: string;
   row_offset?: [number, number][];
   familiar_to?: string;
+  /** `distance`, `lateral`, `finger_factor` shape only the retired B03/S03; edited here: `skip_decay` (S02). */
   sfb?: { distance: "linear" | "squared" | "fitts"; lateral: number; finger_factor: number[]; skip_decay: number };
   /** Hand model for G01 / G05 and B14's spread (`hand.ts` `withHand`). */
   hand?: import("./hand").HandSpec;
 }
 
 export type Dir = "min" | "max" | "info";
-export interface MetricDef { id: string; name: string; unit: string; order: string; dir: Dir; desc: string }
+/** `retired`: still scored for old runs and profiles, hidden in the UI (filtered by `api.meta`). */
+export interface MetricDef { id: string; name: string; unit: string; order: string; dir: Dir; desc: string; retired: boolean }
 
 /** `chars` is slot-ordered; for a layered layout it is the flat string over its layer slots
  *  (see `layerSlots`), and `layers` names layers 1, 2, …. */
@@ -206,7 +208,10 @@ const post = <T>(path: string, body: unknown) =>
 export interface SourceInfo { name: string; bytes: number }
 
 export const api = {
-  meta: () => req<Meta>("/api/meta"),
+  meta: async () => {
+    const m = await req<Meta>("/api/meta");
+    return { ...m, metrics: m.metrics.filter((d) => !d.retired) };
+  },
   layouts: () => req<LayoutInfo[]>("/api/layouts"),
   geometries: () => req<Geometry[]>("/api/geometries"),
   profiles: () => req<Profile[]>("/api/profiles"),

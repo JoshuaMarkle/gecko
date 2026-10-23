@@ -52,24 +52,31 @@ pub struct MetricDef {
     pub order: Order,
     pub dir: Dir,
     pub desc: &'static str,
+    /// Kept so old runs and profiles still score, but no bundled profile weights it and the web
+    /// UI hides it (`context/metrics-catalog.md`).
+    pub retired: bool,
 }
 
 const fn m(id: &'static str, name: &'static str, unit: &'static str, order: Order, dir: Dir, desc: &'static str) -> MetricDef {
-    MetricDef { id, name, unit, order, dir, desc }
+    MetricDef { id, name, unit, order, dir, desc, retired: false }
+}
+
+const fn retired(d: MetricDef) -> MetricDef {
+    MetricDef { retired: true, ..d }
 }
 
 /// Every metric GECKO knows, in report order.
 pub static METRICS: &[MetricDef] = &[
     m("B01", "SFB", "%", Order::Bi, Dir::Min, "Same-finger bigrams: consecutive keys on one finger (different keys)."),
     m("S01", "SFS", "%", Order::Skip, Dir::Min, "Same-finger skipgrams: two keys on one finger with any one symbol between (space too)."),
-    m(
+    retired(m(
         "B03",
         "Finger speed",
         "u",
         Order::Bi,
         Dir::Min,
-        "Same-finger distance per 100 bigrams: g(distance) × finger factor (profile `sfb`).",
-    ),
+        "Retired: same-finger distance per 100 bigrams, g(distance) × finger factor (profile `sfb`). Keystroke timing shows no distance effect beyond B01.",
+    )),
     m(
         "S02",
         "Far SFS",
@@ -78,7 +85,7 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Same finger with 2–3 keys between, decayed per extra key (profile `sfb.skip_decay`).",
     ),
-    m("S03", "SFS distance", "u", Order::Skip, Dir::Min, "Finger speed (B03) applied to skipgrams with one key between."),
+    retired(m("S03", "SFS distance", "u", Order::Skip, Dir::Min, "Retired: finger speed (B03) applied to skipgrams with one key between.")),
     m("B04", "LSB", "%", Order::Bi, Dir::Min, "Lateral stretch: index on a center-column key next to the middle finger."),
     m("B05", "Scissors", "%", Order::Bi, Dir::Min, "Adjacent fingers, same hand, two-row jump."),
     m(
@@ -91,7 +98,14 @@ pub static METRICS: &[MetricDef] = &[
     ),
     m("B07", "Bigram rolls in", "%", Order::Bi, Dir::Max, "Same hand, different fingers, moving toward the index finger."),
     m("B09", "Pinky–ring pairs", "%", Order::Bi, Dir::Min, "Consecutive keys on the pinky and ring finger of one hand."),
-    m("B10", "Row jump", "u", Order::Bi, Dir::Min, "Vertical distance between consecutive same-hand keys, per 100 bigrams."),
+    m(
+        "B10",
+        "Row jump",
+        "u",
+        Order::Bi,
+        Dir::Min,
+        "Vertical travel between consecutive same-hand keys, each measured from its finger's home key, per 100 bigrams.",
+    ),
     m(
         "S05",
         "Skip stretch",
@@ -219,6 +233,14 @@ pub static METRICS: &[MetricDef] = &[
         Order::Bi,
         Dir::Min,
         "Bigram discomfort, mean of 1 − comfort, fitted from Engram's pairwise choices (geometry `comfort.E05`).",
+    ),
+    m(
+        "E01",
+        "Typing time",
+        "%",
+        Order::Bi,
+        Dir::Min,
+        "Predicted extra time per bigram, % of a median keystroke interval: a geometric model fitted to fast touch typists (Aalto 136M keystrokes). A judge; weight 0 in the bundled profiles.",
     ),
     m("B02", "Same-key repeats", "%", Order::Bi, Dir::Info, "The same key twice in a row."),
     m(
@@ -374,6 +396,26 @@ pub fn update_table(g: &Geometry, p: &Profile, prep: &Prep, d: &MetricDef, t: &m
             let Some(c) = g.comfort_tables.get(d.id) else { return false };
             pair(t, n, fresh, ch, &idx, &|i, j| 100.0 * (1.0 - c[i * n + j]))
         }
+        // Key effort reads board-wide fields (home row, home keys, layer holders): rebuild whole.
+        "E01" => pair(t, n, true, &all, &(0..n).collect::<Vec<_>>(), &|i, j| {
+            if g.same_key(i, j) {
+                return 0.0;
+            }
+            let effort = key_effort(g, p, j) + g.holder(j).map_or(0.0, |h| key_effort(g, p, h));
+            let fingers = !k[i].finger.is_thumb() && !k[j].finger.is_thumb();
+            let sh = same_hand(i, j) && fingers && k[i].finger != k[j].finger;
+            let adj = sh && adjacent(i, j);
+            let pinky_ring = sh && k[i].finger.ord() + k[j].finger.ord() == 1;
+            let rows = if sh { (k[i].row - k[j].row).abs() as f32 } else { 0.0 };
+            100.0
+                * (E01_SFB * f32::from(same_finger(i, j))
+                    + E01_SAME_HAND * f32::from(sh)
+                    + E01_ADJACENT * f32::from(adj)
+                    + E01_ROWS * rows
+                    + E01_SCISSOR * f32::from(adj && rows >= 2.0)
+                    + E01_PINKY_RING * f32::from(pinky_ring)
+                    + E01_EFFORT * effort)
+        }),
         "B04" => pair(t, n, fresh, ch, &idx, &|i, j| {
             let lsb = |a: usize, b: usize| k[a].stretch && k[a].finger.ord() == 3 && k[b].finger.ord() == 2;
             pct(same_hand(i, j) && (lsb(i, j) || lsb(j, i)))
@@ -382,14 +424,19 @@ pub fn update_table(g: &Geometry, p: &Profile, prep: &Prep, d: &MetricDef, t: &m
         "B06" => pair(t, n, fresh, ch, &idx, &|i, j| pct(half_scissor(g, i, j))),
         "B07" => pair(t, n, fresh, ch, &idx, &|i, j| pct(rolls(g, i, j) && k[j].finger.ord() > k[i].finger.ord())),
         "B09" => pair(t, n, fresh, ch, &idx, &|i, j| pct(rolls(g, i, j) && k[i].finger.ord() + k[j].finger.ord() == 1)),
-        "B10" => pair(t, n, fresh, ch, &idx, &|i, j| {
-            let sh = same_hand(i, j) && !g.same_key(i, j) && !k[i].finger.is_thumb() && !k[j].finger.is_thumb();
-            if sh {
-                100.0 * (pts[i][1] - pts[j][1]).abs()
-            } else {
-                0.0
-            }
-        }),
+        // Vertical travel from each finger's own home key, so a column stagger that follows
+        // finger length is not a jump. Reads the home keys too: rebuild whole.
+        "B10" => {
+            let lift = home_lift(g, pts);
+            pair(t, n, true, &all, &(0..n).collect::<Vec<_>>(), &|i, j| {
+                let sh = same_hand(i, j) && !g.same_key(i, j) && !k[i].finger.is_thumb() && !k[j].finger.is_thumb();
+                if sh {
+                    100.0 * (lift[i] - lift[j]).abs()
+                } else {
+                    0.0
+                }
+            })
+        }
         "T09" => {
             let st: Vec<f32> = (0..n * n).map(|ij| stretch_at(g, pts, spread, ij / n, ij % n)).collect();
             tri(t, n, fresh, ch, &idx, &|i, j, l| {
@@ -423,11 +470,49 @@ pub fn update_table(g: &Geometry, p: &Profile, prep: &Prep, d: &MetricDef, t: &m
     }
 }
 
+// E01 coefficients, in median relative inter-key intervals, controlling log bigram frequency:
+// fast touch typists (≥ 70 WPM, 18.5k people, 351 letter bigrams; cross-validated R² 0.67 with
+// log frequency). `bench/cost-validity-2026-10-22/`, `context/objective.md` (E01).
+const E01_SFB: f32 = 0.5522;
+const E01_SAME_HAND: f32 = 0.0578;
+const E01_ADJACENT: f32 = 0.0476;
+const E01_ROWS: f32 = 0.0373;
+const E01_SCISSOR: f32 = 0.1004;
+const E01_PINKY_RING: f32 = 0.1263;
+const E01_EFFORT: f32 = 0.0201;
+
 /// The pair/triple tables of [`update_table`] that read [`Geometry::metric_points`]; every
 /// other pair/triple table reads only logical key fields (finger, row, column, flags), so a
 /// pose-only move leaves it unchanged.
 pub fn reads_points(id: &str) -> bool {
     matches!(id, "B03" | "S03" | "B14" | "S04" | "S05" | "B10" | "Y03" | "T09")
+}
+
+/// Each slot's metric-point y minus the mean y of its finger's home keys; for a finger without
+/// home keys, of its hand's home keys; raw y on a board without them.
+fn home_lift(g: &Geometry, pts: &[[f32; 3]]) -> Vec<f32> {
+    let mut finger = [(0.0f32, 0u32); crate::geometry::FINGERS];
+    let mut hand = [(0.0f32, 0u32); 2];
+    for (k, p) in g.key.iter().zip(pts) {
+        if k.home {
+            for e in [&mut finger[k.finger.index()], &mut hand[usize::from(k.hand() == Hand::R)]] {
+                *e = (e.0 + p[1], e.1 + 1);
+            }
+        }
+    }
+    g.key
+        .iter()
+        .zip(pts)
+        .map(|(k, p)| {
+            let (f, h) = (finger[k.finger.index()], hand[usize::from(k.hand() == Hand::R)]);
+            let (y, c) = if f.1 > 0 { f } else { h };
+            if c > 0 {
+                p[1] - y / c as f32
+            } else {
+                p[1]
+            }
+        })
+        .collect()
 }
 
 /// Fill the `[N]` table `t` from `f(i)` (always every entry).

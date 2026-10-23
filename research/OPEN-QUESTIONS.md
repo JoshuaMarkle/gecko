@@ -27,14 +27,13 @@ found little recent work, so most gaps below are gaps in the literature too.
 | RSI risk factors; fatigue over a full workday on non-QWERTY boards | M02 targets, `finger_target` | Typing is ≈ 10 % MVC and shows potentiation, not fatigue ([finger force](sources/finger-force-and-fatigue.md)); no per-finger limit exists in the literature found, so none is needed for M02 |
 | A forearm pronation *limit* (not just effect of tent) | G03 | Tent 20–30° gives ≈ 45° pronation (Marklin review, Rempel 2007: best of six had 14° gable); no injury-linked threshold found. Elbow and shoulder posture not covered |
 | Keyboard-specific thumb data: key force by cluster position, space-bar use, thumb fatigue | I2 (#71), G06 | Joint range and operational workspace done ([thumb](sources/thumb-biomechanics.md)); studies are phone-based and small |
-| Same-finger skipgram cost | S01/S02 weights | Timing shows none (+0.5 %, CI −1.5 to +2.6; [validity](experiments/2026-10-22-cost-function-validity.md)); no comfort data | A comfort or fatigue measurement of SFS |
+| Same-finger skipgram cost | S01/S02 weights | Timing shows none in any split: context, finger, distance, span ([skipgram timing](experiments/2026-10-22-skipgram-timing.md)); no comfort data | A pairwise comfort study of SFS (design in that note) |
 | Layout learning cost | L02 familiarity | Two peer-reviewed studies, rest anecdote; keep as a user-set weight |
 | Symbol and code frequency, layer design | Y-track, D9 (#91) | The French-standard CACM paper is unread |
 | Key switch force, travel, actuation | J, I-tracks | Armstrong 1994 and Martin 1996 give typing forces; no switch-design source |
 | Manufacturability: plate, case, PCB, printing | I4 (#73), J4 (#75) | Only ergogen spacing limits |
 | Non-English n-gram sources, multilingual layouts | E3 corpora | cmini and Leipzig listed, not evaluated |
-| Timing data beyond QWERTY habits | E01 (#31) | 136M data is QWERTY-biased; emg2qwerty is a second source (size unchecked) |
-| Bigram-frequency control in the IKI model | E01 (#31) | 2026 preprint says frequency speeds keypresses; the fit must include it |
+| Timing data beyond QWERTY habits | E01 (#31) | E01 is fitted to the 136M data, which is QWERTY-biased (geometric features only, no per-letter terms); emg2qwerty is a second source (size unchecked) |
 | CHI/UIST proceedings 2023–2026, Engram IJHCI full text, 2025 Biomechanics wrist paper | all tracks | Not indexed by the tools used; abstracts only |
 
 ## Closed
@@ -45,4 +44,5 @@ found little recent work, so most gaps below are gaps in the literature too.
 - 2026-10-21 — RoTS tenure 0.9n–1.1n confirmed in a secondary source (arXiv:1010.0157).
 - 2026-10-21 — Wrist posture risk thresholds ([wrist posture](sources/wrist-posture-and-finger-load.md)); first-pass 2023–2026 survey.
 - 2026-10-21 — Buchholz segment ratios and joint ROM (#6); skipgram definition; trigram classes and `rg` / `my` / `vt` distances tested.
+- 2026-10-22 — Bigram-frequency control in the IKI model: E01 is fitted controlling log bigram frequency ([validity](experiments/2026-10-22-cost-function-validity.md), `context/objective.md`).
 - Dropped: "neutral curl 5° / 4° / 9°" is a Cosmos design choice, not a claim to verify; it stays documented as such in [Cosmos](sources/cosmos-keyboards.md).

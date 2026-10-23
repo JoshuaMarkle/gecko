@@ -5,8 +5,9 @@
 best keyboard itself (2D → 3D). It is first a data-analysis system for judging layouts
 thoroughly and fast, with optimization on top.
 
-- Score any layout on any board: 48 metrics (same-finger bigrams, rolls, stretches, reach
-  and wrist posture from a hand model, …) weighted by editable profiles.
+- Score any layout on any board: 47 metrics (same-finger bigrams, rolls, stretches, reach
+  and wrist posture from a hand model, …) weighted by editable profiles, checked against
+  independent judges (typing time fitted to 136M keystrokes, measured comfort).
 - Optimize with several algorithms (simulated annealing, tabu, memetic, MAP-Elites, NSGA-II, …)
   using fast swap-delta evaluation; every run is reproducible.
 - Explore the landscape of good layouts, not just one optimum.
@@ -20,6 +21,8 @@ Needs Rust (stable), and for the web UI Node and `wasm-pack`.
 ```
 cargo build --release
 ./target/release/gecko compare                 # rank the reference layouts
+./target/release/gecko judge --community        # typing time, comfort, percentiles among community layouts
+./target/release/gecko compare --robust        # how sure each rank is under weight noise
 ./target/release/gecko optimize --time 30s     # writes runs/<id>/
 make && ./target/release/gecko serve           # web UI at http://127.0.0.1:7777
 make test                                      # everything CI runs

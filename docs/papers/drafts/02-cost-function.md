@@ -1,7 +1,8 @@
 # A General Cost Function for Keyboard Layouts: Sensitivity, Calibration and Validity
 
-*Skeleton. Focus paper 2. Topics [T1, T5, T8, T11](../topics.md). Status: scorer, profiles, judges and
-the pairwise fit exist; sweeps, timing model and a user study do not.*
+*Skeleton. Focus paper 2. Topics [T1, T5, T8, T11](../topics.md). Status: scorer, profiles, judges,
+the pairwise fit, weight sweeps (`gecko sweep`, `compare --robust`) and the E01 timing model exist;
+a user study does not.*
 
 ## Abstract (draft)
 Layout tools disagree because their cost functions disagree. We define a general cost function: a
@@ -42,6 +43,9 @@ search effort unless the judge is part of the objective.
 ## Existing evidence
 Timing validity, comfort agreement, weight robustness and a 600-run weight sweep: the experiment
 report `docs/papers/cost-validity/` (`research/experiments/2026-10-22-cost-function-validity.md`).
+The default profile was retuned from it on 2026-10-22; a sweep of the new default is in
+`bench/sweep-2026-10-22/`, and SFS timing by context in
+`research/experiments/2026-10-22-skipgram-timing.md`.
 Held-out pairwise accuracy 53.78 % (learned) vs 51.96 % (default) vs 49.40 % (Engram E05)
 (`research/experiments/2026-10-21-profile-ranking.md`; no CIs yet). An earlier optimum (8.396)
 ranked last on E05 after the profile changed; B11 at weight 1 re-sorts Halmak and Colemak
@@ -57,4 +61,5 @@ Timing data is from QWERTY typists (learn geometric, never per-letter costs); li
 popularity; E05 comes from one study; hand model parameters from literature; no user study yet.
 
 ## Needed
-`gecko sweep` or script; E01 timing model (#31, #61); bootstrap CIs; ideally a 10–20 person study.
+Bootstrap CIs on the ranking fits; Sobol indices over the weights; ideally a 10–20 person study
+(timing and pairwise comfort, including SFS).

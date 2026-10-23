@@ -15,6 +15,9 @@ pub fn fmt_val(v: f64) -> String {
 pub fn print_breakdown(b: &Breakdown) {
     println!("{:<5} {:<18} {:>9} {:>7} {:>9}", "id", "metric", "value", "weight", "score");
     for m in &b.metrics {
+        if m.weight == 0.0 && gecko_core::metrics::def(m.id).is_some_and(|d| d.retired) {
+            continue;
+        }
         let unit = if m.unit == "%" { "%" } else { "" };
         let dir = match m.dir {
             Dir::Min => "",

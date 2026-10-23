@@ -87,7 +87,7 @@ be scored, layout-optimized or shape-searched again.
 
 | Route | |
 |---|---|
-| `GET /api/meta` | defaults, algos, metric definitions, core count |
+| `GET /api/meta` | defaults, algos, metric definitions (with `retired`; `api.meta` drops retired ones for the UI), core count |
 | `GET /api/layouts` · `/api/geometries` · `/api/profiles` · `/api/corpora` | data dir contents; geometries add each finished geometry run's best board (`run:<id>`) and `param` on parametric boards; geometries and corpora carry their content `hash` |
 | `GET /api/geometries/{id}/free?spec=` | free parameters of a parametric board for a `--free` spec: `{vars: [{name, lo, hi, start}]}` |
 | `GET /api/corpora/{name}` | `.gkc` bytes (for WASM) |

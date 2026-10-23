@@ -61,14 +61,15 @@ fn rank_sum_over_runs() {
     let best_t03 = ranked.iter().max_by(|a, b| a.values[1].total_cmp(&b.values[1])).unwrap();
     assert_eq!(best_t03.ranks[1], ranked.iter().filter(|r| r.values[1] == best_t03.values[1]).count() as f64 / 2.0 + 0.5);
     // Re-scored values match the runs' own scores (same inputs; a fresh scorer numbers symbols
-    // in another order, so f32 sums differ in the last bits).
+    // in another order, so f32 sums differ, and the trigram coverage cut breaks frequency ties
+    // by symbol number, keeping a few different rare trigrams: ~3e-5 of the score).
     for r in &ranked {
         let src = &r.sources[0];
         let (id, rank) = src.split_once('#').unwrap();
         let res = run::load_result(&s.runs.join(id)).unwrap();
         let own = &res.best[rank.parse::<usize>().unwrap() - 1];
         assert_eq!(own.chars, r.chars);
-        assert!((own.score - r.score).abs() < 1e-5 * own.score.abs().max(1.0), "{} vs {}", own.score, r.score);
+        assert!((own.score - r.score).abs() < 1e-4 * own.score.abs().max(1.0), "{} vs {}", own.score, r.score);
     }
     assert!(select::metric_cols(&["ZZ9".to_string()], &p).is_err());
     assert!(select::gather(&s.runs, &["../x".to_string()], 10).is_err());

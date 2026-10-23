@@ -1,16 +1,24 @@
 # Objective
 
 Full metric list with IDs: `context/metrics-catalog.md`. Implemented now (`gecko list metrics`):
-B01 SFB, S01 SFS, S02 far SFS (gaps 2–3, decayed), S03 SFS distance, S04/S05 skip stretch (B14 on skipgrams), B03 finger speed,
-B04 LSB, B05 scissors, B06 half scissors, B07 bigram rolls in, B09 pinky–ring pairs, B10 row jump,
-B14 geometric stretch (Oxeylyzer 2), B11 finger-pair movement (KLO), M01 effort, M02 finger-load error,
-M03 finger balance (RSS), M07 peak finger load, M04 hand balance, M09 thumb load, M05 home row, M06 center columns,
-B08 alternation, T01–T08 and T12–T13 (thumb) trigram classes, T09 contortions, T10 irregular trigrams,
-E04/E05 Engram key-pair discomfort (formula / measured; geometry `[comfort]` tables), G01 reach,
-G05 press angle and G03 wrist posture (hand model, profile `[hand]`; `context/hand-model.md`),
-B02 repeats (info), Y01 layer switches (and Shift), Y02 code-symbol bigrams, Y03 paired brackets, Y04 home-row-mod misfires. Profile `[sfb]` sets B03/S03's distance transform (linear, squared, fitts),
-lateral multiplier and per-finger factors, and S02's `skip_decay`. Profile `row_offset`
-(pinky ring middle index × [above, below] home) adds per-finger row costs to M01's geometry effort.
+B01 SFB, S01 SFS, S02 far SFS (gaps 2–3, decayed), S04/S05 skip stretch (B14 on skipgrams),
+B04 LSB, B05 scissors, B06 half scissors, B07 bigram rolls in, B09 pinky–ring pairs, B10 row jump
+(each key measured from its finger's home key), B14 geometric stretch (Oxeylyzer 2), B11
+finger-pair movement (KLO), M01 effort, M02 finger-load error, M03 finger balance (RSS), M07 peak
+finger load, M04 hand balance, M09 thumb load, M05 home row, M06 center columns, B08 alternation,
+T01–T08 and T12–T13 (thumb) trigram classes, T09 contortions, T10 irregular trigrams, E01
+predicted typing time (a judge, below), E04/E05 Engram key-pair discomfort (formula / measured;
+geometry `[comfort]` tables), G01 reach, G05 press angle and G03 wrist posture (hand model,
+profile `[hand]`; `context/hand-model.md`), B02 repeats (info), Y01 layer switches (and Shift),
+Y02 code-symbol bigrams, Y03 paired brackets, Y04 home-row-mod misfires. Profile `[sfb]`'s
+`skip_decay` sets S02. Profile `row_offset` (pinky ring middle index × [above, below] home) adds
+per-finger row costs to M01's geometry effort.
+
+**Retired** (2026-10-22): B03 finger speed and S03 SFS distance. Keystroke timing shows no
+same-finger distance effect beyond B01. They still score, so old runs and profiles verify;
+`gecko list metrics` and the API mark them `retired`, the web UI hides them, fits skip them,
+and no bundled profile weights them. `[sfb]`'s `distance`, `lateral` and `finger_factor` only
+shape them.
 
 ## Hand model (G01, G03, G05)
 
@@ -21,9 +29,10 @@ and pronation of the resting hand against the forearm (elbows from `[hand.body]`
 deviation of sideways reaches. Layer slots add the holder's cost (like M01). Profile `[hand]`
 (`size` or `dims`, optional `body`) sets the hand; without it G01/G03/G05 use the average hand and
 arms and B14's relaxed spread stays 1.35 u (with it: × span / 200 mm). Bundled `default` weights
-them 0; `hand` weights G01 1.0, G05 0.5, G03 1.0 and halves M01. Scales (stdev over references,
-english / ansi-30): G01 0.198, G05 0.060; G03 has none (its spread over layouts is ~0.004: a
-board metric, weighted in natural units). Folded at construction; no hot-loop cost.
+them 0; `hand` weights G01 0.427, G05 0.306 (1.0 and 0.5 on the old 10-layout scale basis, same
+objective), G03 1.0 and halves M01. Scales (stdev over the 9 non-QWERTY references, english /
+ansi-30): G01 0.0847, G05 0.0365; G03 has none (its spread over layouts is ~0.002: a board
+metric, weighted in natural units). Folded at construction; no hot-loop cost.
 
 ## B11 finger-pair movement
 
@@ -43,7 +52,8 @@ Findings (english, ansi-30): B11 spread over the references = 18.3. It agrees wi
 optimum (20 s SA, seed 7: B11 at 0, 0.5, 1 gives near-identical layouts, B14 1.87–1.88, E05
 5.22–5.27) but re-sorts references with ring-up scissors: Semimak (`bl`) 93.7 and Halmak (`ed`)
 97.1 are above QWERTY (85.9); Sturdy 41.5 and Graphite 46.1 are the lowest. Weight 1 swaps
-Halmak and Colemak; 0.5 keeps the reference order. Default 0.5.
+Halmak and Colemak; 0.5 keeps the reference order. Default 0.5 until the 2026-10-22 retune
+halved it to 0.25 (0.2478 on the 9-layout basis); measurements above use the 2026-10-21 profile.
 
 ## Metric contract
 
@@ -125,6 +135,9 @@ refolded as `new` folds them (0, then `+ w·t` in `METRICS` order), so the resul
 `Scorer::new` on the moved board bit for bit (`tests/rebuild.rs`). A changed layer key or
 comfort table marks every slot; a different slot structure is an error. On a 3D board moving one
 key re-fits its hand's plane, so all of that hand's keys are "moved" (geometric tables only).
+B10 measures each key from its finger's home keys, so a moved home key marks its whole hand
+moved; key effort (M01, E01) reads the home row, so a logical change to a home key marks every
+slot. B10 and E01 rebuild their whole table (O(N²)) on every rebuild.
 States must be `refresh`ed afterwards.
 
 Measured 2026-10-21 (i9-13900H, english / default, `gecko perf`, one key nudged per rebuild):
@@ -144,9 +157,11 @@ placement on the home keys, elbow midline) and so recomputed on every rebuild.
 - Frequencies are normalized over the symbols on the layout: values read as "% of the
   keystrokes / bigrams / skipgrams / trigrams typed on this layout".
 - Raw metric values are in natural units (%, average effort). A profile's optional `[scale]`
-  divides each weight (`weight / scale`); `gecko profile normalize` sets scale = the metric's
-  stdev over the reference layouts and rewrites weights so the objective is unchanged. The
-  default profile is in these spread units: weight 1 = "one reference spread".
+  divides each weight (`weight / scale`); `gecko profile normalize --layouts …` sets scale = the
+  metric's stdev over those layouts and rewrites weights so the objective is unchanged. Bundled
+  profiles use the 9 references without QWERTY (`scale_basis`): QWERTY is so far out that it set
+  every scale (SFB spread 1.66 with it, 0.79 without). Weight 1 = "one spread among decent
+  layouts".
 - `gecko profile fit --target E05` fits non-negative spread-unit weights so the other metrics
   predict a judge metric over layouts sampled around the references (reports R²).
 - `trigram_coverage` (default 0.99) keeps the most frequent trigrams covering that share
@@ -154,18 +169,75 @@ placement on the home keys, elbow midline) and so recomputed on every rebuild.
   stay consistent. About 2× faster search than exact (1.0).
 - `gecko profile fit --target likes` learns non-negative weights with pairwise logistic loss
   on unique liked cmini layouts, holding out 20% of whole layouts before computing scales.
-  The opt-in `learned` profile gets 53.8% held-out pair accuracy vs default 52.0% and
-  Engram 49.4% (seed 1); weak popularity evidence, not a replacement for comfort weights.
-  Method, hashes and exact fit: `research/experiments/2026-10-21-profile-ranking.md`.
-- Profiles are TOML in `data/profiles/` (`default`, `sfb`, `hand` = default + hand model, `engram` = independent judge, E05 only):
-  weights, soft targets, constraints. Profiles are versioned; runs record the hash.
+  The fit got 53.8% held-out pair accuracy vs default 52.0% and Engram 49.4% (seed 1,
+  2026-10-21 profiles; `research/experiments/2026-10-21-profile-ranking.md`). It is a ranking
+  aid, not an optimization target: its optimum games the fit (home row 8%, SFB 5.4%), so the
+  bundled `learned` profile was removed on 2026-10-22 and the command prints a warning.
+- Profiles are TOML in `data/profiles/`: `default`; `hand`, `code`, `familiar` (default plus the
+  hand model, layer costs, QWERTY familiarity); `sfb`; `engram` (independent judge, E05 only).
+  Weights, soft targets, constraints. Profiles are versioned; runs record the hash.
+
+## Default profile (2026-10-22)
+
+Retuned against keystroke timing and Engram comfort
+([validity study](../research/experiments/2026-10-22-cost-function-validity.md),
+[decision](decisions/scoring.md)). In old-basis spread units: B01 8.28 → 6, S01 1.06 → 0.75,
+S02 0.31 → 0.22, B14 2 → 1, B11 0.5 → 0.25, S04 0.19 → 0.12, M01 0.279 → 0.6, T01 0.176 → 0.59,
+T03 0.105 → 0.31, T04 0.126 → 0.63; new B05 1.2, B06 0.3, B09 1.2, B10 0.8, M05 0.3; B03 dropped;
+M02, M04, T06, T07, E05 unchanged. Then renormalized to the 9-layout basis (same objective).
+
+- Why: timing gives SFB the largest effect (+0.55 median interval) and scissors (+0.10),
+  pinky–ring (+0.13) and row jump real ones, rates in- and out-rolls equal, and gives B14 almost
+  nothing. The old profile spent 35 % of the score variance among good layouts on B14. Engram
+  comfort is led by key effort and row jump. The weights that reproduce the time judge (NNLS,
+  ρ 0.997) put 11 % on alternates (T01) and give rolls their share; trigram timing has rolls
+  5.7 % faster than alternation. Home row (M05) backs the effort term.
+- Checks: reference order unchanged (Graphite, Sturdy, Semimak, Canary, Dvorak, Colemak-DH,
+  Colemak, Halmak, Workman, QWERTY). Spearman of score vs the time judge over good cmini
+  layouts: 0.44 → 0.87. Optimum (SA 20M evals, two seeds, identical):
+  `lwdgbzquo. rntsfpheai jxmcvky/;,`. It sits at the 1st percentile of cmini on the time judge,
+  with SFB 0.89 %, SFS 6.43 %, home row 63.4 % and effort 1.689, and scores 18.82 under the old
+  default (Graphite 21.68).
+- Rejected: keeping SFB at 8.28 (optimum home row 59.6 %, worse effort and E05); halving S01 and
+  B14 (SFS 7.83 %).
+
+## E01 predicted typing time
+
+A bigram table: the extra time of typing slot j after slot i, in % of a median keystroke
+interval. The model is fitted to fast touch typists (≥ 70 WPM, 18.5k people, 351 letter bigrams
+of the Aalto 136M-keystroke data, median relative interval controlling log bigram frequency;
+cross-validated R² 0.67 with log frequency vs 0.28 without the model):
+`0.5522·SFB + 0.0578·same hand + 0.0476·adjacent fingers + 0.0373·rows + 0.1004·two-row scissor
++ 0.1263·pinky–ring + 0.0201·effort(j)`. Thumb pairs get only the effort term; same-key pairs 0.
+Logical rows, so it reads no metric points. Fitted without SFB distance or roll direction (both
+≈ 0). E01 is a judge: weight 0 in every bundled profile, and fits skip it (like E04/E05).
+Optimizing it would chase the model that checks the score. English / ansi-30: Graphite 6.84,
+Dvorak 7.29, Colemak-DH 8.17, QWERTY 13.06. `gecko judge` reports it with the other judges.
+
+## Robustness
+
+A score is linear in the weights: `Σ (weight / scale) · u` with `u` each metric's signed cost at
+unit weight (`robust::UnitCosts`, `gecko features`). So a ranking can be re-scored under other
+weights without rebuilding scorers.
+
+- `gecko compare --robust` (σ = 0.5 log-normal noise on every weight, 2,000 draws, default
+  profile): Graphite first in 99 % of draws, Sturdy keeps 2nd in 89 %, Workman 9th in 91 %,
+  QWERTY last in all. Semimak and Canary (0.2 apart) swap in about half, and so do Colemak and
+  Halmak. Report adjacent ranks as ties unless `P(>next)` is high.
+- `gecko sweep` (default profile, 20M evaluations per search, 50 draws;
+  `bench/sweep-2026-10-22/`): the base optimum's family collects 55 of 111 weight vectors.
+  Halving any one weight costs at most 0.40 and dropping B01 1.82. σ = 0.5 draws move a median
+  21 keys at a median regret of 1.10. The optimum is a family, not one layout.
+- `gecko optimize` notes results within 0.4 of the best that differ in more than 4 keys
+  (mirror-invariant) as near ties.
 
 ## Calibration
 
 The default profile must rank known layouts sensibly (modern layouts > Colemak-DH and
 Dvorak > QWERTY; Colemak-DH vs Dvorak is left open, see [decisions](decisions/scoring.md)) and reproduce published SFB percentages within tolerance. A
 regression test pins these rankings (`ranking_sanity_on_english`). On the bundled corpus
-QWERTY SFB = 6.63% (published ≈ 6.6%). Validity against 136M-keystroke timing, Engram comfort and
+QWERTY SFB = 6.63% (published ≈ 6.6%). Independent judges per layout: `gecko judge [--community]`
+(E01 typing time, E05/E04 Engram, home row, effort, SFB, with cmini percentiles). Validity against 136M-keystroke timing, Engram comfort and
 weight perturbations: [cost-function validity](../research/experiments/2026-10-22-cost-function-validity.md). Cross-checks: `gecko compare -p engram` (measured
 comfort) and `gecko compare --corpora english,shai,mt-10k,mt-450k,reddit,french` (robustness, L05).
 
@@ -177,22 +249,22 @@ below; `--no-angle` scores them with standard fingering):
 
 | profile · corpus | all (1904) | liked only (303) | ortho (1504) | angle (358) | stagger (40) |
 |---|---|---|---|---|---|
-| default · english | +0.067 | +0.078 | +0.064 | +0.088 | −0.309 |
-| default · shai | +0.071 | +0.100 | +0.068 | +0.087 | −0.322 |
+| default · english | +0.078 | +0.061 | +0.075 | +0.106 | −0.359 |
+| default · shai | +0.077 | +0.071 | +0.073 | +0.111 | −0.386 |
 | engram · english | +0.050 | +0.036 | +0.056 | +0.062 | −0.321 |
-| default · english, `--no-angle` | +0.043 | +0.099 | +0.064 | +0.001 | −0.309 |
-| default · english on ortho-30 (no angle board) | +0.031 | +0.096 | +0.057 | −0.029 | −0.294 |
+| default · english, `--no-angle` | +0.057 | +0.080 | +0.075 | +0.043 | −0.359 |
+| default · english on ortho-30 (no angle board) | +0.052 | +0.076 | +0.074 | +0.030 | −0.364 |
 
-Liked layouts sit at a mean GECKO rank percentile of 45.7 % vs 50.8 % for unliked ones.
-Reading: likes barely track layout quality. They measure fame and age (Graphite 77 likes, rank
-26; the joke layout `inqwerted` 76 likes, rank 1826; Dvorak and Colemak-DH ~20 likes, rank
-~1460), and 84 % of layouts have zero likes (ties). The weak positive ρ among liked layouts is
-the usable signal; `cmini_likes_ranking` pins it (ρ > 0.05, Graphite and Gallium in the top
-10 % of liked layouts: 8th and 15th of 303). Angle fingering lifts the angle group from ρ ≈ 0
-to +0.09 and the whole set from +0.043 to +0.067; liked-only ρ drops (0.099 → 0.078) because
-angle layouts now outrank some liked ortho ones. Engram's comfort tables are per key position,
+Default rows: 2026-10-22 profile. Liked layouts sit at a mean GECKO rank percentile of 45.0 % vs
+50.9 % for unliked ones. Reading: likes barely track layout quality. They measure fame and age
+(Graphite 77 likes, rank 15; the joke layout `inqwerted` 76 likes, rank 1822; Dvorak and
+Colemak-DH ~20 likes, ranks 1198 and 1449), and 84 % of layouts have zero likes (ties). The
+weak positive ρ among liked layouts is the usable signal; `cmini_likes_ranking` pins it
+(ρ > 0.05, Graphite and Gallium in the top 10 % of liked layouts: 5th and 17th of 303). Angle
+fingering lifts the angle group from +0.043 to +0.106 and the whole set from +0.057 to +0.078;
+liked-only ρ drops (0.080 → 0.061) because angle layouts now outrank some liked ortho ones. Engram's comfort tables are per key position,
 so its angle column does not change. The stagger group is small (40, 9 liked) and
-noisy. Per-metric ρ vs likes is printed too (all |ρ| ≤ 0.07). Use these
+noisy. Per-metric ρ vs likes is printed too (all |ρ| ≤ 0.08). Use these
 layouts for C7 as preference pairs between liked layouts, not as raw like counts.
 
 ## Fingering (angle mod)
@@ -204,22 +276,22 @@ bottom-row effort ([decision](decisions/scoring.md)). Reference layouts, default
 english, standard → angle fingering (lower is better; Colemak-DH angle is the ANSI angle
 variant with the `xcdvz` bottom row):
 
-| layout | ansi-30 | ansi-30-angle | Δ | largest weighted changes |
+| layout | ansi-30 | ansi-30-angle | Δ | largest changes |
 |---|---|---|---|---|
-| Graphite | 21.68 (1) | 21.88 (1) | +0.20 | SFB 1.16 → 1.28 %, movement −21 % |
-| Sturdy | 21.83 (2) | 22.62 (2) | +0.79 | SFB 0.89 → 1.03 % |
-| Semimak | 24.05 (3) | 23.84 (3) | −0.21 | movement −27 %, stretch −0.4, SFB +0.13 |
-| Canary | 25.85 (4) | 23.87 (4) | −1.98 | SFB 0.97 → 0.74 %, movement −32 %, stretch −0.6 |
-| Dvorak | 31.43 (5) | 31.79 (6) | +0.37 | SFB, stretch slightly up |
-| Colemak-DH | 31.57 (6) | 32.06 (7) | +0.49 | SFB 1.54 → 1.64 %, load error up |
-| Colemak-DH angle | 32.59 (7) | 31.11 (5) | −1.48 | SFB 1.72 → 1.50 %, stretch −0.55 |
-| Halmak | 33.16 (8) | 34.21 (9) | +1.05 | SFB 2.75 → 2.99 % |
-| Colemak | 33.67 (9) | 34.09 (8) | +0.43 | as Colemak-DH |
-| Workman | 37.66 (10) | 36.57 (10) | −1.09 | SFB 3.00 → 2.85 % |
-| QWERTY | 69.58 (11) | 67.45 (11) | −2.13 | SFB 6.63 → 6.42 %, stretch −0.9 |
+| Graphite | 14.74 (1) | 14.87 (1) | +0.13 | SFB 1.16 → 1.28 %, movement −21 % |
+| Sturdy | 17.67 (2) | 18.21 (2) | +0.54 | SFB 0.89 → 1.03 % |
+| Semimak | 19.71 (3) | 19.31 (4) | −0.40 | movement −27 %, stretch down, SFB +0.13 |
+| Canary | 19.93 (4) | 18.25 (3) | −1.68 | SFB 0.97 → 0.74 %, movement −32 % |
+| Dvorak | 21.99 (5) | 22.26 (5) | +0.27 | SFB, stretch slightly up |
+| Colemak-DH | 26.44 (6) | 26.89 (7) | +0.45 | SFB 1.54 → 1.64 % |
+| Colemak-DH angle | 28.33 (9) | 26.12 (6) | −2.21 | SFB 1.72 → 1.50 %, stretch down |
+| Colemak | 27.37 (7) | 27.69 (8) | +0.32 | as Colemak-DH |
+| Halmak | 28.01 (8) | 28.41 (9) | +0.40 | SFB 2.75 → 2.99 % |
+| Workman | 30.76 (10) | 30.10 (10) | −0.66 | SFB 3.00 → 2.85 % |
+| QWERTY | 61.97 (11) | 60.77 (11) | −1.20 | SFB 6.63 → 6.42 %, stretch down |
 
 Reading: angle fingering is worth about 2 points to layouts designed for it (Canary, the
-Colemak-DH angle variant) and costs 0.2–1 to layouts designed for standard fingering, almost
+Colemak-DH angle variant) and costs 0.1–0.5 to layouts designed for standard fingering, almost
 all through SFB: the left index now covers C V B, so its bottom-row letters collide with its
 home column. Movement (B11) and stretch (B14) fall for most layouts because the bottom-left
 keys are closer to their fingers. Score a layout on the fingering it was designed for;
