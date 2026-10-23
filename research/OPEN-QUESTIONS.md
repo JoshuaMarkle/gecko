@@ -27,6 +27,7 @@ found little recent work, so most gaps below are gaps in the literature too.
 | RSI risk factors; fatigue over a full workday on non-QWERTY boards | M02 targets, `finger_target` | Typing is ≈ 10 % MVC and shows potentiation, not fatigue ([finger force](sources/finger-force-and-fatigue.md)); no per-finger limit exists in the literature found, so none is needed for M02 |
 | A forearm pronation *limit* (not just effect of tent) | G03 | Tent 20–30° gives ≈ 45° pronation (Marklin review, Rempel 2007: best of six had 14° gable); no injury-linked threshold found. Elbow and shoulder posture not covered |
 | Keyboard-specific thumb data: key force by cluster position, space-bar use, thumb fatigue | I2 (#71), G06 | Joint range and operational workspace done ([thumb](sources/thumb-biomechanics.md)); studies are phone-based and small |
+| Same-finger skipgram cost | S01/S02 weights | Timing shows none (+0.5 %, CI −1.5 to +2.6; [validity](experiments/2026-10-22-cost-function-validity.md)); no comfort data | A comfort or fatigue measurement of SFS |
 | Layout learning cost | L02 familiarity | Two peer-reviewed studies, rest anecdote; keep as a user-set weight |
 | Symbol and code frequency, layer design | Y-track, D9 (#91) | The French-standard CACM paper is unread |
 | Key switch force, travel, actuation | J, I-tracks | Armstrong 1994 and Martin 1996 give typing forces; no switch-design source |

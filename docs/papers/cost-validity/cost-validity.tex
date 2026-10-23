@@ -1,0 +1,173 @@
+% Cost-function validity study. Content only; styling is templates/gecko-paper.cls.
+% Build:   docs/papers/templates/build_pdf.sh docs/papers/cost-validity/cost-validity.tex
+% Figures and generated.tex: MPLCONFIGDIR=/tmp/gecko-mpl python3 -I docs/papers/cost-validity/figures.py
+% Every number comes from bench/cost-validity-2026-10-22/ (results.json and the scripts beside it).
+\documentclass{gecko-paper}
+\usepackage{amsmath,array}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\input{generated}
+
+\paperfooter{Joshua Markle · University of Virginia}{GECKO cost-function validity}
+\paperpdfinfo{Is the GECKO cost function right?}{Joshua Markle}{Experiment report}
+\papertitle{Is the cost function right?\\Testing GECKO's layout score against\\typing time, comfort, and its own weights}
+\papersubtitle{Sixty-eight thousand touch typists, a comfort study, and six hundred re-optimizations say which parts of the score are evidence and which are convention.}
+\paperauthor{Joshua Markle}
+\paperaffil{University of Virginia · October 2026}
+\papernotice{Experiment report · 22 October 2026 · GECKO commit 94a22f3}
+
+\begin{document}
+\makepapertitle
+\begin{paperabstract}
+GECKO ranks keyboard layouts with a weighted sum of 16 metrics. We ask whether that score is \emph{right} in three senses: does it agree with independent measurements of what typing costs people, are its conclusions robust to the weights nobody can justify exactly, and does optimizing it buy real improvements or exploit it? We extract every layout's per-metric contributions, test the pair costs against 136M keystrokes (filtered by typist group) and against a measured comfort study, build an independent typing-time judge, and re-optimize under 299 weight vectors. The score is \textbf{valid for touch typists}: controlling for bigram frequency, GECKO's pair cost correlates with the typing time of 18{,}504 fast touch typists at partial $\rho=0.65$ and lifts cross-validated $R^2$ from 0.27 to 0.69, while the same test on one- to four-finger typists, whom its finger model does not describe, gives only 0.26. A same-finger bigram costs fast typists 65\% of their median keystroke interval, which supports SFB's dominant weight. The broad ranking (modern layouts, then classics, then QWERTY) is robust; finer orderings are not: they hinge on the SFB-versus-stretch exchange rate, and with equal weights per metric every modern layout beats every classic in only 6\% of draws. The default optimum is a near tie between two layout families 0.004 points apart, and its 4-point lead over Graphite does not appear in predicted typing time. Timing does \emph{not} support the same-finger skipgram penalty (+0.5\%, 95\% CI $-1.5$ to $+2.6$) or the stretch metric as weighted; it does support penalties GECKO leaves at zero (scissors, pinky–ring pairs, row jumps) and rewards for rolls. We give concrete weight changes and the tools that would make this analysis routine.
+\end{paperabstract}
+
+\begin{paperbody}
+\section{Introduction}
+A layout optimizer is only as good as the score it optimizes. GECKO's default profile \papercite{gecko} was assembled the way most community scores are: metrics taken from existing analyzers (SFB and trigram classes from cmini \papercite{cmini}, stretch from Oxeylyzer \papercite{oxey}, finger-pair movement from KLO \papercite{klo}, measured comfort from the Engram study \papercite{engram}), then weighted by judgement and normalized to “spread units”. It reproduces published SFB numbers and ranks known layouts in the order the community expects, but those are weak checks: the community's own analyzers were built on the same metrics.
+
+We ask three stronger questions.
+\textbf{Validity:} do the costs agree with independent measurements of people typing?
+\textbf{Robustness:} which conclusions survive weights we cannot justify to two significant figures?
+\textbf{Goodhart:} when the optimizer pushes the score to its minimum, do independent judges improve with it, or does the optimizer exploit the score?
+
+\section{The score}
+A profile assigns weight $w_m\ge 0$ and scale $s_m$ to metric $m$; a layout's score is $\sum_m (w_m/s_m)\,u_m$, where $u_m$ is the metric's signed cost (rewards such as rolls enter negatively; the three load-balance terms enter as squared errors). The default profile weights 16 metrics. Scales are standard deviations over ten reference layouts on ANSI-30 with the \texttt{english} corpus, so “weight 1” means one reference spread. SFB carries $w=8.28$; every other weight is $\le 2$.
+
+Because the score is linear in $u$, we exported $u$ for every layout once and re-weighted offline exactly (the reconstruction matches \texttt{gecko score} to $10^{-4}$ on all references). A small tool, \texttt{costlab}, built on \texttt{gecko-core}, exports $u$, the per-metric pair tables, and runs simulated annealing under arbitrary weights (20M evaluations; three seeds of the default profile find the same optimum, 17.561).
+
+\textbf{Layout sets.} 10 references; 1{,}904 distinct community layouts from cmini \papercite{cmini}, all scored on ANSI-30 with standard fingering; 3{,}000 random permutations; optima of every re-optimization.
+
+\section{What the score is made of}
+\paperfigure{varshare}{Share of score variance contributed by each metric, $\mathrm{Cov}(c_m,\text{score})/\mathrm{Var}(\text{score})$. Over random, community, and reference layouts SFB dominates; among good layouts (score $<22$) stretch and comfort decide.\label{fig:varshare}}
+
+SFB explains 80\% of the score variance over random layouts, 70\% over community layouts and 61\% over the references (Figure~\ref{fig:varshare}). The 16 metrics are highly collinear: on community layouts the participation ratio of their correlation spectrum is 3.4, i.e.\ the profile behaves like about three independent criteria. Among \emph{good} layouts (community score $<22$, $n=248$) the picture inverts: stretch (B14) explains 35\%, Engram comfort 14\%, and SFB only 12\%, and SFB and stretch trade off ($r=-0.64$; Figure~\ref{fig:tradeoff}). The score's coarse judgement is therefore an SFB judgement, and its fine judgement is the SFB-to-stretch exchange rate.
+
+\paperfigure{tradeoff}{SFB versus stretch for community layouts with score $<30$. Good layouts lie along a trade-off curve; GECKO's optimum sits below it.\label{fig:tradeoff}}
+
+\section{Validity against typing time}
+\textbf{Data.} The 136M-keystroke study \papercite{dhakal} logged 168k volunteers transcribing sentences, with self-reported finger count, layout and speed. We re-scanned the full public mirror (all 168{,}595 files), kept sections typed exactly as shown, and took press-to-press intervals (IKI) between consecutive letters below 1.5\,s. Each person's intervals were divided by their own median, so the target is \emph{relative} difficulty, free of between-person speed. Groups: \emph{touch} (9–10 fingers, QWERTY; 68{,}063 people), \emph{touch fast} (also $\ge 70$ WPM; 18{,}504) and, as a negative control, \emph{few} (1–4 fingers; 35{,}692). GECKO's finger model describes touch typists only, so a valid score should predict their timing and fail on the control.
+
+\textbf{Confound.} Frequent bigrams are typed faster through practice (Spearman $-0.64$ with log frequency), and on QWERTY, frequency and geometry are entangled. Every test below controls for log bigram frequency; cross-validation holds out all bigrams with the same first letter.
+
+\paperfigure{timing}{Relative IKI against GECKO's folded pair cost (default weights), both residualized on log bigram frequency, in deciles of cost; bars are 95\% intervals. The relation is strong for touch typists and weak for the control group.\label{fig:timing}}
+
+\begin{papertable}{Bigram timing (median relative IKI) versus GECKO pair cost, controlling for log bigram frequency. CV: $R^2$ with first-letter-grouped cross-validation.}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrr@{}}
+\toprule
+group & pairs & partial $\rho$ & $R^2$ freq & +GECKO\\
+\midrule
+touch, $\ge$70 WPM & 351 & \textbf{0.65} & 0.27 & \textbf{0.69}\\
+touch & 435 & 0.50 & 0.34 & 0.58\\
+1–4 fingers (control) & 399 & 0.26 & 0.31 & 0.35\\
+\bottomrule
+\end{tabular*}
+\end{papertable}
+
+GECKO's pair cost is a strong predictor of touch typists' timing (Table~1, Figure~\ref{fig:timing}): adding it to frequency raises cross-validated $R^2$ from 0.27 to 0.69 for fast typists, about as much as a free geometric regression fitted to the timing itself (0.68). The control group gains almost nothing (0.31 to 0.35). This dose–response pattern, strongest for the people the model describes, is the main evidence that the score measures something real.
+
+\textbf{Per-event costs.} A regression on geometric pair features (with log frequency) gives the cost of each event in units of a typist's median interval. For fast touch typists a same-finger bigram costs \textbf{+0.65}, a two-row scissor +0.11, a pinky–ring pair +0.08, an adjacent-finger pair +0.08, any same-hand pair +0.05 and each row of vertical travel +0.03; inward versus outward direction makes no difference ($-0.003$). An SFB is thus 6–13 times as costly as any stretch-type event, which \emph{supports} SFB's dominant weight. Same-finger distance adds nothing once SFB is known ($-0.06$), so the distance-scaled finger-speed metric (B03) is redundant for speed.
+
+\textbf{Trigrams.} A second scan measured the third keystroke of letter trigrams, controlling for the measured time of its own bigram and the trigram's frequency (Table~2). Same-finger skipgrams, the third-largest weight in the profile, have \emph{no} detectable cost: $+0.5\%$ for fast typists (95\% bootstrap CI $-1.5$ to $+2.6$), against $+65\%$ for an SFB. Rolls are reliably faster than alternation ($-5.7\%$), and bad redirects slower ($+3.8\%$).
+
+\begin{papertable}{Effect on the time of the third keystroke (\% vs.\ alternation), fast touch typists, 1{,}334 trigrams; 95\% bootstrap intervals.}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrr@{}}
+\toprule
+event & effect & 95\% CI\\
+\midrule
+SFS (keys 1 and 3 same finger) & +0.5 & $-1.5$ to $+2.6$\\
+roll & $-5.7$ & $-7.2$ to $-4.2$\\
+redirect & +1.3 & $-1.1$ to $+3.6$\\
+bad redirect (no index) & +3.8 & +0.1 to +8.2\\
+one-hand monotone & +0.4 & $-3.2$ to $+4.4$\\
+\bottomrule
+\end{tabular*}
+\end{papertable}
+
+\section{Validity against comfort}
+Engram's study \papercite{engram} asked 61 people to choose the more comfortable of two bigrams (4{,}490 choices); GECKO's E05 metric is a Bradley–Terry fit of those choices. On the 200 measured key pairs, GECKO's pair cost \emph{without} E05 agrees with measured comfort at $\rho=0.49$. But comfort weighs things differently from speed: key effort ($\rho=-0.72$), row jumps ($-0.51$) and stretch ($-0.42$) dominate, while SFB is nearly irrelevant ($-0.06$). Comfort, as measured on bigrams typed in isolation, is about \emph{where} keys are; speed is about \emph{finger collisions}. A profile that serves both needs both kinds of term, which the default has (SFB for speed, E05 and effort for comfort), but the effort and row-jump terms are weak or absent.
+
+\section{An independent time judge}
+The fitted timing model, restricted to relational features (no per-key terms, which on QWERTY absorb practice), predicts a layout's mean relative keystroke time from English letter-bigram frequencies. Fitted only on QWERTY typing, it is independent of GECKO's weights. It agrees with the GECKO score at Spearman 0.94 over random layouts, 0.84 over community layouts and 0.93 over the references, but only 0.44 among good layouts.
+
+\paperfigure{weights}{Share of total weight per metric: the default profile, and non-negative weights fitted so that GECKO's metrics reproduce the time judge over random and community layouts (Spearman 0.997). The judge sees only bigrams, so skipgram metrics cannot be supported by it.\label{fig:weights}}
+
+Fitting non-negative GECKO weights to reproduce the judge (Figure~\ref{fig:weights}) recovers it almost exactly ($\rho=0.997$) with a different emphasis: SFB 25\% (default 55\%), Engram formula comfort E04 15\%, pinky–ring pairs 12\%, scissors 11\%, alternation 11\%, row jump 7\%, and stretch B14 0.3\% (default 13\%). The metrics speed asks for exist in GECKO but are weighted zero; the stretch metric GECKO relies on for fine distinctions carries no speed information beyond them.
+
+\textbf{Goodhart check.} GECKO's default optimum scores 17.56 against Graphite's 21.68, a 4.1-point lead. On the time judge the two are level (2.1377 versus 2.1370; Graphite is in the fastest 4\% of community layouts, the optimum in the fastest 6\%). The optimum also uses the home row less than 96\% of good community layouts (57.8\% of keystrokes) and has higher effort than 92\%: it buys its SFB of 0.51\% partly by moving frequent letters off the home row, the very property the comfort data values most. Beyond the level of the best human designs, further score gains are not visible to either independent judge.
+
+\section{Robustness to the weights}
+\paperfigure{robust}{Reference ranking under log-normal weight perturbations (4{,}000 draws per $\sigma$) and with equal expected weights per metric (diamonds).\label{fig:robust}}
+
+\textbf{Ranking.} Perturbing every weight by a log-normal factor (Figure~\ref{fig:robust}), “every classic layout beats QWERTY” holds in over 99\% of draws at every scale. “Every modern layout beats every classic” holds in 97\% of draws at $\sigma=0.5$ (factors within about $\times0.37$–$\times2.7$), 73\% at $\sigma=1$, and only \textbf{6\%} when every metric gets equal expected weight. Graphite is first in 59\% of draws and Sturdy in 41\%. Only two of the 90 ordered reference pairs are Pareto-dominant (Colemak-DH over Colemak, Workman over QWERTY); every other ordering is a statement about weights. The modern-over-classic result rests on SFB's large weight, which the timing data supports.
+
+\textbf{Scales.} Spread units are not neutral. Recomputing scales without QWERTY changes little (top-20 community overlap 17/20), but computing them over good layouts, where the decisions are made, shrinks SFB's spread from 1.66 to 0.23 and, at the same nominal weights, leaves only 6 of the top 20 community layouts in place. A nominal weight is meaningful only with the layout set that defines its unit.
+
+\textbf{Exchange rate.} Scaling B14 from 0 to 8 times its default leaves the best existing layout unchanged (two candidates), but moves Graphite between rank 438 and 63 of 1{,}914 and Sturdy between 311 and 198. Statements of the form “layout A beats layout B” among good layouts should be reported with the weight range over which they hold.
+
+\section{Re-optimization under perturbed weights}
+\paperfigure{sweep}{Optima under 250 perturbed weight vectors (log-normal, $\sigma=0.5$ and $1.0$), measured against the default optimum: keys moved (mirror-invariant) and regret under the default profile (zero plotted at $10^{-3}$).\label{fig:sweep}}
+
+We re-optimized under the default weights, each weight dropped, halved and doubled (48 vectors), and log-normal draws: \mcAN\ at $\sigma=0.5$ and \mcBN\ at $\sigma=1.0$ (two seeds each; the two seeds agree on \seedagree\ of \seedtotal\ vectors, the rest differ only within near-ties).
+
+\begin{papertable}{One-at-a-time re-optimization: keys moved from the default optimum / regret under the default profile (points), when each weight is dropped, halved or doubled; SFB (\%) and predicted time change $\Delta t$ (\%) of the drop optimum.}
+\small
+\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrrr@{}}
+\toprule
+ & drop & half & double & SFB & $\Delta t$\\
+\midrule
+\oattable
+\bottomrule
+\end{tabular*}
+\end{papertable}
+
+\textbf{Near ties.} The default optimum is not unique in any useful sense. A second family, 14 keys away (\texttt{qkndf zjuo.}\,/\,\texttt{rthcp xseai}), scores 0.004 points worse (0.02\%), trading SFB 0.51\% for 0.64\% and stretch 2.38 for 1.88. Halving or doubling most weights flips between these two families at no meaningful cost (Table~3). The \mcAN\ perturbed vectors produced \mcADistinct\ distinct optima, a median of \mcASlots\ keys from the default optimum, with median regret \mcARegret\ points (90th percentile \mcARegretNinety); at $\sigma=1.0$, \mcBDistinct\ distinct optima of \mcBN, \mcBSlots\ keys away, regret \mcBRegret\ (\mcBRegretNinety). On the time judge, \mcAFaster\% and \mcBFaster\% of these optima are faster than the default optimum, by at most 0.2\%. Small weight changes therefore move many keys but cost little: the landscape has a broad, flat floor, and the weights select a point on it.
+
+\textbf{Load-bearing weights.} Only SFB is indispensable: dropping it raises the optimum's SFB from 0.51\% to 3.40\% and costs 11.4 points. Dropping stretch costs 1.25 and Engram comfort 0.28; dropping any other weight costs at most 0.10, and dropping finger speed (B03), hand balance (M04), SFS (S01), far SFS (S02), alternation (T01) or redirects (T06) does not change the optimum at all. Those terms are inactive at the optimum: other terms already keep them low.
+
+\section{Transfer across corpora}
+Optimizing on one prose corpus and scoring on another costs little: \texttt{english} to \texttt{shai} 0.31 points, to \texttt{reddit} 0.43, \texttt{shai} to \texttt{english} 0.17; every transferred optimum still beats Graphite (3.3–4.1 points behind each corpus's optimum). The Monkeytype word list (\texttt{mt-450k}, each word counted once) is a different target: 2.9–4.9 points of regret in either direction. Corpus choice matters less than weights, except for word lists.
+
+\section{Profiles against the judges}
+\begin{papertable}{Optima of the bundled profiles and of a time-fitted profile (Section~6, with SFS kept), and three references, on every judge: default score, time-judge percentile among community layouts (lower is faster), SFB (\%), stretch, Engram discomfort, home-row use (\%).}
+\small
+\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrrrr@{}}
+\toprule
+layout & score & time & SFB & B14 & E05 & home\\
+\midrule
+\judgetable
+\bottomrule
+\end{tabular*}
+\end{papertable}
+
+The profile matters more on the independent judges than within any one score (Table~4). The \emph{time-fitted} profile (Section~6 weights, SFS kept) produces a layout faster on the time judge than every community layout, with more home-row use (61.4\%), lower effort and better Engram comfort than the default optimum, for 1.8 points of default score; it still beats Graphite by 2.3. The \emph{hand} profile (hand-model reach) lands within 0.6 points of the default and lowers reach cost (G01 0.47 vs 0.56). Single-criterion profiles fail as expected: \emph{sfb} doubles stretch; \emph{engram} (comfort only) accepts 3.1\% SFB. The \emph{learned} profile, fitted to community likes, is exploited by its own optimum: 8\% home-row use, 5.4\% SFB and a default score of 68.3, as bad as QWERTY. A profile fitted to a weak signal is a target, not a judge.
+
+\section{Discussion}
+\textbf{What is right.} The score's backbone is sound. For touch typists the pair costs predict real typing time about as well as a model fitted to the timing itself, and the effect vanishes for the typists the model does not describe. SFB's dominance, the profile's most consequential choice, is what the timing data asks for (an SFB costs 6–13 times any stretch event). Coarse rankings are robust to large weight changes, optima transfer across prose corpora, and the comfort and speed judges both place GECKO's optimum among the best layouts known.
+
+\textbf{What is convention.} The fine structure is not evidence-based. Same-finger skipgrams carry the third-largest weight but have no measurable speed cost; stretch decides between good layouts but adds no speed information once scissors, pinky–ring pairs and row jumps are counted, which GECKO weights at zero; spread units depend on the layout set; and the default optimum is one of two families separated by 0.02\%. Past the level of the best human designs, score improvements do not show up in either independent judge.
+
+\textbf{Recommendations.} (1) Report rankings with their weight robustness, not as single orders. (2) Weight B05 scissors, B09 pinky–ring, B10 row jump and T01 alternation, and reduce B14, guided by the time-fitted shares. (3) Keep SFB high; drop B03 (redundant given SFB). (4) Treat S01/S02 as comfort assumptions, not speed facts, until skipgram comfort is measured. (5) Compute scales over good layouts, or state weights in natural units. (6) Present the optimum as a family (the near-tie set), not a single layout. (7) Do not optimize the \emph{learned} profile; use the time-fitted profile as a second default and report both.
+
+\section{Limitations}
+Timing comes from QWERTY transcription by volunteers; per-key position effects are confounded with practice and were excluded from the judge, but relational effects may still carry QWERTY habits. Speed is not comfort, and the comfort data covers 12 left-hand keys typed in isolation. The time judge is bigram-only, so it cannot judge skipgram or trigram metrics; the trigram timing analysis covers that gap only for the classes tested. Weight perturbations are log-normal around the default, a prior rather than ground truth. Community layouts were all scored with standard fingering. No user study has tested whether the predicted differences are felt.
+
+\section{Reproducibility}
+Inputs: GECKO commit 94a22f3, ANSI-30, \texttt{english}, default profile. All aggregates, the analysis scripts and the \texttt{costlab} source are in \texttt{bench/cost-validity-2026-10-22/}; the timing scans need the public Aalto mirror (Kaggle \texttt{noelsmathew/keystrokes}, CC BY-NC-SA 4.0), which is not redistributed. Optimizations use 20M SA evaluations with seeds 1 and 2.
+
+\section{Tools that would make this routine}
+\textbf{\texttt{gecko sweep}}: re-optimize under a design of weight vectors and report optimum families, regret and per-weight sensitivity (this study's 600 runs, as one command). \textbf{A time metric (E01)} from the fitted model, usable as a judge or an objective, with \texttt{gecko judge} reporting any layout against all judges at once. \textbf{\texttt{gecko score --unit}} to export unit features for batch re-weighting. \textbf{Robust ranking} in \texttt{compare}: rank probabilities under a weight prior. \textbf{A skipgram comfort study}, the largest unsupported weight.
+
+\renewcommand{\refname}{References}
+\begin{thebibliography}{9}
+\paperbibstyle
+\bibitem{gecko}\citetarget{gecko} J. Markle. GECKO: an explainable system for designing keyboard layouts and the keyboards they run on. Draft, 2026.
+\bibitem{cmini}\citetarget{cmini} cmini: AKL community layout analyzer and database. github.com/Apsu/cmini, 2026.
+\bibitem{oxey}\citetarget{oxey} O-X-E-Y. Oxeylyzer 1 and 2. github.com/O-X-E-Y, 2025.
+\bibitem{klo}\citetarget{klo} D. G\"otz. Keyboard Layout Optimizer. github.com/dariogoetz/keyboard\_layout\_optimizer, 2024.
+\bibitem{engram}\citetarget{engram} A. Klein. Engram: a keyboard layout from crowdsourced bigram typing preferences. \textit{Int. J. Human–Computer Interaction}, 2026. doi:10.1080/10447318.2026.2665409.
+\bibitem{dhakal}\citetarget{dhakal} V. Dhakal, A. M. Feit, P. O. Kristensson, and A. Oulasvirta. Observations on typing from 136 million keystrokes. \textit{Proc. CHI}, 2018.
+\end{thebibliography}
+\end{paperbody}
+\end{document}
