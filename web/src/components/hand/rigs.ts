@@ -80,18 +80,31 @@ export function strokesFor(text: string, g: Geometry, chars: string, rigs: Rig[]
 
 export interface Frame3 { pose: HandPose; states: Record<FingerName, FingerState> }
 
+/** A finger sent to a board key (hovering the key in the Hand tab), fingertip target in board-centred coordinates. */
+export interface Reach { side: Side; finger: FingerName; pos: V3 }
+
+/** The finger that types key `slot`, reaching for its top; null when no rig holds that finger. */
+export function reachFor(g: Geometry, rigs: Rig[], keyTop: (i: number) => V3, slot: number): Reach | null {
+  const f = g.key[slot]?.finger;
+  const finger = f && FINGER_OF[f[1]];
+  if (!finger || !rigs.some((r) => r.side === f[0])) return null;
+  return { side: f[0] as Side, finger, pos: keyTop(slot) };
+}
+
 /**
  * Both hands at time `t` of the plan (`t` < 0: resting). The hand follows its fingers' excursions;
  * resting fingers ride along. `lift` (world units) raises each fingertip target, for a mesh whose
- * tip joint sits above its pad.
+ * tip joint sits above its pad. Without a running plan, `over` (keyed by `fingerKey`) moves single
+ * fingers off their homes.
  */
-export function framesAt(rigs: Rig[], plan: Plan | null, d: HandDims, t: number, lift?: Record<FingerName, number>): Frame3[] {
+export function framesAt(rigs: Rig[], plan: Plan | null, d: HandDims, t: number, lift?: Record<FingerName, number>,
+  over?: Record<string, { pos: V3; state: FingerState }>): Frame3[] {
   return rigs.map((r) => {
     const states = {} as Record<FingerName, FingerState>;
     const pos = {} as Record<FingerName, V3>;
     const ex: [FingerName, V3][] = [];
     for (const f of FINGER_NAMES) {
-      const a = plan && t >= 0 ? fingerAt(plan.byFinger[fingerKey(r.side, f)], r.home[f], t, MM) : { pos: r.home[f], state: "rest" as const };
+      const a = plan && t >= 0 ? fingerAt(plan.byFinger[fingerKey(r.side, f)], r.home[f], t, MM) : over?.[fingerKey(r.side, f)] ?? { pos: r.home[f], state: "rest" as const };
       states[f] = a.state;
       pos[f] = a.pos;
       ex.push([f, sub3(a.pos, r.home[f])]);

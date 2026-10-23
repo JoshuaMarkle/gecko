@@ -7,24 +7,28 @@ import { useLayoutEffect, useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import type { Geometry } from "../../api";
 import { ACCENT } from "../../colors";
-import { FINGER_NAMES, keysDown, handLayout, type FingerState, type HandDims, type Plan, type V3 } from "../../hand";
+import { dist3, FINGER_NAMES, fingerKey, keysDown, handLayout, sub3, type FingerState, type HandDims, type Plan, type V3 } from "../../hand";
 import { boardBounds, type Focus, type ViewMode } from "../../three/Keyboard3D";
 import { HandMeshes, padLift } from "./HandMesh";
-import { framesAt, LOOP_GAP, type Frame3, type Rig } from "./rigs";
+import { framesAt, LOOP_GAP, MM, type Frame3, type Reach, type Rig } from "./rigs";
 
 // ---------- 3D ----------
 
 const BONE = "#3a3a3a";
 const MOVE = "#5b8def";
 const STATE_COLOR: Record<FingerState, string> = { rest: BONE, move: MOVE, ready: MOVE, press: ACCENT };
+/** Hover reach easing: fraction of the remaining gap closed per second (exponential), and the most the tip lifts on the way (mm). */
+const REACH_RATE = 12, REACH_ARC = 10;
+const ZERO: V3 = [0, 0, 0];
 
 /**
  * Hands as skinned meshes (`skin`) or as line segments with square joints, colored per finger
- * state, the palm a translucent outline.
+ * state, the palm a translucent outline. While not typing, `reach` sends one finger to a key
+ * (eased there with a small lift, the hand following); without it the fingers ease back home.
  */
-export function Hands({ rigs, dims, plan, clock, keys, playing, loop, onEnd, labels, skin }: {
+export function Hands({ rigs, dims, plan, clock, keys, playing, loop, onEnd, labels, skin, reach }: {
   rigs: Rig[]; dims: HandDims; plan: Plan | null; clock: MutableRefObject<number>; keys: MutableRefObject<Float32Array>;
-  playing: boolean; loop: boolean; onEnd: () => void; labels: boolean; skin: boolean;
+  playing: boolean; loop: boolean; onEnd: () => void; labels: boolean; skin: boolean; reach: Reach | null;
 }) {
   const nh = rigs.length;
   const outlineN = handLayout(dims).outline.length;
@@ -36,6 +40,10 @@ export function Hands({ rigs, dims, plan, clock, keys, playing, loop, onEnd, lab
   const lift = useMemo(() => (skin ? padLift(dims) : undefined), [skin, dims]);
   const rest = useMemo(() => framesAt(rigs, null, dims, -1, lift), [rigs, dims, lift]);
   const last = useRef<Frame3[]>(rest);
+  /** Fingertip offset from home per finger off its home (`fingerKey`), eased toward the hovered key. */
+  const ex = useRef(new Map<string, V3>());
+  /** Set when the buffers show the rest pose but a finger is off home. */
+  const stale = useRef(false);
 
   const draw = (frames: Frame3[]) => {
     last.current = frames;
@@ -78,9 +86,38 @@ export function Hands({ rigs, dims, plan, clock, keys, playing, loop, onEnd, lab
     clock.current = -1;
     keys.current.fill(0);
     draw(rest);
+    stale.current = ex.current.size > 0;
   });
+  /** Eases the hover excursions one step; returns the fingers off home, or null when nothing moved. */
+  const stepReach = (dt: number) => {
+    const k = 1 - Math.exp(-REACH_RATE * dt);
+    let moved = stale.current;
+    const over: Record<string, { pos: V3; state: FingerState }> = {};
+    for (const r of rigs) for (const f of FINGER_NAMES) {
+      const id = fingerKey(r.side, f), home = r.home[f];
+      const goal = reach && reach.side === r.side && reach.finger === f ? sub3(reach.pos, home) : ZERO;
+      const e = ex.current.get(id) ?? ZERO;
+      const gap = dist3(e, goal);
+      if (e === ZERO && goal === ZERO) continue;
+      const done = gap < 1e-3;
+      if (done && goal === ZERO) { ex.current.delete(id); moved = true; continue; }
+      const n: V3 = done ? (gap === 0 ? e : goal) : [e[0] + (goal[0] - e[0]) * k, e[1] + (goal[1] - e[1]) * k, e[2] + (goal[2] - e[2]) * k];
+      moved ||= !done || n !== e;
+      ex.current.set(id, n);
+      const arc = Math.min(0.5 * gap, REACH_ARC * MM);
+      over[id] = { pos: [home[0] + n[0], home[1] + n[1] + arc, home[2] + n[2]], state: done ? "ready" : "move" };
+    }
+    stale.current = false;
+    return moved ? over : null;
+  };
   useFrame((_, dt) => {
-    if (!playing || !plan) return;
+    if (!playing) {
+      const over = stepReach(Math.min(dt, 0.1));
+      if (over) draw(framesAt(rigs, null, dims, -1, lift, over));
+      return;
+    }
+    ex.current.clear();
+    if (!plan) return;
     const next = clock.current < 0 ? 0 : clock.current + Math.min(dt, 0.1);
     if (!loop && next > plan.end) { onEnd(); return; }
     clock.current = loop ? next % (plan.end + LOOP_GAP) : next;

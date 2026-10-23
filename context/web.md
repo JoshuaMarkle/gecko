@@ -73,6 +73,10 @@ from its parent onto its posed segment and stretched to its length; uniform scal
 The model's tip joint sits above the pad, so the mesh poses from targets lifted per finger
 (`padLift`, fit by `HandMesh.test.ts`). Finger skin tints by state; the forearm is clipped 30 mm
 behind the wrist.
+Hovering a key (`Keyboard3D` `onHover`) sends the finger that types it there while typing is
+stopped (`reachFor`, then `framesAt`'s `over`): the fingertip eases toward the key top
+(exponential, 12/s, lifting up to 10 mm on the way), the hand follows by its wrist-movement
+share, and the IK poses the rest. Leaving the key eases the finger back home.
 
 ## Board + layout search
 
