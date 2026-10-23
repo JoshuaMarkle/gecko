@@ -1,8 +1,8 @@
 # Hand model
 
 `gecko_core::hand` turns a hand (preset size or measurements), arms and a board into per-key
-costs the scorer folds like any mono metric: **G01 reach**, **G05 press angle** and **G03 wrist
-posture**. The hand also scales B14's relaxed finger spread. It is a port of the web's `hand.ts` (same skeleton,
+costs the scorer folds like any mono metric: **G01 reach**, **G05 press angle**, **G03 wrist
+posture** and **G06 thumb arc fit**. The hand also scales B14's relaxed finger spread. It is a port of the web's `hand.ts` (same skeleton,
 constants, placement and IK), so the Hand tab shows the hand the scorer measures.
 Background: `research/sources/hand-models.md`.
 
@@ -78,6 +78,19 @@ because its hand-entered key efforts also encode reach).
   wrist-to-key distance). Mostly a board metric: on one board it varies only through those
   sideways reaches (spread over reference layouts on ansi-30 ≈ 0.004), so the hand profile
   weights it in natural units (1.0, no scale): ≈ 1 point between a flat board and a tented split.
+- **G06 thumb arc fit** (thumb keys only, 0 elsewhere) = (gap / 10 mm)², the gap being the key's
+  distance in the key plane (the hand frame's on 3D boards) from the thumb's **natural arc**: the
+  tip's path as the CMC sweeps its flexion range with the other joints at rest, cut to the
+  operational workspace centred on the rest point (73 mm for the average thumb, scaled with thumb
+  length; typing-like use covers ≈ 65–75 mm of the ≈ 130 mm the tip can sweep,
+  `research/sources/thumb-biomechanics.md`). Height is left to G01: the modelled thumb rests
+  ≈ 15 mm above the keycaps and curls down onto them. G01 asks whether the thumb reaches a key;
+  G06 asks whether the cluster follows the sweep, so keys off it (a second thumb row, a key
+  past the workspace) cost more than their reach alone says. `hand::thumb_slots` = ⌊workspace /
+  1 u⌋ is how many 1 u keys fit along it: 3 for the small and average hands, 4 for the large.
+  Values (average hand): Kyria's curved thumb row 0.20–0.25, Lily58's row 0.01–0.4, Corne 0.02–2.0,
+  the Dactyl-Manuform's upper pair 0.15 and 1.6 but its lower four 4–21 (the cluster's known
+  hard-to-reach keys), Ergodox's six 0.01–19 (four above 7).
 - **B14 spread:** the relaxed spread per finger is 1.35 u × `span` / 200 mm with a `[hand]`
   (exactly 1.35 u for the average hand).
 
@@ -93,7 +106,9 @@ away is unreachable and costly; a rigid tent changes no metric but G03, which it
 (`tests/three_d.rs`). Thumb: a cluster key near rest costs < 0.3, a key moved 3 u away is out of
 reach, Dactyl thumb keys press at < half Corne's angle. Wrist: ANSI 9–15° ulnar with palms flat,
 splits ≈ 0° deviation, the Dactyl's tent lowers pronation by > 10°, G03 Dactyl < Corne < ANSI,
-wider elbows deviate more, a sideways out-of-reach key adds G03, bad `[hand.body]` rejected. Web
+wider elbows deviate more, a sideways out-of-reach key adds G03, bad `[hand.body]` rejected.
+G06 (`tests/thumbs.rs`): Kyria's thumb row < 0.5, ≥ 3 of the Dactyl's lower thumb keys > 4,
+finger keys 0, mirrored halves equal; 3 / 3 / 4 thumb slots for small / average / large. Web
 (`hand.test.ts`): the TS thumb rests on its rest point, reaches near targets, keeps its segment
 lengths; `toLocal` inverts `toWorld`. QWERTY, english, average hand and arms:
 
@@ -151,7 +166,9 @@ the default profile (8.29 vs 8.24) while the default optimum costs 2.6% under th
 - Planar finger IK: abduction is free within the cost, not a joint; the finger's axial rotation
   is only its plane's fixed lean (no PIP-axis obliquity growing with flexion); no MCP abduction/flexion
   coupling (abduction shrinks at full flexion). The thumb's CMC axes are fixed (no CMC axial
-  rotation/opposition coupling); G06 (thumb-arc fit) is separate, unimplemented.
+  rotation/opposition coupling). G06's arc is the CMC flexion sweep alone; in real use the CMC
+  moves obliquely to its axes (Tang 2008), and the research note's asymmetry (keys near the
+  thumb base, strongly flexed, are worse than keys at extension) is left to G01.
 - G03: elbows level with the keys, one elbow width for every board; split halves assumed ideally
   turned (a real user may not); no wrist-height or keyboard-slope input yet (extension comes from
   the board's shape only). Elbow width is calibrated to the ≈ 12° conventional-keyboard deviation

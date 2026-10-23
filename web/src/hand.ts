@@ -102,14 +102,14 @@ export function handSpec(h: HandSettings): HandSpec {
 }
 
 /**
- * G01 / G03 / G05 weights and reference spreads (english / ansi-30) added when a profile has none
- * (`data/profiles/hand.toml`); G03 is a board metric, weighted in natural units (scale 1).
+ * G01 / G03 / G05 / G06 weights and reference spreads (english / ansi-30) added when a profile has
+ * none (`data/profiles/hand.toml`); G03 and G06 are board metrics, weighted in natural units (scale 1).
  */
-export const HAND_WEIGHTS: Record<string, [number, number]> = { G01: [1, 0.1983], G03: [1, 1], G05: [0.5, 0.05973] };
+export const HAND_WEIGHTS: Record<string, [number, number]> = { G01: [1, 0.1983], G03: [1, 1], G05: [0.5, 0.05973], G06: [1, 1] };
 
 /**
  * The profile the scorer gets: with "Use hand in optimization" on, `hand` is this hand and G01 /
- * G03 / G05 get the hand profile's weights unless the profile already sets them (0 included);
+ * G03 / G05 / G06 get the hand profile's weights unless the profile already sets them (0 included);
  * off, no `hand` (they then use the average hand, at whatever weight the profile gives them).
  */
 export function withHand(p: Profile, h: HandSettings): Profile {

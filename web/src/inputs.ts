@@ -64,7 +64,7 @@ export function useInputs() {
     for (const [id, [w]] of Object.entries(HAND_WEIGHTS)) if (!(id in (cur?.weights ?? {})) && weights[id] === w) delete weights[id];
     return { ...rest, weights };
   });
-  /** A profile picked from the list (not edited in a view): its own G01 / G03 / G05 weights stay. */
+  /** A profile picked from the list (not edited in a view): its own G01 / G03 / G05 / G06 weights stay. */
   const loadProfile = (p: Profile | null) => setProfileRaw(() => {
     if (!p) return null;
     const { hand: _h, ...rest } = withFingerEffort(p);

@@ -1,5 +1,5 @@
 name = "hand"
-description = "Default plus the hand model: G01 reach, G05 press angle and G03 wrist posture for an average hand (set [hand] to yours); M01 halved since its key efforts also encode reach."
+description = "Default plus the hand model: G01 reach, G05 press angle, G03 wrist posture and G06 thumb arc fit for an average hand (set [hand] to yours); M01 halved since its key efforts also encode reach."
 scale_basis = "stdev over 9 layouts (canary, colemak, colemak-dh, dvorak, graphite, halmak, semimak, sturdy, workman) on english / ansi-30"
 
 # Target % per finger: LP LR LM LI LT RT RI RM RR RP
@@ -11,7 +11,7 @@ row_offset = [[0.0, 0.0], [-0.1, 0.1], [-0.2, 0.2], [0.2, -0.2]]
 
 # Weights and scales: the default profile's (see data/profiles/default.toml for what they mean),
 # plus the terms below.
-# Hand for G01/G03/G05 and B14's relaxed spread: size = "small" | "average" | "large", or explicit
+# Hand for G01/G03/G05/G06 and B14's relaxed spread: size = "small" | "average" | "large", or explicit
 # [hand.dims] in mm (thumb, index, middle, ring, pinky segments; palm_width, palm_length, span,
 # reach), as the web's Hand tab edits them. Optional [hand.body] elbow_width / forearm (mm) for
 # G03; default scaled with the hand (490 / 255 for average). context/hand-model.md.
@@ -43,6 +43,8 @@ G01 = 0.4272  # hand-model reach
 G05 = 0.3056  # hand-model press angle; mostly separates boards, mild on flat ones
 G03 = 1.0     # wrist posture, NATURAL units (no scale): a board metric (ANSI 2.1, split 1.7,
               # tented 1.0); its spread over layouts on one board is ~0.002, so it barely moves search
+G06 = 1.0     # thumb arc fit, NATURAL units (no scale): 0 on ansi-30 (no thumbs), so it has no
+              # spread there; per keystroke ≈ 0.2 between an on-arc and a 1 u off-arc space key
 
 [scale]
 B01 = 0.7908

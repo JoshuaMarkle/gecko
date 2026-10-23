@@ -86,8 +86,8 @@ export function SummaryView({ inputs: i, meta, geometry: g, corpus, profile: p, 
         </tr>; })}
       </tbody></table></Sheet>
       <Sheet title="Hand & simulation"><Settings rows={[
-        ["Use hand in optimization", i.hand.use, i.hand.use, i.hand.use ? "Profile hand for G01 / G03 / G05" : "Off: the average hand, at the profile's weights"],
-        ["Hand-model metrics", weighted("G01", "G03", "G05") ? "Weighted" : "Unweighted", weighted("G01", "G03", "G05"), "G01 reach · G03 wrist · G05 press angle"],
+        ["Use hand in optimization", i.hand.use, i.hand.use, i.hand.use ? "Profile hand for G01 / G03 / G05 / G06" : "Off: the average hand, at the profile's weights"],
+        ["Hand-model metrics", weighted("G01", "G03", "G05", "G06") ? "Weighted" : "Unweighted", weighted("G01", "G03", "G05", "G06"), "G01 reach · G03 wrist · G05 press angle · G06 thumb arc"],
         ["Hand preset", i.hand.preset, i.hand.use, i.hand.use ? "Sent with every score and run" : "Preview only"],
         ...Object.entries(handDims(i.hand)).map(([k, v]): Row => [k, `${value(v)} mm`, i.hand.use, Array.isArray(v) ? "Segments, base → tip" : "Measurement"]),
         ...Object.entries(wristOf(i.hand)).map(([k, v]): Row => [`Wrist ${k}`, v, false, "Simulation only"]),

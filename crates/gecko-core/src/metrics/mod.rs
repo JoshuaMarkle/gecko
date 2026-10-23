@@ -189,6 +189,14 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Hand-model wrist cost per keystroke: ulnar/radial deviation, extension and forearm pronation of the resting hand (elbows from profile `hand.body`; split halves placed to suit the arm), plus the extra deviation of sideways reaches.",
     ),
+    m(
+        "G06",
+        "Thumb arc fit",
+        "",
+        Order::Mono,
+        Dir::Min,
+        "Hand-model thumb cost per keystroke: (distance off the thumb's natural arc / 10 mm)², the arc being the tip's path as the CMC sweeps its flexion range with the other joints at rest; 0 on finger keys.",
+    ),
     m("M05", "Home row", "%", Order::Mono, Dir::Max, "Share of keystrokes on the home row."),
     m("M06", "Center columns", "%", Order::Mono, Dir::Min, "Share of keystrokes on the index stretch columns."),
     m("B08", "Hand alternation", "%", Order::Bi, Dir::Max, "Consecutive keys on different hands."),
@@ -367,7 +375,7 @@ pub fn update_table(g: &Geometry, p: &Profile, prep: &Prep, d: &MetricDef, t: &m
     let pct = |b: bool| if b { 100.0 } else { 0.0 };
     match d.id {
         "M01" => mono(t, n, &|i| key_effort(g, p, i) + g.holder(i).map_or(0.0, |h| key_effort(g, p, h))),
-        "G01" | "G03" | "G05" => {
+        "G01" | "G03" | "G05" | "G06" => {
             let c = prep.hand.get_or_init(|| {
                 let h = p.hand.clone().unwrap_or_default();
                 crate::hand::costs_with(g, &h.dims(), &h.body())
@@ -375,6 +383,7 @@ pub fn update_table(g: &Geometry, p: &Profile, prep: &Prep, d: &MetricDef, t: &m
             let v = match d.id {
                 "G01" => &c.reach,
                 "G03" => &c.wrist,
+                "G06" => &c.arc,
                 _ => &c.align,
             };
             mono(t, n, &|i| v[i] + g.holder(i).map_or(0.0, |h| v[h]))

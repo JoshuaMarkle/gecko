@@ -55,6 +55,14 @@ moved keys, CMA-ES and the bilevel driver below.
   board's) is never changed: no warm-start SA, no inner layout search, no final polish; the whole
   budget goes to CMA-ES over the board, one rebuild + full score per candidate. The web UI's
   Board tab runs this; Both runs bilevel or alternate.
+- **Thumb keys** (`--thumb-keys N|auto`, I2): resize every thumb zone to N columns per side before
+  the search (`geomsearch::resize_thumbs`); `auto` is `hand::thumb_slots` for the profile's hand
+  (3 for the average hand: the 1 u keys that fit along the thumb's 73 mm operational arc, G06).
+  Shrinking keeps columns with a fill the corpus types first, then the cheapest by G01 + G06;
+  growing clones the cheaper end column outward as empty 1 u keys. Kept keys stay in place, so
+  the thumb pose parameters (`thumb`, `thumb3d`) start from the old cluster. Pin `{none}` to keep
+  letters off the empty keys: unpinned, the layout search fills them with letters (thumb letters).
+  Count is not searched by score: with the empty keys pinned every count scores the same (Results).
 - **Collisions**: 2D on flat candidates, 3D keycap + switch + finger access volumes (`collisions_3d`,
   GJK) otherwise, with `--margin` clearance.
   Objective = score + `penalty` · (|start board score| + 1) · total depth, the start board
@@ -220,3 +228,29 @@ thumb keys pinned, `-p data/examples/my-hand.toml` (a 205 mm hand), `--evals 400
   home row for frequent keys, and space is the most frequent).
 - The `20261022-174*` H10 runs above no longer load as boards (keycap overlap under the
   current 2D/3D check); their numbers stand, their `run:<id>` boards do not.
+
+**Thumb cluster (I2, #71, 2026-10-23)**: `corne-36.param`, `-p hand -c english`, `--free
+'3d,fingers.row_curve=0:20,split.tent=0:30'`, `--evals 2000 --seed 1 --threads 5–6`, thumb tokens
+pinned. "G06" is the best board's G06 per keystroke under `hand` (G06 weight 1.0).
+
+| run | thumb keys / side | pins | start → best | G06 | thumbs: rotate, tent, tilt, col curve |
+|---|---|---|---|---|---|
+| `20261023-152222-geom-1e909629` | 3, G06 weight 0 | tokens | 10.90 → 7.36 | 0.155 | 8°, −24°, −12°, 5° |
+| `20261023-152222-geom-467179ae` | 3 | tokens | 10.96 → 7.43 | 0.034 | 12°, −3°, −21°, 14° |
+| `20261023-152222-geom-7ac0d517` | 2 | tokens | 10.96 → 7.49 | | 10°, −2°, −27°, 20° |
+| `20261023-152222-geom-eb9527e1` | 4 | tokens | 10.15 → 6.61 | | 16°, 4°, −14°, 6° |
+| `20261023-152424-geom-e4eae0c0` | 2 | tokens + `{none}` | 12.31 → 9.00 | | 5°, −12°, −11°, 11° |
+| `20261023-152424-geom-b6b0e0d2` | 3 | tokens + `{none}` | 12.31 → 8.86 | 0.012 | 8°, −9°, −20°, 17° |
+| `20261023-152424-geom-fa2d972c` | 4 | tokens + `{none}` | 12.31 → 9.00 | | 6°, 10°, −26°, 2° |
+
+- G06 does what it is for: weighted, the best board's thumb keys sit 4.5× closer to the arc
+  (0.155 → 0.034) for +0.10 G01, +0.08 G03 and −0.11 G05 (weighted), mostly by curving the
+  cluster (col curve 5° → 14°) instead of tenting it (−24° → −3°).
+- Without `{none}` pinned the layout search puts letters on empty thumb keys: Corne's right
+  outer key gets `s`, and the 4-key board's three empty keys get `x`, `r`, `l` (score 6.61).
+  The model charges a thumb press like any cheap key; the thumb's higher press force and the
+  learning cost of thumb letters are not in the score, so this is a profile question, not a
+  board one.
+- With `{none}` pinned, every count starts at the same score (12.31) and ends within 0.14 of
+  the others (one seed): empty keys carry no keystrokes, so the score cannot choose the count.
+  Hence `--thumb-keys auto` sizes the cluster from the arc's capacity instead.
