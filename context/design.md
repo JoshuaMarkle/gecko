@@ -102,7 +102,7 @@ centre, working model right.
 - **Navbar** (40px): three columns (`1fr auto 1fr`) so the transport stays centred.
   - Left: icon tabs (no text labels, so more tabs fit) in segmented tracks with small muted
     group labels and hairline dividers: Home alone, Inputs (Board, Hand, Language, Profile,
-    Summary), Optimize (Layout, Board, Both, Explore), Saved (Runs, Export). Active tab is a
+    Summary), Optimize (Layout, Board, Both, Explore), Saved (Runs, Bench, Export). Active tab is a
     white segment.
   - Centre (Optimize tabs, or any tab while a run is going): one joined cluster of three icon buttons: Play (`--ink` fill; resumes while
     paused), Pause (toggle; `--accent` while paused, the navbar's single blue mark), Stop.

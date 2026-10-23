@@ -203,3 +203,33 @@ fn explore_on_ansi_writes_a_consistent_atlas() {
     }
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn path_relinking_reaches_the_target() {
+    let g = ansi();
+    let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 6);
+    let start = Layout::from_toml(&read("data/layouts/qwerty.toml")).unwrap();
+    let p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
+    let sc = Scorer::new(&g, &c, &p, &start).unwrap();
+    let ctx = Ctx::new(&sc, (0..30).collect(), sc.identity());
+    for seed in 0..8 {
+        let (a, b) = (ctx.random_state(&mut Rng::new(seed)), ctx.random_state(&mut Rng::new(seed + 100)));
+        let path = gecko_core::explore::path::relink(&sc, &a.sym, &b.sym).unwrap();
+        // Every step fixes at least one slot, so the path is never longer than the Hamming distance.
+        assert!(path.steps.len() <= distance::hamming(&a.sym, &b.sym) && path.steps.len() >= distance::swaps(&a.sym, &b.sym));
+        let mut sym = a.sym.clone();
+        for s in &path.steps {
+            sym.swap(s.a, s.b);
+            let want = sc.state_from_sym(sym.clone()).score;
+            assert!((s.score - want).abs() < 1e-6 * want.abs().max(1.0), "step score {} vs full {want}", s.score);
+        }
+        assert_eq!(sym, b.sym);
+        assert!(path.barrier >= -1e-9);
+    }
+    assert!(gecko_core::explore::path::relink(&sc, &start_sym(&sc), &[0; 30]).is_err());
+    assert!(gecko_core::explore::path::relink(&sc, &start_sym(&sc), &start_sym(&sc)).unwrap().steps.is_empty());
+}
+
+fn start_sym(sc: &Scorer) -> Vec<u8> {
+    sc.identity().sym
+}

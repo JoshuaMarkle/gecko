@@ -99,6 +99,9 @@ fn router(store: Store, web: Option<PathBuf>) -> Router {
         .route("/runs/{id}/qd", get(qd_summary))
         .route("/runs/{id}/atlas/{file}", get(atlas_file))
         .route("/swap-matrix", post(swap_matrix))
+        .route("/path", post(path))
+        .route("/bench", get(list_bench))
+        .route("/bench/{id}", get(get_bench))
         .route("/", any(|| async { ApiError(StatusCode::NOT_FOUND, "unknown API route".into()) }))
         .fallback(|| async { ApiError(StatusCode::NOT_FOUND, "unknown API route".into()) })
         .with_state(app);
@@ -620,6 +623,57 @@ async fn swap_matrix(State(app): State<AppState>, Json(req): Json<SwapReq>) -> A
     Ok(Json(v))
 }
 
+#[derive(Deserialize)]
+struct PathReq {
+    #[serde(flatten)]
+    inputs: InputsReq,
+    /// Target layout, slot-ordered like `chars`.
+    to: String,
+}
+
+/// Path relinking from `chars` to `to` (fallback for the WASM `Engine.path`).
+async fn path(State(app): State<AppState>, Json(req): Json<PathReq>) -> ApiResult {
+    let v = tokio::task::spawn_blocking(move || -> std::result::Result<Value, ApiError> {
+        let r = resolve(&app.store, &req.inputs)?;
+        let sc = Scorer::new(&r.geometry, &r.corpus, &r.profile, &r.layout)?;
+        let to = gecko_core::explore::path::target_sym(&sc, &req.to)?;
+        let p = gecko_core::explore::path::relink(&sc, &sc.identity().sym, &to)?;
+        Ok(json!({"schema": SCHEMA, "start": p.start, "steps": p.steps, "barrier": p.barrier}))
+    })
+    .await??;
+    Ok(Json(v))
+}
+
+/// Saved `gecko bench` leaderboards, newest first, without their per-seed traces.
+async fn list_bench(State(app): State<AppState>) -> ApiResult {
+    let mut v: Vec<Value> = std::fs::read_dir(crate::cmd::bench::bench_dir(&app.store))
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter(|e| e.path().extension().is_some_and(|x| x == "json"))
+        .filter_map(|e| serde_json::from_slice::<Value>(&std::fs::read(e.path()).ok()?).ok())
+        .map(|mut b| {
+            if let Some(rs) = b["results"].as_array_mut() {
+                for r in rs {
+                    if let Some(o) = r.as_object_mut() {
+                        o.remove("runs");
+                    }
+                }
+            }
+            b
+        })
+        .collect();
+    v.sort_by(|a, b| b["id"].as_str().cmp(&a["id"].as_str()));
+    Ok(Json(json!(v)))
+}
+
+async fn get_bench(State(app): State<AppState>, Path(id): Path<String>) -> std::result::Result<Response, ApiError> {
+    check_id(&id)?;
+    let bytes = std::fs::read(crate::cmd::bench::bench_dir(&app.store).join(format!("{id}.json")))
+        .map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
+    Ok(([(header::CONTENT_TYPE, "application/json"), (header::CACHE_CONTROL, "no-store")], bytes).into_response())
+}
+
 async fn run_events(
     State(app): State<AppState>,
     Path(id): Path<String>,
@@ -771,9 +825,12 @@ mod tests {
             ("corpora", call("GET", "/api/corpora", None).await),
             ("score", call("POST", "/api/score", Some(json!({"top": 3}))).await),
             ("swapMatrix", call("POST", "/api/swap-matrix", Some(json!({}))).await),
+            ("path", call("POST", "/api/path", Some(json!({"to": "qwfpgjluy;arstdhneiozxcvbkm,./"}))).await),
+            ("benches", call("GET", "/api/bench", None).await),
         ];
         let (started, detail, _) = finished(json!({"algo": "hc", "evals": 20000, "threads": 1})).await;
         samples.push(("startRun", started));
+        assert!(detail["progress"].as_array().unwrap().iter().any(|p| p["workers"].as_array().is_some_and(|w| !w.is_empty())));
         samples.push(("run", detail));
         let (_, _, explore) = finished(json!({"algo": "explore", "evals": 20000, "threads": 1})).await;
         samples.push(("atlas", call("GET", &format!("/api/runs/{explore}/atlas"), None).await));

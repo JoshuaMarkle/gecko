@@ -31,7 +31,7 @@ gecko optimize [--algo sa|hc|ga|memetic|bls|tabu|explore|qd|nsga2|rwsa] [--time 
                [--holdout shai]                                   # also score results on a corpus the search never sees (L06)
                [--fidelity K]                                     # search on the K most frequent trigrams, confirm on all (B8)
                [--fingering] [--fingering-evals 300000]           # then search the board's alternative fingers (C11)
-gecko bench    [--algos hc,sa,ga,bls,tabu] [--seeds 3] [--time 5s]         # algorithm leaderboard
+gecko bench    [--algos hc,sa,ga,bls,tabu] [--seeds 3] [--time 5s] [--no-save]  # algorithm leaderboard; saved to runs/bench/ (web Bench tab)
                [--moves "swap/cycle3/depth2"] [--depth2-width N]      # one row per algo × variant
 gecko explore  [--time 60s | --evals N] [--seed 1] [--threads N] [--pin ...] [--from <layout>]
                [--samples 2000] [--max-optima 100000]         # map local optima; writes an atlas run

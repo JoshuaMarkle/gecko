@@ -3,7 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::{steepest_descent, Ctx, Optimizer, StepInfo, TopK};
+use super::{steepest_descent, Ctx, Optimizer, StepInfo, Telemetry, TopK};
 use crate::rng::Rng;
 use crate::scorer::State;
 
@@ -37,11 +37,12 @@ pub struct Anneal {
     best: Option<State>,
     i: u64,
     restarts: u64,
+    tel: Telemetry,
 }
 
 impl Anneal {
     pub fn new(p: SaParams, top: usize) -> Self {
-        Anneal { p, top: TopK::new(top), t0: 1.0, cur: None, best: None, i: 0, restarts: 0 }
+        Anneal { p, top: TopK::new(top), t0: 1.0, cur: None, best: None, i: 0, restarts: 0, tel: Telemetry::default() }
     }
 
     fn end_restart(&mut self, ctx: &Ctx) -> u64 {
@@ -94,14 +95,19 @@ impl Optimizer for Anneal {
         let best = self.best.as_mut().unwrap();
         let start_i = self.i;
         let end = (self.i + BATCH).min(steps);
+        let (mut improving, mut worse, mut worse_accepted) = (0u64, 0u64, 0u64);
+        let mut t = self.t0;
         while self.i < end {
             // Temperature updated every 256 steps; exp() is the costly part.
-            let t = self.t0 * (ln_ratio * self.i as f64 / steps as f64).exp();
+            t = self.t0 * (ln_ratio * self.i as f64 / steps as f64).exp();
             let chunk_end = (self.i + 256).min(end);
             while self.i < chunk_end {
                 let (a, b) = ctx.random_pair(rng);
                 let d = sc.delta(cur, a, b);
+                improving += (d < 0.0) as u64;
+                worse += (d > 0.0) as u64;
                 if d <= 0.0 || rng.f64() < (-d / t).exp() {
+                    worse_accepted += (d > 0.0) as u64;
                     sc.apply(cur, a, b, d);
                     if cur.score < best.score - 1e-12 {
                         best.clone_from(cur);
@@ -111,6 +117,12 @@ impl Optimizer for Anneal {
             }
         }
         evals += end - start_i;
+        let tel = &mut self.tel;
+        tel.temp = Some(t);
+        tel.proposed += end - start_i;
+        tel.improving += improving;
+        tel.worse += worse;
+        tel.worse_accepted += worse_accepted;
         if self.i >= steps {
             evals += self.end_restart(ctx);
         }
@@ -123,6 +135,14 @@ impl Optimizer for Anneal {
 
     fn top(&self) -> &TopK {
         &self.top
+    }
+
+    fn current(&self) -> Option<(f64, &[u8])> {
+        self.cur.as_ref().map(|c| (c.score, c.sym.as_slice())).or_else(|| self.live_best())
+    }
+
+    fn telemetry(&self) -> Telemetry {
+        self.tel
     }
 
     fn live_best(&self) -> Option<(f64, &[u8])> {

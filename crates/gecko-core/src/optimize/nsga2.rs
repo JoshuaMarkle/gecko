@@ -269,6 +269,7 @@ fn emit(archive: &Archive, ctx: &Ctx, budget: &Budget, on_progress: &mut impl Fn
             best: best.score,
             best_chars: best.sym.iter().map(|&s| ctx.scorer.chars[s as usize]).collect(),
             explore: None,
+            workers: Vec::new(),
         });
     }
 }

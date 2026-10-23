@@ -1,16 +1,17 @@
 // App shell (context/web.md): navbar (Home | Inputs | Optimize | Saved tab groups · play / pause /
 // stop centred, run % beside · working model) over one view. Home is the optimization flowchart;
 // Inputs: Board, Hand, Language, Profile, Summary; Optimize: Layout, Board, Both, Explore (Play
-// runs the open one); Saved: Runs, Export.
+// runs the open one); Saved: Runs, Bench, Export.
 
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react";
 import { api, type Analysis, type CorpusInfo, type Geometry, type GeomRunDetail, type LayoutInfo, type Meta, type Profile, type RunDetail, type RunSummary } from "./api";
 import { ExploreView } from "./components/explore/ExploreView";
 import { collisionColors, stableFocus, useParamBoard } from "./components/geom/GeomBoard";
 import { useGeomVars } from "./components/geom/GeomSearch";
-import { IconBoard, IconExplore, IconExport, IconHand, IconHome, IconLanguage, IconOptBoard, IconOptBoth, IconOptLayout, IconPause, IconPlay, IconProfile, IconRuns, IconStop, IconSummary } from "./components/Icons";
+import { IconBench, IconBoard, IconExplore, IconExport, IconHand, IconHome, IconLanguage, IconOptBoard, IconOptBoth, IconOptLayout, IconPause, IconPlay, IconProfile, IconRuns, IconStop, IconSummary } from "./components/Icons";
 import { BoardSearchView, type LiveBoard } from "./components/views/BoardSearchView";
 import { BoardView } from "./components/views/BoardView";
+import { BenchView } from "./components/views/BenchView";
 import { ExportView } from "./components/views/ExportView";
 import { HandView } from "./components/views/HandView";
 import { HomeView } from "./components/views/HomeView";
@@ -32,7 +33,7 @@ import { profileHash, Scorer, wasmReady } from "./wasm";
 
 const ICONS: Record<View, () => ReactElement> = {
   home: IconHome, board: IconBoard, hand: IconHand, language: IconLanguage, profile: IconProfile, summary: IconSummary,
-  layout: IconOptLayout, shape: IconOptBoard, both: IconOptBoth, explore: IconExplore, runs: IconRuns, export: IconExport,
+  layout: IconOptLayout, shape: IconOptBoard, both: IconOptBoth, explore: IconExplore, runs: IconRuns, bench: IconBench, export: IconExport,
 };
 
 export function App() {
@@ -403,6 +404,7 @@ export function App() {
             current={chars} onAdopt={(c, l, s) => { adopt(c, l, s, runDetail?.config.id); setRank(null); }}
             geomRun={geomDetail} onUseBoard={(id) => adoptBoard(id, geomDetail?.config.id === id ? geomDetail : undefined)} />
         )}
+        {view === "bench" && <BenchView />}
         {view === "export" && <ExportView info={exportInfo} label={shownLabel} onError={setErr} />}
       </main>
     </div>

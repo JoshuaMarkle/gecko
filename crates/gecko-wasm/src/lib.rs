@@ -1,7 +1,7 @@
 //! Browser scorer: the same gecko-core code as the CLI, so numbers in the editor always match.
 //! Built with `wasm-pack build crates/gecko-wasm --target web --out-dir ../../web/src/wasm/pkg`.
 
-use gecko_core::explore::{atlas, distance, stats};
+use gecko_core::explore::{atlas, distance, path, stats};
 use gecko_core::report::{analyze, swap_matrix};
 use gecko_core::{Corpus, Geometry, Layout, Profile, Scorer, SCHEMA};
 use wasm_bindgen::prelude::*;
@@ -44,6 +44,16 @@ impl Engine {
         let layout = Layout::from_str_flat("custom", &self.geometry.name, chars).and_then(|l| l.fit(&self.geometry)).map_err(js)?;
         let sc = Scorer::new(&self.geometry, &self.corpus, &profile, &layout).map_err(js)?;
         Ok(swap_matrix(&sc, &sc.identity()))
+    }
+
+    /// Path relinking from `from` to `to` (slot-ordered chars, same symbols) as JSON
+    /// `{start, steps: [{a, b, score}], barrier}` (gecko-core `explore::path`).
+    pub fn path(&self, from: &str, to: &str, profile_json: &str) -> Result<String, JsError> {
+        let profile: Profile = serde_json::from_str(profile_json).map_err(js)?;
+        let layout = Layout::from_str_flat("custom", &self.geometry.name, from).and_then(|l| l.fit(&self.geometry)).map_err(js)?;
+        let sc = Scorer::new(&self.geometry, &self.corpus, &profile, &layout).map_err(js)?;
+        let target = path::target_sym(&sc, to).map_err(js)?;
+        serde_json::to_string(&path::relink(&sc, &sc.identity().sym, &target).map_err(js)?).map_err(js)
     }
 }
 

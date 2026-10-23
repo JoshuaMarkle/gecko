@@ -1,12 +1,13 @@
 // Explore view: the atlas of an explore run as linked panels. Left: atlas, ranking weights,
 // focus and landscape numbers. Centre: map, fitness–distance, consensus, families, trade-offs,
-// parallel coordinates, funnels, weight stability, landscape, discovery. Right: picked layout.
+// local optima network, path between two layouts, parallel coordinates, funnels, weight
+// stability, landscape, discovery. Right: picked layout.
 // Selection is shared: brushing any cloud focuses every panel; clicking picks one layout.
 // Re-ranking under edited weights is exact and instant (raw metric vectors, gecko-wasm).
 // research/studies/search-space-visualization.md §3, §6.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, FINGERS, type AtlasSummary, type CorpusInfo, type Geometry, type LayoutInfo, type Meta, type Profile, type RunConfig, type RunSummary } from "../../api";
+import { api, FINGERS, type PathResult, type AtlasSummary, type CorpusInfo, type Geometry, type LayoutInfo, type Meta, type Profile, type RunConfig, type RunSummary } from "../../api";
 import { heatColor } from "../../colors";
 import { logGrid, paretoFront, rankOrder, rowChars, sameTables, swapList, symIds, type Swap } from "../../explore";
 import { fmt, fmtCount, fmtTime } from "../../format";
@@ -14,6 +15,8 @@ import { loadAtlasView, type AtlasView, type Scorer } from "../../wasm";
 import { usePref, type SearchSettings } from "../../inputs";
 import { ConsensusBoard, Thumb } from "./Board";
 import { Correlogram, Discovery, Families, Funnels, Landscape, ParallelCoords, Stability, stabilityRows, type Axis, type Family, type Funnel } from "./Panels";
+import { LonGraph } from "./Lon";
+import { PathPanel } from "./PathPanel";
 import { Picked, type PickedInfo } from "./Picked";
 import { Scatter, type Mark } from "./Scatter";
 
@@ -67,6 +70,8 @@ export function ExploreView(p: Props) {
   const [swaps, setSwaps] = useState<Swap[] | null>(null);
   const [refs, setRefs] = useState<{ label: string; sym: Uint8Array; score: number }[]>([]);
   const [copied, setCopied] = useState(false);
+  const [pathFrom, setPathFrom] = useState<number | null>(null);
+  const [path, setPath] = useState<{ key: string; res: PathResult | null; err: string | null } | null>(null);
   const lastLoad = useRef(0);
 
   // Follow a newly started explore run.
@@ -105,7 +110,7 @@ export function ExploreView(p: Props) {
     }, wait);
     return () => { alive = false; clearTimeout(t); };
   }, [id, liveVersion, p.geometries]);
-  useEffect(() => { setBrush(null); setPicked(null); }, [id]);
+  useEffect(() => { setBrush(null); setPicked(null); setPathFrom(null); }, [id]);
 
   const profile = rankBy === "current" || !data ? p.profile : data.config.profile;
   const profJson = useMemo(() => JSON.stringify(profile), [profile]);
@@ -295,6 +300,28 @@ export function ExploreView(p: Props) {
     return () => { alive = false; };
   }, [info?.chars, profile, data, p.scorer, p.scorerKey, p.corpora]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ---- path between two layouts: path start (default best) → picked ----
+  const lonEdges = useMemo(() => (data ? data.view.edges() : new Uint32Array()), [data]);
+  const lonRows = useMemo(() => focus.slice(0, 300), [focus]);
+  const fromRow = data && pathFrom !== null && pathFrom < data.n ? pathFrom : ranked?.best ?? null;
+  const fromChars = data && fromRow !== null ? rowChars(data.syms, data.slots, fromRow, data.alphabet) : "";
+  const toChars = info?.chars ?? "";
+  const pathKey = `${fromChars}|${toChars}|${profJson}`;
+  useEffect(() => {
+    if (!data || !fromChars || !toChars || fromChars === toChars) return;
+    let alive = true;
+    setPath({ key: pathKey, res: null, err: null });
+    const corpus = p.corpora.find((c) => c.name === data.config.corpus.name || c.id === data.config.corpus.name);
+    const geomId = (data.geometry as Geometry & { id: string }).id;
+    (async () => {
+      if (p.scorer && corpus && p.scorerKey === `${geomId}|${corpus.id}`) return p.scorer.path(fromChars, toChars, profile);
+      if (!corpus) throw new Error(`corpus '${data.config.corpus.name}' is not in data/corpora`);
+      return api.path({ geometry: geomId, corpus: corpus.id, profile_override: profile, chars: fromChars, to: toChars });
+    })().then((res) => alive && setPath({ key: pathKey, res, err: null }), (e) => alive && setPath({ key: pathKey, res: null, err: (e as Error).message }));
+    return () => { alive = false; };
+  }, [pathKey, data, p.scorer, p.scorerKey, p.corpora]); // eslint-disable-line react-hooks/exhaustive-deps
+  const shownPath = path && path.key === pathKey ? path : null;
+
   const describe = (row: number | null) => (row === null || !ranked || !data ? "stays best to the end of the range" : `#${ranked.rank[row] + 1} (${fmt(ranked.scores[row], 3)} now, ${ranked.dBest[row]} keys differ)`);
   const near = useMemo(() => (data && ranked ? Array.from(ranked.scores, (s) => s <= ranked.scores[ranked.best] + 0.01 * Math.abs(ranked.scores[ranked.best])) : []), [data, ranked]);
   const coverage = useMemo(() => {
@@ -436,6 +463,16 @@ export function ExploreView(p: Props) {
                 const rows: number[] = []; for (let i = 0; i < data.n; i++) if (ranked.sinks[i] === f.bottom) rows.push(i); selectRows(rows, f.bottom);
               }} /></div>
             </section>
+            <section className="card">
+              <h3>Local optima network<span className="hint">{lonRows.length} focused optima · links: kicks between them · color: funnel</span></h3>
+              <div className="chartbox tall"><LonGraph order={lonRows} edges={lonEdges} scores={ranked.scores} hits={data.hits} sinks={ranked.sinks} funnelRank={funnelRank}
+                picked={pick} best={ranked.best} onPick={onPick} tooltip={(i) => tip(i)} /></div>
+            </section>
+            <section className="card">
+              <h3>Path<span className="hint">cheapest swaps from {fromRow === ranked.best ? "the best" : `#${ranked.rank[fromRow ?? 0] + 1}`} to the picked layout{fromRow !== ranked.best ? "" : " · set another start in the right pane"}</span></h3>
+              <div className="cardbody">{pick !== null && fromRow !== null && <PathPanel geometry={data.geometry} from={fromChars} to={toChars} path={shownPath?.res ?? null} error={shownPath?.err ?? null}
+                fromLabel={fromRow === ranked.best ? "best" : `#${ranked.rank[fromRow] + 1}`} toLabel={`#${ranked.rank[pick] + 1}`} />}</div>
+            </section>
             <section className="card wide">
               <h3>Parallel coordinates<span className="hint">focus in ink, a sample of the rest faint, picked in blue · better is down on every axis</span></h3>
               <div className="chartbox">{axes.length > 1 && <ParallelCoords axes={axes} focus={focus} context={context} picked={pick} onBrush={(r) => setBrush(r)} />}</div>
@@ -463,7 +500,7 @@ export function ExploreView(p: Props) {
       <aside className="pane xright">
         <div className="panehead"><b>Layout</b><span className="hint">lower score is better</span></div>
         <div className="scroll">
-          {data && <Picked p={info} geometry={data.geometry} swaps={swaps} copied={copied}
+          {data && <Picked p={info} geometry={data.geometry} swaps={swaps} copied={copied} isPathStart={pick !== null && pick === fromRow} onPathStart={() => setPathFrom(pick)}
             onOpen={() => info && p.onOpen(info.chars, `atlas #${info.rank + 1}`)}
             onCopy={() => info && navigator.clipboard?.writeText(info.chars).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1200); })} />}
         </div>

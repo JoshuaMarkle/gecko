@@ -4,7 +4,7 @@
 export type InputTabName = "board" | "hand" | "language" | "profile" | "summary";
 /** layout: the layout for a fixed board; shape: the board for a fixed layout; both: board and layout together. */
 export type OptimizeTabName = "layout" | "shape" | "both" | "explore";
-export type SavedTabName = "runs" | "export";
+export type SavedTabName = "runs" | "bench" | "export";
 export type View = "home" | InputTabName | OptimizeTabName | SavedTabName;
 
 export const INPUT_TABS: [InputTabName, string][] = [["board", "Board"], ["hand", "Hand"], ["language", "Language"], ["profile", "Profile"], ["summary", "Summary"]];
@@ -12,7 +12,7 @@ export const OPTIMIZE_TABS: [OptimizeTabName, string][] = [
   ["layout", "Optimize the layout for the board"], ["shape", "Optimize the board for the layout"],
   ["both", "Optimize board and layout together"], ["explore", "Explore the search space"],
 ];
-export const SAVED_TABS: [SavedTabName, string][] = [["runs", "Saved runs"], ["export", "Export"]];
+export const SAVED_TABS: [SavedTabName, string][] = [["runs", "Saved runs"], ["bench", "Algorithm bench"], ["export", "Export"]];
 
 /** Navbar groups in order; the first has no label. */
 export const TAB_GROUPS: [string, [View, string][]][] = [["", [["home", "Home"]]], ["Inputs", INPUT_TABS], ["Optimize", OPTIMIZE_TABS], ["Saved", SAVED_TABS]];

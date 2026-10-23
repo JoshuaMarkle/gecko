@@ -1,5 +1,6 @@
 // Explore right pane: the picked layout — rank, score vs best, provenance in the atlas, metric
-// values vs the best layout, and its swap neighbourhood (which hand edits are nearly free).
+// values vs the best layout, and its swap neighbourhood (which hand edits are nearly free). It can
+// become the start of the Path card.
 
 import type { Geometry, MetricDef } from "../../api";
 import { HAIR, INK, MUTED } from "../../colors";
@@ -39,8 +40,10 @@ function NeighbourChart({ swaps, score }: { swaps: Swap[]; score: number }) {
   );
 }
 
-export function Picked({ p, geometry, swaps, onOpen, onCopy, copied }: {
+export function Picked({ p, geometry, swaps, onOpen, onCopy, copied, isPathStart, onPathStart }: {
   p: PickedInfo | null; geometry: Geometry; swaps: Swap[] | null; onOpen: () => void; onCopy: () => void; copied: boolean;
+  /** This layout starts the Path card; `onPathStart` makes it the start. */
+  isPathStart: boolean; onPathStart: () => void;
 }) {
   if (!p) return <div className="empty">Click a point to inspect a layout.</div>;
   const delta = p.score - p.best;
@@ -64,6 +67,8 @@ export function Picked({ p, geometry, swaps, onOpen, onCopy, copied }: {
         <div className="btns">
           <button className="btn primary" onClick={onOpen}>Open in Layout</button>
           <button className="btn soft small" onClick={onCopy}>{copied ? "Copied" : "Copy layout"}</button>
+          <button className="btn soft small" onClick={onPathStart} disabled={isPathStart}
+            title="The Path card shows the cheapest swap sequence from this layout to whichever layout is picked next">{isPathStart ? "Path start" : "Set as path start"}</button>
         </div>
       </div>
       <details className="sec" open>

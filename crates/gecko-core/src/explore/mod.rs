@@ -7,6 +7,7 @@
 pub mod archive;
 pub mod atlas;
 pub mod distance;
+pub mod path;
 pub mod probe;
 pub mod qd;
 pub mod stats;
@@ -142,7 +143,7 @@ pub fn run(
     let t0 = Instant::now();
     let start_chars: String = ctx.start.chars(sc).iter().collect();
     let phase = |phase: &str| Some(ExploreProgress { phase: phase.into(), ..Default::default() });
-    on_progress(&Progress { elapsed_ms: 0, evals: 0, best: ctx.start.score, best_chars: start_chars.clone(), explore: phase("probe") });
+    on_progress(&Progress { elapsed_ms: 0, evals: 0, best: ctx.start.score, best_chars: start_chars.clone(), explore: phase("probe"), workers: Vec::new() });
 
     // Mirror canonicalization only when nothing is pinned and scores are mirror-symmetric.
     let mirror = if ctx.movable.len() == sc.n { distance::score_symmetry(sc) } else { None };
@@ -183,7 +184,7 @@ pub fn run(
         }
         let (optima, hits, edges) = archive.counts();
         let explore = Some(ExploreProgress { phase: "search".into(), optima: optima as u64, hits, edges: edges as u64, version });
-        on_progress(&Progress { elapsed_ms, evals, best: pg.best, best_chars: pg.best_chars.clone(), explore });
+        on_progress(&Progress { elapsed_ms, evals, best: pg.best, best_chars: pg.best_chars.clone(), explore, workers: Vec::new() });
     });
     let mut out = out;
     out.elapsed_ms += probe_ms;

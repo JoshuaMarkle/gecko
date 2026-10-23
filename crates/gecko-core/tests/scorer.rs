@@ -597,6 +597,34 @@ fn deterministic_with_eval_budget() {
 }
 
 #[test]
+fn worker_trace_records_sa_schedule() {
+    let g = ansi();
+    let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 5);
+    let sc = Scorer::new(&g, &c, &all_weights(), &layout("qwerty")).unwrap();
+    let ctx = Ctx::new(&sc, (0..30).collect(), sc.identity());
+    let mut p = Params { algo: Algo::Sa, seed: 2, threads: 2, time_ms: None, evals: Some(400_000), top: 3, ..Default::default() };
+    p.sa.steps = 100_000;
+    let mut recs = Vec::new();
+    optimize::run(&ctx, &p, Duration::from_millis(1), &Control::default(), |pr| recs.push(pr.clone()));
+    let ws: Vec<_> = recs.iter().flat_map(|r| r.workers.iter()).collect();
+    assert!(!ws.is_empty(), "no worker trace");
+    let (mut proposed, mut worse, mut accepted) = (0, 0, 0);
+    for w in &ws {
+        assert!(w.temp.is_some_and(|t| t > 0.0));
+        assert!(w.improving + w.worse <= w.proposed && w.worse_accepted <= w.worse);
+        assert!(w.best <= w.current + 1e-9 && w.chars.chars().count() == 30);
+        (proposed, worse, accepted) = (proposed + w.proposed, worse + w.worse, accepted + w.worse_accepted);
+    }
+    // Counters are per record, so they add up to the evaluations the annealing loop made.
+    assert!(proposed > 0 && proposed <= 400_000 && accepted > 0 && accepted < worse);
+    // Hill climbing has no schedule: its trace has no temperature.
+    p.algo = Algo::Hc;
+    let mut hc = Vec::new();
+    optimize::run(&ctx, &p, Duration::from_millis(1), &Control::default(), |pr| hc.push(pr.clone()));
+    assert!(hc.iter().flat_map(|r| &r.workers).all(|w| w.temp.is_none() && w.proposed == 0));
+}
+
+#[test]
 fn pins_are_respected() {
     let g = ansi();
     let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 4);

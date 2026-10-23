@@ -1,7 +1,7 @@
 //! One module per command group. Each owns its clap arguments and a `run` function;
 //! this file only lists the commands and dispatches them.
 
-mod bench;
+pub(crate) mod bench;
 mod build;
 mod certify;
 mod corpus;

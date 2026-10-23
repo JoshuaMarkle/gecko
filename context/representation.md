@@ -230,7 +230,22 @@ A run directory `runs/<timestamp>-<algo>-<short-hash>/` contains:
   `bound`: lower bound + optimality gap of the best layout, `context/algorithms/bounds.md`;
   with a holdout corpus, each layout's `holdout` score and a `holdout` report: start/best on
   both corpora, `retained` share of the gain, `rank_corr` Spearman over the top-K)
-- `progress.jsonl` (elapsed, evals, best score and layout, every ~250 ms)
+- `progress.jsonl` (elapsed, evals, best score and layout, every ~250 ms). Runs of
+  independent workers (hc, sa, ga, bls, tabu) add `workers`, one record per
+  worker that has stepped (`optimize::WorkerTrace`):
+  `{evals, current, best, temp?, proposed, improving, worse, worse_accepted, chars}`.
+  `current` / `chars` are the layout the worker is at (SA: current state; BLS: current
+  optimum; tabu: current solution; others: their best), on the worker's fidelity level.
+  `temp` is the SA temperature (absent elsewhere). The four counts are moves since the
+  previous record: proposed, improving, worsening proposed, worsening accepted (SA: single
+  swaps; BLS: kick + descent; zero for algorithms that do not count). Memetic, NSGA-II,
+  RWSA, explore and qd records have no `workers`.
+
+`gecko bench` writes `runs/bench/<stamp>-<algos>.json` (skip with `--no-save`): schema, id,
+created, commit, time_ms, threads, seeds, geometry, corpus, profile, and `results` [{algo,
+moves, mean, best, stdev, evals_per_sec, scores, runs: [{seed, score, evals, elapsed_ms,
+trace: [[ms, best], …]}]}]. `trace` lists every new best with the time it was reached
+(sampled every 20 ms), for time-to-target curves.
 
 Explore runs add an **atlas** (`explore/atlas.rs`; little-endian, fixed-size records,
 rewritten atomically on each snapshot):
