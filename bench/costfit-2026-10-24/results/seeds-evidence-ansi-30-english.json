@@ -1,0 +1,80 @@
+{
+ "profile": "evidence",
+ "board": "ansi-30",
+ "corpus": "english",
+ "evals": 25000000,
+ "best": 8.07357254991255,
+ "at_best": 10,
+ "rows": [
+  {
+   "seed": 1,
+   "run": "20261024-222718-bls-49ef5b6a",
+   "score": 8.07357254991255,
+   "chars": "wgncvzuo,qdtrsfyheiapblmjxk/;.",
+   "holdout": 9.473445053647193
+  },
+  {
+   "seed": 2,
+   "run": "20261024-222718-bls-95eabcb4",
+   "score": 8.07357254991255,
+   "chars": "wgncvzuo,qdtrsfyheiapblmjxk/;.",
+   "holdout": 9.473445053647193
+  },
+  {
+   "seed": 3,
+   "run": "20261024-222718-bls-60f84b82",
+   "score": 8.07357254991255,
+   "chars": "wgncvzuo,qdtrsfyheiapblmjxk/;.",
+   "holdout": 9.473445053647193
+  },
+  {
+   "seed": 4,
+   "run": "20261024-222718-bls-9ae7e651",
+   "score": 8.07357254991255,
+   "chars": "wgncvzuo,qdtrsfyheiapblmjxk/;.",
+   "holdout": 9.473445053647193
+  },
+  {
+   "seed": 5,
+   "run": "20261024-222718-bls-6756a6e5",
+   "score": 8.07357254991255,
+   "chars": "wgncvzuo,qdtrsfyheiapblmjxk/;.",
+   "holdout": 9.473445053647193
+  },
+  {
+   "seed": 6,
+   "run": "20261024-222739-bls-2fdfb05f",
+   "score": 8.07357254991255,
+   "chars": "wgncvzuo,qdtrsfyheiapblmjxk/;.",
+   "holdout": 9.473445053647193
+  },
+  {
+   "seed": 7,
+   "run": "20261024-222739-bls-5a3d9d06",
+   "score": 8.07357254991255,
+   "chars": "wgncvzuo,qdtrsfyheiapblmjxk/;.",
+   "holdout": 9.473445053647193
+  },
+  {
+   "seed": 8,
+   "run": "20261024-222740-bls-8b68c89d",
+   "score": 8.07357254991255,
+   "chars": "wgncvzuo,qdtrsfyheiapblmjxk/;.",
+   "holdout": 9.473445053647193
+  },
+  {
+   "seed": 9,
+   "run": "20261024-222740-bls-02b4a22e",
+   "score": 8.07357254991255,
+   "chars": "wgncvzuo,qdtrsfyheiapblmjxk/;.",
+   "holdout": 9.473445053647193
+  },
+  {
+   "seed": 10,
+   "run": "20261024-222741-bls-92403d53",
+   "score": 8.07357254991255,
+   "chars": "wgncvzuo,qdtrsfyheiapblmjxk/;.",
+   "holdout": 9.473445053647193
+  }
+ ]
+}

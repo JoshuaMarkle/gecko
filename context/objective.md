@@ -215,10 +215,31 @@ placement on the home keys, elbow midline) and so recomputed on every rebuild.
   aid, not an optimization target: its optimum games the fit (home row 8%, SFB 5.4%), so the
   bundled `learned` profile was removed on 2026-10-22 and the command prints a warning.
 - Profiles are TOML in `data/profiles/`: `default`; `hand`, `code`, `familiar` (default plus the
-  hand model, layer costs, QWERTY familiarity); `sfb`; `engram` (independent judge, E05 only).
+  hand model, layer costs, QWERTY familiarity); `balanced` (the default until 2026-10-24; Phase 2
+  and the validation below used it); `sfb`; `engram` (independent judge, E05 only).
   Weights, soft targets, constraints. Profiles are versioned; runs record the hash.
 
-## Default profile (2026-10-22)
+## Default profile (2026-10-24)
+
+Found by a bilevel search ([cost-function optimization](../research/experiments/2026-10-24-cost-function-optimization.md),
+[decision](decisions/scoring.md)): CMA-ES over the weights, each candidate scored by the layout
+it optimizes to. That optimum is judged on typing time (key-pair and trigram timing regressed on
+the metric tables, refit on a held-out half of the typists) and on Engram measured comfort, with
+equal weight per spread. The community ranking of 16 tier layouts is kept (ρ ≥ 0.8).
+
+- Weights: E05 0.62 → 2.08, B08 hand alternation 0 → 1.0, T07 ×2, M01 ×2, M02/M04 ×3–5;
+  S01/S02/S04, T01, T06, B05/B06, B11, M05 cut to ≤ 0.1 (no measured cost). B01, B09, B14, rolls kept.
+- Timing coefficients (log time per unit, 90 % CI): SFB +0.16 (0.11–0.21), alternation −0.085,
+  pinky–ring +0.08, stretch +0.05, row jump +0.04, effort +0.03; third keystroke: bad redirect
+  +0.036, roll out −0.014, SFS +0.015 (0–0.026), trigram alternation 0.
+- Optimum (BLS 25M, 10/10 seeds): `wgncvzuo,q dtrsfyheia pblmjxk/;.`, 8.074. Against the
+  `balanced` optimum it is better on all 7 judges (time model on either typist half, empirical
+  time judge under two practice models, E01 6.54 vs 6.64, E05 4.04 vs 4.91, E04 4.38 vs 4.79). It
+  pays with SFS 8.5 vs 6.4 %, SFB +0.06 pp, home row −2 pp. Both english and shai winners rank
+  1st–2nd on all five corpora. Reference order: Graphite, Sturdy, Semimak, Canary, Dvorak,
+  Halmak, Colemak-DH, Colemak, Workman, QWERTY (Halmak moves up two).
+
+### Previous default (`balanced`, 2026-10-22)
 
 Retuned against keystroke timing and Engram comfort
 ([validity study](../research/experiments/2026-10-22-cost-function-validity.md),
@@ -262,13 +283,15 @@ unit weight (`robust::UnitCosts`, `gecko features`). So a ranking can be re-scor
 weights without rebuilding scorers.
 
 - `gecko compare --robust` (σ = 0.5 log-normal noise on every weight, 2,000 draws, default
-  profile): Graphite first in 99 % of draws, Sturdy keeps 2nd in 89 %, Workman 9th in 91 %,
-  QWERTY last in all. Semimak and Canary (0.2 apart) swap in about half, and so do Colemak and
-  Halmak. Report adjacent ranks as ties unless `P(>next)` is high.
-- `gecko sweep` (default profile, 20M evaluations per search, 50 draws;
-  `bench/sweep-2026-10-22/`): the base optimum's family collects 55 of 111 weight vectors.
-  Halving any one weight costs at most 0.40 and dropping B01 1.82. σ = 0.5 draws move a median
-  21 keys at a median regret of 1.10. The optimum is a family, not one layout.
+  profile): Graphite first in 100 % of draws, Sturdy, Semimak, Canary and Dvorak share ranks
+  2–5, Halmak and Colemak-DH 6–7, QWERTY last in all. Report adjacent ranks as ties unless
+  `P(>next)` is high. (`balanced`: Graphite 99 %, Sturdy 2nd in 89 %.)
+- `gecko sweep` (default profile, 10M evaluations per search, 30 draws + one-at-a-time;
+  `bench/costfit-2026-10-24/results/sweep-evidence.json`): the base optimum's family collects
+  60 of 94 weight vectors, the near-tie `cwdlxqyou, gstnvpheia fbmrjzk/;.` family 25. σ = 0.5
+  draws move a median 19 keys at a median regret of 0.55. Only B01, T04, T03, B09, E05 and B14
+  move the optimum when dropped or doubled; M04, M05, S01, S02, T01, T06 are inactive. The
+  optimum is a family, not one layout. (`balanced`, `bench/sweep-2026-10-22/`: 55 of 111, regret 1.10.)
 - `gecko optimize` notes results within 0.4 of the best that differ in more than 4 keys
   (mirror-invariant) as near ties.
 
@@ -296,7 +319,7 @@ below; `--no-angle` scores them with standard fingering):
 | default · english, `--no-angle` | +0.057 | +0.080 | +0.075 | +0.043 | −0.359 |
 | default · english on ortho-30 (no angle board) | +0.052 | +0.076 | +0.074 | +0.030 | −0.364 |
 
-Default rows: 2026-10-22 profile. Liked layouts sit at a mean GECKO rank percentile of 45.0 % vs
+Default rows: 2026-10-22 profile (now `balanced`). Liked layouts sit at a mean GECKO rank percentile of 45.0 % vs
 50.9 % for unliked ones. Reading: likes barely track layout quality. They measure fame and age
 (Graphite 77 likes, rank 15; the joke layout `inqwerted` 76 likes, rank 1822; Dvorak and
 Colemak-DH ~20 likes, ranks 1198 and 1449), and 84 % of layouts have zero likes (ties). The
@@ -352,7 +375,7 @@ options, and options are independent per key.
 
 `ansi-30-alt` is ansi-30 with the angle mod's three reassignments as options, with the efforts
 `ansi-30-angle` gives them (Z ring 2.8, X middle 2.4, C index 1.8). V keeps effort 1.8, where
-ansi-30-angle raises it to 2.6. English / default, SA 20M evals, 4 threads, seeds 1–3
+ansi-30-angle raises it to 2.6. English / `balanced` (then the default), SA 20M evals, 4 threads, seeds 1–3
 (`bench/fingering-2026-10-23/`):
 
 | board | best | fingering |
@@ -482,7 +505,7 @@ no allocation or extra work is added to the optimization hot loop.
 
 ## Validation (#140, 2026-10-23)
 
-Commit `fed6641`, cmini `0db088e`, profile `default`, ansi-30 standard fingering. Scripts and
+Commit `fed6641`, cmini `0db088e`, profile `default` (now `balanced`), ansi-30 standard fingering. Scripts and
 outputs: `bench/validation-2026-10-23/` (`cmini_compare.py` → `numbers.json`, `ranking.py` →
 `ranking-<profile>.json`, `compare-corpora.*`, `likes-shai.txt`).
 

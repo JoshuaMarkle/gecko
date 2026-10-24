@@ -1,0 +1,80 @@
+{
+ "profile": "evidence",
+ "board": "corne-36",
+ "corpus": "english",
+ "evals": 25000000,
+ "best": 2.6519447127536333,
+ "at_best": 9,
+ "rows": [
+  {
+   "seed": 1,
+   "run": "20261024-222857-bls-3eb97faa",
+   "score": 2.6519447127536333,
+   "chars": "q,jx/bgdnloaeiuwsthr;.zykfcpmv\u238b\u2423\u21e5\u23ce\u232b\u00b7",
+   "holdout": 3.028615595601421
+  },
+  {
+   "seed": 2,
+   "run": "20261024-222857-bls-d1db482d",
+   "score": 2.6519447127536333,
+   "chars": "q,jx/bgdnloaeiuwsthr;.zykfcpmv\u238b\u2423\u21e5\u23ce\u232b\u00b7",
+   "holdout": 3.028615595601421
+  },
+  {
+   "seed": 3,
+   "run": "20261024-222857-bls-478c88e9",
+   "score": 2.6519447127536333,
+   "chars": "q,jx/bgdnloaeiuwsthr;.zykfcpmv\u238b\u2423\u21e5\u23ce\u232b\u00b7",
+   "holdout": 3.028615595601421
+  },
+  {
+   "seed": 4,
+   "run": "20261024-222857-bls-7f5d3db4",
+   "score": 2.6519447127536333,
+   "chars": "q,jx/bgdnloaeiuwsthr;.zykfcpmv\u238b\u2423\u21e5\u23ce\u232b\u00b7",
+   "holdout": 3.028615595601421
+  },
+  {
+   "seed": 5,
+   "run": "20261024-222857-bls-4d82e186",
+   "score": 2.6519447127536333,
+   "chars": "q,jx/bgdnloaeiuwsthr;.zykfcpmv\u238b\u2423\u21e5\u23ce\u232b\u00b7",
+   "holdout": 3.028615595601421
+  },
+  {
+   "seed": 6,
+   "run": "20261024-222924-bls-c7e647fa",
+   "score": 2.6519447127536333,
+   "chars": "q,jx/bgdnloaeiuwsthr;.zykfcpmv\u238b\u2423\u21e5\u23ce\u232b\u00b7",
+   "holdout": 3.028615595601421
+  },
+  {
+   "seed": 7,
+   "run": "20261024-222924-bls-53f41e0a",
+   "score": 2.6519447127536333,
+   "chars": "q,jx/bgdnloaeiuwsthr;.zykfcpmv\u238b\u2423\u21e5\u23ce\u232b\u00b7",
+   "holdout": 3.028615595601421
+  },
+  {
+   "seed": 8,
+   "run": "20261024-222924-bls-f571ae14",
+   "score": 2.6791449324352925,
+   "chars": "q,jx/vwhcboaeiugtrsn;.zykmdlfp\u238b\u2423\u21e5\u23ce\u232b\u00b7",
+   "holdout": 3.183506911128433
+  },
+  {
+   "seed": 9,
+   "run": "20261024-222924-bls-7e376d84",
+   "score": 2.6519447127536333,
+   "chars": "q,jx/bgdnloaeiuwsthr;.zykfcpmv\u238b\u2423\u21e5\u23ce\u232b\u00b7",
+   "holdout": 3.028615595601421
+  },
+  {
+   "seed": 10,
+   "run": "20261024-222924-bls-7b3e3121",
+   "score": 2.6519447127536333,
+   "chars": "q,jx/bgdnloaeiuwsthr;.zykfcpmv\u238b\u2423\u21e5\u23ce\u232b\u00b7",
+   "holdout": 3.028615595601421
+  }
+ ]
+}

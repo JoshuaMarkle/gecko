@@ -1,0 +1,205 @@
+{
+  "schema": 1,
+  "id": "20261024-222951-bls-a310d8a2",
+  "created": "2026-10-24T22:29:51Z",
+  "gecko_version": "0.1.0",
+  "params": {
+    "algo": "bls",
+    "seed": 1,
+    "threads": 4,
+    "time_ms": null,
+    "evals": 25000000,
+    "top": 3,
+    "sa": {
+      "steps": 0,
+      "accept0": 0.5,
+      "t_end_ratio": 0.002
+    },
+    "ga": {
+      "pop_size": 128,
+      "tournament": 3,
+      "elitism": 4,
+      "crossover_rate": 0.9,
+      "mutation_rate": 1.0
+    },
+    "memetic": {
+      "ga": {
+        "pop_size": 24,
+        "tournament": 3,
+        "elitism": 2,
+        "crossover_rate": 0.9,
+        "mutation_rate": 1.0
+      },
+      "local_search": "hc",
+      "local_steps": 12,
+      "islands": 0,
+      "migration_interval": 5,
+      "migrants": 2,
+      "collapse_generations": 3
+    },
+    "bls": {
+      "kick_min": 2,
+      "kick_max": 0,
+      "accept_worse": 0.1,
+      "stagnation": 150,
+      "column_kick": 0.2,
+      "exclusion": 0.5,
+      "exclusion_dist": 8
+    },
+    "explore": {
+      "samples": 2000,
+      "walks": 64,
+      "walk_len": 400,
+      "max_optima": 100000,
+      "snapshot_ms": 2000,
+      "within": 0.01
+    },
+    "tabu": {
+      "tenure_min": 0.9,
+      "tenure_max": 1.1,
+      "diversify": 5.0,
+      "stagnation": 100.0,
+      "refresh": 1000
+    },
+    "moves": {
+      "columns": false,
+      "cycle3": false,
+      "depth2": false,
+      "depth2_width": 32
+    },
+    "qd": {
+      "axes": [
+        "roll_ratio",
+        "index_load"
+      ],
+      "bins": 16,
+      "seeds": 64,
+      "kick_min": 2,
+      "kick_max": 6,
+      "descent": 0,
+      "snapshot_ms": 2000
+    },
+    "nsga2": {
+      "objectives": [
+        "B01",
+        "T03",
+        "M01"
+      ],
+      "pop_size": 128,
+      "generations": 0,
+      "archive_size": 512,
+      "crossover_rate": 0.9,
+      "mutation_rate": 1.0
+    }
+  },
+  "geometry": {
+    "name": "corne-36",
+    "hash": "7ab925ac13918c0b"
+  },
+  "corpus": {
+    "name": "shai",
+    "hash": "d0b7c4a10bb8bcfd"
+  },
+  "profile": {
+    "name": "evidence",
+    "description": "Weights searched against measured typing time (Aalto 136M) and measured comfort (Engram), keeping the community ranking of known layouts (research/experiments/2026-10-24-cost-function-optimization.md).",
+    "weights": {
+      "B01": 2.867,
+      "B05": 0.09229,
+      "B06": 0.02398,
+      "B08": 1.003,
+      "B09": 1.176,
+      "B10": 0.2852,
+      "B11": 0.08619,
+      "B14": 0.5046,
+      "E05": 2.08,
+      "M01": 0.3206,
+      "M02": 0.19,
+      "M04": 0.4181,
+      "M05": 0.03744,
+      "S01": 0.03916,
+      "S02": 0.064,
+      "S04": 0.01843,
+      "T01": 0.06432,
+      "T03": 0.3051,
+      "T04": 0.7151,
+      "T06": 0.00602,
+      "T07": 0.5674
+    },
+    "scale": {
+      "B01": 0.7908,
+      "B05": 0.5297,
+      "B06": 0.6859,
+      "B08": 5.126,
+      "B09": 0.9029,
+      "B10": 3.366,
+      "B11": 18.14,
+      "B14": 1.316,
+      "E05": 1.206,
+      "M01": 0.03799,
+      "M02": 2.018,
+      "M04": 1.789,
+      "M05": 3.573,
+      "S01": 1.209,
+      "S02": 0.4285,
+      "S04": 1.341,
+      "T01": 5.475,
+      "T03": 2.119,
+      "T04": 4.039,
+      "T06": 2.672,
+      "T07": 0.6505
+    },
+    "scale_basis": "stdev over 9 layouts (canary, colemak, colemak-dh, dvorak, graphite, halmak, semimak, sturdy, workman) on english / ansi-30",
+    "finger_target": [
+      8.0,
+      11.0,
+      15.0,
+      16.0,
+      0.0,
+      0.0,
+      16.0,
+      15.0,
+      11.0,
+      8.0
+    ],
+    "thumb_target": 18.0,
+    "trigram_coverage": 0.99,
+    "sfb": {
+      "distance": "linear",
+      "lateral": 1.0,
+      "finger_factor": [
+        2.0,
+        1.538,
+        1.111,
+        1.0,
+        1.0
+      ],
+      "skip_decay": 0.5
+    },
+    "row_offset": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        -0.1,
+        0.1
+      ],
+      [
+        -0.2,
+        0.2
+      ],
+      [
+        0.2,
+        -0.2
+      ]
+    ]
+  },
+  "profile_hash": "f4bb529d008d5b37",
+  "start": "qwertyuiopasdfghjkl;zxcvbnm,./⎋␣⇥⏎⌫·",
+  "pins": "{space}{enter}{bspc}{tab}{esc}{none}",
+  "holdout": {
+    "name": "english",
+    "hash": "1539a821f307a698"
+  }
+}

@@ -1,0 +1,161 @@
+% Cost-function optimization study. Content only; styling is templates/gecko-paper.cls.
+% Build:   docs/papers/templates/build_pdf.sh docs/papers/cost-optimization/cost-optimization.tex
+% Figures: MPLCONFIGDIR=/tmp/gecko-mpl python3 -I docs/papers/cost-optimization/figures.py
+% Every number comes from bench/costfit-2026-10-24/ (results/ and the scripts beside it).
+\documentclass{gecko-paper}
+\usepackage{amsmath,array}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\paperfooter{Joshua Markle · University of Virginia}{GECKO cost-function optimization}
+\paperpdfinfo{Optimizing the cost function}{Joshua Markle}{Experiment report}
+\papertitle{Optimizing the cost function:\\weights judged by the layouts they produce}
+\papersubtitle{Key-pair timing from 49 thousand typists, a comfort study, and 2{,}600 nested optimizations find a profile whose optimum beats the old one on every independent judge.}
+\paperauthor{Joshua Markle}
+\paperaffil{University of Virginia · October 2026}
+\papernotice{Experiment report · 24 October 2026 · GECKO commit dcc3cd1}
+
+\begin{document}
+\makepapertitle
+\begin{paperabstract}
+A layout optimizer exploits whatever its cost function says, so a profile's weights should be judged by the layout they produce rather than by how they rank known layouts. We calibrate GECKO's metrics directly against measurement, then search the weights in a bilevel loop. First, we regress practice-adjusted key-pair typing time (49{,}293 QWERTY touch typists from the 136M-keystroke study, split into two independent halves) on GECKO's own pair tables, and third-keystroke time on its trigram tables. This yields weights in profile units. Same-finger bigrams cost $+17\%$ per pair, hand alternation saves $8\%$, pinky–ring pairs cost $+8\%$, bad redirects $+3.7\%$ on the next key. Same-finger skipgrams, trigram alternation and plain redirects show no measurable cost. The metrics explain 36\% of the reliable non-practice variance; most of the rest is per-key speed that the effort table misses. Second, timing alone cannot rank good layouts: they lie within $0.3\%$ of each other per keystroke, $35$–$45\%$ of their bigrams fall on key pairs QWERTY typists almost never type, and a QWERTY-trained empirical judge confounds practice with motor cost. Comfort therefore decides among good layouts. Third, CMA-ES over all 21 weights, each candidate scored by optimizing a layout and judging it on held-out time and measured Engram comfort while keeping the community's ranking of 16 known layouts, finds weight vectors that Pareto-dominate the previous default. The selected profile's optimum beats the previous default's on all seven independent judges (measured discomfort $-18\%$), ranks first or second on all five corpora, and is found by 39 of 40 seeds. It is GECKO's default since 24 October 2026.
+\end{paperabstract}
+
+\begin{paperbody}
+\section{Introduction}
+GECKO scores a layout as $\sum_m (w_m/s_m)\,u_m$: metric contributions $u_m$ (signed; rewards such as rolls subtract) divided by a spread scale $s_m$ and weighted by $w_m$ \papercite{gecko}. The 22 October profile was tuned so that known layouts rank like an independent typing-time judge \papercite{validity}. That check is necessary but weak. An optimizer does not visit known layouts; it drives the score to its minimum, where the weights are exploited. The right test of a weight vector is the layout it produces.
+
+We therefore ask: \textbf{which weights produce the best optimum}, judged by evidence the weights never saw? This needs (i) metric weights calibrated against measurement at the level the metrics are defined, (ii) judges independent of those weights, and (iii) a search over weight space in which every candidate is evaluated by running the optimizer.
+
+\section{Data}
+\textbf{Timing.} We re-scanned the public mirror of the 136M-keystroke study \papercite{dhakal} on all 30 ANSI-30 keys (letters and \texttt{,./;}). We kept QWERTY touch typists (9–10 fingers) and sections typed exactly with no Backspace. Every press-to-press interval below 1.5\,s between two of the 30 keys enters as $\log$(interval / the typist's median), and so does the third interval of every key triple. Participants were split by id parity into halves A and B (24{,}653 / 24{,}640). Split-half agreement is high: $r=0.98$ over the 415 letter pairs typed at least 30 times; the typist-split $R^2$ ceiling is 0.986 for pairs and 0.918 for triples.
+
+\textbf{Comfort.} Engram's study \papercite{engram}: 61 people, 4{,}490 pairwise choices over 112 left-hand bigrams, fitted by Bradley–Terry and mirrored (GECKO metric E05). E04 is Engram's hand-built formula.
+
+\textbf{Consensus.} 16 named layouts in community tiers (tier 1: Graphite, Gallium, Sturdy, Canary, Rain, Maya, Semimak, Recurva, Nerps, APTv3; then Colemak-DH; Colemak; Dvorak, Workman, Halmak; QWERTY), as in GECKO's Phase 1 validation.
+
+\textbf{Layouts.} 10 references, 1{,}904 distinct cmini layouts \papercite{cmini}, 3{,}000 random permutations; ANSI-30, \texttt{english} corpus.
+
+\paperfigure{coverage}{Share of each reference layout's bigram mass that falls on key pairs QWERTY typists type fewer than 30 times in the timing data. 289 of 900 key pairs never occur.\label{fig:coverage}}
+
+\textbf{The coverage problem.} Good layouts put 34–45\% of their bigram mass on pairs that QWERTY typists almost never type; QWERTY puts 0.5\% there (Figure~\ref{fig:coverage}). Measured pair times alone cannot score an optimized layout, so a model must carry them. Typists of other layouts in the same data do not fill the gap: AZERTY ($r=0.73$ with QWERTY on shared pairs) and QWERTZ ($r=0.88$) add only 44 pairs, and Dvorak-labelled typists disagree with QWERTY entirely ($r\approx0$; their letter field is often empty).
+
+\section{Calibrating the metrics}
+\textbf{Pairs.} The target is the mean log relative interval of each ordered letter pair ($n\ge30$; 401 pairs). Pairs ending in punctuation are excluded because they carry sentence-boundary pauses. Practice is the dominant confound: log pair frequency alone explains $R^2\approx0.4$, and a pair typed 100 times more often is about 40\% faster. It enters as a free nuisance term. The regressors are GECKO's own pair tables, with coefficients constrained to the metric's direction (costs $\ge0$, rewards $\le0$). Linear, quadratic and letter-frequency practice controls change no coefficient by more than 0.02; without any control the fit collapses ($R^2$ 0.21).
+
+\paperfigure{coefs}{Timing effects of GECKO metrics, with 90\% bootstrap intervals over unordered key pairs (pairs) or triples (third key). Negative = faster.\label{fig:coefs}}
+
+Figure~\ref{fig:coefs} shows the result. SFB ($+17\%$), hand alternation ($-8\%$), pinky–ring ($+8\%$), stretch, row jump and key effort are clearly nonzero. Half scissors, LSB, inward bigram rolls, finger-pair movement, home-row share and Engram comfort add nothing once these are in. Beyond practice, the metrics explain $R^2=0.40$ in sample and $0.36$ under 10-fold cross-validation grouped by unordered key pair, identically across typist halves. Extrapolating from frequently typed pairs ($n\ge1000$) to rare ones explains only 0.11 ($\rho=0.32$). The rare-pair regime, where optimized layouts live, is the least predictable.
+
+\textbf{What the metrics miss.} Adding one effect per second key raises cross-validated $R^2$ from 0.39 to 0.56. Bottom-row keys (\texttt{x c v b}) and the centre column are slower than the effort table says; top-row keys under the middle and ring fingers are as fast as home. On QWERTY data a key is always the same letter, so part of this is letter rarity (\texttt{q}, \texttt{x}), and the two cannot yet be separated. Engram's hand-built formula E04 is the best single predictor (CV $R^2$ 0.72 with practice).
+
+\textbf{Trigrams.} The target is the third interval of $i\to j\to k$ minus the mean of $j\to k$ over all contexts (2{,}212 letter triples). Bad redirects cost $+3.7\%$ and outward rolls save $1.4\%$. Skip stretch costs $+1.9\%$ per unit; same-finger skipgrams $+1.5\%$ with an interval reaching 0. Trigram alternation earns nothing beyond the bigram credit (unconstrained it is slightly \emph{slower}). The classes explain $R^2=0.22$ of a signal whose ceiling is 0.92: trigram context is mostly unmodelled.
+
+\section{Judges and their limits}
+We judge an optimum on seven measures. Two are the fitted time model, refit on half A ($T_A$) and on half B ($T_B$). Two are an empirical time judge built only from half B: observed practice-adjusted pair means, shrunk toward a finger-pair $\times$ row-pair model with key effects, plus the trigram context term, under two practice models ($J_B$, and $J_B$ with a letter-frequency control). The last three are GECKO's E01 timing model and Engram's E05 (measured) and E04 (formula).
+
+The empirical judge has a decisive weakness. Adding the letter-frequency control moves QWERTY from last to second of ten references: a judge trained on QWERTY typists cannot fully separate practice from motor cost. So we report it, but never optimize it. The metric coefficients, by contrast, are stable under every practice model.
+
+\section{Speed does not separate good layouts}
+Converting the fitted coefficients into a profile makes hand alternation the largest term (3.5$\times$ SFB per spread). Its optimum is Dvorak-like and only $0.29\%$ per keystroke faster than the previous default's optimum. On the time model all modern references lie within about 1\% of each other; QWERTY is about 6\% slower. Agreement with the community tiers falls from 0.85 to 0.55. Speed is evidence for the \emph{relative} weights of SFB, alternation, pinky–ring and stretch. It cannot choose among good layouts: comfort, and the exchange rate between comfort and speed, does that. A sweep of the comfort share confirms it. Moving all weight from time to E05 changes the optimum's time by about half a percent while cutting measured discomfort by a quarter, and pure comfort lets SFB rise to 3\%, because Engram's isolated-bigram ratings barely punish SFB.
+
+\section{Bilevel weight search}
+\textbf{Objective.} For weight vector $w$, let $L^*(w)$ be the SA optimum (3M evaluations). We minimize
+\begin{align*}
+f(w) ={}& (1-\alpha)\,\frac{T_B(L^*)}{\sigma_T} + \alpha\,\frac{E05(L^*)}{\sigma_E}\\
+&+ 10\,[\rho_0-\rho(w)]_+ + 2\,[M02(L^*)-2.66]_+,
+\end{align*}
+with spreads $\sigma$ over the nine non-QWERTY references. $\rho(w)$ is the Spearman agreement of $w$'s scores with the community tiers, and $\rho_0=0.8$ (previous default: 0.85). The last term keeps finger-load error at the previous optimum's level.
+
+\textbf{Search.} CMA-ES over the log-weights of all 21 metrics (B01 fixed for scale), 16 candidates per generation, 40 generations, started at the previous default. Four runs: $\alpha=0.25, 0.5, 0.75$ with the tier constraint, and $\alpha=0.5$ without it. That is 2{,}560 inner optimizations in total, about 12 minutes per run on 20 cores.
+
+\paperfigure{cma}{Best-so-far objective per generation, relative to generation 0 (each run on its own $\alpha$ scale).\label{fig:cma}}
+
+\textbf{Selection.} The landscape is rugged: runs settle in different layout families (Figure~\ref{fig:cma}), and the $\alpha=0.5$ run did not reach a family the $\alpha=0.75$ run found. So we pooled the six best distinct candidates of every run plus each run's CMA mean, and re-optimized all 29 with three seeds at 10M evaluations. This guards against a lucky inner optimization.
+
+\paperfigure{frontier}{Optima of the re-evaluated weight vectors in speed–comfort space, with the previous default's optimum and known layouts. Every searched vector satisfies the tier constraint.\label{fig:frontier}}
+
+\textbf{Result.} Every pooled candidate dominates the previous default's optimum on both axes (Figure~\ref{fig:frontier}). Table~\ref{tab:pareto} lists the Pareto set. We select the vector with the best $\alpha=0.5$ objective that keeps margin on the tier constraint. The very best scorer (1.496 vs 1.502) sits exactly at $\rho=0.80$ with SFB 1.08\%.
+
+\begin{papertable}{Pareto set after re-evaluation. $\Delta t$: time model (half B) vs.\ the previous default's optimum, \% per keystroke. E05: Engram discomfort. All have tier $\rho\ge0.80$.\label{tab:pareto}}
+\small\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrrr@{}}
+\toprule
+weights from & $\Delta t$ & E05 & SFB & SFS & $\rho$\\
+\midrule
+$\alpha$ 0.25 run & $-0.23$ & 4.31 & 0.83 & 7.49 & 0.80\\
+\textbf{$\alpha$ 0.75 \#3 (new)} & $\mathbf{-0.13}$ & \textbf{4.04} & 0.95 & 8.53 & 0.83\\
+$\alpha$ 0.5 run & $+0.01$ & 3.89 & 0.74 & 7.06 & 0.83\\
+$\alpha$ 0.75 mean & $-0.06$ & 3.85 & 1.00 & 8.45 & 0.80\\
+previous & 0 & 4.91 & 0.89 & 6.43 & 0.85\\
+\bottomrule
+\end{tabular*}
+\end{papertable}
+
+\section{The selected cost function}
+\paperwidefigure{weights}{Weights in spread units: previous default (now \texttt{balanced}) and the selected profile (now \texttt{default}).\label{fig:weights}}
+
+Figure~\ref{fig:weights} compares the weights. Measured comfort E05 rises from 0.62 to 2.08 and becomes the second-largest term after SFB. Hand alternation B08 enters at 1.0, consistent with its $-8\%$ timing effect. Bad redirects, key effort and the load terms roughly double or more. Pinky–ring, stretch and rolls stay. Same-finger skipgrams, skip stretch, trigram alternation, redirects, scissors, finger-pair movement and home-row share fall to 0.1 or less: in the timing data each is either absent or carried by another metric. In words: \emph{keep SFB and pinky–ring, value hand alternation per bigram and rolls per trigram, take measured comfort seriously, and stop paying for costs that do not show up in measurement.}
+
+\section{Analysis of the selected function}
+\textbf{Optimum.} On ANSI-30 / \texttt{english} (BLS, 25M evaluations, 10 of 10 seeds identical, score 8.074):
+
+\smallskip
+\noindent\texttt{\ \ w g n c v z u o , q}\\
+\texttt{\ \ d t r s f y h e i a}\\
+\texttt{\ \ p b l m j x k / ; .}
+\smallskip
+
+All vowels and \texttt{y h} sit on the right hand, consonant columns on the left. SFB 0.95\%, SFS 8.5\%, hand alternation 69.7\%, rolls 45.1\%, home row 61.4\%.
+
+\begin{papertable}{The new optimum against the previous default's optimum and known layouts. $T$: time model on typist half A / B, \% per keystroke relative to the model intercept (only differences matter). Lower is better throughout.\label{tab:judges}}
+\small\setlength{\tabcolsep}{2.5pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrrrr@{}}
+\toprule
+layout & $T_A$ & $T_B$ & $J_B$ & E01 & E05 & E04\\
+\midrule
+new optimum & $\mathbf{-0.38}$ & $\mathbf{-0.20}$ & \textbf{.1736} & \textbf{6.54} & \textbf{4.04} & \textbf{4.38}\\
+prev.\ optimum & $-0.29$ & $-0.08$ & .1792 & 6.64 & 4.91 & 4.79\\
+galite-ref. & $-0.11$ & $+0.08$ & .1764 & 6.82 & 5.19 & 5.00\\
+Graphite & $-0.11$ & $+0.09$ & .1773 & 6.84 & 5.25 & 5.02\\
+Sturdy & $+0.66$ & $+0.88$ & .1822 & 7.60 & 6.54 & 6.18\\
+QWERTY & $+5.56$ & $+5.78$ & .2064 & 13.06 & 12.23 & 13.73\\
+\bottomrule
+\end{tabular*}
+\end{papertable}
+
+\textbf{Every judge improves.} Table~\ref{tab:judges}: the new optimum beats the previous one on all seven judges. That includes four it was never tuned toward ($T_A$, both $J_B$ variants, E01; $J_B$ with the letter control: 0.0436 vs 0.0451) and Engram's formula ($-9\%$). The time gain is small (0.1\%), the comfort gain large ($-18\%$ on E05).
+
+\textbf{Not a table exploit.} A comfort table that is partly formula fill invites the optimizer to hide bigrams in unmeasured cells. The opposite happens: 84\% of the new optimum's same-hand bigram mass falls on pairs Engram measured, against 73\% for the previous optimum and 72\% for Graphite.
+
+\textbf{What it pays.} SFS rises from 6.4 to 8.5\%, SFB by 0.06 points, redirects by 0.25 points, and home-row use falls 2 points. SFS is the open question: no timing cost has been found for it, and its comfort is unmeasured.
+
+\textbf{Search reliability.} With 10 seeds of BLS at 25M evaluations, every seed reaches the best layout on ANSI-30 \texttt{english} and \texttt{shai} and on corne-36 \texttt{shai}; 9 of 10 do on corne-36 \texttt{english}. All four winning runs pass \texttt{gecko verify}.
+
+\textbf{Corpora.} The \texttt{english} and \texttt{shai} winners each rank first or second on all five corpora (\texttt{english}, \texttt{english-cased}, \texttt{shai}, \texttt{mt-450k}, \texttt{reddit}). Under the previous default, the \texttt{english} winner fell to fifth of six on the \texttt{mt-450k} word list.
+
+\textbf{Margin.} Under the new profile the best community layout with the same symbols (galite-reference, 11.85) trails the optimum by 32\% (previous profile: 17\%). On corne-36 the new winner beats every known layout even under the \emph{previous} profile (10.76 vs Gallium 11.75), so the gain is not an artefact of the new weights.
+
+\textbf{Weight robustness.} Re-optimizing under 30 log-normal perturbations ($\sigma=0.5$) and one-at-a-time drop/halve/double of every weight, 60 of 94 vectors land in the base family and 25 in one near-tie family (previous default: 55 of 111). The median regret is 0.55 (6.8\% of the score; previously 1.10, 9\%). Only SFB, rolls, pinky–ring, E05 and stretch move the optimum. Hand balance, home row, SFS, far SFS, trigram alternation and redirects are inactive.
+
+\textbf{Reference ranking.} Under 2{,}000 weight perturbations Graphite ranks first in 100\% of draws. Sturdy, Semimak, Canary and Dvorak share ranks 2–5, and QWERTY is last. The visible change is Halmak moving above Colemak-DH and Colemak, which the community places a tier lower. That is the cost of valuing alternation and comfort; tier agreement stays 0.83.
+
+\section{Limitations}
+Timing is skilled transcription of short English sentences by QWERTY users. Practice is controlled statistically, not experimentally, and fatigue and learning are not measured. Comfort rests on one small study of 12 left-hand keys typed in isolation; E05 now carries the second-largest weight, so a larger comfort study is the most valuable next measurement. Equal weight per spread of time and comfort ($\alpha=0.5$) is a convention; Table~\ref{tab:pareto} shows the alternatives. CMA-ES found different families in different runs, so the selected vector is the best found, not a certified optimum. The time model is fitted on ANSI-30 positions; corne-36 reuses its weights.
+
+\section{Reproducibility}\sloppy
+GECKO commit dcc3cd1. The \texttt{costfit} tool, every script and every result file are in \texttt{bench/costfit-2026-10-24/}; the four winning runs are in its \texttt{runs/}. The profile is \texttt{data/profiles/default.toml}; the previous default is \texttt{balanced.toml}. The keystroke mirror (Kaggle \texttt{noelsmathew/\allowbreak keystrokes}, CC BY-NC-SA 4.0) is not redistributed, so only fitted coefficients and judge values are included. A longer write-up is \texttt{research/\allowbreak experiments/\allowbreak 2026-10-24-cost-\allowbreak function-\allowbreak optimization.md}.
+
+\section{Next steps}
+(1) Fit a timing-derived key-effort table that separates key from letter, for instance using QWERTZ and AZERTY swaps; it is the largest remaining gain in cross-validated $R^2$ ($+0.17$). (2) Measure comfort on all 30 keys, including the centre columns and same-finger skipgrams. (3) Retire inactive weights only after (2).
+
+\renewcommand{\refname}{References}
+\begin{thebibliography}{9}
+\paperbibstyle
+\bibitem{gecko}\citetarget{gecko} J. Markle. GECKO: an explainable system for designing keyboard layouts and the keyboards they run on. Draft, 2026.
+\bibitem{validity}\citetarget{validity} J. Markle. Is the cost function right? Testing GECKO's layout score against typing time, comfort, and its own weights. Experiment report, 2026.
+\bibitem{cmini}\citetarget{cmini} cmini: AKL community layout analyzer and database. github.com/Apsu/cmini, 2026.
+\bibitem{engram}\citetarget{engram} A. Klein. Engram: a keyboard layout from crowdsourced bigram typing preferences. \textit{Int. J. Human–Computer Interaction}, 2026. doi:10.1080/10447318.2026.2665409.
+\bibitem{dhakal}\citetarget{dhakal} V. Dhakal, A. M. Feit, P. O. Kristensson, and A. Oulasvirta. Observations on typing from 136 million keystrokes. \textit{Proc. CHI}, 2018.
+\end{thebibliography}
+\end{paperbody}
+\end{document}

@@ -1,7 +1,9 @@
 # Phase 2 evaluation: does the search beat the best known layouts? (#141)
 
 2026-10-23, GECKO `4e8ace4` (binary built from a clean export of that commit), default
-profile. Data, scripts and the 12 winning runs: `bench/phase2-2026-10-23/` (README there has
+profile of that date, now `balanced` (rerun with `-p balanced`). The 2026-10-24 default's optimum
+scores 8.074 on ansi-30/english and beats galite-reference by 32 % under it
+([cost-function optimization](../research/experiments/2026-10-24-cost-function-optimization.md)). Data, scripts and the 12 winning runs: `bench/phase2-2026-10-23/` (README there has
 the commands). Phase 1 (#140, `objective.md` §Validation) showed the scorer agrees with cmini
 and Oxeylyzer, so "better under our profile" can now be read as a claim about the search.
 
