@@ -121,7 +121,8 @@ scored on it, never searched on); stop confidence (saved, not applied yet); the 
 parameters (memetic islands: population per island, HC/tabu refinement and its step cap, island
 count (0 = threads), migration interval (0 disables), migrant count; `POST /api/runs` accepts
 optional `memetic` in the core `MemeticParams` shape). Main: **Result** (3D working model or live
-best; Default / Heat / Fingers / N-grams) or **Algorithm** (a short description and animation),
+best; Default / Heat / Fingers / N-grams; a layer picker (Base / ① Layer 1 / …) for layered
+layouts, keys the layer cannot use muted) or **Algorithm** (a short description and animation),
 or the **layout editor** overlay (`LayoutEditor`: 2D board, click two keys to swap, Pin mode,
 layer picker, heat, undo). Bottom: convergence (hover: mini keyboard of the best layout then) |
 "Chance we've found the optimal layout" from past runs on the **same inputs** (board, corpus and
@@ -208,8 +209,9 @@ then pieces and their size, connectors left out, blocked switch holes and keycap
 Main: a **3D** toggle (on by default when any key is raised or tilted, off for flat boards;
 reset when the board changes). Off: the image exactly as exported (`boardSvg`, a standalone
 SVG; layers two per row). On: `three/Case3D` renders the STL triangles (bottom plate darker)
-with switch housings and the base layer's keycaps; **Keycaps** and **Bottom** toggles hide
-them, keycaps that hit the case when pressed are red. Bottom: score vs the reference, board /
+with switch housings and keycaps; a layer picker (layered layouts, keycaps on) sets which
+layer's legends they show, and off 3D an **All layers** toggle stacks every layer in the image.
+**Keycaps** and **Bottom** toggles hide them, keycaps that hit the case when pressed are red. Bottom: score vs the reference, board /
 language / profile / run / holdout, weighted metrics and finger load; "No stats" when the
 layout is not scored (stats-only files are disabled, the rest still export).
 

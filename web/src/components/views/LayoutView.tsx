@@ -51,8 +51,8 @@ interface Props {
   canUndo: boolean;
   onUndo: () => void;
   onLoad: (chars: string, label: string) => void;
-  /** The shown layer of the shown layout: symbols, heat and muted keys per key. */
-  view: { chars: string; heat: number[]; muted: boolean[] };
+  /** Each layer of the shown layout (base first): symbols, heat and muted keys per key. */
+  views: { name: string; chars: string; heat: number[]; muted: boolean[] }[];
   shownLabel: string;
   hasModel: boolean;
   refA: Analysis | null;
@@ -227,6 +227,9 @@ export function LayoutView(p: Props) {
   const [shown, setShown] = usePrefMain();
   const [mode, setMode] = useState<ViewMode>("3d");
   const [overlay, setOverlay] = useState<Overlay>("none");
+  const [layer, setLayer] = useState(0);
+  const shownLayer = Math.min(layer, p.views.length - 1);
+  const view = p.views[shownLayer] ?? { name: "Base", chars: "", heat: [], muted: [] };
   const desc = ALGOS.find(([a]) => a === s.algo)?.[2] ?? "";
   const algos = ALGOS.filter(([a]) => p.meta.algos.includes(a));
   const start = s.start ?? "auto";
@@ -341,13 +344,15 @@ export function LayoutView(p: Props) {
           </div>
         ) : (
           <div className="viewport">
-            <Keyboard3D geometry={p.geometry} chars={p.view.chars} heat={p.view.heat} muted={p.view.muted} arcs={arcs} overlay={overlay} mode={mode} selected={null} onKey={() => {}} />
+            <Keyboard3D geometry={p.geometry} chars={view.chars} heat={view.heat} muted={view.muted} arcs={arcs} overlay={overlay} mode={mode} selected={null} onKey={() => {}} />
             <div className="viewlabel">
               <span>{p.live ? "Live best" : p.hasModel ? p.shownLabel : `No model · showing ${p.shownLabel || "the start layout"}`}</span>
               {a && <span className="muted">{fmt(a.breakdown.score, 3)}</span>}
+              {p.views.length > 1 && <span className="muted">{view.name}</span>}
             </div>
             <div className="viewctl">
               <MainSeg shown={shown} setShown={setShown} />
+              {p.views.length > 1 && <Seg inline value={`${shownLayer}`} onChange={(v) => setLayer(+v)} options={p.views.map((v, l) => [`${l}`, v.name] as [string, string])} />}
               <div className="seg inline"><button className={mode === "3d" ? "on" : ""} onClick={() => setMode(mode === "3d" ? "top" : "3d")} title="3D view (off: flat top-down)">3D</button></div>
               <div className="seg inline">
                 {([["none", "Default"], ["heat", "Heat"], ["fingers", "Fingers"], ["ngrams", "N-grams"]] as [Overlay, string][]).map(([o, n]) => <button key={o} className={overlay === o ? "on" : ""} onClick={() => setOverlay(o)}>{n}</button>)}

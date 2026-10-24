@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Geometry } from "../../api";
 import { boardSvg, ergogenYaml, kleJson, layerChars, layoutJson, layoutTextExport, layoutToml, slug, statsCsv, statsMarkdown, type ExportInfo, type ImageOptions, type KeyColor } from "../../export";
-import { fmt, scoredMetrics, verdict } from "../../format";
+import { fmt, layerName, layerSlots, scoredMetrics, verdict } from "../../format";
 import { Case3D } from "../../three/Case3D";
 import { buildCase, exportLayout, wasmReady, type CaseModel, type CaseParams, type Switch } from "../../wasm";
 import { Frame, Num, Sec, Seg, Toggle } from "../Form";
@@ -79,6 +79,7 @@ export function ExportView({ info, label, onError }: { info: ExportInfo; label: 
   const [view3d, setView3d] = useState(() => !isFlat(info.geometry));
   useEffect(() => setView3d(!isFlat(info.geometry)), [info.geometry.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const [caps, setCaps] = useState(true);
+  const [layer, setLayer] = useState(0);
   const [showBottom, setShowBottom] = useState(true);
   const [sw, setSw] = useState<Switch>("mx");
   const [over, setOver] = useState<Partial<CaseParams>>({});
@@ -89,7 +90,10 @@ export function ExportView({ info, label, onError }: { info: ExportInfo; label: 
 
   const e: ExportInfo = useMemo(() => ({ ...info, name: name.trim() || label || "layout" }), [info, name, label]);
   const g: Geometry = e.geometry;
-  const layered = layerChars(g, e.chars).length > 1;
+  const perLayer = useMemo(() => layerChars(g, e.chars), [g, e.chars]);
+  const layered = perLayer.length > 1;
+  const shownLayer = Math.min(layer, perLayer.length - 1);
+  const names = useMemo(() => { const s = layerSlots(g, e.chars); return s.map((_, l) => layerName(e.chars, s, l)); }, [g, e.chars]);
   const opts: ImageOptions = { color: color === "heat" && !e.a ? "plain" : color, layers: layered && layers, title };
   const svg = useMemo(() => boardSvg(e, opts), [e, opts.color, opts.layers, opts.title]); // eslint-disable-line react-hooks/exhaustive-deps
   const preview = useMemo(() => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`, [svg]);
@@ -210,11 +214,14 @@ export function ExportView({ info, label, onError }: { info: ExportInfo; label: 
       main={
         <div className="viewport exportview">
           {!view3d ? <img src={preview} alt={`${e.name} on ${g.name}`} />
-            : model ? <Case3D geometry={g} chars={e.chars} model={model} caps={caps} bottom={showBottom} />
+            : model ? <Case3D geometry={g} chars={perLayer[shownLayer]?.join("") ?? e.chars} model={model} caps={caps} bottom={showBottom} />
             : <div className="empty">{build.err ? `No case: ${build.err}` : "Building the case…"}</div>}
-          <div className="viewlabel"><span>{e.name}</span>{a && <span className="muted">{fmt(a.breakdown.score, 3)}</span>}</div>
+          <div className="viewlabel"><span>{e.name}</span>{a && <span className="muted">{fmt(a.breakdown.score, 3)}</span>}
+            {layered && <span className="muted">{view3d ? names[shownLayer] : layers ? "all layers" : "base layer"}</span>}</div>
           <div className="viewctl">
             <div className="seg inline"><button className={view3d ? "on" : ""} onClick={() => setView3d(!view3d)} title="3D: the printable case (STL); off: the image export">3D</button></div>
+            {view3d && layered && caps && <Seg inline value={`${shownLayer}`} onChange={(v) => setLayer(+v)} options={names.map((n, l) => [`${l}`, n] as [string, string])} />}
+            {!view3d && layered && <div className="seg inline"><button className={layers ? "on" : ""} onClick={() => setLayers(!layers)} title="One board per layer, stacked; off: the base layer only">All layers</button></div>}
             {view3d && <div className="seg inline"><button className={caps ? "on" : ""} onClick={() => setCaps(!caps)} title="Switches and keycaps on the plate">Keycaps</button></div>}
             {view3d && <div className="seg inline"><button className={showBottom ? "on" : ""} onClick={() => setShowBottom(!showBottom)} title="Bottom plate">Bottom</button></div>}
           </div>

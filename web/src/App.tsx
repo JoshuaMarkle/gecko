@@ -22,7 +22,7 @@ import { SavedView } from "./components/views/SavedView";
 import { SummaryView } from "./components/views/SummaryView";
 import { sameInputs } from "./estimate";
 import type { ExportInfo } from "./export";
-import { EMPTY, fitChars, fmt, fmtCount, fmtTime, layerSlots, swapChars } from "./format";
+import { fitChars, fmt, fmtCount, fmtTime, layerViews, swapChars } from "./format";
 import { asProgress, freeSpec, GEOM_DEFAULTS } from "./geom";
 import { withHand } from "./hand";
 import { useInputs, usePref } from "./inputs";
@@ -152,16 +152,8 @@ export function App() {
   const previewChars = layoutLive ? live!.progress[live!.progress.length - 1]?.best_chars : undefined;
   const viewChars = geometry ? fitChars(previewChars ?? chars, geometry) : previewChars ?? chars;
   const editChars = geometry ? fitChars(chars, geometry) : chars;
-  // The 3D views show the base layer; `slots[0][key]` indexes `viewChars`.
-  const slots = useMemo(() => (geometry ? layerSlots(geometry, viewChars) : [[]]), [geometry, viewChars]);
-  const baseView = useMemo(() => {
-    const a = [...viewChars];
-    return {
-      chars: slots[0].map((i) => (i === null ? EMPTY : a[i])).join(""),
-      heat: slots[0].map((i) => (i === null ? 0 : analysis?.heat[i] ?? 0)),
-      muted: slots[0].map((i) => i === null),
-    };
-  }, [slots, viewChars, analysis]);
+  // The shown layout per layer (the Layout tab switches between them; the Hand tab uses the base).
+  const layerView = useMemo(() => (geometry ? layerViews(geometry, viewChars, analysis?.heat) : []), [geometry, viewChars, analysis]);
 
   // ---- scoring (WASM first, server fallback; custom boards are WASM only) ----
   const scoreChars = useCallback(async (c: string): Promise<Analysis | null> => {
@@ -377,7 +369,7 @@ export function App() {
           <BoardView geometries={geometries} customBoards={customBoards} setCustomBoards={setCustomBoards} geometry={geometry} setGeomId={setGeomId}
             constraints={constraints} setConstraints={setConstraints} custom={boardCustom} setCustom={setBoardCustom} />
         )}
-        {view === "hand" && <HandView geometry={geometry} chars={baseView.chars} hand={hand} setHand={setHand} />}
+        {view === "hand" && <HandView geometry={geometry} chars={layerView[0]?.chars ?? viewChars} hand={hand} setHand={setHand} />}
         {view === "language" && <LanguageView langs={langs} corpusId={corpusId} setCorpusId={setCorpusId} />}
         {view === "profile" && (
           <ProfileView meta={meta} profiles={profiles} profileId={profileId} setProfileId={setProfileId} profile={profile} setProfile={setProfile} hand={hand}
@@ -388,7 +380,7 @@ export function App() {
           <LayoutView meta={meta} layouts={layouts} geometry={geometry} corpora={corpora} corpusId={corpusId} search={search} setSearch={setSearch}
             locked={!!live?.running} live={layoutLive} runs={matching} chars={editChars} label={hasModel ? model!.label : label} a={analysis}
             pins={pins} setPins={setPins} onSwap={swap} canUndo={chars !== startChars} onUndo={() => setChars(startChars, "start")} onLoad={(c, l) => setChars(c, l)}
-            view={baseView} shownLabel={shownLabel} hasModel={hasModel} refA={refAnalysis} isRef={isRef} refName={refName} progress={progress} run={runDetail} />
+            views={layerView} shownLabel={shownLabel} hasModel={hasModel} refA={refAnalysis} isRef={isRef} refName={refName} progress={progress} run={runDetail} />
         )}
         {(view === "shape" || view === "both") && (
           <BoardSearchView key={view} target={view === "shape" ? "board" : "both"} meta={meta} layouts={layouts} geometry={geometry} search={search} setSearch={setSearch}

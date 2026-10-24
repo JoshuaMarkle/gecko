@@ -150,6 +150,24 @@ export function layerSlots(g: Geometry, chars: string): (number | null)[][] {
   return next === a.length ? out : [base];
 }
 
+/** Name of layer `l` of a layout (`slots` from `layerSlots`): "Base", or "① Layer 1". */
+export function layerName(chars: string, slots: (number | null)[][], l: number): string {
+  return l === 0 ? "Base" : `${layerKey([...chars].slice(0, slots[0].length), l)?.glyph ?? ""} Layer ${l}`.trim();
+}
+
+/** Each layer as one symbol per key, with the slot heat (`heat` indexes slots) and the keys the
+ *  layer cannot use (muted, shown as `·`). */
+export function layerViews(g: Geometry, chars: string, heat?: number[]): { name: string; chars: string; heat: number[]; muted: boolean[] }[] {
+  const a = [...chars];
+  const slots = layerSlots(g, chars);
+  return slots.map((s, l) => ({
+    name: layerName(chars, slots, l),
+    chars: s.map((i) => (i === null ? EMPTY : a[i] ?? EMPTY)).join(""),
+    heat: s.map((i) => (i === null ? 0 : heat?.[i] ?? 0)),
+    muted: s.map((i) => i === null),
+  }));
+}
+
 /** Layout as editable text: base rows, then each layer's rows after a blank line (`·` on the
  *  keys the layer cannot use). */
 export function layoutText(g: Geometry, chars: string): string {

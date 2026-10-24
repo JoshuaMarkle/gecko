@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Geometry, Key } from "./api";
-import { checkLayout, fitChars, flatBounds, flatKeys, layerSlots, rowsOf, swapChars, undirected, verdict } from "./format";
+import { checkLayout, fitChars, flatBounds, flatKeys, layerSlots, layerViews, rowsOf, swapChars, undirected, verdict } from "./format";
 
 const key = (row: number): Key => ({ pos: [0, row, 0], rot: [0, 0, 0], size: [1, 1], finger: "LI", row, col: 0, home: false, stretch: false, effort: 1 });
 const g: Geometry = { id: "t", name: "t", description: "", key: [key(0), key(0), key(1), key(1), key(1)] };
@@ -43,6 +43,10 @@ describe("format", () => {
     expect(layerSlots(t2, "ab\u24F5\u00B7\u00B7" + "()" + "\u00B7\u00B7")).toEqual([[0, 1, 2, 3, 4], [5, 6, null, 7, 8]]);
     expect(layerSlots(t2, "ab\u2776\u00B7\u00B7" + "()" + "\u00B7\u00B7")).toEqual([[0, 1, 2, 3, 4], [5, 6, null, 7, 8]]);
     expect(layerSlots(t2, "ab\u2460\u00B7\u00B7" + "()" + "\u00B7")).toEqual([[0, 1, 2, 3, 4], [5, 6, null, 7, null]]);
+    // Each layer per key, with slot heat; the held key is muted on the layer.
+    const v = layerViews(t, "ab\u2460c" + "()d", [1, 2, 3, 4, 5, 6, 7]);
+    expect(v.map((l) => l.name)).toEqual(["Base", "\u2460 Layer 1"]);
+    expect(v[1]).toEqual({ name: "\u2460 Layer 1", chars: "()\u00B7d", heat: [5, 6, 0, 7], muted: [false, false, true, false] });
   });
 });
 
