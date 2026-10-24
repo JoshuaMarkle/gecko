@@ -12,6 +12,7 @@
 | Published numbers | SFB % for QWERTY/Colemak/Graphite within tolerance of published values on the matching corpus |
 | Optimizer correctness | On instances small enough to brute-force (≤ 8 keys), each optimizer finds the optimum |
 | Determinism | Same seed → identical result |
+| Start-layout invariance | A layout scores the same (1e-9 relative) whichever layout of its symbol set built the scorer, with `trigram_coverage` < 1 and on `coarse` copies (`score_independent_of_start_layout`) |
 | Format round-trip | Layout/geometry parse → print → parse |
 | Collision (geometry phases) | Known overlapping/non-overlapping key pairs |
 

@@ -596,6 +596,30 @@ fn deterministic_with_eval_budget() {
     }
 }
 
+/// A layout's score must not depend on which layout (symbol order) the scorer was built from,
+/// including which trigrams `trigram_coverage` drops among equal frequencies.
+#[test]
+fn score_independent_of_start_layout() {
+    let g = ansi();
+    let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 2);
+    for coverage in [0.5, 0.9, 0.99] {
+        let mut p = all_weights();
+        p.trigram_coverage = coverage;
+        let (a, b) = (layout("qwerty"), layout("canary"));
+        let from_a = Scorer::new(&g, &c, &p, &a).unwrap();
+        let from_b = Scorer::new(&g, &c, &p, &b).unwrap();
+        assert_eq!(from_a.trigram_count(), from_b.trigram_count());
+        for l in [&a, &b] {
+            let (x, y) = (from_a.full(&from_a.state_for(l).unwrap()), from_b.full(&from_b.state_for(l).unwrap()));
+            assert!((x - y).abs() <= 1e-9 * x.abs(), "coverage {coverage}: {x} vs {y}");
+            let keep = from_a.trigram_count() / 3;
+            let (ca, cb) = (from_a.coarse(keep), from_b.coarse(keep));
+            let (x, y) = (ca.full(&ca.state_for(l).unwrap()), cb.full(&cb.state_for(l).unwrap()));
+            assert!((x - y).abs() <= 1e-9 * x.abs(), "coarse, coverage {coverage}: {x} vs {y}");
+        }
+    }
+}
+
 #[test]
 fn worker_trace_records_sa_schedule() {
     let g = ansi();

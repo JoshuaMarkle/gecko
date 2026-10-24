@@ -206,7 +206,8 @@ placement on the home keys, elbow midline) and so recomputed on every rebuild.
   predict a judge metric over layouts sampled around the references (reports R²).
 - `trigram_coverage` (default 0.99) keeps the most frequent trigrams covering that share
   and renormalizes; scoring, deltas and reports all use the same truncated table, so they
-  stay consistent. About 2× faster search than exact (1.0).
+  stay consistent. Equal frequencies at the cut break by characters, so the kept set does not
+  depend on the start layout's symbol order. About 2× faster search than exact (1.0).
 - `gecko profile fit --target likes` learns non-negative weights with pairwise logistic loss
   on unique liked cmini layouts, holding out 20% of whole layouts before computing scales.
   The fit got 53.8% held-out pair accuracy vs default 52.0% and Engram 49.4% (seed 1,

@@ -128,13 +128,15 @@ gallium-stdpct, Graphite, Canary):
 All 12 winning 25 M runs (`winners.txt`, copies in `runs/`) pass `gecko verify`. The other 588
 runs are in the local `runs/` only; `seeds-*.json` records each one's id, score and layout.
 
-**Scorer invariance bug found.** The same layout scores 12.153876 when the search starts from
-it and 12.154293 when the search starts from QWERTY (relative 3·10⁻⁵). The cause is in
-`truncate_coverage` (`scorer/build.rs`): it drops trigrams below the coverage cut, and it
-breaks frequency ties by layout symbol index, which follows the start layout's order. So the
-kept trigram set depends on the start. It is far below every margin above, but scores of
-identical layouts from different runs can differ in the 4th decimal. The fix is to break ties
-by corpus character, not layout index. Not fixed here.
+**Scorer invariance bug found, fixed 2026-10-24.** The same layout scored 12.153876 when the
+search started from it and 12.154293 when it started from QWERTY (relative 3·10⁻⁵). The cause
+was in `truncate_coverage` (`scorer/build.rs`): it drops trigrams below the coverage cut and
+broke frequency ties by layout symbol index, which follows the start layout's order, so the
+kept trigram set depended on the start (`Scorer::coarse` had the same tie-break). Both now
+break ties by characters; the two starts agree to 1.6·10⁻⁷ (12.1539333 / 12.1539335). Scores
+shift by at most 10⁻³ (trigram metrics; reference ranking unchanged), far below every margin
+above. The winning layouts are unchanged, but 6 of the 12 runs reproduce only with a binary
+from before the fix (`4e8ace4`), since their recorded scores moved in the 4th–7th decimal.
 
 ## Limits
 

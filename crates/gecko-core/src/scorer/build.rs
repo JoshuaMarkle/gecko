@@ -74,7 +74,7 @@ impl Scorer {
             }
         }
         let (shift_effort, shift_press, shift_pair) = shift_tables(geometry, &shift_keys);
-        truncate_coverage(&mut f3, profile.trigram_coverage as f64);
+        truncate_coverage(&mut f3, &chars, profile.trigram_coverage as f64);
         norm(&mut f3);
 
         // Y03 weights: each bracket pair on the layout by the corpus frequency of its two symbols.
@@ -368,8 +368,13 @@ impl Scorer {
         if keep >= self.tri_all.len() {
             return out;
         }
+        let key = |t: &TriEntry| [t.x, t.y, t.z].map(|s| self.chars[s as usize]);
         let mut idx: Vec<usize> = (0..self.tri_all.len()).collect();
-        idx.sort_by(|&a, &b| self.tri_all[b].f.total_cmp(&self.tri_all[a].f).then(a.cmp(&b)));
+        // Ties by characters, not symbol index: the kept set must not depend on symbol order.
+        idx.sort_by(|&a, &b| {
+            let (ta, tb) = (&self.tri_all[a], &self.tri_all[b]);
+            tb.f.total_cmp(&ta.f).then_with(|| key(ta).cmp(&key(tb))).then(a.cmp(&b))
+        });
         idx.truncate(keep);
         idx.sort_unstable();
         out.tri_all = idx.iter().enumerate().map(|(id, &i)| TriEntry { id: id as u32, ..self.tri_all[i] }).collect();
@@ -611,14 +616,18 @@ fn index_trigrams(n: usize, tri_all: &[TriEntry]) -> (Vec<u32>, Vec<TriEntry>, V
     (tri_start, tri_entries, tri_pair_start, tri_pair)
 }
 
-/// Zero the least frequent entries so the rest cover `coverage` of the total.
-fn truncate_coverage(f: &mut [f32], coverage: f64) {
+/// Zero the least frequent entries of the trigram table `f` (indexed by the symbols `chars`)
+/// so the rest cover `coverage` of the total. Ties break by characters, not symbol index, so
+/// the kept set does not depend on the layout's symbol order (the search's start layout).
+fn truncate_coverage(f: &mut [f32], chars: &[char], coverage: f64) {
     if coverage >= 1.0 {
         return;
     }
-    let total: f64 = f.iter().map(|&x| x as f64).sum();
+    let n = chars.len();
+    let key = |i: usize| [chars[i / (n * n)], chars[i / n % n], chars[i % n]];
     let mut idx: Vec<usize> = (0..f.len()).filter(|&i| f[i] > 0.0).collect();
-    idx.sort_by(|&a, &b| f[b].total_cmp(&f[a]).then(a.cmp(&b)));
+    idx.sort_by(|&a, &b| f[b].total_cmp(&f[a]).then_with(|| key(a).cmp(&key(b))).then(a.cmp(&b)));
+    let total: f64 = idx.iter().map(|&i| f[i] as f64).sum();
     let mut acc = 0.0;
     let mut keep = idx.len();
     for (k, &i) in idx.iter().enumerate() {
