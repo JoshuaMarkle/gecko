@@ -20,6 +20,15 @@ export interface SearchSettings {
   stopConf?: number | null;
   /** Corpus id the results are also scored on but never searched on (L06); "" = none. */
   holdout?: string;
+  /** Symbol set: "" = the starting layout's symbols; else a keyset built from the board and
+   *  language (`gecko keyset`): letters only, letters + Shift-paired symbols, or + a symbol layer. */
+  keyset?: "" | "alpha" | "shift" | "layer";
+  /** Shift pairs for `shift`: "natural" (US), "frequency", or pairs like "-_ =+ ({". */
+  keysetPairs?: string;
+  /** Search the keys of Shift, Ctrl and the layer key before the run. */
+  keysetPlace?: boolean;
+  /** Let letters and symbols take thumb keys. */
+  thumbLetters?: boolean;
   /** Board and Both tab settings (`geom.ts`); defaults `GEOM_DEFAULTS`. */
   geom?: GeomSettings;
 }

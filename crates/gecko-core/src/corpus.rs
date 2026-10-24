@@ -20,7 +20,7 @@
 //! skipgrams) are estimated by assuming consecutive words are independent (see
 //! `add_word_boundaries`).
 
-use crate::layout::{ARROWS, ENTER as ENTER_SYM, SPACE as SPACE_SYM};
+use crate::layout::{ARROWS, BACKSPACE, ENTER as ENTER_SYM, SPACE as SPACE_SYM};
 use crate::rng::Rng;
 use crate::{hash, Error, Result};
 
@@ -112,7 +112,7 @@ pub struct Corpus {
 }
 
 /// US-QWERTY shifted characters and the key they are typed on.
-const US_SHIFT: &[(char, char)] = &[
+pub const US_SHIFT: &[(char, char)] = &[
     ('!', '1'),
     ('@', '2'),
     ('#', '3'),
@@ -214,6 +214,26 @@ fn strip_gutenberg(text: &str) -> &str {
     let start = text.find("*** START OF").and_then(|i| text[i..].find('\n').map(|j| i + j + 1)).unwrap_or(0);
     let end = text[start..].find("*** END OF").map(|i| start + i).unwrap_or(text.len());
     &text[start..end]
+}
+
+/// Hard-wrapped text → one line per paragraph: lines join with a space, blank lines (one or
+/// more) become one `\n`.
+pub fn join_paragraphs(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut blank = false;
+    for line in text.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            blank = true;
+            continue;
+        }
+        if !out.is_empty() {
+            out.push(if blank { '\n' } else { ' ' });
+        }
+        out.push_str(line);
+        blank = false;
+    }
+    out
 }
 
 /// Edge statistics of imported words, each counted as the segment `␣word` (a space token,
@@ -356,6 +376,14 @@ impl Corpus {
     /// Count n-grams of `text` into this corpus.
     pub fn add_text(&mut self, text: &str) {
         let (t, sh) = self.tokens(strip_gutenberg(text));
+        self.count(&t, &sh, 1, 1);
+    }
+
+    /// Count hard-wrapped prose (`corpus build --paragraphs`): a single line break is a space
+    /// (the source's wrapping, not a typed Enter) and a blank line one paragraph break, which is
+    /// `⏎` when the charset has it.
+    pub fn add_prose(&mut self, text: &str) {
+        let (t, sh) = self.tokens(&join_paragraphs(strip_gutenberg(text)));
         self.count(&t, &sh, 1, 1);
     }
 
@@ -637,6 +665,121 @@ impl Corpus {
         let a = arrow.iter().map(|&i| stream.mono[i as usize]).sum::<u64>() as f64 / stream.total_chars().max(1) as f64;
         if !(share > 0.0 && share < a) {
             return Err(Error::invalid("corpus nav", format!("share must be in (0, {a:.2})")));
+        }
+        let w = share / a;
+        Corpus::mix(name, &[(&base, 1.0 - w), (&stream, w)])
+    }
+
+    /// This corpus as typed on keys that carry Shift pairs `(base, shifted)`: every n-gram of a
+    /// shifted symbol moves to its base key (added to the base's counts; the base joins the
+    /// charset in the shifted symbol's place when missing) and Shift presses are added for it.
+    /// A press is counted before each shifted symbol except right after another symbol of a
+    /// pair (`::` holds Shift): `mono[s] − Σ bi[t, s]` over pair-shifted t, of which `bi[x, s]`
+    /// with x not pair-shifted are presses after x. Estimates where case counts meet pairs: a
+    /// capital right after a pair-shifted symbol still counts its own press. Pairs whose
+    /// shifted symbol is not in the charset change nothing.
+    pub fn keyed(&self, pairs: &[(char, char)]) -> Result<Self> {
+        let pair_of = |ch: char| pairs.iter().find(|p| p.1 == ch);
+        if !self.charset.iter().any(|&ch| pair_of(ch).is_some()) {
+            return Ok(self.clone());
+        }
+        let mut cs: Vec<char> = Vec::new();
+        for &ch in &self.charset {
+            let k = pair_of(ch).map_or(ch, |p| p.0);
+            if !cs.contains(&k) && (k == ch || !self.charset.contains(&k)) {
+                cs.push(k);
+            }
+        }
+        let c = self.size();
+        let n = cs.len();
+        let map: Vec<usize> =
+            self.charset.iter().map(|&ch| cs.iter().position(|&k| k == pair_of(ch).map_or(ch, |p| p.0)).unwrap()).collect();
+        let sh: Vec<bool> = self.charset.iter().map(|&ch| pair_of(ch).is_some()).collect();
+        let mut out = Corpus::new(&self.name, &cs.iter().collect::<String>());
+        for x in 0..c {
+            let mx = map[x];
+            out.mono[mx] += self.mono[x];
+            out.shift[mx] += self.shift[x];
+            for y in 0..c {
+                let (xy, my) = (x * c + y, mx * n + map[y]);
+                out.bi[my] += self.bi[xy];
+                out.skip[my] += self.skip[xy];
+                out.skip2[my] += self.skip2[xy];
+                out.skip3[my] += self.skip3[xy];
+                out.shift_bi[my] += self.shift_bi[xy];
+                for z in 0..c {
+                    out.tri[my * n + map[z]] += self.tri[xy * c + z];
+                }
+            }
+        }
+        for y in (0..c).filter(|&y| sh[y]) {
+            let held: u64 = (0..c).filter(|&x| sh[x]).map(|x| self.bi[x * c + y]).sum();
+            out.shift[map[y]] += self.mono[y].saturating_sub(held);
+            for x in (0..c).filter(|&x| !sh[x]) {
+                out.shift_bi[map[x] * n + map[y]] += self.bi[x * c + y];
+            }
+        }
+        Ok(out)
+    }
+
+    /// This corpus plus Backspace (`⌫`) making up `share` of all keystrokes, from a typing-error
+    /// model (seeded, deterministic): a stream typed from the bigram chain where, before each
+    /// keystroke, an error starts with probability 0.1; the typist types k wrong symbols (the
+    /// first drawn from the monograms, the rest continuing the chain), presses `⌫` k times and
+    /// retypes from where the error began. k − 1 is geometric with continuation 0.45 (mean k
+    /// 1.82). The stream is mixed in like [`Corpus::with_nav`] at the weight that gives `share`,
+    /// so other statistics stay mostly exact. Fitted on 4,000 participants of the Aalto 136M
+    /// keystrokes study (2.8M keys): `⌫` is 5.6 % of keystrokes, 3.0 runs per 100 keys, runs of
+    /// 1/2/3 keys 55/25/10 %.
+    pub fn with_edits(&self, name: &str, share: f64, seed: u64) -> Result<Self> {
+        const LEN: usize = 2_000_000;
+        const START: f64 = 0.1;
+        const CONT: f64 = 0.45;
+        let base = self.extended(name, &[BACKSPACE])?;
+        let bs = base.index_of(BACKSPACE).unwrap() as u8;
+        let c = self.size();
+        let mut cum = vec![0u64; (c + 1) * c];
+        for x in 0..=c {
+            let mut acc = 0;
+            for y in 0..c {
+                acc += if x == c { self.mono[y] } else { self.bi[x * c + y] };
+                cum[x * c + y] = acc;
+            }
+        }
+        if cum[c * c + c - 1] == 0 {
+            return Err(Error::invalid("corpus", "empty corpus"));
+        }
+        let mut rng = Rng::new(seed);
+        let draw = |rng: &mut Rng, row: usize| -> Option<u8> {
+            let r = &cum[row * c..row * c + c];
+            let tot = r[c - 1];
+            (tot > 0).then(|| r.partition_point(|&v| v <= (rng.f64() * tot as f64) as u64).min(c - 1) as u8)
+        };
+        let next = |rng: &mut Rng, prev: Option<u8>| prev.and_then(|p| draw(rng, p as usize)).or_else(|| draw(rng, c)).unwrap();
+        let mut t: Vec<u8> = Vec::with_capacity(LEN + 64);
+        let mut prev: Option<u8> = None;
+        while t.len() < LEN {
+            if rng.f64() < START {
+                let mut k = 1;
+                let mut wrong = draw(&mut rng, c).unwrap();
+                t.push(wrong);
+                while rng.f64() < CONT {
+                    wrong = next(&mut rng, Some(wrong));
+                    t.push(wrong);
+                    k += 1;
+                }
+                t.extend(std::iter::repeat_n(bs, k));
+                continue;
+            }
+            let x = next(&mut rng, prev);
+            t.push(x);
+            prev = Some(x);
+        }
+        let mut stream = Corpus::new(name, &base.charset.iter().collect::<String>());
+        stream.count(&t, &vec![false; t.len()], 1, 1);
+        let a = stream.mono[bs as usize] as f64 / stream.total_chars().max(1) as f64;
+        if !(share > 0.0 && share < a) {
+            return Err(Error::invalid("corpus edits", format!("share must be in (0, {a:.2})")));
         }
         let w = share / a;
         Corpus::mix(name, &[(&base, 1.0 - w), (&stream, w)])

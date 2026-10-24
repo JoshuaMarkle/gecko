@@ -252,6 +252,9 @@ export function App() {
         ...(!explore && search.budget === "evals" ? { evals: search.evals ?? 50_000_000 } : { time_ms: search.timeS * 1000 }),
         threads: search.threads, seed: search.seed, pins, sa_steps: search.saSteps, ga_pop: search.gaPop,
         holdout: search.holdout && search.holdout !== corpus.id ? search.holdout : undefined,
+        keyset: search.keyset ? {
+          mode: search.keyset, pairs: search.keysetPairs || "natural", place: search.keysetPlace ?? true, thumb_letters: search.thumbLetters ?? false,
+        } : undefined,
         memetic: search.algo === "memetic" ? {
           ga: { pop_size: search.memeticPop ?? 24 }, local_search: search.localSearch ?? "hc",
           local_steps: search.localSteps ?? 12, islands: search.islands ?? 0,

@@ -89,7 +89,13 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   in strings/JSON/UI: `␣` space, `⏎` enter, `⌫` bspc, `⇥` tab, `⎋` esc, and `·` = empty slot
   (zero frequency, may repeat, unpinned unless `--pin '{none}'`), `⇧` Shift (base layer only,
   may repeat, never moves). Text input (layout rows, `raw:`, `--pin`) also takes `{space}`,
-  `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `{none}`, `{shift}`, `{left}`, `{down}`, `{up}`, `{right}` (arrows `←↓↑→`).
+  `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `{none}`, `{shift}`, `{ctrl}`, `{left}`, `{down}`, `{up}`, `{right}` (arrows `←↓↑→`).
+  `⎈` Ctrl is fixed like `⇧` (base layer, may repeat, never moves; costs: [keysets.md](keysets.md#modelled-keys)).
+- Shift pairs (`Layout.shifted`, TOML `shifted = ["-_", "[{"]`): base symbol then the symbol
+  Shift gives on its key; the base is on the layout, the shifted symbol is not. The scorer
+  types the shifted symbol as its base key + Shift (`Corpus::keyed`). Like adaptive rules they
+  are not in the flat char string: runs store them in `config.json` (`shifted`), `run:<id>`
+  reattaches them, `/api/score` takes `shifted`. They are part of the layout hash.
   The scorer gives repeated `·` distinct symbol ids.
 - Text format: rows of symbols matching the geometry's rows (`data/layouts/*.toml`), e.g.
   ```
@@ -168,6 +174,14 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   occurrences), then `word\tcount`, most frequent first, folded like the tokenizer and merged
   (`I` + `i`), capped at 20 000 words. Not part of the `.gkc` or its hash. Bundled for `shai`
   and `mt-10k`.
+- Shift pairs (`Corpus::keyed`, applied by `Scorer::new` when the layout has `shifted`): each
+  shifted symbol's n-grams move to its base key and Shift presses are added: one before each
+  shifted symbol except right after another pair-shifted one (`::` holds Shift), from bigrams;
+  the presses after an unshifted x go to `shift_bi`. A capital right after a pair-shifted symbol
+  still counts its own press (the tables do not record case per bigram).
+- `gecko corpus build --paragraphs`: hard-wrapped prose, a line break is a space and a blank line
+  one `⏎` (else every wrapped line would be an Enter). `gecko corpus edits` adds Backspace from a
+  typing-error model ([keysets.md](keysets.md#modelled-keys)), mixed in like `corpus nav`.
 - `gecko corpus build <text>` counts raw text. `gecko corpus import <dir>` reads cmini-style
   JSON counts: from `words.json` every in-word n-gram is exact, and skipgrams across a space are
   estimated assuming consecutive words are independent (spans over 3+ words are dropped);
@@ -183,6 +197,8 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   |---|---|---|---|
   | `english` | 10 Project Gutenberg novels (raw text in `data/corpora/src/`, not committed; other corpora's sources go in `data/corpora/src/<name>/`, served by `/api/corpora/{name}/sources`) | 7.5M chars incl. space | 6.63 % |
   | `english-cased` | Same 10 novels, rebuilt with the current tokenizer (`GKCORP3`: Shift tables, punctuation as shifted keys) | 7.5M chars incl. space | 6.61 % |
+  | `english-full` | Same novels, `--charset code --paragraphs`: every ASCII symbol and digit its own symbol, `⏎` per paragraph, Shift tables (keysets) | 7.5M chars | |
+  | `english-full-bspc` | `english-full` + `⌫` at 5.6 % of keystrokes (`corpus edits`) | | |
   | `shai` | cmini `corpora/shai/words.json` (iweb-based English; the community default) | 520M | 6.70 % |
   | `mt-10k` | cmini `corpora/english-10k` (Monkeytype 10k word list, each word once) | 82k | 8.40 % |
   | `mt-450k` | cmini `corpora/english-450k` (Monkeytype 450k list) | 4.8M | 8.30 % |

@@ -84,6 +84,13 @@ Adaptive keys (`magic.rs` unit tests + `scorer.rs`): the count rewrite equals th
 text exactly for mono/bigrams and beats no rewrite for trigrams/skipgrams; delta == full with
 a magic key (proptest); `[[magic]]` TOML round-trip; Magic Sturdy's rules halve its SFBs on
 `english` and the rule search matches or beats them.
+Keysets (`keyset.rs` unit tests + `tests/keyset.rs`): each mode's symbol set on corne-36 and
+ansi-30; delta == full (proptest) and breakdown == score with Shift pairs, Ctrl, L04 zones and a
+symbol layer; `set_geometry` equals a fresh build; Ctrl cost scales with profile `ctrl` and
+needs a `⎈`; L04 counts Space off the thumbs, a letter on a thumb or a layer; the keyed corpus
+(`::` holds Shift, missing bases); the Backspace model's share and run continuation; paragraph
+joining; the placement search never worsens and keeps the fixed keys. The API contract test
+starts a `shift` keyset run and re-scores its best with `shifted`.
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`, `web/src/export.test.ts` (layout TOML, KLE, stats, standalone SVG), `web/src/runViews.test.ts` (metric columns, qd grid projection: best elite per cell, one-axis rows).
 WASM == CLI: `web/scripts/wasm-parity.mjs` tests all 10 references × all 4 profiles
 using the same web-target package loaded by the browser.

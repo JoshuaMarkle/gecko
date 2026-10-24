@@ -379,14 +379,20 @@ impl Scorer {
 
     // ---- accessors for reports ----
 
-    /// Unweighted Shift part of metric `id` (M01, Y01; 0 otherwise or without Shift).
+    /// Unweighted Shift and Ctrl part of metric `id` (M01, Y01; 0 otherwise or without either key).
     pub fn shift_value(&self, id: &str, st: &State) -> f64 {
-        if !self.has_shift {
-            return 0.0;
-        }
         let (n, pos) = (self.n, &st.pos);
-        let mono = |t: &[f32]| (0..n).map(|y| self.fsh[y] as f64 * t[pos[y] as usize] as f64).sum::<f64>();
-        match id {
+        let on = |f: &[f32], t: &[f32]| (0..n).map(|y| f[y] as f64 * t[pos[y] as usize] as f64).sum::<f64>();
+        let ctrl = match id {
+            "M01" => on(&self.fct, &self.ctrl_effort),
+            "Y01" => on(&self.fct, &self.ctrl_press),
+            _ => 0.0,
+        };
+        if !self.has_shift {
+            return ctrl;
+        }
+        let mono = |t: &[f32]| on(&self.fsh, t);
+        ctrl + match id {
             "M01" => mono(&self.shift_effort),
             "Y01" => {
                 let mut v = mono(&self.shift_press);

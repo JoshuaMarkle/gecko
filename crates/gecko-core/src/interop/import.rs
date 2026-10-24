@@ -84,6 +84,7 @@ impl Imported {
             rows: self.rows.iter().map(|r| r.iter().collect()).collect(),
             layer: Vec::new(),
             magic: Vec::new(),
+            shifted: Vec::new(),
         }
     }
 

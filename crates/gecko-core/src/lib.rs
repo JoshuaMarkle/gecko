@@ -17,6 +17,7 @@ pub mod geomsearch;
 pub mod hand;
 pub mod hash;
 pub mod interop;
+pub mod keyset;
 pub mod layout;
 pub mod magic;
 pub mod metrics;

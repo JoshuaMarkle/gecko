@@ -426,6 +426,16 @@ the key no longer counts. Not modeled: the learning cost of rules (only `gecko m
   channels: mono `fsh`/`Csh` and pair `fsb`/`Csb` (the latter compiled into the pair delta only
   when weighted). Without `⇧` on the layout Shift costs nothing, so 30-key layouts score as
   before. A one-shot Shift costs the same for single capitals; caps runs are scored as held.
+- **Ctrl** (layout has `⎈` keys): profile `ctrl` presses per keystroke over the shortcut letters
+  (`profile::CTRL_SHORTCUTS`), each costed like a Shift press before the letter (best `⎈` key's
+  effort in M01, Y01 100 or 200 on the letter's finger). Folded into `Cp` with the M01/Y01
+  weights, so full, delta and QAP terms need no new channel; `shift_value` reports it.
+- **Shift pairs** (`Layout.shifted`): the corpus is keyed first (`representation.md`), so a pair
+  key carries both symbols' n-grams and the shifted one's Shift presses.
+- **L04 key zones** (`Order::Place`, count of keys): with profile `thumb_zone` (e.g. `␣⌫⏎`), a
+  zone symbol off the base thumb keys or a letter, digit or punctuation symbol on one costs 1;
+  with `base_letters`, a letter or zone symbol on a layer key costs 1. Keysets weight it 100, a
+  constraint ([keysets.md](keysets.md#special-keys)).
 - Not modeled yet: the Shift key's own keystroke in finger load,
   layer state beyond one bigram (toggle assumes each bigram starts from `i`'s layer). Profile `code` weights Y01/Y02/Y03 (scales are rough estimates).
 

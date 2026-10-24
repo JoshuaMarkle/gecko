@@ -8,6 +8,7 @@ mod corpus;
 mod explore;
 mod geometry;
 mod judge;
+pub(crate) mod keyset;
 mod layouts;
 mod list;
 mod magic;
@@ -39,6 +40,10 @@ pub enum Cmd {
     Sweep(judge::SweepArgs),
     /// Finger loads, heat, and the worst same-finger and stretch n-grams.
     Analyze(score::AnalyzeArgs),
+    /// Choose the symbols to place from the board and corpus and build a start layout: alpha
+    /// (letters only), shift (letters + symbol keys with Shift pairs) or layer (letters + a
+    /// symbol layer). `optimize --keyset <mode>` searches from it.
+    Keyset(keyset::KeysetArgs),
     /// Search for better layouts. Always writes a run directory.
     Optimize(Box<optimize::OptimizeArgs>),
     /// Map the space of good layouts: landscape probe + breakout local search with exclusion
@@ -116,6 +121,7 @@ impl Cmd {
             Cmd::Judge(a) => judge::judge(&ctx, a),
             Cmd::Features(a) => judge::features(&ctx, a),
             Cmd::Sweep(a) => judge::sweep(&ctx, a),
+            Cmd::Keyset(a) => keyset::run(&ctx, a),
             Cmd::Optimize(a) => optimize::run(&ctx, *a),
             Cmd::Explore(a) => explore::explore(&ctx, a),
             Cmd::Qd(a) => explore::qd(&ctx, a),

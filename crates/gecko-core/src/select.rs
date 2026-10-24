@@ -25,6 +25,8 @@ pub struct Candidate {
     /// Board the chars are laid out on.
     pub geometry: String,
     pub magic: Vec<Magic>,
+    /// Shift pairs of the run's start layout.
+    pub shifted: Vec<String>,
 }
 
 /// What one run contributed.
@@ -90,7 +92,13 @@ pub fn gather(runs: &Path, ids: &[String], pool: usize) -> Result<(Vec<Candidate
                 Some(&i) => out[i].sources.push(src),
                 None => {
                     index.insert(key, out.len());
-                    out.push(Candidate { chars, sources: vec![src], geometry: cfg.geometry.name.clone(), magic: cfg.magic.clone() });
+                    out.push(Candidate {
+                        chars,
+                        sources: vec![src],
+                        geometry: cfg.geometry.name.clone(),
+                        magic: cfg.magic.clone(),
+                        shifted: cfg.shifted.clone(),
+                    });
                 }
             }
         }
@@ -178,13 +186,16 @@ pub fn select(
     let mut rows = Vec::with_capacity(cands.len());
     for c in cands {
         let board = boards.get(&c.geometry).ok_or_else(|| Error::invalid("select", format!("board '{}' not loaded", c.geometry)))?;
-        let layout = Layout::from_flat(&c.sources[0], board, c.chars.chars().collect())?.with_magic(c.magic.clone())?.fit(g)?;
+        let layout = Layout::from_flat(&c.sources[0], board, c.chars.chars().collect())?
+            .with_magic(c.magic.clone())?
+            .with_shifted(c.shifted.clone())?
+            .fit(g)?;
         let mut set = layout.chars.clone();
         set.extend(layout.layers.iter().flat_map(|l| l.chars.iter().copied()));
         set.sort_unstable();
         let key = (
             set.into_iter().collect::<String>() + &layout.layers.len().to_string(),
-            serde_json::to_string(&layout.magic).unwrap_or_default(),
+            serde_json::to_string(&layout.magic).unwrap_or_default() + &layout.shifted.join(" "),
         );
         let st = match scorers.get(&key) {
             Some(sc) if layout.layers.is_empty() && sc.n == layout.chars.len() => {
@@ -206,7 +217,7 @@ pub fn select(
         let b = breakdown(sc, &st);
         let values: Vec<f64> = idx.iter().map(|&m| b.metrics[m].value).collect();
         let flat = st.chars(sc);
-        let shown = Layout::from_flat("", g, flat.clone())?.with_magic(layout.magic.clone())?;
+        let shown = Layout::from_flat("", g, flat.clone())?.with_extras_of(&layout)?;
         rows.push(Selected {
             rank: 0,
             rank_sum: 0.0,

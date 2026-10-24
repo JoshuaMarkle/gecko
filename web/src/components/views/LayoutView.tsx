@@ -256,6 +256,30 @@ export function LayoutView(p: Props) {
             </div>
           </Sec>
           <StartSec layouts={p.layouts} start={start} setStart={(v) => set({ start: v })} label={p.label} pins={p.pins} onLoad={p.onLoad} onEdit={() => setEditing(true)} />
+          <Sec id="search-symbols" title="Symbols" note="what the search places">
+            <div className="row">
+              <label title="Which symbols get keys. Starting layout: its own symbols. Otherwise a set built from the board and language: letters only (free keys stay empty), letters + symbol keys that carry a Shift pair (-_ [{ …), or letters + a symbol layer. Space, Backspace, Enter, Shift and Ctrl go on the thumbs of boards that have them.">Symbols</label>
+              <select value={s.keyset ?? ""} onChange={(e) => set({ keyset: e.target.value as SearchSettings["keyset"] })}>
+                <option value="">Starting layout</option>
+                <option value="alpha">Letters only</option>
+                <option value="shift">Letters + Shift-paired symbols</option>
+                <option value="layer">Letters + symbol layer</option>
+              </select>
+              <span />
+            </div>
+            {s.keyset === "shift" && (
+              <div className="row">
+                <label title="How symbols pair on Shift keys: natural US pairs (-_ =+ [{ ;: '&quot; ,< .> /?), by frequency rank, or your own pairs such as -_ =+ ({ )}">Pairs</label>
+                <input value={s.keysetPairs || "natural"} onChange={(e) => set({ keysetPairs: e.target.value })} />
+                <span />
+              </div>
+            )}
+            {s.keyset && <>
+              <Toggle label="Place modifiers" help="Before the run, search the keys of Shift, Ctrl and the layer key (each candidate thumb key, then a local re-optimization)." value={s.keysetPlace ?? true} onChange={(v) => set({ keysetPlace: v })} />
+              <Toggle label="Letters on thumbs" help="Let letters and symbols take thumb keys (and Space, Backspace, Enter leave them). Off: a thumb zone keeps them apart." value={s.thumbLetters ?? false} onChange={(v) => set({ thumbLetters: v })} />
+              <div className="hint">Pick a language with punctuation and Enter (english-full, english-full-bspc, code). Shift pairs are scored on the server; the editor's live score ignores them.</div>
+            </>}
+          </Sec>
           <Sec id="search" title="Budget" note="how long, how wide">
             <div className="row">
               <label title="Stop after a wall-clock time or after a number of evaluations (exactly reproducible).">Budget</label>

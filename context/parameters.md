@@ -62,7 +62,7 @@ thumb CMC degrees of freedom, scale from hand length and breadth.
 | Param | Notes |
 |---|---|
 | `sources` + `mix_weights` | e.g. 70% English prose, 20% chat, 10% code |
-| `charset` | Which symbols are optimized; everything else is dropped or mapped |
+| `charset` | Which symbols are counted; the layout's symbols are what a search places (`--keyset` builds them, [keysets.md](keysets.md)) |
 | `case_fold`, `shift_model` | Fold uppercase, or count Shift as a key press |
 | `max_skip` | Skipgram depth (1–3) |
 | `trigram_top_k` | Keep top-K trigrams during search (speed), full set for final report |
@@ -74,6 +74,8 @@ thumb CMC degrees of freedom, scale from hand length and breadth.
 | Param | Notes |
 |---|---|
 | `profile` | Named weights file |
+| `ctrl` | Ctrl shortcut presses per keystroke on layouts with `⎈` (default 0.01, an assumption) |
+| `thumb_zone`, `base_letters` | L04 key zones: symbols that belong on thumb keys; letters on the base layer ([keysets.md](keysets.md)) |
 | `weights[metric]` | Per metric |
 | `targets[metric]`, `target_factor` | Soft targets |
 | `normalization` | % / per-1000 / z-score against reference layouts |

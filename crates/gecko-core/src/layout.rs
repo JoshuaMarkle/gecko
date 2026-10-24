@@ -16,6 +16,10 @@
 //! Adaptive keys (`magic`): keys whose output depends on the previous symbol, with their rules
 //! ([`crate::magic`]). The scorer rewrites the corpus for them; the flat char string does not
 //! carry rules, so they travel separately (`Layout::magic`, run configs).
+//!
+//! Shift pairs (`shifted`, e.g. `-_`, `[{`): a key's shifted symbol rides with its base symbol,
+//! so the pair moves as one key. The scorer counts the shifted symbol as its base key typed with
+//! Shift (`Corpus::keyed`). Like adaptive rules they travel beside the flat char string.
 
 use serde::{Deserialize, Serialize};
 
@@ -39,6 +43,9 @@ pub const EMPTY: char = '\u{00B7}'; // ·
 /// layout may have several (the scorer uses the best one per symbol). Without one, Shift
 /// costs nothing.
 pub const SHIFT: char = '\u{21E7}'; // ⇧
+/// Ctrl (`⎈`): a fixed base key held for shortcuts (profile `ctrl`). Like Shift, a layout may
+/// have several and the scorer uses the best one per shortcut key; without one, Ctrl costs nothing.
+pub const CTRL: char = '\u{2388}'; // ⎈
 /// Base-layer keys that hold layers 1, 2, 3 (`①②③`). Never moved by the optimizer.
 pub const LAYER_KEYS: [char; 3] = ['\u{2460}', '\u{2461}', '\u{2462}'];
 /// One-shot layer keys for layers 1, 2, 3 (`⓵⓶⓷`).
@@ -59,6 +66,7 @@ pub const TOKENS: &[(char, &[&str])] = &[
     (RIGHT, &["right"]),
     (EMPTY, &["none", "empty", "_"]),
     (SHIFT, &["shift", "sft"]),
+    (CTRL, &["ctrl", "control"]),
     (LAYER_KEYS[0], &["layer1", "l1"]),
     (LAYER_KEYS[1], &["layer2", "l2"]),
     (LAYER_KEYS[2], &["layer3", "l3"]),
@@ -95,9 +103,31 @@ fn find_layer_key(base: &[char], l: usize) -> Option<(usize, LayerMode)> {
     base.iter().enumerate().find_map(|(k, &c)| layer_key_info(c).filter(|i| i.0 == l).map(|i| (k, i.1)))
 }
 
-/// Keys the optimizer never moves: layer keys and Shift.
+/// Keys the optimizer never moves: layer keys, Shift and Ctrl.
 pub fn is_fixed_key(c: char) -> bool {
-    is_layer_key(c) || c == SHIFT
+    is_layer_key(c) || c == SHIFT || c == CTRL
+}
+
+/// Parse Shift pairs written as two-char strings (`"-_"`, `"[{"`, tokens allowed) separated by
+/// whitespace or given one per item.
+pub fn parse_shifted<S: AsRef<str>>(items: &[S]) -> Result<Vec<String>> {
+    let mut out = Vec::new();
+    for item in items {
+        for word in item.as_ref().split_whitespace() {
+            let cs = parse_symbols(word)?;
+            if cs.len() != 2 || cs[0] == cs[1] {
+                return Err(Error::invalid("layout", format!("shift pair '{word}' must be two different symbols (base, shifted)")));
+            }
+            out.push(cs.iter().collect());
+        }
+    }
+    Ok(out)
+}
+
+/// A Shift pair's (base, shifted) symbols.
+pub fn pair_chars(p: &str) -> (char, char) {
+    let mut it = p.chars();
+    (it.next().unwrap_or(EMPTY), it.next().unwrap_or(EMPTY))
 }
 
 /// Glyph for a token name (case-insensitive), e.g. `space` → `␣`.
@@ -147,6 +177,9 @@ pub struct LayoutFile {
     /// Adaptive keys (`[[magic]]` tables).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub magic: Vec<MagicFile>,
+    /// Shift pairs, base then shifted symbol: `shifted = ["-_", "=+", "[{"]`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub shifted: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -180,6 +213,10 @@ pub struct Layout {
     /// Adaptive keys; each key's glyph is on the layout.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub magic: Vec<Magic>,
+    /// Shift pairs (`"-_"`: `_` is Shift + the key of `-`); each base is on the layout, no
+    /// shifted symbol is.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub shifted: Vec<String>,
 }
 
 impl Layout {
@@ -200,8 +237,10 @@ impl Layout {
             }
         }
         l.magic = f.magic.iter().map(Magic::from_file).collect::<Result<_>>()?;
+        l.shifted = parse_shifted(&f.shifted)?;
         l.check_unique()?;
         l.check_magic()?;
+        l.check_shifted()?;
         Ok(l)
     }
 
@@ -222,6 +261,7 @@ impl Layout {
             chars,
             layers: Vec::new(),
             magic: Vec::new(),
+            shifted: Vec::new(),
         };
         l.check_unique()?;
         Ok(l)
@@ -323,6 +363,43 @@ impl Layout {
         Ok(self)
     }
 
+    /// Every Shift pair's base is on the layout and its shifted symbol is not; no symbol is in
+    /// two pairs.
+    pub fn check_shifted(&self) -> Result<()> {
+        let on = |c: char| self.chars.iter().chain(self.layers.iter().flat_map(|l| l.chars.iter())).any(|&x| x == c);
+        let mut seen = std::collections::BTreeSet::new();
+        for p in &self.shifted {
+            let (b, s) = pair_chars(p);
+            if p.chars().count() != 2 || !seen.insert(b) || !seen.insert(s) {
+                return Err(Error::invalid("layout", format!("'{}': bad or repeated shift pair '{p}'", self.name)));
+            }
+            if !on(b) {
+                return Err(Error::invalid("layout", format!("'{}': shift pair '{p}' has its base '{b}' off the layout", self.name)));
+            }
+            if on(s) {
+                return Err(Error::invalid("layout", format!("'{}': '{s}' is both on a key and Shift + '{b}'", self.name)));
+            }
+        }
+        Ok(())
+    }
+
+    /// These Shift pairs, checked against the layout.
+    pub fn with_shifted(mut self, shifted: Vec<String>) -> Result<Self> {
+        self.shifted = shifted;
+        self.check_shifted()?;
+        Ok(self)
+    }
+
+    /// The adaptive keys and Shift pairs of `other` (they travel beside the flat chars).
+    pub fn with_extras_of(self, other: &Layout) -> Result<Self> {
+        self.with_magic(other.magic.clone())?.with_shifted(other.shifted.clone())
+    }
+
+    /// The shifted symbol typed on base symbol `c`'s key, if any.
+    pub fn shifted_of(&self, c: char) -> Option<char> {
+        self.shifted.iter().map(|p| pair_chars(p)).find(|&(b, _)| b == c).map(|p| p.1)
+    }
+
     pub fn check_geometry(&self, g: &Geometry) -> Result<()> {
         for chars in std::iter::once(&self.chars).chain(self.layers.iter().map(|l| &l.chars)) {
             if chars.len() != g.len() {
@@ -343,7 +420,7 @@ impl Layout {
     pub fn fit(&self, g: &Geometry) -> Result<Layout> {
         if self.layers.is_empty() && self.chars.len() > g.len() {
             let l = Self::from_flat(&self.name, g, self.chars.clone())?;
-            return Ok(Layout { source: self.source.clone(), magic: self.magic.clone(), ..l });
+            return Ok(Layout { source: self.source.clone(), magic: self.magic.clone(), shifted: self.shifted.clone(), ..l });
         }
         let open = g.key.iter().filter(|k| k.fill.is_none()).count();
         let fit = |chars: &[char], fill: &dyn Fn(&crate::Key) -> Option<char>| -> Vec<char> {
@@ -414,16 +491,21 @@ impl Layout {
             rows: self.rows(g),
             layer,
             magic: self.magic.iter().map(Magic::to_file).collect(),
+            shifted: self.shifted.clone(),
         };
         toml::to_string(&f).unwrap_or_default()
     }
 
-    /// Hash of (geometry, symbols, adaptive rules). Identifies a layout independent of its name.
+    /// Hash of (geometry, symbols, adaptive rules, Shift pairs). Identifies a layout independent
+    /// of its name; layouts without rules or pairs hash as before.
     pub fn hash(&self) -> u64 {
         let mut s: String = std::iter::once(self.geometry.as_str()).chain(std::iter::once("|")).collect::<String>()
             + &self.chars.iter().chain(self.layers.iter().flat_map(|l| l.chars.iter())).collect::<String>();
         for m in &self.magic {
             s += &format!("|{}{}:{}", m.key, if m.repeat { "+" } else { "" }, crate::magic::format_rules(&m.rules));
+        }
+        if !self.shifted.is_empty() {
+            s += &format!("|shifted:{}", self.shifted.join(" "));
         }
         hash::fnv1a(s.as_bytes())
     }

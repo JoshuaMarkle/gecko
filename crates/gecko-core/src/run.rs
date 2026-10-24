@@ -34,6 +34,9 @@ pub struct RunConfig {
     /// Adaptive keys of the start layout (they hold for every result).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub magic: Vec<crate::magic::Magic>,
+    /// Shift pairs of the start layout (they hold for every result).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub shifted: Vec<String>,
     /// Corpus the results are also scored on but the search never sees (L06).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub holdout: Option<Input>,
@@ -189,7 +192,8 @@ pub fn prepare(runs: &Path, spec: &RunSpec) -> Result<Prepared> {
         spec.corpus.hash(),
         spec.profile.hash(),
         spec.start.chars.iter().collect::<String>()
-            + &crate::magic::format_rules(&spec.start.magic.iter().flat_map(|m| m.rules.clone()).collect::<Vec<_>>()),
+            + &crate::magic::format_rules(&spec.start.magic.iter().flat_map(|m| m.rules.clone()).collect::<Vec<_>>())
+            + &spec.start.shifted.join(" "),
         spec.pins,
         serde_json::to_string(&spec.params).unwrap_or_default()
     );
@@ -215,6 +219,7 @@ pub fn prepare(runs: &Path, spec: &RunSpec) -> Result<Prepared> {
         start: spec.start.chars.iter().collect(),
         pins: spec.pins.to_string(),
         magic: spec.start.magic.clone(),
+        shifted: spec.start.shifted.clone(),
         holdout: spec.holdout.map(|h| Input { name: h.name.clone(), hash: hash::hex(h.hash()) }),
     };
     std::fs::write(dir.join("config.json"), serde_json::to_string_pretty(&config).unwrap())?;
@@ -287,7 +292,7 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
         .map(|(i, s)| {
             let st = scorer.state_from_sym(s.sym.clone());
             let chars: Vec<char> = st.chars(scorer);
-            let l = Layout::from_flat("", spec.geometry, chars.clone())?.with_magic(spec.start.magic.clone())?;
+            let l = Layout::from_flat("", spec.geometry, chars.clone())?.with_extras_of(spec.start)?;
             Ok(Ranked {
                 rank: i + 1,
                 score: st.score,
@@ -321,7 +326,7 @@ pub fn execute(prep: &Prepared, spec: &RunSpec, control: &Control, mut on_progre
         .map(|(i, point)| {
             let st = scorer.state_from_sym(point.sym.clone());
             let chars = st.chars(scorer);
-            let layout = Layout::from_flat("", spec.geometry, chars.clone())?.with_magic(spec.start.magic.clone())?;
+            let layout = Layout::from_flat("", spec.geometry, chars.clone())?.with_extras_of(spec.start)?;
             Ok(ParetoRanked {
                 layout: Ranked {
                     rank: i + 1,
@@ -517,7 +522,9 @@ pub fn verify(store: &crate::store::Store, dir: &Path) -> Result<Verification> {
     if checks.iter().any(|c| !c.ok) {
         return Ok(Verification { schema: SCHEMA, id: config.id, ok: false, checks, rerun: None });
     }
-    let start = Layout::from_flat("start", &geometry, config.start.chars().collect())?;
+    let start = Layout::from_flat("start", &geometry, config.start.chars().collect())?
+        .with_magic(config.magic.clone())?
+        .with_shifted(config.shifted.clone())?;
     let spec = RunSpec {
         geometry: &geometry,
         corpus: &corpus,

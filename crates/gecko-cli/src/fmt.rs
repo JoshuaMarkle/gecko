@@ -50,6 +50,9 @@ pub fn layout_rows(layout: &Layout, g: &Geometry) -> String {
     for m in &layout.magic {
         out += &format!("\n  {} {}{}", m.key, gecko_core::magic::format_rules(&m.rules), if m.repeat { " (else repeat)" } else { "" });
     }
+    if !layout.shifted.is_empty() {
+        out += &format!("\n  ⇧ {}", layout.shifted.join(" "));
+    }
     out
 }
 

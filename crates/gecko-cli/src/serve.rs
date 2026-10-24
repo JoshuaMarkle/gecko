@@ -16,6 +16,7 @@ use axum::routing::{any, get, post};
 use axum::{Json, Router};
 use futures_util::stream::{self, Stream, StreamExt};
 use gecko_core::geomsearch::{self, GeomParams, GeomSpec};
+use gecko_core::keyset;
 use gecko_core::optimize::{Algo, Control, Params};
 use gecko_core::report::analyze;
 use gecko_core::run::{self, RunSpec};
@@ -274,6 +275,9 @@ struct InputsReq {
     /// Slot-ordered symbols; or `layout` (any CLI layout spec).
     chars: Option<String>,
     layout: Option<String>,
+    /// Shift pairs of `chars` (`["-_", "[{"]`), as a keyset run's results carry them.
+    #[serde(default)]
+    shifted: Vec<String>,
 }
 
 struct Resolved {
@@ -309,6 +313,7 @@ fn resolve(store: &Store, r: &InputsReq) -> std::result::Result<Resolved, ApiErr
         (None, None) => store.layout(&d.reference, &geometry.name)?,
     }
     .fit(&geometry)?;
+    let layout = if r.shifted.is_empty() { layout } else { layout.with_shifted(r.shifted.clone())? };
     Ok(Resolved { geometry, corpus, profile, layout })
 }
 
@@ -366,6 +371,33 @@ struct RunReq {
     /// A board + layout search (G6) on the parametric `geometry` instead of a layout search.
     #[serde(default)]
     geom: Option<GeomReq>,
+    /// Build the symbol set and start layout from the board and corpus (`gecko keyset`)
+    /// instead of `chars` / `layout`.
+    #[serde(default)]
+    keyset: Option<KeysetReq>,
+}
+
+/// `optimize --keyset` options. `place` searches the fixed keys' places before the run
+/// (synchronously, `place_evals` ≤ 5M SA evaluations per settle).
+#[derive(Deserialize)]
+struct KeysetReq {
+    mode: String,
+    #[serde(default)]
+    symbols: Option<usize>,
+    #[serde(default)]
+    pairs: String,
+    #[serde(default)]
+    digits: Option<bool>,
+    #[serde(default)]
+    keys: Option<String>,
+    #[serde(default)]
+    layer_mode: String,
+    #[serde(default)]
+    thumb_letters: bool,
+    #[serde(default)]
+    place: bool,
+    #[serde(default)]
+    place_evals: Option<u64>,
 }
 
 /// Geometry search settings: `free` as `gecko geom optimize --free`, plus any `GeomParams`
@@ -381,10 +413,26 @@ async fn start_run(State(app): State<AppState>, Json(mut req): Json<RunReq>) -> 
     if let Some(g) = req.geom.take() {
         return start_geom_run(app, req, g);
     }
-    let r = resolve(&app.store, &req.inputs)?;
+    let mut r = resolve(&app.store, &req.inputs)?;
+    let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
+    if let Some(k) = &req.keyset {
+        let spec = keyset::spec_from(&k.mode, k.symbols, &k.pairs, k.digits, k.keys.as_deref(), &k.layer_mode, k.thumb_letters)?;
+        let ks = keyset::build(&r.geometry, &r.corpus, &spec)?;
+        keyset::apply_profile(&r.geometry, &ks.layout, &mut r.profile, k.thumb_letters);
+        r.layout = ks.layout;
+        if k.place && r.layout.chars.iter().any(|&c| gecko_core::layout::is_fixed_key(c)) {
+            let opts = keyset::PlaceOpts {
+                evals: k.place_evals.unwrap_or(1_000_000).clamp(1000, 5_000_000),
+                seed: req.seed.unwrap_or(1),
+                threads: req.threads.unwrap_or(cores).clamp(1, cores.max(1)),
+                pins: gecko_core::layout::parse_symbols(&req.pins)?,
+                ..Default::default()
+            };
+            r.layout = keyset::place_fixed(&r.geometry, &r.corpus, &r.profile, &r.layout, &opts)?.layout;
+        }
+    }
     let algo_name = req.algo.as_deref().unwrap_or("sa");
     let algo = Algo::parse(algo_name).ok_or_else(|| ApiError(StatusCode::BAD_REQUEST, format!("unknown algo '{algo_name}'")))?;
-    let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
     let mut params = Params {
         algo,
         seed: req.seed.unwrap_or(1),
@@ -836,6 +884,23 @@ mod tests {
         samples.push(("atlas", call("GET", &format!("/api/runs/{explore}/atlas"), None).await));
         let (_, _, qd) = finished(json!({"algo": "qd", "evals": 20000, "threads": 1})).await;
         samples.push(("qd", call("GET", &format!("/api/runs/{qd}/qd"), None).await));
+        // A keyset run: Shift pairs travel in the config, and /api/score takes them back.
+        let ks = json!({"geometry": "corne-36", "corpus": "english-full", "algo": "hc", "evals": 20000, "threads": 1,
+            "keyset": {"mode": "shift", "place": true, "place_evals": 2000}});
+        let (started, detail, _) = finished(ks).await;
+        let shifted = started["config"]["shifted"].clone();
+        assert!(shifted.as_array().is_some_and(|p| !p.is_empty()), "{shifted}");
+        assert_eq!(started["config"]["profile"]["thumb_zone"], "␣⌫⏎");
+        let chars = detail["result"]["best"][0]["chars"].clone();
+        let score = detail["result"]["best"][0]["score"].as_f64().unwrap();
+        let rescored = call(
+            "POST",
+            "/api/score",
+            Some(json!({"geometry": "corne-36", "corpus": "english-full", "chars": chars,
+            "shifted": shifted, "profile_override": started["config"]["profile"], "top": 1})),
+        )
+        .await;
+        assert!((rescored["analysis"]["breakdown"]["score"].as_f64().unwrap() - score).abs() < 1e-6, "{rescored}");
         samples.push(("geometryFree", call("GET", "/api/geometries/corne-36/free?spec=3d", None).await));
         let geom = json!({"geometry": "corne-36", "profile": "hand", "evals": 12, "threads": 1,
             "geom": {"free": "fingers.stagger", "inner_evals": 500, "polish_evals": 2000}});

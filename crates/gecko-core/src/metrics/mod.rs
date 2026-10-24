@@ -257,7 +257,7 @@ pub static METRICS: &[MetricDef] = &[
         "%",
         Order::Bi,
         Dir::Min,
-        "Layer-key presses per 100 bigrams: hold and toggle layers cost a press on entry, toggle layers another to leave, one-shot layers one per symbol; a press next to another key of the layer key's finger counts double. Plus Shift presses per 100 keystrokes (with a ⇧ key), double when Shift's finger also types the shifted key or the key before.",
+        "Layer-key presses per 100 bigrams: hold and toggle layers cost a press on entry, toggle layers another to leave, one-shot layers one per symbol; a press next to another key of the layer key's finger counts double. Plus Shift and Ctrl presses per 100 keystrokes (with a ⇧ / ⎈ key), double when the modifier's finger also types the key (Shift: or the key before).",
     ),
     m(
         "Y02",
@@ -298,6 +298,14 @@ pub static METRICS: &[MetricDef] = &[
         Order::Place,
         Dir::Min,
         "Distance from the reference layout (profile `familiar_to`), % of keystrokes: 0 on the reference key, 50 on another key of its finger, 75 on its hand, 100 otherwise.",
+    ),
+    m(
+        "L04",
+        "Key zones",
+        "keys",
+        Order::Place,
+        Dir::Min,
+        "Keys out of their zone: with profile `thumb_zone` (e.g. `␣⌫⏎`), a zone symbol off the base thumb keys or a letter, digit or punctuation symbol on one; with `base_letters`, a letter or zone symbol on a layer key. Weighted high it is a constraint (keysets use 100).",
     ),
 ];
 
@@ -856,6 +864,23 @@ pub fn place_table(id: &str, g: &Geometry, p: &Profile, chars: &[char], qwerty: 
                         50.0 * (d / 2.0).min(1.0)
                     };
                     t[x * n + i] = w / total * cost;
+                }
+            }
+        }
+        "L04" => {
+            let zone: Vec<char> = p.thumb_zone.as_deref().map(|z| crate::layout::parse_symbols(z).unwrap_or_default()).unwrap_or_default();
+            for (x, &c) in chars.iter().enumerate() {
+                let (in_zone, typed) = (zone.contains(&c), c.is_ascii_alphanumeric() || c.is_ascii_punctuation());
+                for i in 0..n {
+                    let out = if k[i].layer > 0 {
+                        p.base_letters && (c.is_ascii_lowercase() || in_zone)
+                    } else {
+                        let thumb = k[i].finger.is_thumb();
+                        p.thumb_zone.is_some() && ((in_zone && !thumb) || (typed && !in_zone && thumb))
+                    };
+                    if out {
+                        t[x * n + i] = 1.0;
+                    }
                 }
             }
         }

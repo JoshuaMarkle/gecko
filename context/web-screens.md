@@ -114,7 +114,9 @@ Typing effort / Sideways effort / Vertical effort labels. Metric IDs remain in t
 
 ## Layout (optimize the layout for the board)
 Sidebar: algorithm; starting layout (Auto = the loaded layout, or a named layout) and **Edit
-layout**; budget (time or evaluations), threads, seed; holdout corpus (L06: results are also
+layout**; **Symbols** (the starting layout's, or a keyset: letters only, letters + Shift-paired
+symbols with a Pairs field, letters + a symbol layer; Place modifiers, Letters on thumbs;
+[keysets.md](keysets.md)); budget (time or evaluations), threads, seed; holdout corpus (L06: results are also
 scored on it, never searched on); stop confidence (saved, not applied yet); the algorithm's own
 parameters (memetic islands: population per island, HC/tabu refinement and its step cap, island
 count (0 = threads), migration interval (0 disables), migrant count; `POST /api/runs` accepts

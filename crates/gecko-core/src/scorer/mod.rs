@@ -13,6 +13,10 @@
 //! before y, per keystroke: the Shift key's effort in M01 and one press in Y01) `+ Σ fsb[x,y]·
 //! Csb[p(x),p(y)]` (presses right after x: Y01's same-finger-into-Shift extra).
 //!
+//! Ctrl (layout has `⎈` keys): shortcut presses `fct[x]` (profile `ctrl` × the letter's share
+//! of shortcuts) cost like Shift's mono part; they are folded into the symbol-on-slot table `cp`,
+//! so the hot loop needs no extra channel.
+//!
 //! A layered layout is scored on its virtual geometry (`Geometry::layered`): one slot per
 //! (layer, key), so layers cost nothing extra in the hot loop beyond the larger N.
 //!
@@ -43,6 +47,8 @@ pub struct Scorer {
     pub corpus_name: String,
     /// The layout's adaptive keys; the corpus was rewritten for them (`magic::rewrite`).
     pub magic: Vec<crate::magic::Magic>,
+    /// The layout's Shift pairs; the corpus was keyed for them (`Corpus::keyed`).
+    pub shifted: Vec<String>,
     f1: Vec<f32>,
     f2: Vec<f32>,
     fk: Vec<f32>,
@@ -112,6 +118,13 @@ pub struct Scorer {
     fold_w: Vec<f32>,
     /// Weights of the Shift channel's M01 and Y01 parts (`csh`, `csb`).
     shift_w: (f32, f32),
+    /// Ctrl shortcut presses per keystroke before symbol x (zero without a `⎈` key). Folded
+    /// into `cp` with `ctrl_w` (M01, Y01 weights) as `fct[x] · cost(slot)`.
+    fct: Vec<f32>,
+    /// Unfolded Ctrl tables (reports): M01 and Y01 per shortcut press on slot j.
+    ctrl_effort: Vec<f32>,
+    ctrl_press: Vec<f32>,
+    ctrl_w: (f32, f32),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -199,7 +212,7 @@ impl Scorer {
 
     /// The layout of state `st` (layers split back out, adaptive keys attached).
     pub fn layout_of(&self, st: &State, name: &str) -> Result<Layout> {
-        Layout::from_flat(name, &self.base_geometry(), st.chars(self))?.with_magic(self.magic.clone())
+        Layout::from_flat(name, &self.base_geometry(), st.chars(self))?.with_magic(self.magic.clone())?.with_shifted(self.shifted.clone())
     }
 
     pub fn state_from_sym(&self, sym: Vec<u8>) -> State {

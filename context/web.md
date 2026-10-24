@@ -114,8 +114,8 @@ be scored, layout-optimized or shape-searched again.
 | `GET /api/geometries/{id}/free?spec=` | free parameters of a parametric board for a `--free` spec: `{vars: [{name, lo, hi, start}]}` |
 | `GET /api/corpora/{name}` | `.gkc` bytes (for WASM) |
 | `GET /api/corpora/{name}/sources` · `/sources/{file}` | source texts of a corpus (`data/corpora/src/<name>/`; loose `src/` files = `english`): list `[{name, bytes}]`, or one file as text |
-| `POST /api/score` | `{geometry, corpus, profile \| profile_override, chars \| layout, top}` → analysis |
-| `GET /api/runs` · `POST /api/runs` | list (each with `kind`: layout / geometry and the `geometry_hash`, `corpus_hash`, `profile_hash` of its inputs, so the UI matches runs by content, not names) / start (`algo, time_ms \| evals, threads, seed, pins, sa_steps, ga_pop, memetic, moves, holdout` + score inputs; with `geom: {free, mode (bilevel / alternate / board), inner_evals, margin, penalty, keep_effort, …}` a board + layout search, `evals` then counts boards) |
+| `POST /api/score` | `{geometry, corpus, profile \| profile_override, chars \| layout, shifted?, top}` → analysis (`shifted`: Shift pairs, [keysets.md](keysets.md)) |
+| `GET /api/runs` · `POST /api/runs` | list (each with `kind`: layout / geometry and the `geometry_hash`, `corpus_hash`, `profile_hash` of its inputs, so the UI matches runs by content, not names) / start (`algo, time_ms \| evals, threads, seed, pins, sa_steps, ga_pop, memetic, moves, holdout` + score inputs; `keyset: {mode, pairs, symbols, keys, layer_mode, thumb_letters, place, place_evals}` builds the start layout instead (placement runs before the response, ≤ 5M evals per settle); with `geom: {free, mode (bilevel / alternate / board), inner_evals, margin, penalty, keep_effort, …}` a board + layout search, `evals` then counts boards) |
 | `GET /api/runs/{id}` | config, result, progress, running, paused; a geometry run adds `kind: "geometry"` and its start `param` |
 | `GET /api/runs/{id}/events` | SSE: `progress`, then `done` (RunResult) or `failed` |
 | `POST /api/runs/{id}/cancel` | stop early (results are still saved) |

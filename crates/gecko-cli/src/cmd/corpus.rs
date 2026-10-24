@@ -1,4 +1,4 @@
-//! `gecko corpus build | mix | nav | import`: compile n-gram tables into data/corpora/.
+//! `gecko corpus build | mix | nav | edits | import`: compile n-gram tables into data/corpora/.
 
 use std::path::{Path, PathBuf};
 
@@ -28,6 +28,9 @@ pub enum CorpusCmd {
         /// Fold diacritics to ASCII letters first (`é` → `e`, `œ` → `oe`), for non-English text.
         #[arg(long)]
         fold: bool,
+        /// Hard-wrapped prose: a line break is a space, a blank line one Enter (`⏎`).
+        #[arg(long)]
+        paragraphs: bool,
     },
     /// Weighted mix of corpora with the same charset (each normalized first), e.g.
     /// `gecko corpus mix code-rs:1 code-py:1 --out code`.
@@ -43,6 +46,18 @@ pub enum CorpusCmd {
         base: String,
         /// Arrow share of all keystrokes.
         #[arg(long, default_value_t = 0.03)]
+        share: f64,
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
+        #[arg(long)]
+        out: String,
+    },
+    /// Add Backspace `⌫` to a corpus from a typing-error model fitted on the Aalto 136M
+    /// keystrokes study (text has none): `gecko corpus edits english-full --out english-full-bspc`.
+    Edits {
+        base: String,
+        /// Backspace share of all keystrokes (Aalto typists: 0.056).
+        #[arg(long, default_value_t = 0.056)]
         share: f64,
         #[arg(long, default_value_t = 1)]
         seed: u64,
@@ -66,7 +81,9 @@ pub enum CorpusCmd {
 impl CorpusCmd {
     pub fn run(self, ctx: &Ctx) -> Result<()> {
         match self {
-            CorpusCmd::Build { sources, out, charset, ext, fold } => build(ctx, &sources, &out, &charset, &ext, fold),
+            CorpusCmd::Build { sources, out, charset, ext, fold, paragraphs } => {
+                build(ctx, &sources, &out, &charset, &ext, fold, paragraphs)
+            }
             CorpusCmd::Mix { parts, out } => {
                 let loaded = parts
                     .iter()
@@ -79,6 +96,7 @@ impl CorpusCmd {
                 write_corpus(ctx, &Corpus::mix(&out, &refs)?, parts.len())
             }
             CorpusCmd::Nav { base, share, seed, out } => write_corpus(ctx, &ctx.store.corpus(&base)?.with_nav(&out, share, seed)?, 1),
+            CorpusCmd::Edits { base, share, seed, out } => write_corpus(ctx, &ctx.store.corpus(&base)?.with_edits(&out, share, seed)?, 1),
             CorpusCmd::Import { dir, out, charset, fold } => import(ctx, &dir, &out, &charset, fold),
         }
     }
@@ -92,7 +110,7 @@ fn fold_if(fold: bool, s: String) -> String {
     }
 }
 
-fn build(ctx: &Ctx, sources: &[PathBuf], out: &str, charset: &str, ext: &str, fold: bool) -> Result<()> {
+fn build(ctx: &Ctx, sources: &[PathBuf], out: &str, charset: &str, ext: &str, fold: bool, paragraphs: bool) -> Result<()> {
     if sources.is_empty() {
         bail!("give at least one text file or directory");
     }
@@ -111,7 +129,12 @@ fn build(ctx: &Ctx, sources: &[PathBuf], out: &str, charset: &str, ext: &str, fo
     }
     for f in &files {
         let bytes = std::fs::read(f).with_context(|| format!("reading {}", f.display()))?;
-        c.add_text(&fold_if(fold, String::from_utf8_lossy(&bytes).into_owned()));
+        let text = fold_if(fold, String::from_utf8_lossy(&bytes).into_owned());
+        if paragraphs {
+            c.add_prose(&text);
+        } else {
+            c.add_text(&text);
+        }
     }
     write_corpus(ctx, &c, files.len())
 }

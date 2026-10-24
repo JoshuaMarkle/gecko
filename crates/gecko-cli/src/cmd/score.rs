@@ -60,7 +60,7 @@ pub fn score(ctx: &Ctx, a: ScoreArgs) -> Result<()> {
     let b = breakdown(&sc, &st);
     if ctx.json {
         ctx.print(json!({"schema": SCHEMA, "layout": layout.name, "rows": layout.all_rows(&l.geometry), "magic": layout.magic,
-            "geometry": l.geometry.name, "profile": l.profile.name, "corpus": l.corpus.name, "breakdown": b}));
+            "shifted": layout.shifted, "geometry": l.geometry.name, "profile": l.profile.name, "corpus": l.corpus.name, "breakdown": b}));
     } else {
         println!(
             "{}  ({} · {} · {})\n  {}\n",

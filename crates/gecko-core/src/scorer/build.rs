@@ -9,6 +9,15 @@ impl Scorer {
     /// as typed with them.
     pub fn new(geometry: &Geometry, corpus: &Corpus, profile: &Profile, layout: &Layout) -> Result<Self> {
         let board = geometry;
+        let keyed;
+        let corpus = if layout.shifted.is_empty() {
+            corpus
+        } else {
+            layout.check_shifted()?;
+            let pairs: Vec<(char, char)> = layout.shifted.iter().map(|p| crate::layout::pair_chars(p)).collect();
+            keyed = corpus.keyed(&pairs)?;
+            &keyed
+        };
         let rewritten;
         let corpus = if layout.magic.is_empty() {
             corpus
@@ -74,6 +83,8 @@ impl Scorer {
             }
         }
         let (shift_effort, shift_press, shift_pair) = shift_tables(geometry, &shift_keys);
+        let fct = ctrl_freqs(&chars, profile);
+        let (ctrl_effort, ctrl_press) = ctrl_tables(geometry, &chars);
         truncate_coverage(&mut f3, &chars, profile.trigram_coverage as f64);
         norm(&mut f3);
 
@@ -188,6 +199,8 @@ impl Scorer {
             }
         }
         let (tri_start, tri_entries, tri_pair_start, tri_pair) = index_trigrams(n, &tri_all);
+        let ctrl_w = (profile.effective_weight("M01"), profile.effective_weight("Y01"));
+        add_ctrl(&mut cp, &fct, &ctrl_effort, &ctrl_press, ctrl_w);
         let has_place = cp.iter().any(|&c| c != 0.0);
         let brackets = if cb.iter().any(|&c| c != 0.0) { bracket_all.clone() } else { Vec::new() };
         if let Some(h) = &profile.hand {
@@ -204,6 +217,7 @@ impl Scorer {
             profile: profile.clone(),
             corpus_name: corpus.name.clone(),
             magic: layout.magic.clone(),
+            shifted: layout.shifted.clone(),
             f1,
             f2,
             fk,
@@ -252,6 +266,10 @@ impl Scorer {
             tables,
             fold_w,
             shift_w: (w_effort, w_y01),
+            fct,
+            ctrl_effort,
+            ctrl_press,
+            ctrl_w,
         })
     }
 
@@ -327,6 +345,8 @@ impl Scorer {
                 _ => {}
             }
         }
+        out.ctrl_w = (out.profile.weight("M01"), out.profile.weight("Y01"));
+        add_ctrl(&mut out.cp, &out.fct, &out.ctrl_effort, &out.ctrl_press, out.ctrl_w);
         out.has_place = out.cp.iter().any(|&c| c != 0.0);
         out.has_load = [out.w_load, out.w_hand, out.w_rss, out.w_peak, out.w_thumb].iter().any(|&w| w != 0.0);
         out.brackets = if out.cb.iter().any(|&c| c != 0.0) { out.bracket_all.clone() } else { Vec::new() };
@@ -515,6 +535,8 @@ impl Scorer {
         self.csh = self.shift_effort.iter().zip(&self.shift_press).map(|(e, p)| w_effort * e + w_y01 * p).collect();
         self.csb = self.shift_pair.iter().map(|p| w_y01 * p).collect();
         self.has_shift_pair = self.has_shift && self.csb.iter().any(|&c| c != 0.0) && self.fsb.iter().any(|&f| f > 0.0);
+        (self.ctrl_effort, self.ctrl_press) = ctrl_tables(geometry, &self.chars);
+        add_ctrl(&mut self.cp, &self.fct, &self.ctrl_effort, &self.ctrl_press, self.ctrl_w);
         self.has_place = self.cp.iter().any(|&c| c != 0.0);
         self.brackets = if self.cb.iter().any(|&c| c != 0.0) { self.bracket_all.clone() } else { Vec::new() };
         (self.target, self.thumb_target) = finger_targets(&self.profile, geometry);
@@ -546,6 +568,43 @@ fn shift_tables(g: &Geometry, keys: &[usize]) -> (Vec<f32>, Vec<f32>, Vec<f32>) 
         }
     }
     (effort, press, pair)
+}
+
+/// Ctrl shortcut presses per keystroke before each symbol: profile `ctrl` spread over the
+/// letters of [`crate::profile::CTRL_SHORTCUTS`] on the layout (renormalized). All zero
+/// without a `⎈` key.
+fn ctrl_freqs(chars: &[char], profile: &Profile) -> Vec<f32> {
+    let mut f = vec![0f32; chars.len()];
+    if !chars.contains(&crate::layout::CTRL) || profile.ctrl <= 0.0 {
+        return f;
+    }
+    let share = |c: char| crate::profile::CTRL_SHORTCUTS.iter().find(|s| s.0 == c).map_or(0.0, |s| s.1);
+    let total: f32 = chars.iter().map(|&c| share(c)).sum();
+    if total > 0.0 {
+        for (v, &c) in f.iter_mut().zip(chars) {
+            *v = profile.ctrl * share(c) / total;
+        }
+    }
+    f
+}
+
+/// Unfolded Ctrl tables per slot j: the effort of the `⎈` key that presses shortcuts on j
+/// (chosen like Shift's) and Y01 = 100, 200 on j's finger. Zero without a `⎈` key.
+fn ctrl_tables(g: &Geometry, chars: &[char]) -> (Vec<f32>, Vec<f32>) {
+    let keys: Vec<usize> = (0..chars.len()).filter(|&i| chars[i] == crate::layout::CTRL).collect();
+    let (effort, press, _) = shift_tables(g, &keys);
+    (effort, press)
+}
+
+/// Fold Ctrl presses into the symbol-on-slot table: `cp[x, j] += fct[x] · (w_M01 · effort[j]
+/// + w_Y01 · press[j])`.
+fn add_ctrl(cp: &mut [f32], fct: &[f32], effort: &[f32], press: &[f32], (w_effort, w_y01): (f32, f32)) {
+    let n = fct.len();
+    for (x, &f) in fct.iter().enumerate().filter(|e| *e.1 > 0.0) {
+        for j in 0..n {
+            cp[x * n + j] += f * (w_effort * effort[j] + w_y01 * press[j]);
+        }
+    }
 }
 
 /// Target finger loads (%) and the thumb target: the profile's `finger_target`, or with

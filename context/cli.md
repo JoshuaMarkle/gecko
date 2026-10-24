@@ -31,6 +31,13 @@ gecko optimize [--algo sa|hc|ga|memetic|bls|tabu|explore|qd|nsga2|rwsa] [--time 
                [--holdout shai]                                   # also score results on a corpus the search never sees (L06)
                [--fidelity K]                                     # search on the K most frequent trigrams, confirm on all (B8)
                [--fingering] [--fingering-evals 300000]           # then search the board's alternative fingers (C11)
+               [--keyset alpha|shift|layer] [keyset options]      # build the symbols + start layout instead of --from
+gecko keyset   alpha|shift|layer [--symbols N] [--pairs natural|frequency|"-_ =+ ({"] [--digits|--no-digits]
+               [--keys space,bspc,enter,shift,ctrl,tab,esc] [--layer-mode hold|oneshot|toggle]
+               [--thumb-letters] [--place [--place-evals 2000000]] [--out name|path.toml]
+                                                                  # symbols to place from board + corpus, start layout,
+                                                                  #   placement of Shift/Ctrl/layer keys (keysets.md);
+                                                                  #   optimize --keyset places them unless --no-place
 gecko bench    [--algos hc,sa,ga,bls,tabu] [--seeds 3] [--time 5s] [--no-save]  # algorithm leaderboard; saved to runs/bench/ (web Bench tab)
                [--moves "swap/cycle3/depth2"] [--depth2-width N]      # one row per algo × variant
 gecko explore  [--time 60s | --evals N] [--seed 1] [--threads N] [--pin ...] [--from <layout>]
@@ -55,7 +62,9 @@ gecko certify  run:<id> [--free 10] [--symbols nsrhtceaio] [--kind full|pair] [-
 gecko verify   run:<id>                                           # re-run an --evals run from config.json;
                                                                   #   check input hashes, evals and best.json (layout and geometry runs)
 gecko perf     [--layout qwerty] [--record]                       # full evals/s, swap deltas/s, scorer builds/s, 1-key rebuilds/s (1 thread); --record appends to bench/history.jsonl
-gecko corpus build <files or dirs...> [--out english] [--charset default|code|nav|<symbols>] [--ext txt] [--fold]
+gecko corpus build <files or dirs...> [--out english] [--charset default|code|nav|<symbols>] [--ext txt] [--fold] [--paragraphs]
+                                                                       # --paragraphs: wrapped prose, blank line = one ⏎
+gecko corpus edits <corpus> [--share 0.056] [--seed 1] --out <name>    # add Backspace from a typing-error model
 gecko corpus mix <corpus>[:weight]... --out <name>                     # weighted mix, same charset
 gecko corpus import <cmini corpus dir> --out <name> [--charset ...] [--fold]   # words.json or n-gram JSON; --fold: é→e; also writes <name>.words.tsv
 gecko geometry import-kle <file.json> --out <name> [--force]       # KLE board → data/geometries/<name>.toml
@@ -101,6 +110,11 @@ fills. Tokens can be written `{space}`, `{enter}`, `{bspc}`, `{tab}`, `{esc}`, `
 Layered layouts: `--from layered/corne-code`; their rows print per layer (`[sym]`, `[num]`;
 non-hold layers add their mode, `[num, toggle]`),
 and JSON `rows` lists the base rows then each layer's. Runs store the flat layered string.
+Keysets (`gecko keyset`, `optimize --keyset`, [keysets.md](keysets.md)): print the symbols placed,
+the ones left out with their keystroke share, the profile changes (thumb zone, L04 and Y01
+weights) and, with placement, each accepted fixed-key move. `--out` writes the start layout to
+`data/layouts/keyset/<name>.toml` (kept out of `compare`, like `layered/`). Layouts with Shift
+pairs print them as `⇧ ,< .> -_` under their rows; `score --json` adds `shifted`.
 Adaptive keys (`[[magic]]`, e.g. `magic/magic-sturdy`): `score`/`compare` rewrite the corpus for
 their rules; human output prints `★ ao cy …` under the rows, `score --json` adds `magic`.
 `optimize --from` a magic layout moves the key like any symbol with the rules fixed; the run's

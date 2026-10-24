@@ -41,6 +41,7 @@ gecko/
 | `hand` | Hand model: skeleton, placement over home keys, finger IK, 4-DoF thumb, per-key G01/G03/G05 costs ([hand-model.md](hand-model.md)) |
 | `layout` | Slot-ordered symbols; rows ↔ flat; TOML; hash |
 | `magic` | Adaptive (magic / repeat) keys |
+| `keyset` | Symbol sets and start layouts from board + corpus (alpha, Shift pairs, symbol layer); fixed-key placement search ([keysets.md](keysets.md)) |
 | `corpus` | Text → n-gram count tables; binary `.gkc` format; mixing |
 | `profile` | Metric weights, finger targets, trigram coverage |
 | `metrics` | Metric definitions + per-geometry cost tables (`metrics/mod.rs`; trigram classes in `metrics/trigram.rs`) |

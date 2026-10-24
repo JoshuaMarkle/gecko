@@ -166,6 +166,8 @@ export interface RunConfig {
   profile: Profile;
   start: string;
   pins: string;
+  /** Shift pairs of the start layout (keyset `shift` runs), base then shifted symbol. */
+  shifted?: string[];
   holdout?: { name: string; hash: string };
 }
 export interface RunSummary {
@@ -277,7 +279,9 @@ export const api = {
   },
 };
 
-export interface ScoreRequest { geometry: string; corpus: string; profile_override: Profile; chars: string; top?: number }
+export interface ScoreRequest { geometry: string; corpus: string; profile_override: Profile; chars: string; top?: number; shifted?: string[] }
+/** Build the symbol set and start layout from board and corpus (`gecko keyset`). */
+export interface KeysetRequest { mode: "alpha" | "shift" | "layer"; pairs?: string; symbols?: number; keys?: string; layer_mode?: string; thumb_letters?: boolean; place?: boolean; place_evals?: number }
 export interface RunRequest extends ScoreRequest {
   algo: string; time_ms?: number; evals?: number; threads: number; seed: number; pins: string; sa_steps?: number; ga_pop?: number;
   /** Corpus id to score results on without searching on it (L06). */
@@ -285,6 +289,8 @@ export interface RunRequest extends ScoreRequest {
   memetic?: { ga: { pop_size: number }; local_search: "hc" | "tabu"; local_steps: number; islands: number; migration_interval: number; migrants: number };
   /** A board + layout search on the (parametric) geometry; `evals` then counts boards. */
   geom?: GeomRequest;
+  /** Start from a keyset instead of `chars`. */
+  keyset?: KeysetRequest;
 }
 /** `free` as `gecko geom optimize --free`; the rest override `GeomSearchParams`. */
 export interface GeomRequest { free: string; mode?: "bilevel" | "alternate" | "board"; inner_evals?: number; margin?: number; penalty?: number; keep_effort?: boolean }

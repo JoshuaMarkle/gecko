@@ -31,8 +31,14 @@ pub struct OptimizeArgs {
     #[arg(long, default_value = "")]
     pin: String,
     /// Start layout (also defines the symbol set).
-    #[arg(long)]
+    #[arg(long, conflicts_with = "keyset")]
     from: Option<String>,
+    /// Build the symbol set and start layout from the board and corpus instead of --from:
+    /// alpha, shift (Shift-paired symbol keys) or layer (symbol layer). See `gecko keyset`.
+    #[arg(long)]
+    keyset: Option<String>,
+    #[command(flatten)]
+    keyset_opts: super::keyset::KeysetOpts,
     #[arg(long, default_value_t = 10)]
     top: usize,
     /// SA: swap attempts per restart.
@@ -141,7 +147,17 @@ pub fn run(ctx: &Ctx, a: OptimizeArgs) -> Result<()> {
         l.profile.fidelity = (k > 0).then(|| l.profile.fidelity.map_or(Fidelity::new(k), |f| Fidelity { top_k: k, ..f }));
     }
     let holdout = a.holdout.as_ref().map(|h| ctx.store.corpus(h)).transpose()?;
-    let start = ctx.start(a.from.as_deref(), &l)?;
+    let start = match &a.keyset {
+        Some(mode) => {
+            let (ks, placed) = a.keyset_opts.start(ctx, &mut l, mode, &a.pin, a.seed, threads(a.threads))?;
+            let layout = placed.as_ref().map_or_else(|| ks.layout.clone(), |p| p.layout.clone());
+            if !ctx.json {
+                super::keyset::print_keyset(&ks, &layout, &l, placed.as_ref());
+            }
+            layout
+        }
+        None => ctx.start(a.from.as_deref(), &l)?,
+    };
     let spec = RunSpec {
         geometry: &l.geometry,
         corpus: &l.corpus,
@@ -169,7 +185,7 @@ pub fn run(ctx: &Ctx, a: OptimizeArgs) -> Result<()> {
         return Ok(());
     }
     eprintln!();
-    print_result(&res, &l)?;
+    print_result(&res, &l, &start.shifted)?;
     if !ties.is_empty() {
         println!("\nnear-tie: {} other result(s) within {NEAR_TIE} of #1 but a different arrangement:", ties.len());
         for t in &ties {
@@ -221,7 +237,7 @@ fn near_ties(res: &RunResult, l: &Loaded) -> Vec<NearTie> {
         .collect()
 }
 
-fn print_result(res: &RunResult, l: &Loaded) -> Result<()> {
+fn print_result(res: &RunResult, l: &Loaded, shifted: &[String]) -> Result<()> {
     println!("run {}  {} evals in {:.1}s ({:.2} M evals/s)", res.id, res.evals, res.elapsed_ms as f64 / 1000.0, res.evals_per_sec / 1e6);
     if !res.front.is_empty() {
         println!(
@@ -269,7 +285,7 @@ fn print_result(res: &RunResult, l: &Loaded) -> Result<()> {
         );
     }
     if let Some(b) = res.best.first() {
-        let layout = Layout::from_flat("best", &l.geometry, b.chars.chars().collect())?;
+        let layout = Layout::from_flat("best", &l.geometry, b.chars.chars().collect())?.with_shifted(shifted.to_vec())?;
         let (sc, st) = score_layout(l, &layout)?;
         println!("\nbest\n  {}\n", layout_rows(&layout, &l.geometry));
         print_breakdown(&breakdown(&sc, &st));

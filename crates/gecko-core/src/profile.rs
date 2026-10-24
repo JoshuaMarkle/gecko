@@ -57,6 +57,19 @@ pub struct Profile {
     /// Unset: G01/G03/G05 use the average hand and arms and B14 its fixed spread.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hand: Option<HandSpec>,
+    /// Ctrl shortcut presses per keystroke, spread over [`CTRL_SHORTCUTS`]. Charged (M01 effort,
+    /// Y01 presses, like Shift) only on layouts with a `⎈` key. Default 0.01: an assumption,
+    /// not a measurement (typing-test data has almost no shortcuts).
+    #[serde(default = "default_ctrl", skip_serializing_if = "is_default_ctrl")]
+    pub ctrl: f32,
+    /// Symbols that belong on thumb keys for L04 (e.g. `"␣⌫⏎"`, tokens allowed); letters,
+    /// digits and punctuation then belong off them. Unset = L04 costs nothing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thumb_zone: Option<String>,
+    /// L04 also counts letters (and `thumb_zone` symbols) on layer keys: they belong on the
+    /// base layer. Keysets with a symbol layer set it.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub base_letters: bool,
     /// G07 build limits (`geometry/manufacture.rs`). Set: the geometry search penalizes and
     /// hard-fails boards past them like keycap collisions. Not a scoring metric.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -173,6 +186,36 @@ pub fn default_trigram_coverage() -> f32 {
     0.99
 }
 
+pub fn default_ctrl() -> f32 {
+    0.01
+}
+
+fn is_default_ctrl(v: &f32) -> bool {
+    *v == default_ctrl()
+}
+
+/// Share of Ctrl shortcuts per letter (sums to 1). A rough estimate of desktop shortcut use
+/// (copy, paste, undo, save first), not a measurement; letters off the layout are dropped and
+/// the rest renormalized.
+pub const CTRL_SHORTCUTS: &[(char, f32)] = &[
+    ('c', 0.20),
+    ('v', 0.20),
+    ('z', 0.12),
+    ('s', 0.10),
+    ('a', 0.06),
+    ('x', 0.06),
+    ('f', 0.05),
+    ('w', 0.04),
+    ('t', 0.04),
+    ('r', 0.03),
+    ('y', 0.02),
+    ('l', 0.02),
+    ('n', 0.02),
+    ('p', 0.02),
+    ('o', 0.01),
+    ('k', 0.01),
+];
+
 pub fn default_thumb_target() -> f32 {
     18.0
 }
@@ -253,6 +296,15 @@ impl Profile {
         }
         if let Some(r) = &self.familiar_to {
             v["familiar_to"] = serde_json::json!(r);
+        }
+        if !is_default_ctrl(&self.ctrl) {
+            v["ctrl"] = serde_json::json!(self.ctrl);
+        }
+        if let Some(z) = &self.thumb_zone {
+            v["thumb_zone"] = serde_json::json!(z);
+        }
+        if self.base_letters {
+            v["base_letters"] = serde_json::json!(true);
         }
         if let Some(h) = &self.hand {
             v["hand"] = serde_json::json!(h);
