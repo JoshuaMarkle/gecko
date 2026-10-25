@@ -1,0 +1,13 @@
+name = "us-layer (ltgt-vim, completed: <>⏎) + digits pad"
+geometry = "corne-36"
+source = "bench/symbol-layer-2026-10-25/study.py (run 20261025-161958-bls-618c7c85)"
+rows = ["qwfpbjluy'", "arstgmneio", "zxcdvkh,./", "{esc}{space}{shift}{layer1}{bspc}{layer2}"]
+shifted = ["'\"", "/?"]
+
+[[layer]]
+name = "sym"
+rows = ["!789%^&*()", "-456\\;`~:@", "_123|#<>$=", "[0{enter}···"]
+
+[[layer]]
+name = "num"
+rows = ["]+{}······", "··········", "··········", "······"]

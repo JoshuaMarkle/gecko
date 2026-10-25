@@ -1,0 +1,13 @@
+name = "ltgt-vim-digits-pad-free (best of 6 seeds)"
+geometry = "corne-36"
+source = "bench/symbol-layer-2026-10-25/study.py (run 20261025-170200-bls-702cdbaf)"
+rows = ["qwfpbjluy'", "arstgmneio", "zxcdvkh,./", "{esc}{space}{shift}{layer1}{bspc}{layer2}"]
+shifted = ["'\"", "/?"]
+
+[[layer]]
+name = "sym"
+rows = ["*789\\+#{}$", "(456=&_:-)", ";123[]<>`!", "%0{enter}···"]
+
+[[layer]]
+name = "num"
+rows = ["··········", "~@^····|··", "··········", "······"]

@@ -1,0 +1,14 @@
+name = "Colemak-DH + GECKO symbol layer (Vim programming)"
+geometry = "corne-36"
+source = "bench/symbol-layer-2026-10-25 (research/experiments/2026-10-25-symbol-layer.md): Sym layer optimized on vim-programmer-typed with brackets paired and related symbols grouped (Vim # *), two hand edits; Esc on the base thumb, Enter on Sym; numpad on Num"
+# Thumbs: Enter/Esc Space Shift | [hold Sym] Backspace [hold Num]. Right thumb keys belong to the holder on both layers.
+rows = ["qwfpbjluy'", "arstgmneio", "zxcdvkh,./", "{esc}{space}{shift}{layer1}{bspc}{layer2}"]
+shifted = ["'\"", "/?"]
+
+[[layer]]
+name = "sym"
+rows = ["@<>···=!{}", "-()[·&]:;_", "+^$\\·|~`#*", "·%{enter}···"]
+
+[[layer]]
+name = "num"
+rows = ["·789······", "·456······", "·123······", "·0····"]

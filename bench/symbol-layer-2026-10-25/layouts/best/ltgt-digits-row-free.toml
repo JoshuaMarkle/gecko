@@ -1,0 +1,13 @@
+name = "ltgt-digits-row-free (best of 6 seeds)"
+geometry = "corne-36"
+source = "bench/symbol-layer-2026-10-25/study.py (run 20261025-165630-bls-ff06f721)"
+rows = ["qwfpbjluy'", "arstgmneio", "zxcdvkh,./", "{enter}{space}{shift}{layer1}{bspc}{layer2}"]
+shifted = ["'\"", "/?"]
+
+[[layer]]
+name = "sym"
+rows = ["{()$\\|;=-}", "1234567890", "<>[]!#:*`&", "%+_···"]
+
+[[layer]]
+name = "num"
+rows = ["·······^··", "··~····@··", "··········", "······"]

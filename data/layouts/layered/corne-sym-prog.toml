@@ -1,0 +1,14 @@
+name = "Colemak-DH + GECKO symbol layer (programming)"
+geometry = "corne-36"
+source = "bench/symbol-layer-2026-10-25 (research/experiments/2026-10-25-symbol-layer.md): Sym layer optimized on programmer-typed with brackets paired and related symbols grouped, two hand edits; < > on the layer (Shift+, Shift+. unused); numpad on Num"
+# Thumbs: Enter/Esc Space Shift | [hold Sym] Backspace [hold Num]. Right thumb keys belong to the holder on both layers.
+rows = ["qwfpbjluy'", "arstgmneio", "zxcdvkh,./", "{enter}{space}{shift}{layer1}{bspc}{layer2}"]
+shifted = ["'\"", "/?"]
+
+[[layer]]
+name = "sym"
+rows = ["@<>··^=!&|", "*()#·$:_-+", "{}[]·%;\\`~", "······"]
+
+[[layer]]
+name = "num"
+rows = ["·789······", "·456······", "·123······", "·0····"]

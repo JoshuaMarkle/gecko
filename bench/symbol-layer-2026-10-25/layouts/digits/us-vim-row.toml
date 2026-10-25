@@ -1,0 +1,13 @@
+name = "us-layer (us-vim, completed: ⏎) + digits row"
+geometry = "corne-36"
+source = "bench/symbol-layer-2026-10-25/study.py (run 20261025-161928-bls-a766d436)"
+rows = ["qwfpbjluy'", "arstgmneio", "zxcdvkh,./", "{esc}{space}{shift}{layer1}{bspc}{layer2}"]
+shifted = ["'\"", ",<", ".>", "/?"]
+
+[[layer]]
+name = "sym"
+rows = ["!@#$%^&*()", "1234567890", "_+{}|-=[]\\", ";`{enter}···"]
+
+[[layer]]
+name = "num"
+rows = ["~:········", "··········", "··········", "······"]

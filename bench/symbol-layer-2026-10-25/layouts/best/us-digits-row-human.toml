@@ -1,0 +1,13 @@
+name = "us-digits-row-human (best of 6 seeds)"
+geometry = "corne-36"
+source = "bench/symbol-layer-2026-10-25/study.py (run 20261025-163408-bls-6aa003fc)"
+rows = ["qwfpbjluy'", "arstgmneio", "zxcdvkh,./", "{enter}{space}{shift}{layer1}{bspc}{layer2}"]
+shifted = ["'\"", ",<", ".>", "/?"]
+
+[[layer]]
+name = "sym"
+rows = [":()&|*+-_;", "1234567890", "`\\[]%#{}=!", "~^$···"]
+
+[[layer]]
+name = "num"
+rows = ["··········", "·······@··", "··········", "······"]

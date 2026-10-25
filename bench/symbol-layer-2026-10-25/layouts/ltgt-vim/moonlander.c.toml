@@ -1,0 +1,13 @@
+name = "moonlander (ltgt-vim, completed: &*+-:;<=>\\_⏎)"
+geometry = "corne-36"
+source = "bench/symbol-layer-2026-10-25/study.py (run 20261025-161958-bls-5308cafc)"
+rows = ["qwfpbjluy'", "arstgmneio", "zxcdvkh,./", "{esc}{space}{shift}{layer1}{bspc}{layer2}"]
+shifted = ["'\"", "/?"]
+
+[[layer]]
+name = "sym"
+rows = ["!@[]|·+=;\\", "#$()`<>:-_", "%^{}~·*&··", "··{enter}···"]
+
+[[layer]]
+name = "num"
+rows = ["α789βγδεζη", "θ456ικλμνξ", "ο123πρστυφ", "χ0ψ···"]

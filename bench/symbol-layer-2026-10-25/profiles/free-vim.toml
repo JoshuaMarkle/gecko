@@ -1,0 +1,71 @@
+name = "free-vim"
+description = "free-prog with thumb zone ␣⌫ (Esc and Enter compete for the other keys, as in the Vim study)."
+scale_basis = "stdev over 9 layouts (canary, colemak, colemak-dh, dvorak, graphite, halmak, semimak, sturdy, workman) on english / ansi-30"
+
+# Target % per finger: LP LR LM LI LT RT RI RM RR RP
+finger_target = [8.0, 11.0, 15.0, 16.0, 0.0, 0.0, 16.0, 15.0, 11.0, 8.0]
+
+# `effort` added off the home row per finger (pinky ring middle index), [above, below] home.
+# KLO's key costs: the top row is easy for middle/ring, the bottom row easy for index.
+row_offset = [[0.0, 0.0], [-0.1, 0.1], [-0.2, 0.2], [0.2, -0.2]]
+
+# Weights and scales: the default profile's (see data/profiles/default.toml for what they mean),
+# plus the terms below.
+thumb_zone = "␣⌫"
+base_letters = true
+
+[weights]
+zones = 100.0          # constraint: Space, Backspace, Enter on base thumbs; letters on the base layer
+sfb = 2.867            # SFB %; +17 % time per SFB pair (Aalto key-pair timing)
+sfs = 0.03916          # SFS %, one key between; no timing or comfort cost found, kept near zero
+sfs_far = 0.064        # far SFS %, 2–3 keys between (decayed); as sfs
+stretch = 0.5046       # geometric stretch (LSB, scissors, crossings); +5 % time per stretch unit
+movement = 0.08619     # finger-pair movement (KLO table + ring coupling); no timing effect
+skip_stretch = 0.01843 # skip stretch (stretch on keys 1–3 of a trigram)
+scissor = 0.09229      # full scissors; mostly carried by stretch and row_jump
+half_scissor = 0.02398 # half scissors; no measurable timing effect
+hand_switch = 1.003    # hand alternation (bigrams): −8 % time per alternating pair
+pinky_ring = 1.176     # pinky–ring pairs: +8 % time
+row_jump = 0.2852      # same-hand row jump: +4 % time per key of vertical travel
+effort = 0.3206        # key effort: +3 % time per effort unit, and Engram comfort
+home_row = 0.03744     # home row share; no effect beyond effort
+finger_target = 0.19   # finger load error (mean squared %)
+hand_balance = 0.4181  # hand balance
+alternate = 0.06432    # trigram alternates; no credit beyond hand_switch
+inroll = 0.3051        # rolls in: faster third keystroke
+outroll = 0.7151       # rolls out: −1.4 % third-keystroke time
+redirect = 0.00602     # redirects; no measured cost beyond bad_redirect
+bad_redirect = 0.5674  # bad redirects: +3.7 % third-keystroke time
+engram = 2.08          # measured key-pair discomfort (Engram); the main comfort term
+layer_switch = 26.8   # layer-key presses per 100 bigrams; see README (calibration)
+symbol_bigram = 1.0    # code-symbol bigrams on one finger or across a layer change, % of symbol bigrams
+brackets = 0.5         # bracket pairs not adjacent/mirrored on one layer, % by use (reversed = half)
+
+[scale]
+sfb = 0.7908
+sfs = 1.209
+sfs_far = 0.4285
+stretch = 1.316
+movement = 18.14
+skip_stretch = 1.341
+scissor = 0.5297
+half_scissor = 0.6859
+hand_switch = 5.126
+pinky_ring = 0.9029
+row_jump = 3.366
+effort = 0.03799
+home_row = 3.573
+finger_target = 2.018
+hand_balance = 1.789
+alternate = 5.475
+inroll = 2.119
+outroll = 4.039
+redirect = 2.672
+bad_redirect = 0.6505
+engram = 1.206
+# layer_switch/symbol_bigram: rough spread of random symbol/number layer arrangements of layered/corne-code on
+# code / corne-36 (not from `profile normalize`, which needs several layered references).
+layer_switch = 2.0
+symbol_bigram = 8.0
+# brackets: random arrangements sit near 100 with little spread; 25 = one typical pair's share.
+brackets = 25.0

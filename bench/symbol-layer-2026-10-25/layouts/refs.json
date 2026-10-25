@@ -1,0 +1,194 @@
+{
+ "us/getreuer": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": ""
+ },
+ "us/miryoku": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπ{space}{bspc}{enter}",
+  "missing": ""
+ },
+ "us/neo3": {
+  "pins": "!#$%&'()*+,-./0123456789:;=[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": "@"
+ },
+ "us/ergol": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": ""
+ },
+ "us/seniply": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": ""
+ },
+ "us/shelzuuz": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": ""
+ },
+ "us/beakl15": {
+  "pins": "#$%&'()*+,-./0123456789:;=[\\]^_abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": "!@`"
+ },
+ "us/elixir": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": ""
+ },
+ "us/sunaku": {
+  "pins": "$%'*,-./0123456789:=@[]^_abcdefghijklmnopqrstuvwxyz{|}αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": "!#&()+;\\`~"
+ },
+ "us/hietala": {
+  "pins": "!#%&'()*+,-./0123456789@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": "$:;="
+ },
+ "us/moonlander": {
+  "pins": "!#$%'(),./0123456789@[]^`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": "&*+-:;=\\_"
+ },
+ "us/us-layer": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": ""
+ },
+ "us-vim/getreuer": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "⏎"
+ },
+ "us-vim/miryoku": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπ{space}{bspc}{esc}",
+  "missing": "⏎"
+ },
+ "us-vim/neo3": {
+  "pins": "!#$%&'()*+,-./0123456789:;=[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "@⏎"
+ },
+ "us-vim/ergol": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "⏎"
+ },
+ "us-vim/seniply": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "⏎"
+ },
+ "us-vim/shelzuuz": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "⏎"
+ },
+ "us-vim/beakl15": {
+  "pins": "#$%&'()*+,-./0123456789:;=[\\]^_abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "!@`⏎"
+ },
+ "us-vim/elixir": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "⏎"
+ },
+ "us-vim/sunaku": {
+  "pins": "$%'*,-./0123456789:=@[]^_abcdefghijklmnopqrstuvwxyz{|}αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "!#&()+;\\`~⏎"
+ },
+ "us-vim/hietala": {
+  "pins": "!#%&'()*+,-./0123456789@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "$:;=⏎"
+ },
+ "us-vim/moonlander": {
+  "pins": "!#$%'(),./0123456789@[]^`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "&*+-:;=\\_⏎"
+ },
+ "us-vim/us-layer": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "⏎"
+ },
+ "ltgt/getreuer": {
+  "pins": "!#$%&'()*+,-./0123456789:;<=>@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": ""
+ },
+ "ltgt/miryoku": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπ{space}{bspc}{enter}",
+  "missing": "<>"
+ },
+ "ltgt/neo3": {
+  "pins": "!#$%&'()*+,-./0123456789:;<=>[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": "@"
+ },
+ "ltgt/ergol": {
+  "pins": "!#$%&'()*+,-./0123456789:;<=>@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": ""
+ },
+ "ltgt/seniply": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": "<>"
+ },
+ "ltgt/shelzuuz": {
+  "pins": "!#$%&'()*+,-./0123456789:;<=>@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": ""
+ },
+ "ltgt/beakl15": {
+  "pins": "#$%&'()*+,-./0123456789:;<=>[\\]^_abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": "!@`"
+ },
+ "ltgt/elixir": {
+  "pins": "!#$%&'()*+,-./0123456789:;<=>@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": ""
+ },
+ "ltgt/sunaku": {
+  "pins": "$%'*,-./0123456789:<=>@[]^_abcdefghijklmnopqrstuvwxyz{|}αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": "!#&()+;\\`~"
+ },
+ "ltgt/hietala": {
+  "pins": "!#%&'()*+,-./0123456789<>@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": "$:;="
+ },
+ "ltgt/moonlander": {
+  "pins": "!#$%'(),./0123456789@[]^`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": "&*+-:;<=>\\_"
+ },
+ "ltgt/us-layer": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{enter}",
+  "missing": "<>"
+ },
+ "ltgt-vim/getreuer": {
+  "pins": "!#$%&'()*+,-./0123456789:;<=>@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "⏎"
+ },
+ "ltgt-vim/miryoku": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπ{space}{bspc}{esc}",
+  "missing": "<>⏎"
+ },
+ "ltgt-vim/neo3": {
+  "pins": "!#$%&'()*+,-./0123456789:;<=>[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "@⏎"
+ },
+ "ltgt-vim/ergol": {
+  "pins": "!#$%&'()*+,-./0123456789:;<=>@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "⏎"
+ },
+ "ltgt-vim/seniply": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "<>⏎"
+ },
+ "ltgt-vim/shelzuuz": {
+  "pins": "!#$%&'()*+,-./0123456789:;<=>@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "⏎"
+ },
+ "ltgt-vim/beakl15": {
+  "pins": "#$%&'()*+,-./0123456789:;<=>[\\]^_abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "!@`⏎"
+ },
+ "ltgt-vim/elixir": {
+  "pins": "!#$%&'()*+,-./0123456789:;<=>@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "⏎"
+ },
+ "ltgt-vim/sunaku": {
+  "pins": "$%'*,-./0123456789:<=>@[]^_abcdefghijklmnopqrstuvwxyz{|}αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "!#&()+;\\`~⏎"
+ },
+ "ltgt-vim/hietala": {
+  "pins": "!#%&'()*+,-./0123456789<>@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "$:;=⏎"
+ },
+ "ltgt-vim/moonlander": {
+  "pins": "!#$%'(),./0123456789@[]^`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "&*+-:;<=>\\_⏎"
+ },
+ "ltgt-vim/us-layer": {
+  "pins": "!#$%&'()*+,-./0123456789:;=@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~αβγδεζηθικλμνξοπρστυφχψ{space}{bspc}{esc}",
+  "missing": "<>⏎"
+ }
+}

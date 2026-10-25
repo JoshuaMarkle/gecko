@@ -1,0 +1,13 @@
+name = "seniply (us)"
+geometry = "corne-36"
+source = "bench/symbol-layer-2026-10-25/refs.py"
+rows = ["qwfpbjluy'", "arstgmneio", "zxcdvkh,./", "{enter}{space}{shift}{layer1}{bspc}{layer2}"]
+shifted = ["'\"", ",<", ".>", "/?"]
+
+[[layer]]
+name = "sym"
+rows = ["!@#$%=`:;+", "····^*({[-", "··\\|&~)}]_", "······"]
+
+[[layer]]
+name = "num"
+rows = ["α789βγδεζη", "θ456ικλμνξ", "ο123πρστυφ", "χ0ψ···"]

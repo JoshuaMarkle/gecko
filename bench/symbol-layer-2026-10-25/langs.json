@@ -1,0 +1,103 @@
+{
+ "us": {
+  "us-free.toml": {
+   "code-python-typed": 192.27629030294614,
+   "code-rust-typed": 260.9152354426175,
+   "code-js-typed": 244.4485412672286,
+   "code-c-typed": 259.61223237785936,
+   "code-shell-typed": 299.1191286568776,
+   "code-lua-typed": 277.963360210068,
+   "markdown": 178.1286414138505
+  },
+  "us-human.toml": {
+   "code-python-typed": 191.65216755286315,
+   "code-rust-typed": 261.66460238369496,
+   "code-js-typed": 244.4906405821229,
+   "code-c-typed": 261.89614788945676,
+   "code-shell-typed": 299.6398468228391,
+   "code-lua-typed": 278.61603523068794,
+   "markdown": 177.95812681264664
+  },
+  "getreuer.c.toml": {
+   "code-python-typed": 195.54790408368814,
+   "code-rust-typed": 265.5400598280864,
+   "code-js-typed": 248.30910078709405,
+   "code-c-typed": 263.36650739911687,
+   "code-shell-typed": 305.81635889014586,
+   "code-lua-typed": 285.97002482166505,
+   "markdown": 182.71916984719147
+  },
+  "neo3.c.toml": {
+   "code-python-typed": 193.3572441930462,
+   "code-rust-typed": 267.6548441879597,
+   "code-js-typed": 248.58248849512697,
+   "code-c-typed": 263.6464412087242,
+   "code-shell-typed": 301.52555691482104,
+   "code-lua-typed": 283.11462989944084,
+   "markdown": 182.59106109538692
+  },
+  "shelzuuz.c.toml": {
+   "code-python-typed": 192.9097251051937,
+   "code-rust-typed": 264.8401649898439,
+   "code-js-typed": 247.99512384207424,
+   "code-c-typed": 262.01088450691117,
+   "code-shell-typed": 304.12047780267346,
+   "code-lua-typed": 285.246585592903,
+   "markdown": 180.70458533096834
+  },
+  "hietala.c.toml": {
+   "code-python-typed": 193.78484443749903,
+   "code-rust-typed": 265.80386409831186,
+   "code-js-typed": 246.75933554772905,
+   "code-c-typed": 261.63163598387166,
+   "code-shell-typed": 301.95010173393445,
+   "code-lua-typed": 283.31705742500213,
+   "markdown": 180.75875242662556
+  },
+  "ergol.c.toml": {
+   "code-python-typed": 194.81261124592925,
+   "code-rust-typed": 265.1811885883546,
+   "code-js-typed": 246.7205658006318,
+   "code-c-typed": 263.153733954782,
+   "code-shell-typed": 303.59342220586865,
+   "code-lua-typed": 282.6051295915137,
+   "markdown": 180.40852363205607
+  },
+  "elixir.c.toml": {
+   "code-python-typed": 193.76376327762114,
+   "code-rust-typed": 264.64586930233895,
+   "code-js-typed": 246.81477976720097,
+   "code-c-typed": 263.0132728369482,
+   "code-shell-typed": 303.6866665805973,
+   "code-lua-typed": 282.78605645674014,
+   "markdown": 181.65253127879245
+  },
+  "us-layer.c.toml": {
+   "code-python-typed": 194.94662748064866,
+   "code-rust-typed": 266.4372047624837,
+   "code-js-typed": 247.61111612216877,
+   "code-c-typed": 261.7981276179378,
+   "code-shell-typed": 303.0814947877453,
+   "code-lua-typed": 282.95413301455045,
+   "markdown": 179.72713431412885
+  },
+  "miryoku.c.toml": {
+   "code-python-typed": 204.7247746746361,
+   "code-rust-typed": 290.6643750785308,
+   "code-js-typed": 265.09958781796456,
+   "code-c-typed": 280.72887320281546,
+   "code-shell-typed": 324.0833608886642,
+   "code-lua-typed": 307.8992158565337,
+   "markdown": 195.37123184422472
+  },
+  "seniply.c.toml": {
+   "code-python-typed": 199.09743530800915,
+   "code-rust-typed": 270.7193698230565,
+   "code-js-typed": 251.44213130915358,
+   "code-c-typed": 265.9350101350144,
+   "code-shell-typed": 305.8653913436176,
+   "code-lua-typed": 289.0367376838065,
+   "markdown": 183.2152568607525
+  }
+ }
+}

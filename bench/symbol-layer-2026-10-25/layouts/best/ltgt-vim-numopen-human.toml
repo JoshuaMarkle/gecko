@@ -1,0 +1,13 @@
+name = "ltgt-vim-numopen-human (best of 6 seeds)"
+geometry = "corne-36"
+source = "bench/symbol-layer-2026-10-25/study.py (run 20261025-164802-bls-f024aa3e)"
+rows = ["qwfpbjluy'", "arstgmneio", "zxcdvkh,./", "{esc}{space}{shift}{layer1}{bspc}{layer2}"]
+shifted = ["'\"", "/?"]
+
+[[layer]]
+name = "sym"
+rows = ["··········", "·`~····&|·", "··········", "······"]
+
+[[layer]]
+name = "num"
+rows = ["{789\\$^_@}", "=456[]+-:!", "(123<>*#;)", "%0{enter}···"]
