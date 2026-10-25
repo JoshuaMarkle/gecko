@@ -1,6 +1,6 @@
 # Symbol layers for programming and Vim, 2026-10-25
 
-Write-up: `research/experiments/2026-10-25-symbol-layer.md`; designs and principles in
+Write-up: `research/experiments/2026-10-25-symbol-layer.md`; report and PDF `docs/papers/symbol-layer/`; designs and principles in
 `research/sources/symbol-layers.md`. corne-36, BLS, 4 threads per run.
 
 ## Frame
