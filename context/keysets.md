@@ -43,25 +43,25 @@ gecko optimize --keyset shift  -g corne-36 -c programmer --evals 40000000
   or every key on boards without them), with the displaced symbol taking its old key, each
   followed by a steepest descent; keep the best improving move, re-anneal, repeat (3 rounds
   at most). Layer symbols stranded by a moved hold key move to free layer keys.
-- **Key zones (L04).** Without a constraint the search treats Space like a letter: on corne-36 it
+- **Key zones (`zones`).** Without a constraint the search treats Space like a letter: on corne-36 it
   put Space on an index home key and letters on the thumbs. Keysets therefore set profile
   `thumb_zone` = the layout's `␣⌫⏎` (letters, digits and punctuation off the thumbs, those
   three on them) and, with a layer, `base_letters` (letters and the zone keys on the base
-  layer), with L04 weighted 100 (a constraint). `--thumb-letters` drops the thumb zone.
+  layer), with `zones` weighted 100 (a constraint). `--thumb-letters` drops the thumb zone.
   Symbols are then placed only on non-thumb keys, so corne-36 `shift` gets 4 pair keys and Tab
   on the sixth thumb.
-- Keysets weight **Y01** (layer, Shift and Ctrl presses) at the `code` profile's weight (1,
+- Keysets weight **`layer_switch`** (layer, Shift and Ctrl presses) at the `code` profile's weight (1,
   scale 2) when the profile leaves it at 0, so the modifiers cost more than their key's effort.
   The CLI prints every profile change; the run's `config.json` records the profile used.
 
 ## Modelled keys
 
-- **Shift**: per press, the best `⇧` key's effort (M01) and a Y01 press, doubled on the shifted
+- **Shift**: per press, the best `⇧` key's effort (`effort`) and a `layer_switch` press, doubled on the shifted
   key's finger ([objective](objective.md#layers-y01-y02-y03)). Needs case counts (`GKCORP3`) or
   Shift pairs.
 - **Ctrl** (`⎈`, `{ctrl}`): profile `ctrl` shortcut presses per keystroke (default 0.01, an
   assumption) spread over `profile::CTRL_SHORTCUTS` (c v 20 %, z 12 %, s 10 %, …, an estimate),
-  costed like Shift's press (effort + Y01). Folded into the symbol-on-slot table, so the hot loop
+  costed like Shift's press (effort + `layer_switch`). Folded into the symbol-on-slot table, so the hot loop
   is unchanged. Only layouts with a `⎈` key pay it.
 - **Backspace**: text has none. `gecko corpus edits <corpus> --share 0.056 --out <name>` adds `⌫`
   from a typing-error model fitted on the Aalto 136M keystrokes study (4,000 participants,
@@ -112,7 +112,7 @@ y x · k · q m ⇥ b c        q z v f c k y - . ,        q z v f c k y * . ,
 ⎋ ⌫ ⇧ ⎈ ␣ ⏎                ⇥ ⌫ ⇧ ⎈ ␣ ⏎                ⇧ ⌫ ① ⎈ ␣ ⏎
 ```
 
-- Space, Backspace and Enter stay on the thumbs (L04 = 0); Space lands on the right middle
+- Space, Backspace and Enter stay on the thumbs (`zones` = 0); Space lands on the right middle
   thumb, Backspace on the left middle one. `alpha` leaves a top-row middle key and two bottom-row keys empty.
 - The placement search moves Shift and Ctrl from the outer thumbs (the heuristic start) to the
   inner ones. It is worth only 0.06 at these weights (Shift ≈ 2.4 presses per 100 keys from
@@ -121,8 +121,8 @@ y x · k · q m ⇥ b c        q z v f c k y - . ,        q z v f c k y * . ,
 - `shift` mode picks `,< .> -_ '"` for the 4 free keys; `/?` and `;:` (0.4 % each) are left out.
 - `layer` with the default profile keeps letters, `, .` on the base and moves two rare symbols
   (`< *`) onto the remaining base keys while `' -` take cheap layer thumb keys: the default
-  profile does not weight Y02 and a layer thumb key costs little. With `-p code` (Y02 weighted)
+  profile does not weight `symbol_bigram` and a layer thumb key costs little. With `-p code` (`symbol_bigram` weighted)
   on prose, `. , '` join `"` on the layer to keep dialogue bigrams (`."`, `,"`) on one layer,
-  and digits take base keys: `code`'s Y02 suits code, not dialogue-heavy prose.
+  and digits take base keys: `code`'s `symbol_bigram` suits code, not dialogue-heavy prose.
 - ansi-30 (no thumbs, no modifiers): `alpha` 24.516 (`20261024-210635-sa-edd119e9`), `shift`
   27.643 (`20261024-210654-sa-d9afa02f`, pairs `,< .> -_ '"`).

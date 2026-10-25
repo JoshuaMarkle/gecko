@@ -231,20 +231,20 @@ describe("hand sizes", () => {
 });
 
 describe("hand in the scored profile", () => {
-  const base: Profile = { name: "p", description: "", weights: { B01: 1 }, finger_target: [], trigram_coverage: 0.99, scale: { B01: 2 } };
+  const base: Profile = { name: "p", description: "", weights: { sfb: 1 }, finger_target: [], trigram_coverage: 0.99, scale: { sfb: 2 } };
   const on: HandSettings = { use: true, preset: "large", custom: null };
 
-  it("adds the hand and G01 / G03 / G05 / G06 at the hand profile's weights when on", () => {
+  it("adds the hand and reach / wrist / press_angle / thumb_arc at the hand profile's weights when on", () => {
     const p = withHand(base, on);
     expect(p.hand).toEqual({ size: "large" });
-    expect(p.weights).toEqual({ B01: 1, G01: HAND_WEIGHTS.G01[0], G03: HAND_WEIGHTS.G03[0], G05: HAND_WEIGHTS.G05[0], G06: HAND_WEIGHTS.G06[0] });
-    expect(p.scale?.G01).toBe(HAND_WEIGHTS.G01[1]);
-    expect(base.weights.G01).toBeUndefined();
+    expect(p.weights).toEqual({ sfb: 1, reach: HAND_WEIGHTS.reach[0], wrist: HAND_WEIGHTS.wrist[0], press_angle: HAND_WEIGHTS.press_angle[0], thumb_arc: HAND_WEIGHTS.thumb_arc[0] });
+    expect(p.scale?.reach).toBe(HAND_WEIGHTS.reach[1]);
+    expect(base.weights.reach).toBeUndefined();
   });
 
   it("keeps weights the profile sets, 0 included, and drops the hand when off", () => {
-    const set = { ...base, weights: { B01: 1, G01: 0 } };
-    expect(withHand(set, on).weights.G01).toBe(0);
+    const set = { ...base, weights: { sfb: 1, reach: 0 } };
+    expect(withHand(set, on).weights.reach).toBe(0);
     const off = withHand({ ...base, hand: { size: "small" } }, { ...on, use: false });
     expect(off.hand).toBeUndefined();
     expect(off.weights).toEqual(base.weights);

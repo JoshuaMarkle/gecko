@@ -11,11 +11,11 @@ load") and sees what each choice costs.
 
 | Name | Value |
 |---|---|
-| `roll_ratio` | 100 · (T03 + T04) / (T01 + T03 + T04): rolls vs alternation, % |
+| `roll_ratio` | 100 · (`inroll` + `outroll`) / (`alternate` + `inroll` + `outroll`): rolls vs alternation, % |
 | `index_load` | % of keystrokes on the two index fingers |
 | `pinky_load` | % of keystrokes on the two pinkies |
-| `hand_balance` | % of keystrokes on the left hand (M04) |
-| any metric id | its raw value (e.g. `B01`, `M05`, `T06`) |
+| `hand_balance` | % of keystrokes on the left hand (`hand_balance`) |
+| any metric id | its raw value (e.g. `sfb`, `home_row`, `redirect`) |
 
 Default `roll_ratio,index_load`, 16 bins each. Values outside the range go to the edge bins.
 

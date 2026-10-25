@@ -27,7 +27,7 @@ pub(crate) fn costs(sc: &Scorer, st: &State) -> Vec<f64> {
     breakdown(sc, st).metrics.iter().map(|m| m.weighted).collect()
 }
 
-/// Population standard deviation of each metric's raw cost over `layouts` (M02/M04/M09 use their
+/// Population standard deviation of each metric's raw cost over `layouts` (finger_target/hand_balance/thumb_load use their
 /// squared costs, like the scorer). Metrics with zero spread are left out.
 pub fn spread_scales(g: &Geometry, corpus: &Corpus, profile: &Profile, layouts: &[Layout]) -> Result<BTreeMap<String, f32>> {
     let unit = unit_profile(profile);
@@ -112,7 +112,7 @@ pub fn fit_to(g: &Geometry, corpus: &Corpus, profile: &Profile, layouts: &[Layou
     let feats: Vec<usize> = METRICS
         .iter()
         .enumerate()
-        .filter(|(i, d)| *i != ti && !d.retired && !d.id.starts_with('E') && scales.contains_key(d.id))
+        .filter(|(i, d)| *i != ti && !d.retired && !crate::metrics::is_model(d.id) && scales.contains_key(d.id))
         .map(|(i, _)| i)
         .collect();
     let unit = unit_profile(profile);

@@ -48,10 +48,10 @@ export interface Profile {
   weights: Record<string, number>;
   finger_target: number[];
   finger_effort?: import("./fingerEffort").FingerEffort;
-  /** Target thumb share % for M09 (default 18 when absent). */
+  /** Target thumb share % for thumb_load (default 18 when absent). */
   thumb_target?: number;
   trigram_coverage: number;
-  /** Vim motion policy for L03: "row" (h j k l in order), "pairs" (h l and j k), "fingers" (four fingers). */
+  /** Vim motion policy for vim: "row" (h j k l in order), "pairs" (h l and j k), "fingers" (four fingers). */
   vim?: string;
   /** Adaptive fidelity: search on the `top_k` most frequent trigrams, confirm on the full tables. */
   fidelity?: { top_k: number; grow: number; misses: number };
@@ -60,15 +60,16 @@ export interface Profile {
   scale_basis?: string;
   row_offset?: [number, number][];
   familiar_to?: string;
-  /** `distance`, `lateral`, `finger_factor` shape only the retired B03/S03; edited here: `skip_decay` (S02). */
+  /** `distance`, `lateral`, `finger_factor` shape only the retired sfb_distance/sfs_distance; edited here: `skip_decay` (sfs_far). */
   sfb?: { distance: "linear" | "squared" | "fitts"; lateral: number; finger_factor: number[]; skip_decay: number };
-  /** Hand model for G01 / G05 and B14's spread (`hand.ts` `withHand`). */
+  /** Hand model for reach / press_angle and stretch's spread (`hand.ts` `withHand`). */
   hand?: import("./hand").HandSpec;
 }
 
 export type Dir = "min" | "max" | "info";
 /** `retired`: still scored for old runs and profiles, hidden in the UI (filtered by `api.meta`). */
-export interface MetricDef { id: string; name: string; unit: string; order: string; dir: Dir; desc: string; retired: boolean }
+/** `legacy`: the metric's code before 2026-10-24 (`B01`, …), still accepted on input. */
+export interface MetricDef { id: string; legacy: string; name: string; unit: string; order: string; dir: Dir; desc: string; retired: boolean }
 
 /** `chars` is slot-ordered; for a layered layout it is the flat string over its layer slots
  *  (see `layerSlots`), and `layers` names layers 1, 2, …. */

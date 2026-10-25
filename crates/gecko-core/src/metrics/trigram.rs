@@ -1,4 +1,4 @@
-//! Trigram classification (T01–T08). Every slot triple gets exactly one class, so class
+//! Trigram classification (alternate–sft). Every slot triple gets exactly one class, so class
 //! shares sum to 100% of trigrams and reports stay easy to read.
 
 use serde::Serialize;
@@ -26,16 +26,16 @@ pub enum TriClass {
 
 pub fn class_for(id: &str) -> Option<TriClass> {
     Some(match id {
-        "T01" => TriClass::Alternate,
-        "T02" => TriClass::AlternateSfs,
-        "T03" => TriClass::RollIn,
-        "T04" => TriClass::RollOut,
-        "T05" => TriClass::Onehand,
-        "T06" => TriClass::Redirect,
-        "T07" => TriClass::BadRedirect,
-        "T08" => TriClass::Sft,
-        "T12" => TriClass::ThumbRoll,
-        "T13" => TriClass::ThumbAlt,
+        "alternate" => TriClass::Alternate,
+        "alt_sfs" => TriClass::AlternateSfs,
+        "inroll" => TriClass::RollIn,
+        "outroll" => TriClass::RollOut,
+        "onehand" => TriClass::Onehand,
+        "redirect" => TriClass::Redirect,
+        "bad_redirect" => TriClass::BadRedirect,
+        "sft" => TriClass::Sft,
+        "thumb_roll" => TriClass::ThumbRoll,
+        "thumb_alt" => TriClass::ThumbAlt,
         _ => return None,
     })
 }

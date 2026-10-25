@@ -26,10 +26,10 @@ use crate::{hash, Error, Result, SCHEMA};
 
 /// Named descriptors besides raw metric ids: (name, description).
 pub const DESCRIPTORS: &[(&str, &str)] = &[
-    ("roll_ratio", "rolls / (rolls + alternates), % of T03 + T04 over T01 + T03 + T04"),
+    ("roll_ratio", "rolls / (rolls + alternates), % of inroll + outroll over alternate + inroll + outroll"),
     ("index_load", "% of keystrokes on the two index fingers"),
     ("pinky_load", "% of keystrokes on the two pinkies"),
-    ("hand_balance", "% of keystrokes on the left hand (M04)"),
+    ("hand_balance", "% of keystrokes on the left hand (hand_balance)"),
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -49,10 +49,9 @@ impl Desc {
     fn parse(name: &str) -> Option<Desc> {
         let ix = |id: &str| index_of(id).expect("metric exists");
         Some(match name {
-            "roll_ratio" => Desc::RollRatio { t01: ix("T01"), t03: ix("T03"), t04: ix("T04") },
+            "roll_ratio" => Desc::RollRatio { t01: ix("alternate"), t03: ix("inroll"), t04: ix("outroll") },
             "index_load" => Desc::Fingers(3, 6),
             "pinky_load" => Desc::Fingers(0, 9),
-            "hand_balance" => Desc::Metric(ix("M04")),
             id => Desc::Metric(index_of(id)?),
         })
     }
@@ -518,7 +517,7 @@ mod tests {
     #[test]
     fn axes_parse_and_bin() {
         assert_eq!(parse_axis("roll_ratio").unwrap(), AxisSpec { name: "roll_ratio".into(), range: None });
-        assert_eq!(parse_axis("B01:0.5:3").unwrap().range, Some((0.5, 3.0)));
+        assert_eq!(parse_axis("sfb:0.5:3").unwrap().range, Some((0.5, 3.0)));
         assert!(parse_axis("nope").is_err());
         assert!(parse_axis("index_load:5:1").is_err());
         assert!(parse_axis("index_load:5").is_err());

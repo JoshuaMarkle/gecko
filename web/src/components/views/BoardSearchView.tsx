@@ -27,7 +27,7 @@ interface Props {
   locked: boolean;
   /** Free parameters of the board for the selected groups (`useGeomVars`). */
   geomVars: { vars: GeomVar[]; error: string | null };
-  /** The profile weights a hand-model metric (G01 / G03 / G05 / G06): without one, board shape barely matters. */
+  /** The profile weights a hand-model metric (reach / wrist / press_angle / thumb_arc): without one, board shape barely matters. */
   handWeighted: boolean;
   /** The layout the run starts from (Board: keeps). */
   chars: string;

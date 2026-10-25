@@ -9,10 +9,10 @@ page covers what to do with h j k l, which a layout search would otherwise scatt
 | Policy | How | What it keeps | Cost (below) |
 |---|---|---|---|
 | QWERTY spots | `optimize --from qwerty --pin hjkl` | h j k l exactly where they are: no relearning, Vim help and muscle memory still apply | +24 % |
-| Row | profile `vim = "row"`, L03 weight 100 | h j k l in order on four neighbouring keys of one row, anywhere | +12 % |
-| Pairs | `vim = "pairs"`, L03 100 | h left of l and j left of k, each pair on neighbouring keys; the pairs may sit apart | +2 % |
-| Fingers | `vim = "fingers"`, L03 100 | four different fingers of one hand (any rows): a chord-like cluster, no shape | +7.5 % |
-| Free | no L03 | nothing; remap motions in your config instead | baseline |
+| Row | profile `vim = "row"`, `vim` weight 100 | h j k l in order on four neighbouring keys of one row, anywhere | +12 % |
+| Pairs | `vim = "pairs"`, `vim` 100 | h left of l and j left of k, each pair on neighbouring keys; the pairs may sit apart | +2 % |
+| Fingers | `vim = "fingers"`, `vim` 100 | four different fingers of one hand (any rows): a chord-like cluster, no shape | +7.5 % |
+| Free | no `vim` | nothing; remap motions in your config instead | baseline |
 
 - **Row** is the classic case: the mnemonic is the order, not the keys. It costs the most
   of the shaped policies, since four letters must share a row; the search parks them on a
@@ -25,7 +25,7 @@ page covers what to do with h j k l, which a layout search would otherwise scatt
 - **Free** suits users who remap (`noremap` to the new letters' positions, or arrow keys on a
   layer). Remapping costs config upkeep and breaks other machines' Vim.
 
-L03 counts "% of the policy's key pairs broken" (reversed neighbours half), unweighted by
+`vim` counts "% of the policy's key pairs broken" (reversed neighbours half), unweighted by
 frequency, so at weight 100 any breakage outweighs every typing metric: a constraint, not a
 preference. Lower weights (1–5) let the search trade it. In the web app: Profile → Shortcuts
 and familiarity → Vim h j k l.
@@ -54,12 +54,12 @@ focus events) break the n-grams.
 ## Results
 
 2026-10-24, `vim-programmer`, ansi-30, SA 60 s × 20 threads, seeds 1 and 2; each best layout
-rescored with profile `default` (no L03), so the numbers are what the policy costs in typing
+rescored with profile `default` (no `vim`), so the numbers are what the policy costs in typing
 score (lower is better). The best of the two seeds is shown. Under the weight-100 constraint SA
 is noisier (row 25.5 / 24.5, pairs 22.3 / 23.6 across seeds); the free and QWERTY-pinned runs
 gave the same layout on both seeds.
 
-| Policy | Score | vs free | SFB % | E05 comfort | E01 time | Best layout (top / home / bottom) | Run |
+| Policy | Score | vs free | SFB % | `engram` comfort | `typing_time` time | Best layout (top / home / bottom) | Run |
 |---|---|---|---|---|---|---|---|
 | Free | 21.85 | — | 2.51 | 5.90 | 7.62 | `mflpzqyou, dsrnbgteia cxwhv/kj;.` | `20261025-011539-sa-b13d65de` |
 | Pairs | 22.33 | +2 % | 2.46 | 5.87 | 7.70 | `,uoyqzhlfc aietgbnrsd ./jk;vpwxm` | `20261025-011842-sa-a654d29d` |
@@ -71,6 +71,6 @@ gave the same layout on both seeds.
 Reading: **pairs is nearly free** (h l and j k as two neighbour pairs fit where the search
 wants those letters anyway), so it is the recommended policy for a new layout. Row costs about
 half of what pinning QWERTY spots costs. Pinning h j k l at QWERTY is still far better than
-QWERTY (27 vs 70): the rest of the layout carries most of the gain. E05 is Engram comfort and
-E01 predicted typing time (both lower is better; judges, not weighted).
+QWERTY (27 vs 70): the rest of the layout carries most of the gain. `engram` is Engram comfort and
+`typing_time` (both lower is better; judges, not weighted).
 

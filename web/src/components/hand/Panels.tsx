@@ -18,9 +18,9 @@ import { CODE_OF, LOOP_GAP, MM } from "./rigs";
 const FINGER_ORDER: Finger[] = ["LP", "LR", "LM", "LI", "LT", "RT", "RI", "RM", "RR", "RP"];
 
 /**
- * The scorer's per-key hand costs by finger: home key, mean and worst key (G01 reach), mean
- * press angle (G05), and keys the fingertip cannot reach with the hand resting on the home keys;
- * then each wrist's resting posture and G03.
+ * The scorer's per-key hand costs by finger: home key, mean and worst key (`reach`), mean
+ * press angle (`press_angle`), and keys the fingertip cannot reach with the hand resting on the home keys;
+ * then each wrist's resting posture and `wrist` cost.
  */
 export function Reach({ geometry, chars, costs, body }: { geometry: Geometry; chars: string; costs: HandCosts | null; body: Body }) {
   const bodyText = `${body.elbowWidth.toFixed(0)} mm`;
@@ -47,7 +47,7 @@ export function Reach({ geometry, chars, costs, body }: { geometry: Geometry; ch
   return (
     <div className="reachtab">
       <table className="tbl">
-        <thead><tr><th>Finger</th><th>Keys</th><th title="G01 on the finger's home key">Home</th><th title="Mean G01 over the finger's keys">Mean reach</th><th>Hardest key</th><th title="Mean G05 press angle cost">Press angle</th><th title="Keys the fingertip cannot reach with the hand on the home keys (shortfall, mm)">Out of reach</th></tr></thead>
+        <thead><tr><th>Finger</th><th>Keys</th><th title="reach on the finger's home key">Home</th><th title="Mean reach over the finger's keys">Mean reach</th><th>Hardest key</th><th title="Mean press angle cost (press_angle)">Press angle</th><th title="Keys the fingertip cannot reach with the hand on the home keys (shortfall, mm)">Out of reach</th></tr></thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.f}>
@@ -63,7 +63,7 @@ export function Reach({ geometry, chars, costs, body }: { geometry: Geometry; ch
         </tbody>
       </table>
       <table className="tbl posture">
-        <thead><tr><th>Wrist</th><th title="Ulnar (+, toward the pinky) or radial (−) deviation of the hand from the forearm">Deviation</th><th title="Extension (+, back of the hand up) or flexion (−)">Extension</th><th title="Forearm rotation: 90° = palm flat down, 0° = thumb up">Pronation</th><th title="Mean G03 over the hand's keys: the resting posture plus sideways reaches">Posture cost</th></tr></thead>
+        <thead><tr><th>Wrist</th><th title="Ulnar (+, toward the pinky) or radial (−) deviation of the hand from the forearm">Deviation</th><th title="Extension (+, back of the hand up) or flexion (−)">Extension</th><th title="Forearm rotation: 90° = palm flat down, 0° = thumb up">Pronation</th><th title="Mean wrist over the hand's keys: the resting posture plus sideways reaches">Posture cost</th></tr></thead>
         <tbody>
           {(["L", "R"] as const).map((side, h) => costs.placed[h] && (
             <tr key={side}>
@@ -80,7 +80,7 @@ export function Reach({ geometry, chars, costs, body }: { geometry: Geometry; ch
         Mean reach over all {all.length} keys {avg.toFixed(2)}{costs.placed.includes(false) ? " · a hand without four home keys is not placed (its keys cost 0)" : ""}.
         Reach = joint deviation from the natural curl + sideways splay + fingertip shortfall (hand fixed on the home keys); 0 at rest, about 1 for a comfortable off-home key.
         Posture: forearms from elbows {bodyText} apart; split halves are assumed turned to line up with the forearm (no resting deviation), a tent lowers pronation. Neutral is 0° deviation and extension, 30° pronation.
-        The layout's G01 / G03 / G05 / G06 (per keystroke) are in the Profile tab's Hand model section and in Analysis.
+        The layout's reach / wrist / press_angle / thumb_arc (per keystroke) are in the Profile tab's Hand model section and in Analysis.
       </div>
     </div>
   );

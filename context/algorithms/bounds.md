@@ -9,13 +9,13 @@ optimum. It is omitted with more than 48 movable symbols or a negatively weighte
 ## Method
 
 1. **QAP form** (`Scorer::qap_terms`). Score = `Σ M[x, p(x)] + Σ_{x≠y} Σ_ch F_ch[x, y]·C_ch[p(x), p(y)]`.
-   The channels are bigrams, skipgrams, far skipgrams, Y02, Shift pairs and Y03 brackets.
+   The channels are bigrams, skipgrams, far skipgrams, `symbol_bigram`, Shift pairs and `brackets`.
    Same-symbol pairs fold into `M`.
 2. **Trigrams are relaxed to pairs**, so the result is still a lower bound. A trigram x y z with
    distinct symbols is split into thirds: (x, y) at (i, j) costs `min_k c3[i, j, k]`, (y, z)
    costs `min_i c3`, and (x, z) costs `min_j c3`, with the free key on any other slot.
    Trigrams with a repeated symbol are exact pair or mono terms.
-3. **Load terms** (M02, M03, M04, M07, M09) are ≥ 0 when their weights are ≥ 0, so they are
+3. **Load terms** (`finger_target`, `finger_evenness`, `hand_balance`, `finger_peak`, `thumb_load`) are ≥ 0 when their weights are ≥ 0, so they are
    bounded by 0 (dropped).
 4. **Pins**: pinned symbols are constants. Their terms with movable symbols become linear terms.
 5. **Gilmore–Lawler**. For each movable x on free slot i:
@@ -46,7 +46,7 @@ is checked against brute force (`bound::tests`).
 | 16 (pin `xvqjzyw/;,.bmk`) | 13.26 (11.31) | 24.5 % | 17.11 (15.27) | 12.1 % |
 | 10 (pin 20, free `nsrhtceaio`) | 15.30 (15.19) | 12.9 % | 19.12 (19.05) | 1.7 % |
 
-- A pair-only profile (default without T*, M02, M04) gives the same picture. SA's optimum
+- A pair-only profile (default without T*, `finger_target`, `hand_balance`) gives the same picture. SA's optimum
   there is 19.276 (two seeds agree), and the bound is 5.81 after 50 iterations (69.9 %). So the
   weakness is the bound, not the search. Gilmore–Lawler is known to be weak on dense QAPs, and
   dual ascent closes only ~1.3 of ~14.8 points.

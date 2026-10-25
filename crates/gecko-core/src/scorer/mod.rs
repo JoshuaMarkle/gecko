@@ -2,16 +2,16 @@
 //!
 //! ```text
 //! score = Σ f1[x]·C1[p(x)] + Σ f2[x,y]·C2[p(x),p(y)] + Σ fk[x,z]·Ck[p(x),p(z)]
-//!       + Σ fkf[x,z]·Ckf[p(x),p(z)] + Σ f3[x,y,z]·C3[p(x),p(y),p(z)] + load terms (M02, M03, M04, M07, M09)
+//!       + Σ fkf[x,z]·Ckf[p(x),p(z)] + Σ f3[x,y,z]·C3[p(x),p(y),p(z)] + load terms (finger_target, finger_evenness, hand_balance, finger_peak, thumb_load)
 //! ```
 //!
 //! `fk` is gap-1 skipgrams; `fkf` mixes gap-2 and gap-3 skipgrams with `sfb.skip_decay`;
-//! `fy` is bigrams of two code symbols (Y02), with its own cost table `Cy`. Y03 adds
+//! `fy` is bigrams of two code symbols (symbol_bigram), with its own cost table `Cy`. brackets adds
 //! `Σ w[o,c]·Cb[p(o),p(c)]` over the few bracket pairs (o, c) on the layout (a sparse list).
 //!
 //! Shift (layout has `⇧` keys, corpus has case counts): `+ Σ fsh[y]·Csh[p(y)]` (presses
-//! before y, per keystroke: the Shift key's effort in M01 and one press in Y01) `+ Σ fsb[x,y]·
-//! Csb[p(x),p(y)]` (presses right after x: Y01's same-finger-into-Shift extra).
+//! before y, per keystroke: the Shift key's effort in effort and one press in layer_switch) `+ Σ fsb[x,y]·
+//! Csb[p(x),p(y)]` (presses right after x: layer_switch's same-finger-into-Shift extra).
 //!
 //! Ctrl (layout has `⎈` keys): shortcut presses `fct[x]` (profile `ctrl` × the letter's share
 //! of shortcuts) cost like Shift's mono part; they are folded into the symbol-on-slot table `cp`,
@@ -66,7 +66,7 @@ pub struct Scorer {
     fsb: Vec<f32>,
     csh: Vec<f32>,
     csb: Vec<f32>,
-    /// Unfolded Shift tables (reports): M01 and Y01 per press before slot j, Y01 per (i, j).
+    /// Unfolded Shift tables (reports): effort and layer_switch per press before slot j, layer_switch per (i, j).
     shift_effort: Vec<f32>,
     shift_press: Vec<f32>,
     shift_pair: Vec<f32>,
@@ -77,13 +77,13 @@ pub struct Scorer {
     has_pair: bool,
     /// The far-skipgram channel is in use (skipped otherwise; it costs ~12% of delta speed).
     has_far: bool,
-    /// The code-symbol bigram channel (Y02) is in use.
+    /// The code-symbol bigram channel (symbol_bigram) is in use.
     has_sym: bool,
     has_tri: bool,
-    /// Bracket pairs on the layout with their weights (Y03); empty when Y03 is unweighted.
+    /// Bracket pairs on the layout with their weights (brackets); empty when brackets is unweighted.
     brackets: Vec<PairEntry>,
     cb: Vec<f32>,
-    /// Symbol-on-slot costs (L01, L02), `cp[x * n + slot]`; `has_place` when any is non-zero.
+    /// Symbol-on-slot costs (shortcuts, familiar), `cp[x * n + slot]`; `has_place` when any is non-zero.
     cp: Vec<f32>,
     has_place: bool,
     /// All bracket pairs on the layout, weighted or not (reports).
@@ -116,12 +116,12 @@ pub struct Scorer {
     tables: Vec<Option<Vec<f32>>>,
     /// Signed weight each linear metric was folded with (0 = not folded), aligned with `METRICS`.
     fold_w: Vec<f32>,
-    /// Weights of the Shift channel's M01 and Y01 parts (`csh`, `csb`).
+    /// Weights of the Shift channel's effort and layer_switch parts (`csh`, `csb`).
     shift_w: (f32, f32),
     /// Ctrl shortcut presses per keystroke before symbol x (zero without a `⎈` key). Folded
-    /// into `cp` with `ctrl_w` (M01, Y01 weights) as `fct[x] · cost(slot)`.
+    /// into `cp` with `ctrl_w` (effort, layer_switch weights) as `fct[x] · cost(slot)`.
     fct: Vec<f32>,
-    /// Unfolded Ctrl tables (reports): M01 and Y01 per shortcut press on slot j.
+    /// Unfolded Ctrl tables (reports): effort and layer_switch per shortcut press on slot j.
     ctrl_effort: Vec<f32>,
     ctrl_press: Vec<f32>,
     ctrl_w: (f32, f32),
@@ -252,7 +252,7 @@ impl Scorer {
     pub fn fy(&self) -> &[f32] {
         &self.fy
     }
-    /// Bracket pairs on the layout and their Y03 weights (sum 1).
+    /// Bracket pairs on the layout and their brackets weights (sum 1).
     pub fn bracket_pairs(&self) -> &[PairEntry] {
         &self.bracket_all
     }

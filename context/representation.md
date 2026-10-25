@@ -13,7 +13,7 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   `pos[3], rot[3], size[2], finger, row, col, home, stretch, effort` (hand comes from finger). `effort` and `stretch` are optional: a key without
   `effort`, or a board that marks no key `stretch`, gets them derived from key positions on
   load ([geometry.md](geometry.md#derived-effort-and-stretch-g4)); parametric columns may omit
-  `effort` too. Optional `hrm` (bool) marks home-row mod keys for Y04;
+  `effort` too. Optional `hrm` (bool) marks home-row mod keys for `hrm_misfire`;
   unset = `home` keys on a finger outside the stretch columns (`Geometry::hrm`). Optional
   `alt = [{ finger = "LR", effort = 2.8 }, …]` lists other fingers that may press the key (C11;
   effort derived when missing; not on home keys). Scoring uses `finger`/`effort`; only
@@ -32,17 +32,17 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   every 30-key reference layout fits all bundled split boards (`Layout::fit`; the CLI and server
   apply it). Thumb fills follow Miryoku: `⎋ ␣ ⇥ | ⏎ ⌫ ·` (36), `␣ ⇥ | ⏎ ⌫` (34). Larger boards use the same five nonempty thumb fills as Corne,
   with all other non-core keys filled `·`; these are comparison defaults, not factory maps.
-- Thumbs: trigrams with a thumb class as "other"; B05 scissors ignore thumbs; M02 compares
+- Thumbs: trigrams with a thumb class as "other"; `scissor` ignore thumbs; `finger_target` compares
   non-thumb finger loads as shares of non-thumb keystrokes (unchanged when thumbs are idle).
-- Optional `[comfort]` maps comfort metrics to key-pair tables: `E04 = "engram-2key"` loads
+- Optional `[comfort]` maps comfort metrics to key-pair tables: `engram_formula = "engram-2key"` loads
   `data/comfort/engram-2key.csv` (`a_row,a_col,b_row,b_col,score,…`, 0..1, higher = more
   comfortable, keys matched by row/col). The store loads them into `comfort_tables`, which are
-  served with the geometry so the WASM scorer has them. ansi-30: E04 Engram formula, E05 fitted
+  served with the geometry so the WASM scorer has them. ansi-30: `engram_formula`, `engram` fitted
   from Engram's raw choices (`research/scripts/fit_engram_bt.py`).
 - `effort` is the base per-press cost. Profiles add a per-finger row offset on top
   (`row_offset`, pinky ring middle index × [above home, below home]; thumbs and home row 0):
   the default/code profiles make the top row cheaper for middle/ring and the bottom row
-  cheaper for index (KLO's key-cost asymmetry), on any geometry. M01 uses `effort + offset`.
+  cheaper for index (KLO's key-cost asymmetry), on any geometry. `effort` uses `effort + offset`.
 - Positions are always 3D. Flat boards use z = 0 and only z-rotation. `pos` is the
   unrotated top-left corner at the bottom of the keycap; rotation is about the keycap's
   centre (as the 3D viewer draws it). `rot` convention, keycap top / normal and the points
@@ -129,7 +129,7 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 - Scoring flattens a layered layout onto `Geometry::layered`: the base keys, then each layer's
   usable keys as virtual keys (`layer`, `phys` set; `layer_keys` = holders, `layer_modes`). Metrics see each
   symbol at its physical key (layer copies of one key are the same key: repeats, not SFBs);
-  Y01/Y02 add the layer costs. The flat char string (base, then layer 1's usable keys, …) is
+  `layer_switch`/`symbol_bigram` add the layer costs. The flat char string (base, then layer 1's usable keys, …) is
   what runs, `raw:`, `/api/score` and WASM use; `Layout::from_flat` / `fit` split it back
   using the `①②③` positions. Layer keys never move (`Ctx::new`). ≤ 128 slots in all.
 - Adaptive keys (`magic.rs`): a key whose output depends on the previous symbol. TOML:
@@ -274,8 +274,9 @@ trace: [[ms, best], …]}]}]. `trace` lists every new best with the time it was 
 
 Explore runs add an **atlas** (`explore/atlas.rs`; little-endian, fixed-size records,
 rewritten atomically on each snapshot):
-- `optima.bin`: `GKATLAS1`, u32 version 1, slots S, metrics M, count N; M metric ids
-  (4 bytes, zero-padded); N × {f64 score, u32 hits, u32 first_ms, u16 flags, S × u8 symbol
+- `optima.bin`: `GKATLAS1`, u32 version 2, slots S, metrics M, count N; M metric ids
+  (u8 length + bytes; version 1 had 4 zero-padded bytes holding the old codes, renamed to IDs
+  on read); N × {f64 score, u32 hits, u32 first_ms, u16 flags, S × u8 symbol
   ids, M × f32 raw metric values}, sorted by score. Flag 1 = constrained (end of an
   exclusion descent).
 - `edges.bin`: `GKEDGES1`, u32 count; × {u32 from, u32 to, u32 count, u8 kick, u8 strength}

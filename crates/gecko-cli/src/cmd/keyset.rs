@@ -37,7 +37,7 @@ pub struct KeysetOpts {
     #[arg(long)]
     pub no_place: bool,
     /// Let letters and symbols take thumb keys (and Space, Backspace, Enter leave them).
-    /// Default: a thumb zone (profile `thumb_zone`, L04 weight 100) keeps them apart.
+    /// Default: a thumb zone (profile `thumb_zone`, zones weight 100) keeps them apart.
     #[arg(long)]
     pub thumb_letters: bool,
     /// Placement search: SA evaluations for its first optimization and after each accepted move.

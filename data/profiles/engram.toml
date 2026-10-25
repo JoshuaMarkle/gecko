@@ -1,5 +1,5 @@
 name = "engram"
-description = "Independent judge: only key-pair comfort measured in the Engram study (E05). Not hand-tuned; use it to cross-check other profiles."
+description = "Independent judge: only key-pair comfort measured in the Engram study (engram). Not hand-tuned; use it to cross-check other profiles."
 
 [weights]
-E05 = 1.0   # measured Engram comfort; E04 is the hand-built formula
+engram = 1.0 # measured Engram comfort; engram_formula is the hand-built formula

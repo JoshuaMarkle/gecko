@@ -65,7 +65,7 @@ pub struct OptimizeArgs {
     /// Memetic: best individuals sent per migration.
     #[arg(long)]
     migrants: Option<usize>,
-    /// Pareto objectives, e.g. B01,T03,M01 (NSGA-II or random-weight SA).
+    /// Pareto objectives, e.g. sfb,inroll,effort (NSGA-II or random-weight SA).
     #[arg(long, value_delimiter = ',')]
     objectives: Option<Vec<String>>,
     /// NSGA-II generations (0 = use the time/evaluation budget).

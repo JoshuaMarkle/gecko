@@ -65,8 +65,8 @@ impl Scorer {
         for v in [&mut f1, &mut f2, &mut fk, &mut fk2, &mut fk3, &mut fy, &mut f3] {
             norm(v);
         }
-        // Far skipgrams: gap 2 × decay + gap 3 × decay², each normalized like gap 1, so S02 reads
-        // as "% of skipgram volume, decayed" relative to S01.
+        // Far skipgrams: gap 2 × decay + gap 3 × decay², each normalized like gap 1, so sfs_far reads
+        // as "% of skipgram volume, decayed" relative to sfs.
         let decay = profile.sfb.skip_decay;
         let fkf: Vec<f32> = fk2.iter().zip(&fk3).map(|(a, b)| decay * a + decay * decay * b).collect();
         let shift_keys: Vec<usize> = (0..n).filter(|&i| chars[i] == crate::layout::SHIFT).collect();
@@ -88,7 +88,7 @@ impl Scorer {
         truncate_coverage(&mut f3, &chars, profile.trigram_coverage as f64);
         norm(&mut f3);
 
-        // Y03 weights: each bracket pair on the layout by the corpus frequency of its two symbols.
+        // brackets weights: each bracket pair on the layout by the corpus frequency of its two symbols.
         let mut bracket_all = Vec::new();
         for (o, c) in metrics::BRACKET_PAIRS {
             let (Some(x), Some(y)) = (chars.iter().position(|&ch| ch == o), chars.iter().position(|&ch| ch == c)) else {
@@ -102,11 +102,11 @@ impl Scorer {
         let bracket_total: f64 = bracket_all.iter().map(|e| e.2).sum();
         let mut bracket_all: Vec<PairEntry> =
             bracket_all.into_iter().map(|(x, y, f)| PairEntry { x, y, f: (f / bracket_total) as f32, t: 0 }).collect();
-        // L03: the policy's motion-key pairs on the layout, equal weights.
+        // vim: the policy's motion-key pairs on the layout, equal weights.
         if let Some(pairs) = profile.vim.as_deref().and_then(metrics::vim_pairs) {
             let at = |c: char| chars.iter().position(|&ch| ch == c);
             let on: Vec<(usize, usize)> = pairs.iter().filter_map(|&(a, b)| Some((at(a)?, at(b)?))).collect();
-            let t = (metrics::sparse_block("L03") * n * n) as u32;
+            let t = (metrics::sparse_block("vim") * n * n) as u32;
             bracket_all.extend(on.iter().map(|&(x, y)| PairEntry { x: x as u8, y: y as u8, f: 1.0 / on.len() as f32, t }));
         }
 
@@ -133,7 +133,7 @@ impl Scorer {
         let (mut has_pair, mut has_far, mut has_sym, mut has_tri) = (false, false, false, false);
         let has_shift = fsh.iter().any(|&f| f > 0.0);
         let w_of = |id: &str| if has_shift { profile.effective_weight(id) } else { 0.0 };
-        let (w_effort, w_y01) = (w_of("M01"), w_of("Y01"));
+        let (w_effort, w_y01) = (w_of("effort"), w_of("layer_switch"));
         let csh: Vec<f32> = shift_effort.iter().zip(&shift_press).map(|(e, p)| w_effort * e + w_y01 * p).collect();
         let csb: Vec<f32> = shift_pair.iter().map(|p| w_y01 * p).collect();
         let has_shift_pair = has_shift && csb.iter().any(|&c| c != 0.0) && fsb.iter().any(|&f| f > 0.0);
@@ -152,11 +152,11 @@ impl Scorer {
             }
             match (d.order, t) {
                 (Order::Load, _) => match d.id {
-                    "M02" => w_load = w as f64,
-                    "M04" => w_hand = w as f64,
-                    "M03" => w_rss = w as f64,
-                    "M07" => w_peak = w as f64,
-                    "M09" => w_thumb = w as f64,
+                    "finger_target" => w_load = w as f64,
+                    "hand_balance" => w_hand = w as f64,
+                    "finger_evenness" => w_rss = w as f64,
+                    "finger_peak" => w_peak = w as f64,
+                    "thumb_load" => w_thumb = w as f64,
                     _ => {}
                 },
                 (order, Some(t)) => {
@@ -185,7 +185,7 @@ impl Scorer {
                             has_tri = true;
                             &mut c3
                         }
-                        Order::Brackets => &mut cb[block..block + n * n],
+                        Order::Pairs => &mut cb[block..block + n * n],
                         Order::Place => &mut cp,
                         Order::Load => unreachable!(),
                     };
@@ -207,7 +207,7 @@ impl Scorer {
             }
         }
         let (tri_start, tri_entries, tri_pair_start, tri_pair) = index_trigrams(n, &tri_all);
-        let ctrl_w = (profile.effective_weight("M01"), profile.effective_weight("Y01"));
+        let ctrl_w = (profile.effective_weight("effort"), profile.effective_weight("layer_switch"));
         add_ctrl(&mut cp, &fct, &ctrl_effort, &ctrl_press, ctrl_w);
         let has_place = cp.iter().any(|&c| c != 0.0);
         let brackets = sparse_used(&bracket_all, &cb, n);
@@ -294,7 +294,7 @@ impl Scorer {
             if METRICS[mi].dir == Dir::Info || !weight.is_finite() || weight < 0.0 {
                 return Err(Error::invalid("objectives", format!("'{id}' needs a scored metric and a finite nonnegative weight")));
             }
-            out.profile.weights.insert(id.to_owned(), weight);
+            out.profile.weights.insert(METRICS[mi].id.to_owned(), weight);
         }
         for table in [&mut out.c1, &mut out.c2, &mut out.ck, &mut out.ckf, &mut out.cy, &mut out.c3, &mut out.cb, &mut out.cp] {
             table.fill(0.0);
@@ -310,11 +310,11 @@ impl Scorer {
             let signed = if d.dir == Dir::Max { -w } else { w };
             match (d.order, table) {
                 (Order::Load, _) => match d.id {
-                    "M02" => out.w_load = w as f64,
-                    "M04" => out.w_hand = w as f64,
-                    "M03" => out.w_rss = w as f64,
-                    "M07" => out.w_peak = w as f64,
-                    "M09" => out.w_thumb = w as f64,
+                    "finger_target" => out.w_load = w as f64,
+                    "hand_balance" => out.w_hand = w as f64,
+                    "finger_evenness" => out.w_rss = w as f64,
+                    "finger_peak" => out.w_peak = w as f64,
+                    "thumb_load" => out.w_thumb = w as f64,
                     _ => {}
                 },
                 (order, Some(table)) => {
@@ -343,7 +343,7 @@ impl Scorer {
                             out.has_tri = true;
                             &mut out.c3
                         }
-                        Order::Brackets => &mut out.cb[block..block + n * n],
+                        Order::Pairs => &mut out.cb[block..block + n * n],
                         Order::Place => &mut out.cp,
                         Order::Load => unreachable!(),
                     };
@@ -355,12 +355,12 @@ impl Scorer {
                 _ => {}
             }
         }
-        out.ctrl_w = (out.profile.weight("M01"), out.profile.weight("Y01"));
+        out.ctrl_w = (out.profile.weight("effort"), out.profile.weight("layer_switch"));
         add_ctrl(&mut out.cp, &out.fct, &out.ctrl_effort, &out.ctrl_press, out.ctrl_w);
         out.has_place = out.cp.iter().any(|&c| c != 0.0);
         out.has_load = [out.w_load, out.w_hand, out.w_rss, out.w_peak, out.w_thumb].iter().any(|&w| w != 0.0);
         out.brackets = sparse_used(&out.bracket_all, &out.cb, n);
-        let (effort, layer) = (out.profile.weight("M01"), out.profile.weight("Y01"));
+        let (effort, layer) = (out.profile.weight("effort"), out.profile.weight("layer_switch"));
         out.shift_w = (effort, layer);
         for ((cost, e), p) in out.csh.iter_mut().zip(&out.shift_effort).zip(&out.shift_press) {
             *cost = effort * e + layer * p;
@@ -373,7 +373,7 @@ impl Scorer {
     }
 
     /// One metric's actual cost at unit weight (max metrics are negated; load targets retain
-    /// their nonlinear penalty). Raw report values may differ, e.g. M04 reports left share.
+    /// their nonlinear penalty). Raw report values may differ, e.g. hand_balance reports left share.
     pub fn objective(&self, id: &str) -> Result<Self> {
         self.with_weights(&[(id, 1.0)])
     }
@@ -450,8 +450,8 @@ impl Scorer {
             logical.fill(true);
             moved.fill(true);
         }
-        // B10 measures from each finger's (or hand's) home keys: a moved home key moves its hand.
-        // Key effort (M01, E01) reads the home row and home keys board-wide.
+        // row_jump measures from each finger's (or hand's) home keys: a moved home key moves its hand.
+        // Key effort (effort, typing_time) reads the home row and home keys board-wide.
         let home_moved: Vec<crate::Hand> =
             (0..n).filter(|&i| moved[i] && (vg.key[i].home || old[i].home)).map(|i| vg.key[i].hand()).collect();
         for i in 0..n {
@@ -522,7 +522,7 @@ impl Scorer {
         ]
         .into_iter()
         .map(|(dst, order)| (&mut dst[..], srcs(order)))
-        .chain(self.cb.chunks_mut(n * n).enumerate().map(|(b, dst)| (dst, srcs_in(Order::Brackets, Some(b)))))
+        .chain(self.cb.chunks_mut(n * n).enumerate().map(|(b, dst)| (dst, srcs_in(Order::Pairs, Some(b)))))
         {
             let (s, ch) = srcs;
             let idx: Vec<usize> = (0..n).filter(|&i| ch[i]).collect();
@@ -573,8 +573,8 @@ fn sparse_used(all: &[PairEntry], cb: &[f32], n: usize) -> Vec<PairEntry> {
 
 /// Unfolded Shift cost tables for the `⇧` slots `keys` (all zero without one): the Shift key
 /// that types slot j is the best of `keys` by (on j's finger, on j's hand, effort, index).
-/// Per press before slot j: that key's effort (M01) and Y01 = 100, 200 when it is on j's finger
-/// (held while j presses). Per press between slots i and j: Y01 + 100 when i is a different key
+/// Per press before slot j: that key's effort (effort) and layer_switch = 100, 200 when it is on j's finger
+/// (held while j presses). Per press between slots i and j: layer_switch + 100 when i is a different key
 /// on that Shift key's finger (same finger into Shift).
 fn shift_tables(g: &Geometry, keys: &[usize]) -> (Vec<f32>, Vec<f32>, Vec<f32>) {
     let n = g.len();
@@ -616,7 +616,7 @@ fn ctrl_freqs(chars: &[char], profile: &Profile) -> Vec<f32> {
 }
 
 /// Unfolded Ctrl tables per slot j: the effort of the `⎈` key that presses shortcuts on j
-/// (chosen like Shift's) and Y01 = 100, 200 on j's finger. Zero without a `⎈` key.
+/// (chosen like Shift's) and layer_switch = 100, 200 on j's finger. Zero without a `⎈` key.
 fn ctrl_tables(g: &Geometry, chars: &[char]) -> (Vec<f32>, Vec<f32>) {
     let keys: Vec<usize> = (0..chars.len()).filter(|&i| chars[i] == crate::layout::CTRL).collect();
     let (effort, press, _) = shift_tables(g, &keys);

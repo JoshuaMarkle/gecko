@@ -92,7 +92,7 @@ impl Finger {
     }
 
     /// Length offset in key units added to a key's y for this finger (longer fingers reach
-    /// up more easily). Oxeylyzer 2 values; used by the B14 stretch metric.
+    /// up more easily). Oxeylyzer 2 values; used by the `stretch` metric.
     pub fn length_offset(self) -> f32 {
         match self.ord() {
             0 => -0.15,
@@ -125,7 +125,7 @@ pub struct Key {
     /// Index-finger stretch column (center columns on a standard board).
     #[serde(default)]
     pub stretch: bool,
-    /// Home-row mod (tap-hold modifier) on this key, for Y04. Unset = the default: a home key
+    /// Home-row mod (tap-hold modifier) on this key, for hrm_misfire. Unset = the default: a home key
     /// on a finger (not thumb, not stretch column). See [`Geometry::hrm`].
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hrm: Option<bool>,
@@ -190,12 +190,12 @@ pub struct Geometry {
     #[serde(default)]
     pub description: String,
     pub key: Vec<Key>,
-    /// Comfort metric id (E04, E05) → key-pair comfort table in `data/comfort/<name>.csv`.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    /// Comfort metric id (engram_formula, engram) → key-pair comfort table in `data/comfort/<name>.csv`.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty", deserialize_with = "crate::metrics::canonical_keys")]
     pub comfort: BTreeMap<String, String>,
     /// The loaded tables by metric id, `[N×N]` in 0..1 (higher = more comfortable), filled by
     /// the store from `comfort`. Serialized so the browser scorer gets them with the geometry.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty", deserialize_with = "crate::metrics::canonical_keys")]
     pub comfort_tables: BTreeMap<String, Vec<f32>>,
     /// Layered (virtual) geometries only: the physical key that holds layer `l` is
     /// `layer_keys[l - 1]`. See [`Geometry::layered`].
@@ -206,7 +206,7 @@ pub struct Geometry {
     pub layer_modes: Vec<LayerMode>,
 }
 
-/// How a layer key reaches its layer. See `context/objective.md` (Y01) for the costs.
+/// How a layer key reaches its layer. See `context/objective.md` (layer_switch) for the costs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum LayerMode {
@@ -366,7 +366,7 @@ impl Geometry {
 
     /// Load a pair comfort CSV (`a_row,a_col,b_row,b_col,score,…`, `#` comments, one header
     /// line) as the table for `metric`, matching keys by (row, col). Pairs not listed score 1.0
-    /// (no discomfort); same-key repeats are set to 1.0 because B02 reports them.
+    /// (no discomfort); same-key repeats are set to 1.0 because repeat reports them.
     pub fn load_comfort(&mut self, metric: &str, csv: &str) -> Result<()> {
         let n = self.len();
         let slot = |r: i8, c: i8| self.key.iter().position(|k| k.row == r && k.col == c);
@@ -445,7 +445,7 @@ impl Geometry {
         Ok(g)
     }
 
-    /// Slot `i` is a home-row mod key (Y04): a base-layer key with `hrm = true`, or, when
+    /// Slot `i` is a home-row mod key (hrm_misfire): a base-layer key with `hrm = true`, or, when
     /// `hrm` is unset, a home key on a finger outside the stretch columns (one per finger on
     /// the bundled boards). Layer copies never are: a layer is held, so the key has no tap-hold.
     pub fn hrm(&self, i: usize) -> bool {
@@ -469,7 +469,7 @@ impl Geometry {
     /// key reaching layer `l` and how. A hold layer drops every key on the holding finger (it
     /// is busy holding); one-shot and toggle layers drop only the layer key itself (on a toggle
     /// layer it is the key that leaves). Every metric then sees a layered symbol at its
-    /// physical key; layer-key presses are scored by Y01/Y02. Comfort tables expand by
+    /// physical key; layer-key presses are scored by layer_switch/symbol_bigram. Comfort tables expand by
     /// physical key; the layer key adds to effort and finger loads.
     pub fn layered(&self, holders: &[(usize, LayerMode)]) -> Result<Geometry> {
         if !self.layer_keys.is_empty() || self.key.iter().any(|k| k.layer != 0) {

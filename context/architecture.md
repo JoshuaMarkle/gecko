@@ -39,7 +39,7 @@ gecko/
 | Module | Responsibility |
 |---|---|
 | `geometry` | Keys (pos, rot, size, finger, effort), fingers, hands; TOML parse and print. Submodules: `parametric` (zones/columns/rows → ordinary geometry), `derive` (G4 effort/stretch from positions), `pose` (3D key poses, per-hand measuring frames), `flat2d` (clean 2D drawing), `collision` (G04 2D keycap overlap, SAT), `manufacture` (G07 build limits), `collision3d` (H8 keycap + switch hulls, grid + GJK/EPA), `case` (J4 plate and case shells), `mesh` (convex hulls, binary STL) |
-| `hand` | Hand model: skeleton, placement over home keys, finger IK, 4-DoF thumb, per-key G01/G03/G05 costs ([hand-model.md](hand-model.md)) |
+| `hand` | Hand model: skeleton, placement over home keys, finger IK, 4-DoF thumb, per-key `reach`/`wrist`/`press_angle` costs ([hand-model.md](hand-model.md)) |
 | `layout` | Slot-ordered symbols; rows ↔ flat; TOML; hash |
 | `magic` | Adaptive (magic / repeat) keys |
 | `keyset` | Symbol sets and start layouts from board + corpus (alpha, Shift pairs, symbol layer); fixed-key placement search ([keysets.md](keysets.md)) |

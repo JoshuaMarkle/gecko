@@ -31,7 +31,7 @@ pub struct NsgaParams {
 impl Default for NsgaParams {
     fn default() -> Self {
         Self {
-            objectives: vec!["B01".into(), "T03".into(), "M01".into()],
+            objectives: vec!["sfb".into(), "inroll".into(), "effort".into()],
             pop_size: 128,
             generations: 0,
             archive_size: 512,
@@ -89,9 +89,9 @@ fn objectives(p: &NsgaParams) -> Vec<Objective> {
         .map(|id| {
             let d = &METRICS[metrics::index_of(id).unwrap()];
             let cost = match id.as_str() {
-                "M02" => "squared finger-load error",
-                "M04" => "squared deviation of left share from 50%",
-                "M09" => "squared deviation of thumb share from profile.thumb_target",
+                "finger_target" => "squared finger-load error",
+                "hand_balance" => "squared deviation of left share from 50%",
+                "thumb_load" => "squared deviation of thumb share from profile.thumb_target",
                 _ if d.dir == Dir::Max => "negative raw value",
                 _ => "raw value",
             };

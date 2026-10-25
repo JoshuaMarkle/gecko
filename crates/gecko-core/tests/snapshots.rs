@@ -36,7 +36,7 @@ fn table(profile: &str) -> String {
         let b = breakdown(&sc, &sc.identity());
         writeln!(out, "{name}  score {:.4}", b.score).unwrap();
         for m in b.metrics.iter().filter(|m| m.weight != 0.0) {
-            writeln!(out, "  {} {:<28} {:>10.4} {:<4} x {:>6.3} = {:>10.4}", m.id, m.name, m.value, m.unit, m.weight, m.weighted).unwrap();
+            writeln!(out, "  {:<15} {:<28} {:>10.4} {:<4} x {:>6.3} = {:>10.4}", m.id, m.name, m.value, m.unit, m.weight, m.weighted).unwrap();
         }
     }
     out

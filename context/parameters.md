@@ -37,7 +37,7 @@ Three groups: what **describes** a keyboard, what **steers** optimization, and w
 |---|---|
 | `strength[finger]` | Relative capacity (index > middle > ring > pinky) |
 | `speed[finger]` | Relative speed for distance-weighted SFB |
-| `target_load[finger]` | Desired share for M02 |
+| `target_load[finger]` | Desired share for `finger_target` |
 | `lateral_multiplier` | Extra cost on horizontal movement |
 | `row_cost[row]` | Off-home penalty per row (often asymmetric: top easier than bottom for some fingers) |
 
@@ -75,7 +75,7 @@ thumb CMC degrees of freedom, scale from hand length and breadth.
 |---|---|
 | `profile` | Named weights file |
 | `ctrl` | Ctrl shortcut presses per keystroke on layouts with `⎈` (default 0.01, an assumption) |
-| `thumb_zone`, `base_letters` | L04 key zones: symbols that belong on thumb keys; letters on the base layer ([keysets.md](keysets.md)) |
+| `thumb_zone`, `base_letters` | `zones`: symbols that belong on thumb keys; letters on the base layer ([keysets.md](keysets.md)) |
 | `weights[metric]` | Per metric |
 | `targets[metric]`, `target_factor` | Soft targets |
 | `normalization` | % / per-1000 / z-score against reference layouts |

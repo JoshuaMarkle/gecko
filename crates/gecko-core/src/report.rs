@@ -90,7 +90,7 @@ pub fn breakdown(sc: &Scorer, st: &State) -> Breakdown {
                 v
             }
             (Order::Place, Some(t)) => (0..n).map(|x| t[x * n + pos[x] as usize] as f64).sum(),
-            (Order::Brackets, Some(t)) => {
+            (Order::Pairs, Some(t)) => {
                 let off = (crate::metrics::sparse_block(d.id) * n * n) as u32;
                 sc.bracket_pairs()
                     .iter()
@@ -113,11 +113,11 @@ pub fn breakdown(sc: &Scorer, st: &State) -> Breakdown {
                 v
             }
             (Order::Load, _) => match d.id {
-                "M02" => load_error_cost(&st.load, sc.target()).sqrt(),
-                "M04" => left_share(&st.load),
-                "M03" => balance_rss(&st.load),
-                "M07" => peak_load(&st.load, sc.target()),
-                "M09" => thumb_share(&st.load),
+                "finger_target" => load_error_cost(&st.load, sc.target()).sqrt(),
+                "hand_balance" => left_share(&st.load),
+                "finger_evenness" => balance_rss(&st.load),
+                "finger_peak" => peak_load(&st.load, sc.target()),
+                "thumb_load" => thumb_share(&st.load),
                 _ => 0.0,
             },
             _ => 0.0,
@@ -126,9 +126,9 @@ pub fn breakdown(sc: &Scorer, st: &State) -> Breakdown {
         let w = sc.profile.effective_weight(d.id) as f64;
         let weighted = match (d.dir, d.id) {
             (Dir::Info, _) => 0.0,
-            (_, "M02") => w * load_error_cost(&st.load, sc.target()),
-            (_, "M04") => w * hand_cost(&st.load),
-            (_, "M09") => w * thumb_cost(&st.load, sc.thumb_target()),
+            (_, "finger_target") => w * load_error_cost(&st.load, sc.target()),
+            (_, "hand_balance") => w * hand_cost(&st.load),
+            (_, "thumb_load") => w * thumb_cost(&st.load, sc.thumb_target()),
             (Dir::Min, _) => w * value,
             (Dir::Max, _) => -w * value,
         };
@@ -156,7 +156,7 @@ fn worst_pairs(sc: &Scorer, st: &State, f: &[f32], t: &[f32], top: usize) -> Vec
 }
 
 /// All pairs of `f` on `st`, classed by the first matching `(table, kind)` in `classes`, else
-/// `alternate` / `same_hand` from `alt` (the B08 alternation table).
+/// `alternate` / `same_hand` from `alt` (the `hand_switch` table).
 fn all_pairs(sc: &Scorer, st: &State, f: &[f32], classes: &[(&[f32], &'static str)], alt: &[f32]) -> Vec<Pair> {
     let n = sc.n;
     let mut v = Vec::new();
@@ -208,12 +208,12 @@ pub fn analyze(sc: &Scorer, st: &State, top: usize) -> Analysis {
         finger_target: *sc.target(),
         fingers,
         heat,
-        worst_sfb: worst_pairs(sc, st, sc.f2(), t("B01"), top),
-        worst_sfs: worst_pairs(sc, st, sc.fk(), t("S01"), top),
-        worst_lsb: worst_pairs(sc, st, sc.f2(), t("B04"), top),
-        worst_scissors: worst_pairs(sc, st, sc.f2(), t("B05"), top),
-        bigrams: all_pairs(sc, st, sc.f2(), &[(t("B01"), "sfb"), (t("B04"), "lsb"), (t("B05"), "scissor")], t("B08")),
-        skipgrams: all_pairs(sc, st, sc.fk(), &[(t("S01"), "sfs")], t("B08")),
+        worst_sfb: worst_pairs(sc, st, sc.f2(), t("sfb"), top),
+        worst_sfs: worst_pairs(sc, st, sc.fk(), t("sfs"), top),
+        worst_lsb: worst_pairs(sc, st, sc.f2(), t("lsb"), top),
+        worst_scissors: worst_pairs(sc, st, sc.f2(), t("scissor"), top),
+        bigrams: all_pairs(sc, st, sc.f2(), &[(t("sfb"), "sfb"), (t("lsb"), "lsb"), (t("scissor"), "scissor")], t("hand_switch")),
+        skipgrams: all_pairs(sc, st, sc.fk(), &[(t("sfs"), "sfs")], t("hand_switch")),
     }
 }
 
@@ -224,7 +224,7 @@ pub struct WordCost {
     /// % of all word occurrences.
     pub freq: f64,
     /// Per occurrence, summed over the word's n-grams: offending n-grams for % metrics (2 = two
-    /// SFBs), distance for `u` metrics, raw effort for M01.
+    /// SFBs), distance for `u` metrics, raw effort for effort.
     pub cost: f64,
     /// % of this metric's word-attributed total (Σ freq × cost over every word).
     pub share: f64,
@@ -279,7 +279,7 @@ pub fn worst_words(sc: &Scorer, st: &State, words: &WordList, top: usize) -> Vec
             Order::Skip => &[(2, 1.0)],
             Order::SkipFar => &[(3, decay), (4, decay * decay)],
             Order::Tri => &[(2, 1.0)],
-            Order::Load | Order::Brackets | Order::Place => continue,
+            Order::Load | Order::Pairs | Order::Place => continue,
         };
         // % and u tables hold 100 × the per-n-gram cost (metric values read per 100 n-grams).
         let scale = if d.unit.is_empty() { 1.0 } else { 0.01 };

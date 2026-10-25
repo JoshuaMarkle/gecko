@@ -56,8 +56,8 @@ pub fn fit_preferences(g: &Geometry, corpus: &Corpus, profile: &Profile, bundle:
     let mut features = Vec::new();
     for (i, d) in METRICS.iter().enumerate() {
         let sd = stdev(train_rows.iter().map(|r| r[i]));
-        // Comfort and timing (E*) stay independent judges; info and retired metrics never score.
-        if d.dir != Dir::Info && !d.retired && !d.id.starts_with('E') && sd > 1e-8 {
+        // Comfort and timing models stay independent judges; info and retired metrics never score.
+        if d.dir != Dir::Info && !d.retired && !crate::metrics::is_model(d.id) && sd > 1e-8 {
             scales.insert(d.id.to_string(), sd as f32);
             features.push(i);
         }
@@ -83,7 +83,7 @@ pub fn fit_preferences(g: &Geometry, corpus: &Corpus, profile: &Profile, bundle:
     let scores: Vec<f64> = normalized.iter().map(|r| dot(r, &w)).collect();
     let baseline: Vec<f64> =
         rows.iter().map(|r| r.iter().zip(METRICS).map(|(c, d)| c * profile.effective_weight(d.id) as f64).sum()).collect();
-    let engram_index = crate::metrics::index_of("E05").unwrap();
+    let engram_index = crate::metrics::index_of("engram").unwrap();
     let engram: Vec<f64> = rows.iter().map(|r| r[engram_index]).collect();
     Ok(RankingFit {
         target: "likes".into(),

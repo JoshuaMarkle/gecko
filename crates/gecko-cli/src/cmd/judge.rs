@@ -76,7 +76,7 @@ pub struct SweepArgs {
 }
 
 /// The judges `gecko judge` reports, with their direction (true = higher is better).
-const JUDGES: [(&str, bool); 6] = [("E01", false), ("E05", false), ("E04", false), ("M05", true), ("M01", false), ("B01", false)];
+const JUDGES: [(&str, bool); 6] = [("typing_time", false), ("engram", false), ("engram_formula", false), ("home_row", true), ("effort", false), ("sfb", false)];
 
 /// Every community layout that fits the geometry, as (spec, layout).
 fn community(ctx: &Ctx, l: &Loaded) -> Result<Vec<(String, Layout)>> {
@@ -227,7 +227,7 @@ pub fn judge(ctx: &Ctx, a: JudgeArgs) -> Result<()> {
         }
         println!();
     }
-    println!("E01 typing time (% of a median keystroke interval) · E05/E04 Engram discomfort % · M05 home row % (higher better) · M01 effort · B01 SFB %");
+    println!("typing_time (% of a median keystroke interval) · engram / engram_formula discomfort % · home_row % (higher better) · effort · sfb %");
     Ok(())
 }
 
@@ -269,9 +269,9 @@ pub fn sweep(ctx: &Ctx, a: SweepArgs) -> Result<()> {
         return Ok(());
     }
     let base = &r.rows[0];
-    let e01 = |row: &gecko_core::robust::SweepRow| row.judges.get("E01").copied().unwrap_or(f64::NAN);
+    let e01 = |row: &gecko_core::robust::SweepRow| row.judges.get("typing_time").copied().unwrap_or(f64::NAN);
     println!(
-        "base optimum ({}): {:.3}  E01 {:.3}\n  {}",
+        "base optimum ({}): {:.3}  typing_time {:.3}\n  {}",
         r.profile,
         base.score,
         e01(base),

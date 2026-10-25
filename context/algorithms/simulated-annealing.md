@@ -20,12 +20,12 @@ tempering (replicas at several temperatures exchange states).
 
 ## Results
 
-Implemented: `optimize/anneal.rs`. `steps = 0` (default) = auto, ≈ 4 restarts per worker in the budget; T updated every 256 steps. Best under the current default profile (spread units, B14, S02, E05): 15.704,
+Implemented: `optimize/anneal.rs`. `steps = 0` (default) = auto, ≈ 4 restarts per worker in the budget; T updated every 256 steps. Best under the current default profile (spread units, `stretch`, `sfs_far`, `engram`): 15.704,
 `jkndfzquo, rthcpxseai lmbwvyg/;.` (20 s, seeds 1 and 2 agree). Ranks 1st on english/shai/mt-10k,
-2nd on mt-450k, and edges out Graphite on measured comfort (E05 5.22 vs 5.25). The previous
-profile's optimum (8.396 then) ranked last of all layouts on E05. Adding S04 (skip stretch,
+2nd on mt-450k, and edges out Graphite on measured comfort (`engram` 5.22 vs 5.25). The previous
+profile's optimum (8.396 then) ranked last of all layouts on `engram`. Adding `skip_stretch` (skip stretch,
 0.19) leaves the optimum unchanged up to `,`/`.` (16.476, run `20261021-062404-sa-cf288ac0`,
-15 s seed 1); its S04 7.71 sits mid-pack among references (Colemak-DH 6.56 … QWERTY 13.07).
+15 s seed 1); its `skip_stretch` 7.71 sits mid-pack among references (Colemak-DH 6.56 … QWERTY 13.07).
 
 Leaderboard 2026-10-20 (`gecko bench --time 5s --seeds 3`, 20 threads, i9-13900H, default
 profile, english corpus, ansi-30; lower is better; Semimak 11.85, Graphite 12.26, QWERTY 53.31):
@@ -46,40 +46,40 @@ space; Semimak 12.34, Sturdy 12.43 with Miryoku thumbs):
 
 With the empty right-outer thumb movable, SA moves a frequent letter there (`s`, effort 1.8)
 and leaves a top-row slot empty: a letter on a thumb is worth ~1.8 points under the default
-profile. Thumb-trigram and thumb-load metrics (M09) don't exist yet, so this probably
+profile. Thumb-trigram and thumb-load metrics (`thumb_load`) don't exist yet, so this probably
 overrates thumb letters.
 
 Layers 2026-10-20 (`--from layered/corne-code --geometry corne-36 --corpus code --profile code
 --time 20s`, base letters and thumbs pinned; 102 slots, 2.3 M evals/s on 20 threads): start
-score 34.16 (Y01 11.0 %, Y02 25.0 %) → 27.972 (run `20261020-224013-sa-0d1258cd`). SA swaps
+score 34.16 (`layer_switch` 11.0 %, `symbol_bigram` 25.0 %) → 27.972 (run `20261020-224013-sa-0d1258cd`). SA swaps
 which layer holds digits and which holds symbols: most digits end up on ① (left inner thumb), the
 code symbols on ② (right outer thumb). It converges in ~4 s; the top 5 differ in where a few
 rare symbols and digits sit.
 
 Layer modes 2026-10-21 (same setup, `--pin 'qwfpbjluy;arstgmneiozxcdvkh,./{esc}{space}{enter}{bspc}'`):
 
-| start layout | start | Y01 / Y02 start | best | Y01 / Y02 best | run |
+| start layout | start | `layer_switch` / `symbol_bigram` start | best | `layer_switch` / `symbol_bigram` best | run |
 |---|---|---|---|---|---|
 | `corne-code` (hold, hold) | 34.160 | 11.0 / 25.0 | 27.971 | 9.8 / 22.9 | `20261021-063224-sa-d8fe64ac` |
 | `corne-code-numtoggle` (hold, toggle) | 34.583 | 11.8 / 25.0 | 28.809 | 11.5 / 23.2 | `20261021-063305-sa-61baea70` |
 | `corne-code-oneshot` (one-shot ×2) | 42.731 | 14.3 / 80.5 | 35.987 | 12.8 / 80.5 | `20261021-063245-sa-7e873956` |
 
 Hold wins on code: symbols come in runs (`()`, `->`, `!=`), which one-shot pays a tap for
-each, and Y02 counts every one-shot symbol pair as awkward (80 % is its floor once the base
+each, and `symbol_bigram` counts every one-shot symbol pair as awkward (80 % is its floor once the base
 is pinned). SA does use the thumb keys one-shot frees (`"`, `<`, `3`, `:` land there), but
 that cannot make up for the extra taps. A toggled number layer costs a little: numbers in code are short runs,
 so the exit tap outweighs saved holds. One-shot should pay off only for layers typed one
 symbol at a time, which this corpus/profile doesn't reward.
 
-With Y03 (paired brackets, `code` weight 0.5) on 2026-10-21, same command: 34.160 → 15.902
-(run `20261021-070903-sa-80e6b876`, Y03 0 %): `( )`, `[ ]` and `< >` end up mirrored across the
+With `brackets` (paired brackets, `code` weight 0.5) on 2026-10-21, same command: 34.160 → 15.902
+(run `20261021-070903-sa-80e6b876`, `brackets` 0 %): `( )`, `[ ]` and `< >` end up mirrored across the
 hands of layer ②, `{ }` adjacent.
 
 Digits and arrows 2026-10-21 (D7; `--geometry corne-36 --corpus code-nav --profile code`, base,
 thumbs and the symbol layer pinned, `--time 20s` / `10s`, seed 1; arrows are modelled, see
 `code-nav` in representation.md):
 
-| layout | score | B01 SFB | Y01 | run |
+| layout | score | `sfb` | `layer_switch` | run |
 |---|---|---|---|---|
 | `layered/corne-num` (numpad left, 0 on thumb, arrows on right home row) | 38.980 | 3.22 % | 11.65 % | — |
 | `layered/corne-numrow` (digits across home row, arrows right top row) | 38.409 | 3.13 % | 11.57 % | — |
@@ -104,7 +104,7 @@ K = 1000 found the best layout seen (15.977, `ujo.qwbkmx ieanhgctsr y/;,zpdfvl`)
 seeds, and exact SA found it on one. On layered corne-code, at equal time it is level with exact
 search. Details: `context/objective.md` (Adaptive fidelity).
 
-Vim h j k l constraints 2026-10-24 (`vim-programmer`, ansi-30, 60 s, seeds 1–2, L03 weight 100):
-rescored without L03, pairs costs +2 % over the free optimum, fingers +7.5 %, row +12 %, QWERTY
-spots (`--pin hjkl`) +24 %. With L03 at weight 100, SA spread across seeds is about 1 point
+Vim h j k l constraints 2026-10-24 (`vim-programmer`, ansi-30, 60 s, seeds 1–2, `vim` weight 100):
+rescored without `vim`, pairs costs +2 % over the free optimum, fingers +7.5 %, row +12 %, QWERTY
+spots (`--pin hjkl`) +24 %. With `vim` at weight 100, SA spread across seeds is about 1 point
 (5 %). Unconstrained runs agree across seeds. Table and runs: `context/vim.md`.

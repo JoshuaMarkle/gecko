@@ -248,7 +248,7 @@ pub fn build(g: &Geometry, c: &Corpus, spec: &Spec) -> Result<Keyset> {
     for (&k, &s) in fixed.iter().zip(&fixed_slots) {
         chars[s] = k;
     }
-    // Special keys on the thumb keys, letters and symbols off them (the thumb zone, L04);
+    // Special keys on the thumb keys, letters and symbols off them (the thumb zone, zones);
     // each group by frequency onto the easiest keys, spilling over when its keys run out.
     let freq = |ch: char| share(ch) + layout_shifted(&base_syms, ch).map_or(0.0, &share);
     let by_freq = |v: &mut Vec<char>| v.sort_by(|&a, &b| freq(b).total_cmp(&freq(a)).then(a.cmp(&b)));
@@ -393,8 +393,8 @@ pub fn spec_from(
 
 /// Adapt profile `p` to keyset layout `l` on `g` and say what changed:
 /// - the thumb zone (unless letters may take thumbs) and, for a layered layout, `base_letters`,
-///   with L04 at [`ZONE_WEIGHT`] if unweighted;
-/// - Y01 at the `code` profile's weight (1, scale 2) if unweighted, so Shift, Ctrl and layer-key
+///   with zones at [`ZONE_WEIGHT`] if unweighted;
+/// - layer_switch at the `code` profile's weight (1, scale 2) if unweighted, so Shift, Ctrl and layer-key
 ///   presses cost more than their effort.
 pub fn apply_profile(g: &Geometry, l: &Layout, p: &mut Profile, thumb_letters: bool) -> Vec<String> {
     let mut notes = Vec::new();
@@ -408,20 +408,20 @@ pub fn apply_profile(g: &Geometry, l: &Layout, p: &mut Profile, thumb_letters: b
         p.base_letters = true;
         notes.push("letters on the base layer".into());
     }
-    if (p.thumb_zone.is_some() || p.base_letters) && p.weight("L04") == 0.0 {
-        p.weights.insert("L04".into(), ZONE_WEIGHT);
-        notes.push(format!("L04 weight {ZONE_WEIGHT}"));
+    if (p.thumb_zone.is_some() || p.base_letters) && p.weight("zones") == 0.0 {
+        p.weights.insert("zones".into(), ZONE_WEIGHT);
+        notes.push(format!("zones weight {ZONE_WEIGHT}"));
     }
     let modifiers = l.chars.iter().any(|&c| layout::is_fixed_key(c));
-    if modifiers && p.weight("Y01") == 0.0 {
-        p.weights.insert("Y01".into(), 1.0);
-        p.scale.insert("Y01".into(), 2.0);
-        notes.push("Y01 weight 1 (scale 2, as profile code)".into());
+    if modifiers && p.weight("layer_switch") == 0.0 {
+        p.weights.insert("layer_switch".into(), 1.0);
+        p.scale.insert("layer_switch".into(), 2.0);
+        notes.push("layer_switch weight 1 (scale 2, as profile code)".into());
     }
     notes
 }
 
-/// L04 weight keysets give the thumb zone: far above any trade-off, so it acts as a constraint.
+/// zones weight keysets give the thumb zone: far above any trade-off, so it acts as a constraint.
 pub const ZONE_WEIGHT: f32 = 100.0;
 
 /// The thumb zone for `l` on `g` (profile `thumb_zone`): Space, Backspace and Enter if the

@@ -72,13 +72,13 @@ Semimak and Canary score 14–20 in every cell; full table: `summary.json`, `ref
 
 Weighted cost, winner minus best known; the same pattern in all 12 cells:
 
-- **Gains:** stretch (B14, −0.4 to −0.7), scissors (B05, −0.3 to −0.5) and half scissors (B06,
-  −0.1 to −0.6), row jumps (B10) on shai, and pinky–ring pairs (B09) in about half the cells
+- **Gains:** stretch (`stretch`, −0.4 to −0.7), scissors (`scissor`, −0.3 to −0.5) and half scissors (`half_scissor`,
+  −0.1 to −0.6), row jumps (`row_jump`) on shai, and pinky–ring pairs (`pinky_ring`) in about half the cells
   (it is a cost in the others). On corne-36/english also
-  outward rolls (T04, −0.5). Lateral and vertical stretches are where hand-tuned layouts leave
+  outward rolls (`outroll`, −0.5). Lateral and vertical stretches are where hand-tuned layouts leave
   the most.
-- **Costs:** the winner pays slightly more SFB (B01, +0.1 to +0.3; e.g. 0.94 % vs 0.87 % on ansi-30/
-  english/apos) and effort (M01, +0.1 to +0.4) for that. Against the qwerty-set references, which
+- **Costs:** the winner pays slightly more SFB (`sfb`, +0.1 to +0.3; e.g. 0.94 % vs 0.87 % on ansi-30/
+  english/apos) and effort (`effort`, +0.1 to +0.4) for that. Against the qwerty-set references, which
   are weaker, SFB is a gain as well (1.12 % → 0.89 %).
 - So the margin is not one metric being gamed: it is many small stretch and scissor terms that the
   community layouts never optimized for, paid for with a little SFB. Whether typists value that

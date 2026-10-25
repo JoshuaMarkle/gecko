@@ -31,43 +31,43 @@ type Visual = "load" | "reach" | "hand" | "sfb" | "stretch" | "rolls" | "redirec
 interface Section { id: Visual; title: string; ids: string[]; what: string; why: string; how: string }
 
 const SECTIONS: Section[] = [
-  { id: "load", title: "Finger load", ids: ["M02", "M03", "M07", "M04", "M09"],
+  { id: "load", title: "Finger load", ids: ["finger_target", "finger_evenness", "finger_peak", "hand_balance", "thumb_load"],
     what: "How keystrokes divide over fingers and hands, against the target share per finger below.",
     why: "Overloaded weak fingers (pinkies) tire first; an even, strength-matched load is the base of comfort.",
     how: "Each weight scales its metric's spread over the reference layouts; raising Finger load error pulls loads toward the targets, Left hand toward 50/50." },
-  { id: "reach", title: "Rows and reach", ids: ["M01", "M05", "M06", "B10", "B11"],
+  { id: "reach", title: "Rows and reach", ids: ["effort", "home_row", "center_cols", "row_jump", "movement"],
     what: "Where frequent keys sit: per-key effort, home-row use, the stretch columns, row jumps and total finger travel.",
     why: "The home row costs nothing to reach; every row change or centre-column stretch is motion.",
     how: "Higher Effort and Movement weights pull frequent symbols toward cheap keys; Home row is a reward and lowers the score as it rises." },
-  { id: "hand", title: "Hand model", ids: ["G01", "G05", "G03", "G06"],
+  { id: "hand", title: "Hand model", ids: ["reach", "press_angle", "wrist", "thumb_arc"],
     what: "Reach, press angle, wrist posture and thumb arc fit from the hand model: each key's cost for this hand, with the hand resting on the home keys (set the hand and arms on the Hand tab).",
     why: "Keys the fingertips reach with little joint deviation, and press head-on, are faster and kinder; straight, less-pronated wrists strain less. The costs follow the board's shape and the hand's size.",
     how: "Reach pulls frequent symbols onto keys this hand reaches easily; Press angle, Wrist posture and Thumb arc fit mostly separate boards (keywells, splits, tents and thumb keys along the thumb's sweep win). Turning on Use hand in optimization adds all four at the hand profile's weights." },
-  { id: "sfb", title: "Same-finger", ids: ["B01", "B02", "S01", "S02", "T02", "T08"],
+  { id: "sfb", title: "Same-finger", ids: ["sfb", "repeat", "sfs", "sfs_far", "alt_sfs", "sft"],
     what: "Consecutive (SFB) and one-apart (SFS) keystrokes on the same finger.",
     why: "A finger cannot start the next key until it lifts from the last; same-finger pairs are the biggest single speed cost.",
     how: "SFB carries the largest default weight: in keystroke timing an SFB costs about half a keystroke more, and how far the finger travels adds nothing measurable. SFS has no measured timing cost; its weight is a comfort assumption. Skip decay sets how much SFS two or three keys apart count." },
-  { id: "stretch", title: "Stretches and scissors", ids: ["B04", "B05", "B06", "B09", "B14", "S04", "S05", "T09"],
+  { id: "stretch", title: "Stretches and scissors", ids: ["lsb", "scissor", "half_scissor", "pinky_ring", "stretch", "skip_stretch", "contortion"],
     what: "Pairs that spread or cross adjacent fingers: lateral stretches (LSB), scissors (adjacent fingers on rows two apart), pinky–ring pairs.",
     why: "Adjacent fingers share tendons; forcing them apart vertically or sideways strains the hand.",
-    how: "Stretch (B14) measures the geometry directly and replaces LSB and Scissors by default; weight it up for a compact feel." },
-  { id: "rolls", title: "Rolls and alternation", ids: ["B07", "B08", "T01", "T03", "T04", "T05", "T12", "T13"],
+    how: "Stretch measures the geometry directly and replaces LSB and Scissors by default; weight it up for a compact feel." },
+  { id: "rolls", title: "Rolls and alternation", ids: ["bigram_inroll", "hand_switch", "alternate", "inroll", "outroll", "onehand", "thumb_roll", "thumb_alt"],
     what: "Trigrams that roll across one hand (inward or outward) or alternate between hands.",
     why: "Rolls and alternation are the fast, fluid patterns; good layouts trade between them.",
     how: "These are rewards: a larger weight lowers the score more for each % of rolls or alternates." },
-  { id: "redirects", title: "Redirects", ids: ["T06", "T07", "T10"],
+  { id: "redirects", title: "Redirects", ids: ["redirect", "bad_redirect", "irregular"],
     what: "One-hand trigrams that change direction (e.g. ring → index → middle); bad redirects avoid the index finger entirely.",
     why: "Changing direction mid-roll breaks rhythm and needs fine finger control.",
     how: "Raise Redirects to discourage direction changes; Bad redirects separately penalises the worst ones." },
-  { id: "comfort", title: "Measured comfort and timing", ids: ["E01", "E04", "E05"],
+  { id: "comfort", title: "Measured comfort and timing", ids: ["typing_time", "engram_formula", "engram"],
     what: "Key-pair discomfort from Engram's formula and its measured typing data, and typing time predicted from 136M keystrokes of fast touch typists.",
     why: "Measured comfort and timing catch pairs the geometric metrics miss, and check that the other weights point the right way.",
     how: "A light weight nudges ties toward measured-comfortable pairs. Typing time is a judge, unweighted by default: weighting it makes the score chase the model that checks it." },
-  { id: "layers", title: "Layers", ids: ["Y01", "Y02", "Y03", "Y04"],
+  { id: "layers", title: "Layers", ids: ["layer_switch", "symbol_bigram", "brackets", "hrm_misfire"],
     what: "Layer switches, symbol bigrams across layers, paired brackets and home-row-mod misfires.",
     why: "On small boards symbols live on layers; each switch is an extra key press.",
     how: "Only layered layouts score here. Raise Layer switches to keep frequent symbols on the base." },
-  { id: "shortcuts", title: "Shortcuts and familiarity", ids: ["L01", "L02", "L03"],
+  { id: "shortcuts", title: "Shortcuts and familiarity", ids: ["shortcuts", "familiar", "vim"],
     what: "Whether Z X C V (and other shortcut letters) stay reachable by the left hand, how far the layout moves from QWERTY, and whether Vim's h j k l keep a usable shape.",
     why: "Shortcuts are muscle memory; a familiar layout is quicker to learn.",
     how: "Zero by default. A small weight trades a little typing score for an easier switch." },
@@ -163,7 +163,7 @@ function Visualize({ id, geometry, chars, a, layouts, hand }: { id: Visual; geom
   }
 }
 
-/** G01 reach cost per key for the profile's hand (average when the profile has none). */
+/** `reach` cost per key for the profile's hand (average when the profile has none). */
 function HandVisual({ geometry, hand, label }: { geometry: Geometry; hand: HandSpec; label: (i: number) => string }) {
   const c = useHandCosts(geometry, hand);
   if (!c) return <div className="empty">Solving the hand…</div>;
@@ -174,7 +174,7 @@ function HandVisual({ geometry, hand, label }: { geometry: Geometry; hand: HandS
         const t = Math.min(1, c.reach[i] / Math.min(hi, 4)) * 0.85;
         return { fill: heatColor(t), text: heatText(t), main: label(i), sub: c.reach[i].toFixed(1), ring: c.miss[i] > 0 };
       }} />
-      <div className="legend static"><span>darker = higher reach cost (G01) · ringed = the fingertip falls short with the hand on the home keys</span></div>
+      <div className="legend static"><span>darker = higher reach cost · ringed = the fingertip falls short with the hand on the home keys</span></div>
     </div>
   );
 }
@@ -259,7 +259,7 @@ export function ProfileView(p: Props) {
                 {s.id === "load" && <>
                   <Toggle label="Symmetric hands" help="Use the left-hand costs for both hands. Turning this on copies the left values to the right." value={effort.symmetric}
                     onChange={v => p.setProfile({ ...pr, finger_effort: symmetricEffort(effort, v) })} />
-                  <p className="hint">Higher effort = harder. Targets use inverse typing effort, normalized over fingers on this board. Movement costs add to Effort (M01) per column or row from home.</p>
+                  <p className="hint">Higher effort = harder. Targets use inverse typing effort, normalized over fingers on this board. Movement costs add to Effort per column or row from home.</p>
                   {(effort.symmetric ? [3, 2, 1, 0, 4] : [3, 2, 1, 0, 4, 6, 7, 8, 9, 5]).map(i => {
                     const name = ["Pinky", "Ring", "Middle", "Index", "Thumb"][i < 5 ? i : 9 - i];
                     const label = effort.symmetric ? name : `${i < 5 ? "Left" : "Right"} ${name.toLowerCase()}`;
@@ -279,12 +279,12 @@ export function ProfileView(p: Props) {
                 </>}
                 {s.id === "shortcuts" && <>
                   <div className="row">
-                    <label title="Shape Vim motions (L03) must keep. Off: L03 scores 0. Row: h j k l in order on neighbouring keys of one row. Pairs: h left of l and j left of k, each on neighbours. Fingers: four different fingers of one hand.">Vim h j k l</label>
+                    <label title="Shape Vim motions must keep. Off: the vim metric scores 0. Row: h j k l in order on neighbouring keys of one row. Pairs: h left of l and j left of k, each on neighbours. Fingers: four different fingers of one hand.">Vim h j k l</label>
                     <Seg value={(pr.vim ?? "off") as "off" | "row" | "pairs" | "fingers"} options={[["off", "Off"], ["row", "Row"], ["pairs", "Pairs"], ["fingers", "Fingers"]]}
                       onChange={(v) => p.setProfile({ ...pr, vim: v === "off" ? undefined : v })} />
                     <span />
                   </div>
-                  {pr.vim && !pr.weights.L03 && <p className="hint">Give Vim motions (L03) a weight for the policy to count; 100 or more makes it a constraint.</p>}
+                  {pr.vim && !pr.weights.vim && <p className="hint">Give Vim motions a weight for the policy to count; 100 or more makes it a constraint.</p>}
                 </>}
                 {s.id === "precision" && (
                   <Num label="Trigram coverage" help="Keep the most frequent trigrams covering this share of trigram volume. 1 = exact, lower = faster search." value={pr.trigram_coverage} step={0.005} min={0.5} max={1}

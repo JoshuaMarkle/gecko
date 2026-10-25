@@ -62,7 +62,7 @@ fn keyset_scorer(mode: Mode) -> Scorer {
 
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(24))]
-    /// Shift pairs (keyed corpus), Ctrl (folded into the place table), the thumb zone (L04) and
+    /// Shift pairs (keyed corpus), Ctrl (folded into the place table), the thumb zone (zones) and
     /// a symbol layer keep deltas exact.
     #[test]
     fn delta_matches_full_with_keysets(mode in 0usize..3, seed in 0u64..10_000, swaps in proptest::collection::vec((0usize..200, 0usize..200), 1..40)) {
@@ -88,7 +88,7 @@ fn breakdown_matches_score_and_rebuild() {
         let st = ctx.random_state(&mut Rng::new(7));
         let b = breakdown(&sc, &st);
         assert!((b.score - st.score).abs() < 1e-6 * st.score.abs().max(1.0), "{mode:?}: {} vs {}", b.score, st.score);
-        // Re-costing the same board reproduces the scorer (Ctrl and L04 included).
+        // Re-costing the same board reproduces the scorer (Ctrl and zones included).
         let mut moved = corne();
         moved.key[3].pos[0] += 0.2;
         let mut re = sc.clone();
@@ -104,7 +104,7 @@ fn ctrl_costs_only_with_a_ctrl_key() {
     let sc = keyset_scorer(Mode::Alpha);
     let st = sc.identity();
     assert!(sc.chars.contains(&CTRL));
-    let m01 = sc.shift_value("M01", &st);
+    let m01 = sc.shift_value("effort", &st);
     assert!(m01 > 0.0);
     // Without ⎈, Ctrl costs nothing.
     let g = corne();
@@ -120,16 +120,16 @@ fn ctrl_costs_only_with_a_ctrl_key() {
         *ch = gecko_core::layout::EMPTY;
     }
     let bare = Scorer::new(&g, &c, &p, &no_shift).unwrap();
-    assert_eq!(bare.shift_value("M01", &bare.identity()), 0.0);
-    assert!(plain.shift_value("M01", &plain.identity()) > 0.0, "Shift still costs");
+    assert_eq!(bare.shift_value("effort", &bare.identity()), 0.0);
+    assert!(plain.shift_value("effort", &plain.identity()) > 0.0, "Shift still costs");
     // The ctrl share scales the cost.
     let mut half = p.clone();
     half.ctrl = 0.01;
     let sc2 = Scorer::new(&g, &c, &half, &sc.layout_of(&st, "x").unwrap()).unwrap();
     let shift_only = Scorer::new(&g, &c, &Profile { ctrl: 0.0, ..p.clone() }, &sc.layout_of(&st, "x").unwrap()).unwrap();
-    let base = shift_only.shift_value("M01", &shift_only.identity());
-    let full = sc.shift_value("M01", &st) - base;
-    let halved = sc2.shift_value("M01", &sc2.identity()) - base;
+    let base = shift_only.shift_value("effort", &shift_only.identity());
+    let full = sc.shift_value("effort", &st) - base;
+    let halved = sc2.shift_value("effort", &sc2.identity()) - base;
     assert!((full - 2.0 * halved).abs() < 1e-6, "{full} vs 2×{halved}");
 }
 
@@ -137,7 +137,7 @@ fn ctrl_costs_only_with_a_ctrl_key() {
 fn thumb_zone_counts_misplaced_keys() {
     let sc = keyset_scorer(Mode::Alpha);
     let st = sc.identity();
-    let l04 = |sc: &Scorer, st: &gecko_core::State| breakdown(sc, st).metrics.iter().find(|m| m.id == "L04").unwrap().value;
+    let l04 = |sc: &Scorer, st: &gecko_core::State| breakdown(sc, st).metrics.iter().find(|m| m.id == "zones").unwrap().value;
     assert_eq!(l04(&sc, &st), 0.0, "keysets start inside the zone");
     let space = sc.chars.iter().position(|&c| c == gecko_core::layout::SPACE).unwrap();
     let e = sc.chars.iter().position(|&c| c == 'e').unwrap();
@@ -211,7 +211,7 @@ fn placement_never_worsens_and_keeps_fixed_keys() {
     let c = code_corpus(3);
     let mut p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
     p.thumb_zone = Some("␣⌫⏎".into());
-    p.weights.insert("L04".into(), keyset::ZONE_WEIGHT);
+    p.weights.insert("zones".into(), keyset::ZONE_WEIGHT);
     let ks = keyset::build(&g, &c, &Spec::new(Mode::Layer)).unwrap();
     let opts = PlaceOpts { evals: 40_000, rounds: 1, threads: 2, ..Default::default() };
     let r = keyset::place_fixed(&g, &c, &p, &ks.layout, &opts).unwrap();

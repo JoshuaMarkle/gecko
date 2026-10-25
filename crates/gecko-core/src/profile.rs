@@ -14,23 +14,23 @@ pub struct Profile {
     pub description: String,
     /// Metric id → weight (≥ 0). Direction comes from the metric definition, so a larger
     /// weight always means "care more". Missing metrics have weight 0.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::metrics::canonical_keys")]
     pub weights: BTreeMap<String, f32>,
     /// Metric id → spread of that metric's cost over the reference layouts (`gecko profile
     /// normalize`). The scorer uses `weight / scale`, so with scales set a weight of 1 means
     /// "one reference spread". Missing = 1 (weight applies to natural units).
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty", deserialize_with = "crate::metrics::canonical_keys")]
     pub scale: BTreeMap<String, f32>,
     /// How `scale` was measured (corpus, geometry, layouts); informational.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub scale_basis: String,
-    /// Target finger load in % (LP LR LM LI LT RT RI RM RR RP) for M02.
+    /// Target finger load in % (LP LR LM LI LT RT RI RM RR RP) for finger_target.
     #[serde(default = "default_finger_target")]
     pub finger_target: [f32; FINGERS],
     /// Optional relative typing and movement costs; replaces legacy percentage targets.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub finger_effort: Option<FingerEffort>,
-    /// Target thumb share in % of keystrokes for M09 (both thumbs together).
+    /// Target thumb share in % of keystrokes for thumb_load (both thumbs together).
     #[serde(default = "default_thumb_target")]
     pub thumb_target: f32,
     /// Keep the most frequent trigrams covering this share of trigram volume (renormalized).
@@ -41,38 +41,38 @@ pub struct Profile {
     /// the full tables. Changes search speed, never the objective. Unset = exact search.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fidelity: Option<Fidelity>,
-    /// How same-finger distance metrics (B03, S03) and decayed skipgrams (S02) are costed.
+    /// How same-finger distance metrics (sfb_distance, sfs_distance) and decayed skipgrams (sfs_far) are costed.
     #[serde(default)]
     pub sfb: SfbParams,
-    /// Effort (M01) added per finger off the home row, pinky ring middle index, as
+    /// Effort (effort) added per finger off the home row, pinky ring middle index, as
     /// `[above home, below home]`. Encodes KLO's asymmetric key costs (top row easy for
     /// middle/ring, bottom row easy for index) on any geometry. Thumbs get none. Default 0.
     #[serde(default, skip_serializing_if = "is_zero_rows")]
     pub row_offset: [[f32; 2]; 4],
-    /// Reference layout for L02 (familiarity): `"qwerty"` is the only one built in. Unset = L02
+    /// Reference layout for familiar (familiarity): `"qwerty"` is the only one built in. Unset = familiar
     /// costs nothing.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub familiar_to: Option<String>,
-    /// Hand model (and arms) for G01/G03/G05 and B14's relaxed spread (`context/hand-model.md`).
-    /// Unset: G01/G03/G05 use the average hand and arms and B14 its fixed spread.
+    /// Hand model (and arms) for reach/wrist/press_angle and stretch's relaxed spread (`context/hand-model.md`).
+    /// Unset: reach/wrist/press_angle use the average hand and arms and stretch its fixed spread.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hand: Option<HandSpec>,
-    /// Ctrl shortcut presses per keystroke, spread over [`CTRL_SHORTCUTS`]. Charged (M01 effort,
-    /// Y01 presses, like Shift) only on layouts with a `⎈` key. Default 0.01: an assumption,
+    /// Ctrl shortcut presses per keystroke, spread over [`CTRL_SHORTCUTS`]. Charged (`effort`,
+    /// layer_switch presses, like Shift) only on layouts with a `⎈` key. Default 0.01: an assumption,
     /// not a measurement (typing-test data has almost no shortcuts).
     #[serde(default = "default_ctrl", skip_serializing_if = "is_default_ctrl")]
     pub ctrl: f32,
-    /// Symbols that belong on thumb keys for L04 (e.g. `"␣⌫⏎"`, tokens allowed); letters,
-    /// digits and punctuation then belong off them. Unset = L04 costs nothing.
+    /// Symbols that belong on thumb keys for zones (e.g. `"␣⌫⏎"`, tokens allowed); letters,
+    /// digits and punctuation then belong off them. Unset = zones costs nothing.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumb_zone: Option<String>,
-    /// L04 also counts letters (and `thumb_zone` symbols) on layer keys: they belong on the
+    /// zones also counts letters (and `thumb_zone` symbols) on layer keys: they belong on the
     /// base layer. Keysets with a symbol layer set it.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub base_letters: bool,
-    /// Vim motion keys `h j k l` for L03: `"row"` (one row, in this order, neighbouring keys),
+    /// Vim motion keys `h j k l` for vim: `"row"` (one row, in this order, neighbouring keys),
     /// `"pairs"` (`h` left of `l` and `j` left of `k`, each on neighbouring keys) or `"fingers"`
-    /// (four different fingers of one hand). Unset = L03 costs nothing. Fixed QWERTY spots are
+    /// (four different fingers of one hand). Unset = vim costs nothing. Fixed QWERTY spots are
     /// pins (`--pin hjkl`), not this.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vim: Option<String>,
@@ -177,13 +177,13 @@ pub struct SfbParams {
     pub lateral: f32,
     /// Cost multiplier per finger, pinky ring middle index thumb (higher = worse).
     pub finger_factor: [f32; 5],
-    /// Skipgram weight per extra key between: S02 counts gap-2 × decay + gap-3 × decay².
+    /// Skipgram weight per extra key between: sfs_far counts gap-2 × decay + gap-3 × decay².
     pub skip_decay: f32,
 }
 
 impl Default for SfbParams {
     fn default() -> Self {
-        // finger_factor = 1 / old finger strength (0.5, 0.65, 0.9, 1.0), so B03 is unchanged.
+        // finger_factor = 1 / old finger strength (0.5, 0.65, 0.9, 1.0), so sfb_distance is unchanged.
         SfbParams { distance: DistanceFn::Linear, lateral: 1.0, finger_factor: [2.0, 1.538, 1.111, 1.0, 1.0], skip_decay: 0.5 }
     }
 }

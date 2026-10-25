@@ -74,7 +74,7 @@ fn sweep_reports_every_weight() {
     let st = store();
     let g = st.geometry("ansi-30").unwrap();
     let c = st.corpus("english").unwrap();
-    let p = Profile::from_toml("name = \"two\"\n[weights]\nB01 = 1.0\nM01 = 0.5\n[scale]\nB01 = 0.79\nM01 = 0.038\n").unwrap();
+    let p = Profile::from_toml("name = \"two\"\n[weights]\nsfb = 1.0\neffort = 0.5\n[scale]\nsfb = 0.79\neffort = 0.038\n").unwrap();
     let start: Layout = st.layout("qwerty", &g.name).unwrap().fit(&g).unwrap();
     let spec = SweepSpec { sigma: 0.5, draws: 2, seed: 1, evals: 40_000, seeds: 1, threads: 2, family_keys: 10 };
     let mut calls = 0;
@@ -83,8 +83,8 @@ fn sweep_reports_every_weight() {
     assert_eq!(r.rows.len(), calls);
     assert_eq!(r.rows[0].variant, "base");
     assert_eq!((r.rows[0].regret, r.rows[0].keys_moved, r.rows[0].base_cost), (0.0, 0, 0.0));
-    assert_eq!(r.sensitivity.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(), ["B01", "M01"]);
-    assert_eq!(r.rows.iter().find(|x| x.variant == "M01:drop").unwrap().weights["M01"], 0.0);
-    assert!(r.rows.iter().all(|x| x.judges.contains_key("E01") && x.chars.chars().count() == 30));
+    assert_eq!(r.sensitivity.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(), ["effort", "sfb"]);
+    assert_eq!(r.rows.iter().find(|x| x.variant == "effort:drop").unwrap().weights["effort"], 0.0);
+    assert!(r.rows.iter().all(|x| x.judges.contains_key("typing_time") && x.chars.chars().count() == 30));
     assert_eq!(r.families.iter().map(|f| f.count).sum::<usize>(), r.rows.len());
 }

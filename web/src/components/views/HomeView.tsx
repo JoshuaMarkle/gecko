@@ -37,7 +37,7 @@ export function HomeView(p: Props) {
   const g = { ...GEOM_DEFAULTS, ...p.search.geom };
   const w = p.profile.weights;
   const weighted = Object.entries(w).filter(([id, v]) => v !== 0 && p.meta.metrics.some((m) => m.id === id && m.dir !== "info")).length;
-  const handOn = ["G01", "G03", "G05", "G06"].some((id) => (w[id] ?? 0) !== 0);
+  const handOn = ["reach", "wrist", "press_angle", "thumb_arc"].some((id) => (w[id] ?? 0) !== 0);
   const param = !!p.geometry.param;
   const runnable = !p.isCustomBoard && !!p.corpus;
   const boxes: Partial<Record<string, FlowBox>> = {

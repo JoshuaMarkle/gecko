@@ -46,18 +46,18 @@ comfort tables and profile defaults, then invokes the real CLI to get expected r
 ## Implemented (`crates/gecko-core/tests/scorer.rs`, `tests/corpora.rs`, `tests/metrics.rs` + unit tests)
 
 Metric unit tests (`tests/metrics.rs`): every implemented metric on a 6-key board (plus a
-2-key crossed-finger board for B14 and a 6-key layered board for Y01/Y02 and thumb loads)
+2-key crossed-finger board for `stretch` and a 6-key layered board for `layer_switch`/`symbol_bigram` and thumb loads)
 with explicit n-gram counts; each expected value is commented with its arithmetic and checked
-through both `breakdown` and the folded `Scorer::full` (E01's model and B10's home-relative row
+through both `breakdown` and the folded `Scorer::full` (`typing_time`'s model and `row_jump`'s home-relative row
 jump included).
 delta == full (proptest), folding == breakdown, brute-force optimum on a 6-key board for
 HC/SA/GA/memetic, determinism with an eval budget, pins respected, ranking sanity + QWERTY SFB,
 corpus counting (incl. skip-2/3, word imports) + binary round-trip (dense and `GKCORP4` sparse form) + `GKCORP1` compatibility,
 Unicode punctuation folding, Gutenberg markup stripping, union-charset mixes, exact ⌫ share of the edits model,
 every bundled recipe matches its built `.gkc` (`recipes_match_their_built_corpora`), the Vim grammar and log import,
-L03 per policy on QWERTY (row 0, pairs 50, fingers 16.7),
+`vim` per policy on QWERTY (row 0, pairs 50, fingers 16.7),
 imported corpora reproduce QWERTY SFB computed independently from their source tables,
-layout TOML round-trip, word lists (fold/merge/TSV round-trip), worst words sum to B01 and Semimak shows `you're` on shai. Reference snapshots (`tests/snapshots.rs`): score + weighted
+layout TOML round-trip, word lists (fold/merge/TSV round-trip), worst words sum to `sfb` and Semimak shows `you're` on shai. Reference snapshots (`tests/snapshots.rs`): score + weighted
 metrics of the 10 `data/layouts/*.toml` × default/sfb/engram/code on `english`, 4 decimals. KLE (`tests/kle.rs` + unit tests in `interop/kle.rs`): bundled boards round-trip
 export → import (physical keys exact, fingers/rows/columns re-guessed), geometry TOML
 round-trip, raw-data parsing, rotation origins, ANSI 60% traditional fingering. Explore (`tests/explore.rs` + unit tests in `explore/`): raw-vector
@@ -88,9 +88,9 @@ text exactly for mono/bigrams and beats no rewrite for trigrams/skipgrams; delta
 a magic key (proptest); `[[magic]]` TOML round-trip; Magic Sturdy's rules halve its SFBs on
 `english` and the rule search matches or beats them.
 Keysets (`keyset.rs` unit tests + `tests/keyset.rs`): each mode's symbol set on corne-36 and
-ansi-30; delta == full (proptest) and breakdown == score with Shift pairs, Ctrl, L04 zones and a
+ansi-30; delta == full (proptest) and breakdown == score with Shift pairs, Ctrl, `zones` zones and a
 symbol layer; `set_geometry` equals a fresh build; Ctrl cost scales with profile `ctrl` and
-needs a `⎈`; L04 counts Space off the thumbs, a letter on a thumb or a layer; the keyed corpus
+needs a `⎈`; `zones` counts Space off the thumbs, a letter on a thumb or a layer; the keyed corpus
 (`::` holds Shift, missing bases); the Backspace model's share and run continuation; paragraph
 joining; the placement search never worsens and keeps the fixed keys. The API contract test
 starts a `shift` keyset run and re-scores its best with `shifted`.
@@ -167,8 +167,8 @@ TOML round-trips, and all-symbol score deltas (including ErgoDox above 64 slots)
 Integration coverage: corpus extension and adaptive-key rewriting retain Shift counts; tabu
 mixed deltas include Shift and bracket placement. Trigram-cache updates and rollback swaps are
 covered by the delta/full properties and extended-neighbourhood regressions. Full evaluation
-recomputes trigram terms independently of the cache. Reference snapshots include S04, row
-effort offsets and Y03.
+recomputes trigram terms independently of the cache. Reference snapshots include `skip_stretch`, row
+effort offsets and `brackets`.
 
 Parametric geometry (`tests/parametric.rs`): ortho-30 and corrected QMK corne-36 generation
 matches every explicit key/metadata field and content hash, and all reference scores/raw
@@ -198,22 +198,22 @@ mirrored edits, unlocking/relinking hands, and positive typing-cost limits.
 
 Hand model (`tests/hand.rs`): IK recovers the natural curl and reports exact shortfalls; home
 keys cheapest per finger on six boards; mirrored boards give mirrored costs; reach ordering by
-hand size; a moved key becomes unreachable; ergonomic boards beat flat ones on G01/G05 with
-QWERTY; profile `[hand]` round-trips, changes the table hash and scales B14. Thumb: cluster keys
-near rest are cheap, a far key is out of reach, tilted keywell thumb keys press better. G03:
+hand size; a moved key becomes unreachable; ergonomic boards beat flat ones on `reach`/`press_angle` with
+QWERTY; profile `[hand]` round-trips, changes the table hash and scales `stretch`. Thumb: cluster keys
+near rest are cheap, a far key is out of reach, tilted keywell thumb keys press better. `wrist`:
 ANSI ≈ 12° ulnar with palms flat, splits ≈ 0°, a tent lowers pronation, Dactyl < Corne < ANSI,
-wider elbows deviate more, sideways misses add cost, bad `[hand.body]` rejected. G01/G03/G05 are
-in `all_weights`, so the delta == full tests cover them; the tent test covers G01/G05's frame
-invariance and that tenting lowers G03. Web: `hand.test.ts` covers `withHand` / `handSpec` /
+wider elbows deviate more, sideways misses add cost, bad `[hand.body]` rejected. `reach`/`wrist`/`press_angle` are
+in `all_weights`, so the delta == full tests cover them; the tent test covers `reach`/`press_angle`'s frame
+invariance and that tenting lowers `wrist`. Web: `hand.test.ts` covers `withHand` / `handSpec` /
 `bodyOf`, the TS thumb (rest, reach, segment lengths) and `toLocal`. The Tabu `delta_shift`
 check allows 3e-5 relative: f32 pair tables valued 0–100 can leave a few ULP after cancelling
-(seen on Y02 when the per-metric test weights shift).
+(seen on `symbol_bigram` when the per-metric test weights shift).
 
 Weight robustness (`tests/robust.rs`): unit costs times `weight / scale` reproduce the scorer's
 score (default, hand, familiar; three layouts); QWERTY and its mirror are 0 keys apart
 (mirror-invariant) and one swap 2; families join a swap and a mirror and keep a scramble apart;
 rank confidence with σ = 0 keeps every rank, QWERTY stays last at σ = 0.5; a small sweep runs
-1 + 3·weights + draws searches with base regret 0 and E01 judges on every optimum. `select`
+1 + 3·weights + draws searches with base regret 0 and `typing_time` judges on every optimum. `select`
 re-scores runs with a fresh scorer, so it allows 1e-4 relative (trigram tie-break by symbol
 order, see above).
 

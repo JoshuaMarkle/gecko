@@ -42,5 +42,5 @@ pub use layout::Layout;
 pub use profile::Profile;
 pub use scorer::{Scorer, State};
 
-/// Version of every JSON shape GECKO emits (`"schema": 1`).
-pub const SCHEMA: u32 = 1;
+/// Version of every JSON shape GECKO emits. 2 (2026-10-24): metric ids are names (`sfb`), not codes (`B01`).
+pub const SCHEMA: u32 = 2;

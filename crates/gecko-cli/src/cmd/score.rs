@@ -108,7 +108,7 @@ pub fn compare(ctx: &Ctx, a: CompareArgs) -> Result<()> {
         ctx.print(json!({"schema": SCHEMA, "geometry": l.geometry.name, "profile": l.profile.name, "corpus": l.corpus.name, "layouts": v}));
         return Ok(());
     }
-    let cols = ["B01", "S01", "B04", "B05", "M01", "T03", "T06", "M04"];
+    let cols = ["sfb", "sfs", "lsb", "scissor", "effort", "inroll", "redirect", "hand_balance"];
     print!("{:<4} {:<14} {:>8}", "#", "layout", "score");
     for c in cols {
         let d = gecko_core::metrics::def(c).unwrap();
@@ -173,7 +173,7 @@ fn robustness(ctx: &Ctx, a: CompareArgs) -> Result<()> {
             let (sc, st) = score_layout(&l, lay)?;
             let b = breakdown(&sc, &st);
             score[ci][i] = b.score;
-            sfb[ci][i] = b.metrics.iter().find(|m| m.id == "B01").map_or(0.0, |m| m.value);
+            sfb[ci][i] = b.metrics.iter().find(|m| m.id == "sfb").map_or(0.0, |m| m.value);
         }
         let mut order: Vec<usize> = (0..nl).collect();
         order.sort_by(|&a, &b| score[ci][a].total_cmp(&score[ci][b]));

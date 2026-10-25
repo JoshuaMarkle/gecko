@@ -1,131 +1,147 @@
 # Metrics catalog
 
-The master list of ways to judge a layout. IDs are stable so code, profiles, and
-docs can refer to them (e.g. `B01`). **Order** = the n-gram data the metric needs,
-which decides how it folds into the scorer (see `context/objective.md`).
-**Dir:** `−` penalize, `+` reward, `±` target value.
-**Pri:** P0 = MVP, P1 = soon after, P2 = later, P3 = research, retired = kept only so old runs
-and profiles still score (`retired` in `gecko list metrics`).
+The master list of ways to judge a layout. Each metric has a stable **ID**, a short snake_case
+name (e.g. `sfb`) that code, profiles, the CLI and JSON use. IDs use the words layout people
+already use (SFB, SFS, LSB, scissor, redirect). **Old** is the metric's code before 2026-10-24
+(`B01`, …): still accepted wherever an ID is read (profiles, geometries, runs, atlases, CLI
+flags), and kept in `gecko list metrics`. Older runs, `bench/`, `research/` and `docs/papers/`
+use the old codes; this table translates them.
+
+**Order** = the n-gram data the metric needs, which decides how it folds into the scorer (see
+`context/objective.md`). **Dir:** `−` penalize, `+` reward, `±` target value, `info` report only.
+**Retired** = kept only so old runs and profiles still score (`retired` in `gecko list metrics`).
 
 Notation: `f(x)` corpus frequency; keys `i,j,k`; fingers LP LR LM LI LT | RT RI RM RR RP.
-"Same hand, different finger" is SH. Rates are reported per 1000 keystrokes or as %.
+"Same hand, different finger" is SH.
 
-## 1. Monogram (per key)
+## Same finger
 
-| ID | Metric | Dir | Pri | Definition / notes |
+| ID | Old | Order | Dir | Definition / notes |
 |---|---|---|---|---|
-| M01 | Key effort (heatmap) | − | P0 | Σ f(c)·effort(slot). Effort table per geometry (carpalx base effort, Oxeylyzer heatmap) plus profile `row_offset` per finger (KLO asymmetry). |
-| M02 | Finger load | ± | P0 | Share per finger vs a target distribution (e.g. index > middle > ring > pinky). |
-| M03 | Finger balance (RSS) | − | P1 | √Σ(finger cost²): penalizes uneven load without a separate target (Kühlmak). Implemented: √Σ share² over non-thumb fingers (35.4 = perfectly even). |
-| M04 | Hand balance | ± | P0 | L:R share; flag beyond 60:40. |
-| M05 | Row usage | ± | P0 | Home / top / bottom / number row shares. Home row high is good. |
-| M06 | Center-column usage | − | P1 | Use of index stretch columns (QWERTY T G B Y H N). |
-| M07 | Max finger use | − | P1 | Soft cap on any single finger's share (pinky especially). Implemented: highest non-thumb share as % of its `finger_target` (100 = none over target). |
-| M08 | Off-home penalty | − | P1 | carpalx-style row/finger/hand penalty per press. |
-| M09 | Thumb load | ± | P2 | When thumbs carry letters/space/layer keys. Implemented as squared distance from profile `thumb_target` (%). |
+| `sfb` | B01 | bi | − | Same finger, different key. The single most important modern metric. |
+| `sfs` | S01 | skip | − | Same finger with one key between (space too). |
+| `sfs_far` | S02 | skip-far | − | Same finger at gaps 2 and 3, decayed per extra key (profile `sfb.skip_decay`, Oxeylyzer). |
+| `sft` | T08 | tri | − | All three keys on one finger. |
+| `alt_sfs` | T02 | tri | − | Alternating trigram (L-R-L) whose keys 1 and 3 share a finger. |
+| `repeat` | B02 | bi | info | Same key twice. Mostly unavoidable; reported, not optimized. |
+| `sfb_distance` | B03 | bi | retired | Σ f·g(dist) × finger factor (Oxeylyzer/genkey fspeed). Retired 2026-10-22: keystroke timing shows no distance effect beyond `sfb`. |
+| `sfs_distance` | S03 | skip | retired | Distance-weighted `sfs`, like `sfb_distance`. Retired with it. |
 
-## 2. Bigram (consecutive keys)
+## Stretches and scissors
 
-| ID | Metric | Dir | Pri | Definition / notes |
+| ID | Old | Order | Dir | Definition / notes |
 |---|---|---|---|---|
-| B01 | SFB | − | P0 | Same finger, different key. The single most important modern metric. |
-| B02 | Same-key repeat (SFR) | info | P0 | Same key twice. Mostly unavoidable; report, don't optimize. |
-| B03 | SFB distance (finger speed) | − | retired | Σ f·dist(i,j)^p / strength(finger). Fspeed in Oxeylyzer/genkey. Retired 2026-10-22: keystroke timing shows no distance effect beyond B01. Still scored for old runs, hidden in the UI. |
-| B04 | LSB (lateral stretch) | − | P0 | Adjacent fingers on same hand with horizontal spread ≥ threshold (usually index center column + middle). Kühlmak weights by inverse finger distance (WLSB). |
-| B05 | Full scissor | − | P1 | Adjacent fingers, 2-row jump (QWERTY `ex`, `cr`). |
-| B06 | Half scissor | − | P1 | Adjacent fingers, 1-row jump where the shorter finger reaches up (e.g. pinky top, ring bottom). Implemented (length order pinky < index < ring < middle). |
-| B07 | Bigram roll in / out | + | P1 | SH bigram, direction pinky→index (in) or index→pinky (out). In usually preferred. Implemented as inward rolls only; outward = same-hand − SFB − in. |
-| B08 | Hand alternation | + | P1 | Consecutive keys on different hands. |
-| B09 | Weak-finger pair | − | P1 | Pinky–ring adjacency and other awkward finger pairs. Implemented: pinky–ring bigrams on one hand. |
-| B10 | Row jump (same hand) | − | P1 | Vertical distance between SH keys. Implemented: 100·\|Δlift\| per bigram, thumbs excluded; lift = y minus the y of the finger's home keys (the hand's when the finger has none), so a column stagger along finger length is no jump. In the default profile. |
-| B11 | Movement pattern cost | − | P2 | KLO-style cost per same-hand finger pair: `pair · direction · (0.1 + rows² + lateral)`. Pair = KLO `finger_switch_factor`, ring pairs × Häger-Ross coupling; direction ×(1+2·Δlength) for short-up/long-down scissors; lateral = columns beyond finger spacing (LSB). Implemented; default weight 0.5 on top of B14. Generalizes B04–B10. |
-| B12 | Predicted bigram time | − | P2 | Empirical inter-key interval (IKI) model per key/finger pair, fit from timing data. |
-| B14 | Geometric stretch | − | P0 | Oxeylyzer 2 formula on key positions + finger length offsets; covers LSB, scissors, crossings on any geometry. Implemented; replaces B04/B05 in the default profile. |
-| B13 | No switch after off-home key | − | P2 | Hand stays after a key that pulls it off home position (KLO). |
+| `stretch` | B14 | bi | − | Oxeylyzer 2 formula on key positions + finger length offsets; covers LSB, scissors and crossings on any geometry. Per 100 bigrams. |
+| `skip_stretch` | S04 | skip | − | `stretch` between keys 1 and 3 of a trigram (Kühlmak's disjoint LSB / scissors). S05 (KLO secondary bigram) built the same table and is an alias of this one. |
+| `contortion` | T09 | tri | − | Both steps of a trigram have `stretch`; cost = their sum (Kühlmak). |
+| `lsb` | B04 | bi | − | Lateral stretch: index on a center-column key next to the middle finger. |
+| `scissor` | B05 | bi | − | Adjacent fingers, same hand, two-row jump (QWERTY `ex`, `cr`). |
+| `half_scissor` | B06 | bi | − | Adjacent fingers, one-row jump with the shorter finger on the upper row (length order pinky < index < ring < middle). |
 
-## 3. Skipgram (keys 1 and 3, 1–3 apart)
+## Motion
 
-| ID | Metric | Dir | Pri | Definition / notes |
+| ID | Old | Order | Dir | Definition / notes |
 |---|---|---|---|---|
-| S01 | SFS / DSFB | − | P0 | Same finger with one key between. Oxeylyzer default weight 0.11 vs SFB per frequency unit. |
-| S02 | Decayed skipgrams | − | P1 | Same finger at gaps 2 and 3 with decaying weights (Oxeylyzer fspeed). |
-| S03 | SFS distance | − | retired | Distance-weighted S01, like B03. Retired with B03. |
-| S04 | Skip stretch (skip LSB / scissor) | − | P2 | B14 stretch on keys 1 and 3 of a trigram (Kühlmak's disjoint bigrams). Implemented; default weight 0.19 spread units (B14's per-unit weight × the S01/B01 ratio 0.12). |
-| S05 | Secondary bigram comfort | − | P2 | Movement cost of 1st→3rd key in a trigram (KLO). Implemented with B14 stretch as the movement cost (any geometry); also covers most of S04. |
+| `row_jump` | B10 | bi | − | 100·\|Δlift\| per same-hand bigram, thumbs excluded; lift = y minus the y of the finger's home keys (the hand's when the finger has none), so a column stagger along finger length is no jump. |
+| `pinky_ring` | B09 | bi | − | Pinky–ring bigrams on one hand. |
+| `movement` | B11 | bi | − | KLO-style cost per same-hand finger pair: `pair · direction · (0.1 + rows² + lateral)`. Pair = KLO `finger_switch_factor`, ring pairs × Häger-Ross coupling; direction ×(1+2·Δlength) for short-up/long-down scissors; lateral = columns beyond finger spacing. |
+| `irregular` | T10 | tri | − | Both bigrams of the trigram are bad (KLO): `sfb`, `lsb`, `scissor` or `half_scissor`. |
 
-## 4. Trigram
+## Rolls and alternation
 
-Classify every trigram into exactly one class, then weight classes. This keeps trigram
-stats summing to 100% and makes reports easy to read.
+Trigram classes (`alternate` … `thumb_alt`, `alt_sfs`, `sft`) are exclusive: every trigram has
+exactly one, so they sum to 100 % with "other" (contains an SFB or a repeat).
 
-| ID | Class / metric | Dir | Pri | Definition |
+| ID | Old | Order | Dir | Definition / notes |
 |---|---|---|---|---|
-| T01 | Alternate | + | P1 | Hands L-R-L or R-L-R. |
-| T02 | Alternate SFS | − | P1 | Alternate where keys 1 and 3 share a finger. |
-| T03 | Roll in | + | P1 | Two SH keys (not SFB) + other hand, inward. |
-| T04 | Roll out | + | P1 | Same, outward. |
-| T05 | Onehand in / out | ± | P1 | Three SH keys, monotonic direction. Don't penalize by default. |
-| T06 | Redirect | − | P1 | Three SH keys changing direction (QWERTY `ads`). |
-| T07 | Bad redirect | − | P1 | Redirect with no index finger. |
-| T08 | Same-finger trigram | − | P1 | Contains an SFB on both steps. |
-| T09 | Contortion | − | P2 | Chained bad bigrams on one hand (Kühlmak). Implemented: both steps have B14 stretch; cost = their sum. |
-| T10 | Irregularity | − | P2 | Both bigrams of the trigram are bad (KLO). Implemented: bad = SFB, LSB (B04), full or half scissor. |
-| T11 | carpalx triad effort | − | P2 | Full carpalx model, as a separate profile. |
-| T12 | Thumb roll | + | P2 | Trigram with a thumb key next to a same-hand key (other finger). |
-| T13 | Thumb alternate | + | P2 | Trigram with a thumb where every thumb step changes hands. |
+| `hand_switch` | B08 | bi | + | Consecutive keys on different hands. |
+| `bigram_inroll` | B07 | bi | + | SH bigram moving toward the index finger. Outward = same-hand − `sfb` − in. |
+| `alternate` | T01 | tri | + | Hands L-R-L or R-L-R, keys 1 and 3 on different fingers. |
+| `inroll` | T03 | tri | + | Two SH keys (not SFB) rolling toward the thumb + one other-hand key. |
+| `outroll` | T04 | tri | + | Same, rolling away from the thumb. |
+| `onehand` | T05 | tri | info | Three SH keys in one direction. |
+| `redirect` | T06 | tri | − | Three SH keys changing direction (QWERTY `ads`). |
+| `bad_redirect` | T07 | tri | − | Redirect without the index finger. |
+| `thumb_roll` | T12 | tri | + | Trigram with a thumb key next to a same-hand key (other finger). |
+| `thumb_alt` | T13 | tri | + | Trigram with a thumb where every step into or out of the thumb changes hands. |
 
-## 5. Longer sequences and words
+## Keys and load
 
-| ID | Metric | Dir | Pri | Definition |
+| ID | Old | Order | Dir | Definition / notes |
 |---|---|---|---|---|
-| W01 | Same-hand run length | info | P2 | Average/distribution of consecutive same-hand presses. |
-| W02 | Word coverage | ± | P2 | Share of top-N words typeable on home row / with no SFB / one-handed. |
-| W03 | Rhythm consistency | − | P3 | Variance of predicted IKIs within words. |
+| `effort` | M01 | mono | − | Σ f(c)·effort(slot): geometry base effort (carpalx, Oxeylyzer heatmap) plus profile `row_offset` per finger (KLO asymmetry), layer key effort, and Shift/Ctrl key effort per press. |
+| `home_row` | M05 | mono | + | Share of keystrokes on the home row. |
+| `center_cols` | M06 | mono | − | Share on the index stretch columns (QWERTY T G B Y H N). |
+| `finger_target` | M02 | load | ± | RMS gap between finger loads and the profile's `finger_target` distribution. |
+| `finger_evenness` | M03 | load | − | √Σ share² over non-thumb fingers (Kühlmak); 35.4 = perfectly even. |
+| `finger_peak` | M07 | load | − | Highest non-thumb share as % of its `finger_target` (100 = none over target). |
+| `hand_balance` | M04 | load | ± | Left-hand share; scored as squared distance from 50 %. |
+| `thumb_load` | M09 | load | ± | Thumb share; scored as squared distance from profile `thumb_target`. |
 
-## 6. Empirical / learned
+## Hand model (physical geometry)
 
-| ID | Metric | Dir | Pri | Definition |
+Per keystroke, from the hand model (`context/hand-model.md`).
+
+| ID | Old | Order | Dir | Definition / notes |
 |---|---|---|---|---|
-| E01 | Predicted typing time | − | P2 | Σ predicted extra interval over bigrams, % of a median keystroke interval, from a geometric model fitted to fast touch typists (SFB, same hand, adjacent fingers, rows, scissor, pinky–ring, key effort). Implemented; a judge, weight 0 in bundled profiles (`gecko judge`; `context/objective.md`). |
-| E02 | Personal timing cost | − | P3 | Same, fit to the user's own keystroke logs. |
-| E04 | Engram formula discomfort | − | P1 | Mean (1 − comfort) over bigrams from Engram's hand-built pair formula. Implemented. |
-| E05 | Engram measured discomfort | − | P1 | Same, from a Bradley–Terry fit of Engram's raw pairwise choices (74% held-out accuracy vs 59% for the formula). Implemented; in the default profile. |
-| E03 | Learned weights | − | P3 | Profile weights fit so the weighted sum predicts measured speed/comfort. `gecko profile fit --target E05` / `likes` fits judges or likes; a likes fit is a ranking aid only (its optimum games it). |
+| `reach` | G01 | mono | − | Joint deviation from the natural curl + splay + fingertip shortfall, hand placed on the home keys. |
+| `press_angle` | G05 | mono | − | (angle / 45°)² between the fingertip's press direction and the keycap normal (fingers: distal phalanx within the finger plane; thumbs: push along CMC → tip). |
+| `wrist` | G03 | mono | − | Resting hand vs forearm (elbows from profile `hand.body`; split halves aligned with the forearm): ulnar/radial deviation, extension, pronation, squared over comfortable ranges, plus the deviation of sideways out-of-reach keys. |
+| `thumb_arc` | G06 | mono | − | (key-plane distance from the tip's CMC flexion sweep, cut to the 73 mm operational workspace / 10 mm)² per thumb key; 0 on finger keys. `--thumb-keys auto` sizes clusters to the arc. |
 
-## 7. Layout-level (no frequencies)
+## Layers and symbols
 
-| ID | Metric | Dir | Pri | Definition |
+| ID | Old | Order | Dir | Definition / notes |
 |---|---|---|---|---|
-| L01 | Shortcut placement | − | P1 | Z X C V (and A S Q W) reachable by the left hand / near QWERTY spots. Implemented (`Order::Place`; profile `familiar`): 100 off the left hand, up to 50 by distance from the QWERTY spot; A S Q W at half weight. |
-| L02 | Familiarity | ± | P2 | Distance from a reference layout: keys moved, keys kept on the same finger/hand. Implemented (profile `familiar_to = "qwerty"`): per keystroke 0 on the reference key, 50 same finger, 75 same hand, 100 otherwise. |
-| L03 | Vim motions | − | P2 | h j k l keep a usable shape (profile `vim`: `row` in order on one row, `pairs` h←l and j←k each on neighbours, `fingers` four fingers of one hand). % of the policy's pairs broken (reversed neighbours half). Implemented (`Order::Brackets` sparse pairs); [vim.md](vim.md). Brackets are Y03. |
-| L04 | Key zones | − | P1 | Symbols kept in or out of key zones (soft pins). Implemented as "Key zones" (`Order::Place`): profile `thumb_zone` (those symbols on thumb keys, letters/digits/punctuation off them) and `base_letters` (letters off layer keys); count of misplaced keys. Keysets weight it 100. Fixed positions remain `--pin`. |
-| L05 | Corpus robustness | − | P2 | Score spread across several corpora (prose, chat, code). Report only: `gecko compare --corpora`. |
-| L06 | Held-out generalization | info | P2 | Score on a corpus not used in optimization. Guards against overfitting. |
-| L07 | Grouping / symmetry | − | P3 | Related symbols kept together or mirrored (vowels, similar letters); L03 and Y03 cover Vim keys and brackets. |
+| `layer_switch` | Y01 | bi | − | Layer-key presses (hold, toggle, one-shot) expanded into the n-grams, plus Shift and Ctrl presses; double when the modifier's finger also types the key. |
+| `hrm_misfire` | Y04 | bi | − | % of bigrams whose first key is a home-row mod (geometry `hrm`, default = home keys outside the stretch columns) and whose second is another finger of the same hand. |
+| `symbol_bigram` | Y02 | sym-bi | − | Code-symbol bigrams (`()`, `->`, `!=`, …) typed with one finger on two keys or across a layer change, % of symbol bigrams. |
+| `brackets` | Y03 | pairs | − | Open/close pairs `() [] {} <>` adjacent or mirrored on one layer, by symbol frequency; reversed order = half cost. |
 
-## 8. Layers and symbols (phase: symbol layers)
+## Placement (layout-level, no n-grams)
 
-| ID | Metric | Dir | Pri | Definition |
+| ID | Old | Order | Dir | Definition / notes |
 |---|---|---|---|---|
-| Y01 | Layer switch cost | − | P2 | Modifier press cost (hold, one-shot, toggle) expanded into the n-grams. Implemented. |
-| Y02 | Symbol n-grams | − | P2 | Code corpora bigrams such as `()`, `->`, `=>`, `!=`. |
-| Y03 | Paired symbol layout | − | P2 | Open/close pairs adjacent or mirrored. Implemented: `() [] {} <>` by symbol frequency; reversed = half cost (`context/objective.md`). |
-| Y04 | Home-row-mod misfire risk | − | P3 | Fast same-hand rolls through mod keys. Implemented: % of bigrams whose first key is a home-row mod (geometry `hrm`, default = home keys outside the stretch columns) and whose second is another finger of the same hand. |
+| `shortcuts` | L01 | place | − | Z X C V (and A S Q W at half weight): 100 off the left hand, up to 50 on it by distance from the QWERTY spot. Per shortcut letter. |
+| `familiar` | L02 | place | ± | Distance from profile `familiar_to = "qwerty"`, per keystroke: 0 on the reference key, 50 same finger, 75 same hand, 100 otherwise. |
+| `vim` | L03 | pairs | − | h j k l keep the profile `vim` shape: `row` in order on one row, `pairs` h←l and j←k on neighbours, `fingers` four fingers of one hand. % of the policy's pairs broken (reversed neighbours half). [vim.md](vim.md). |
+| `zones` | L04 | place | − | Count of keys out of their zone (soft pins): profile `thumb_zone` (those symbols on thumb keys, letters/digits/punctuation off them) and `base_letters` (letters off layer keys). Keysets weight it 100. Fixed positions remain `--pin`. |
 
-## 9. Physical geometry (phases: 2D geometry, 3D)
+## Comfort and timing models
 
-| ID | Metric | Dir | Pri | Definition |
+Judges fitted to measured data. Weight fits (`gecko profile fit`, `calibrate::rank`) keep them
+out of the features (`metrics::is_model`).
+
+| ID | Old | Order | Dir | Definition / notes |
 |---|---|---|---|---|
-| G01 | Reach cost | − | P2 | Hand-model cost to place fingertip on key (joint deviation from neutral). Implemented: joint deviation from the natural curl + splay + fingertip shortfall, hand placed on the home keys (`context/hand-model.md`). |
-| G02 | 2D/3D travel | − | P2 | Euclidean fingertip travel between key tops (replaces grid distance). |
-| G03 | Wrist posture | − | P3 | Pronation, ulnar deviation, extension from tent/splay/tilt. Implemented: resting hand vs forearm (elbows from profile `hand.body`; split halves assumed aligned with the forearm), squared over comfortable ranges, plus the deviation of sideways out-of-reach keys (`context/hand-model.md`). |
-| G04 | Collision | hard | P2 | Keycaps/switches may not intersect (OBB in 2D, convex hull in 3D). |
-| G05 | Press direction alignment | − | P3 | Angle between key normal and fingertip flexion direction. Implemented: distal phalanx vs keycap normal within the finger plane, (angle / 45°)²; thumbs: the push along the CMC → tip line (`context/hand-model.md`). |
-| G06 | Thumb arc fit | − | P3 | Thumb keys along the thumb's natural arc. Implemented: (key-plane distance from the tip's CMC flexion sweep, cut to the 73 mm operational workspace / 10 mm)² per thumb key (`context/hand-model.md`); `--thumb-keys auto` sizes clusters to the arc. |
-| G07 | Manufacturability | hard/− | P3 | Min spacing, max angles, column counts, plate limits. Implemented as a feasibility check, not a scored metric: profile `[build]` (switch pitch, key angle, height, plate per piece, keys per column, columns per hand); excess penalizes and hard-fails geometry search candidates (`context/geometry.md`). |
+| `engram` | E05 | bi | − | Mean (1 − comfort) from a Bradley–Terry fit of Engram's raw pairwise choices (74 % held-out accuracy vs 59 % for the formula). Geometry `comfort.engram`. In the default profile. |
+| `engram_formula` | E04 | bi | − | Same, from Engram's hand-built pair formula. Geometry `comfort.engram_formula`. |
+| `typing_time` | E01 | bi | − | Σ predicted extra interval over bigrams, % of a median keystroke interval, from a geometric model fitted to fast touch typists (Aalto). A judge: weight 0 in bundled profiles (`gecko judge`; `context/objective.md`). |
 
-## 10. Aggregation methods
+## Not yet metrics
+
+Ideas and non-scored checks. They get an ID when implemented as a metric. The old code is
+given so older notes can be traced.
+
+| Old | Idea | Status |
+|---|---|---|
+| M08 | carpalx-style row/finger/hand penalty per press | covered by `effort` + `row_offset` |
+| B12 | Empirical inter-key interval model per key/finger pair | done as `typing_time` |
+| B13 | No switch after an off-home key (KLO) | open |
+| T11 | Full carpalx triad effort, as a separate profile | open |
+| W01 | Same-hand run length distribution | open |
+| W02 | Share of top-N words on the home row / with no SFB / one-handed | open |
+| W03 | Variance of predicted intervals within words | research |
+| E02 | Timing model fit to the user's own keystroke logs | research |
+| E03 | Profile weights fit to measured speed/comfort | a command: `gecko profile fit --target engram` / `likes` |
+| L05 | Score spread across corpora | a report: `gecko compare --corpora` |
+| L06 | Score on a held-out corpus | a report: `--holdout` |
+| L07 | Related symbols grouped or mirrored | open; `vim` and `brackets` cover Vim keys and brackets |
+| G02 | Euclidean fingertip travel between key tops | open |
+| G04 | Keycap/switch collision | a hard check (`context/geometry.md`) |
+| G07 | Manufacturability | a feasibility check, profile `[build]` (`context/geometry.md`) |
+
+## Aggregation methods
 
 | Method | Use |
 |---|---|
@@ -136,11 +152,3 @@ stats summing to 100% and makes reports easy to read.
 | Rank-sum across objectives | Pick the best trade-off from many generated layouts without weights (`gecko select`). |
 | Pareto front (NSGA-II) | Show trade-offs explicitly. |
 | Lexicographic | E.g. minimize SFB first, then everything else as tie-breaker. |
-
-## Starting profile (P0)
-
-Historical; the current default is in `context/objective.md` (Default profile).
-`M01 M02 M04 M05 B01 B03 B04 S01` with weights tuned until the scorer ranks well-known
-modern layouts (Graphite, Canary, Colemak-DH, Sturdy) clearly above QWERTY, Dvorak, and
-Colemak, and matches public SFB numbers (e.g. QWERTY ≈ 6.6%, Colemak ≈ 1.37%,
-Graphite ≈ 1.04% on the corpus used in the Graphite stats).

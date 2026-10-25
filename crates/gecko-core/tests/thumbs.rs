@@ -1,4 +1,4 @@
-//! Thumb clusters (I2, #71): G06 thumb arc fit against boards whose clusters are known to fit
+//! Thumb clusters (I2, #71): `thumb_arc` against boards whose clusters are known to fit
 //! or miss the thumb's sweep, the arc's key capacity, and resizing a parametric thumb zone for
 //! a key-count search. See `context/hand-model.md` and `context/algorithms/geometry-search.md`.
 
@@ -15,7 +15,7 @@ fn store() -> Store {
     Store::open(Path::new(ROOT)).unwrap()
 }
 
-/// G06 of the right hand's thumb keys, by key position `[x, y]`.
+/// thumb_arc of the right hand's thumb keys, by key position `[x, y]`.
 fn right_thumbs(g: &Geometry) -> Vec<([f32; 2], f32)> {
     let c = costs(g, &AVERAGE);
     g.key

@@ -180,10 +180,10 @@ fn optimize(ctx: &Ctx, a: OptimizeArgs) -> Result<()> {
     set(&mut s.rounds, a.rounds);
     set(&mut s.smooth, a.smooth);
     set(&mut s.repair_passes, a.repair_passes);
-    let hand = ["G01", "G03", "G05", "G06"].iter().any(|m| l.profile.weights.get(*m).is_some_and(|w| *w != 0.0));
+    let hand = ["reach", "wrist", "press_angle", "thumb_arc"].iter().any(|m| l.profile.weights.get(*m).is_some_and(|w| *w != 0.0));
     if !hand {
         eprintln!(
-            "warning: profile '{}' weights no hand-model metric (G01/G03/G05/G06); board shape only moves distance metrics. Try -p hand.",
+            "warning: profile '{}' weights no hand-model metric (reach/wrist/press_angle/thumb_arc); board shape only moves distance metrics. Try -p hand.",
             l.profile.name
         );
     }

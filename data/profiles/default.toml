@@ -5,7 +5,7 @@ scale_basis = "stdev over 9 layouts (canary, colemak, colemak-dh, dvorak, graphi
 # Target % per finger: LP LR LM LI LT RT RI RM RR RP
 finger_target = [8.0, 11.0, 15.0, 16.0, 0.0, 0.0, 16.0, 15.0, 11.0, 8.0]
 
-# M01 effort added off the home row per finger (pinky ring middle index), [above, below] home.
+# `effort` added off the home row per finger (pinky ring middle index), [above, below] home.
 # KLO's key costs: the top row is easy for middle/ring, the bottom row easy for index.
 row_offset = [[0.0, 0.0], [-0.1, 0.1], [-0.2, 0.2], [0.2, -0.2]]
 
@@ -17,48 +17,48 @@ row_offset = [[0.0, 0.0], [-0.1, 0.1], [-0.2, 0.2], [0.2, -0.2]]
 # community ranking of known layouts (tier rho >= 0.8). The previous default is `balanced`.
 # research/experiments/2026-10-24-cost-function-optimization.md; context/decisions/scoring.md.
 [weights]
-B01 = 2.867   # SFB %; +17 % time per SFB pair (Aalto key-pair timing)
-S01 = 0.03916 # SFS %, one key between; no timing or comfort cost found, kept near zero
-S02 = 0.064   # far SFS %, 2–3 keys between (decayed); as S01
-B14 = 0.5046  # geometric stretch (LSB, scissors, crossings); +5 % time per stretch unit
-B11 = 0.08619 # finger-pair movement (KLO table + ring coupling); no timing effect
-S04 = 0.01843 # skip stretch (B14 on keys 1–3 of a trigram)
-B05 = 0.09229 # full scissors; mostly carried by B14 and B10
-B06 = 0.02398 # half scissors; no measurable timing effect
-B08 = 1.003   # hand alternation (bigrams): −8 % time per alternating pair
-B09 = 1.176   # pinky–ring pairs: +8 % time
-B10 = 0.2852  # same-hand row jump: +4 % time per key of vertical travel
-M01 = 0.3206  # key effort: +3 % time per effort unit, and Engram comfort
-M05 = 0.03744 # home row share; no effect beyond M01
-M02 = 0.19    # finger load error (mean squared %)
-M04 = 0.4181  # hand balance
-T01 = 0.06432 # trigram alternates; no credit beyond B08
-T03 = 0.3051  # rolls in: faster third keystroke
-T04 = 0.7151  # rolls out: −1.4 % third-keystroke time
-T06 = 0.00602 # redirects; no measured cost beyond T07
-T07 = 0.5674  # bad redirects: +3.7 % third-keystroke time
-E05 = 2.08    # measured key-pair discomfort (Engram); the main comfort term
-# E01 (predicted typing time) is a judge, deliberately unweighted: `gecko judge`.
+sfb = 2.867            # SFB %; +17 % time per SFB pair (Aalto key-pair timing)
+sfs = 0.03916          # SFS %, one key between; no timing or comfort cost found, kept near zero
+sfs_far = 0.064        # far SFS %, 2–3 keys between (decayed); as sfs
+stretch = 0.5046       # geometric stretch (LSB, scissors, crossings); +5 % time per stretch unit
+movement = 0.08619     # finger-pair movement (KLO table + ring coupling); no timing effect
+skip_stretch = 0.01843 # skip stretch (stretch on keys 1–3 of a trigram)
+scissor = 0.09229      # full scissors; mostly carried by stretch and row_jump
+half_scissor = 0.02398 # half scissors; no measurable timing effect
+hand_switch = 1.003    # hand alternation (bigrams): −8 % time per alternating pair
+pinky_ring = 1.176     # pinky–ring pairs: +8 % time
+row_jump = 0.2852      # same-hand row jump: +4 % time per key of vertical travel
+effort = 0.3206        # key effort: +3 % time per effort unit, and Engram comfort
+home_row = 0.03744     # home row share; no effect beyond effort
+finger_target = 0.19   # finger load error (mean squared %)
+hand_balance = 0.4181  # hand balance
+alternate = 0.06432    # trigram alternates; no credit beyond hand_switch
+inroll = 0.3051        # rolls in: faster third keystroke
+outroll = 0.7151       # rolls out: −1.4 % third-keystroke time
+redirect = 0.00602     # redirects; no measured cost beyond bad_redirect
+bad_redirect = 0.5674  # bad redirects: +3.7 % third-keystroke time
+engram = 2.08          # measured key-pair discomfort (Engram); the main comfort term
+# typing_time (predicted typing time) is a judge, deliberately unweighted: `gecko judge`.
 
 [scale]
-B01 = 0.7908
-S01 = 1.209
-S02 = 0.4285
-B14 = 1.316
-B11 = 18.14
-S04 = 1.341
-B05 = 0.5297
-B06 = 0.6859
-B08 = 5.126
-B09 = 0.9029
-B10 = 3.366
-M01 = 0.03799
-M05 = 3.573
-M02 = 2.018
-M04 = 1.789
-T01 = 5.475
-T03 = 2.119
-T04 = 4.039
-T06 = 2.672
-T07 = 0.6505
-E05 = 1.206
+sfb = 0.7908
+sfs = 1.209
+sfs_far = 0.4285
+stretch = 1.316
+movement = 18.14
+skip_stretch = 1.341
+scissor = 0.5297
+half_scissor = 0.6859
+hand_switch = 5.126
+pinky_ring = 0.9029
+row_jump = 3.366
+effort = 0.03799
+home_row = 3.573
+finger_target = 2.018
+hand_balance = 1.789
+alternate = 5.475
+inroll = 2.119
+outroll = 4.039
+redirect = 2.672
+bad_redirect = 0.6505
+engram = 1.206

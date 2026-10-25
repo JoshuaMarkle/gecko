@@ -42,7 +42,7 @@ moved keys, CMA-ES and the bilevel driver below.
   the file's value; the start board keeps its own values and CMA-ES starts from them clamped.
   Pass `split.tilt=lo:hi` / `split.angle=lo:hi` to search outside them.
 - **Efforts** are dropped and derived from key positions per candidate (`--keep-effort` keeps
-  the file's), so M01 follows moved keys.
+  the file's), so `effort` follows moved keys.
 - **Bilevel** (default): one full SA on the start board first, so candidates warm-start from a
   good layout. Then CMA-ES (σ0 0.1 of each range, IPOP restarts from the best point) proposes
   boards; each gets a 20k-swap low-temperature SA (accept0 0.05) from the incumbent layout plus
@@ -58,8 +58,8 @@ moved keys, CMA-ES and the bilevel driver below.
   Board tab runs this; Both runs bilevel or alternate.
 - **Thumb keys** (`--thumb-keys N|auto`, I2): resize every thumb zone to N columns per side before
   the search (`geomsearch::resize_thumbs`); `auto` is `hand::thumb_slots` for the profile's hand
-  (3 for the average hand: the 1 u keys that fit along the thumb's 73 mm operational arc, G06).
-  Shrinking keeps columns with a fill the corpus types first, then the cheapest by G01 + G06;
+  (3 for the average hand: the 1 u keys that fit along the thumb's 73 mm operational arc, `thumb_arc`).
+  Shrinking keeps columns with a fill the corpus types first, then the cheapest by `reach` + `thumb_arc`;
   growing clones the cheaper end column outward as empty 1 u keys. Kept keys stay in place, so
   the thumb pose parameters (`thumb`, `thumb3d`) start from the old cluster. Pin `{none}` to keep
   letters off the empty keys: unpinned, the layout search fills them with letters (thumb letters).
@@ -154,7 +154,7 @@ optimum (f 2.98–6.96), IPOP reaches f ≤ 1e-8 in 3.8k–24k evaluations (2–
 These match published CMA-ES figures (≈ 1.8k and ≈ 6k for sphere / Rosenbrock 10-D).
 
 Board + layout search (`gecko geom optimize -g corne-36.param -p hand -c english`, QWERTY start,
-20 threads, 2026-10-21). Score = after the equal final SA polish; "hand" = G01 + G03 + G05 part.
+20 threads, 2026-10-21). Score = after the equal final SA polish; "hand" = `reach` + `wrist` + `press_angle` part.
 
 | run | free | budget | boards | start → best | hand / other | notes |
 |---|---|---|---|---|---|---|
@@ -165,26 +165,26 @@ Board + layout search (`gecko geom optimize -g corne-36.param -p hand -c english
 | `…034605-geom-2239a9cb` | 3d, seed 2 | 120 s | 14k | 11.64 → 7.29 (−37.4%) | −3.71 / −0.64 | row curve 30° (bound), tent 40°, tilt −13° |
 | `…034405-geom-3599b4d0` | 3d, row curve ≤ 20°, tent ≤ 30°, tilt −5–0° | 120 s | 14k | 11.63 → 7.27 (−37.5%) | −3.56 / −0.81 | col curve 15° (bound), tent 26° |
 
-- 2D gains are ~10%, split between hand model and layout metrics (B14, S04); seeds agree to 0.3%.
-- 3D gains come from the hand model: G05 press angle (−1.7) and G03 wrist posture (1.67 → ≈ 0)
-  dominate, G01 reach −0.5. Every 3D run tents 26–40° and tilts negative, matching the posture
+- 2D gains are ~10%, split between hand model and layout metrics (`stretch`, `skip_stretch`); seeds agree to 0.3%.
+- 3D gains come from the hand model: `press_angle` (−1.7) and `wrist` (1.67 → ≈ 0)
+  dominate, `reach` −0.5. Every 3D run tents 26–40° and tilts negative, matching the posture
   literature's direction; curvature runs to its bound, but row and column curvature trade off
   (Dactyl-like bounds reach the same score), so the optimum is a plateau, not one shape.
-- Caveat: the hand model has no finger-vs-neighbouring-keycap clearance and G03's optimum
+- Caveat: the hand model has no finger-vs-neighbouring-keycap clearance and `wrist`'s optimum
   (≈ 58° effective pronation relief) is uncalibrated, so 3D shapes are model-optimal, not
   validated. Use bounds as priors (H6 #59, H10 #69).
 
 **3D bilevel search (H10, 2026-10-22)**: same command, `--free 3d` (34 parameters, with the split
 opening), H8 GJK volumes and the H6 posture priors (tilt −4–0°, opening 10–20°), 120 s.
 
-| run | seed | boards | start → best | G01 / G03 / G05 (start → best) | shape |
+| run | seed | boards | start → best | `reach` / `wrist` / `press_angle` (start → best) | shape |
 |---|---|---|---|---|---|
 | `20261022-174027-geom-10c6ce3e` | 1 | 5.9k | 11.66 → 7.48 (−35.9%) | 1.26 → 0.59 / 1.67 → 0.02 / 1.84 → 0.40 | row curve 30° (bound), col 0°, tent 38°, tilt −4° (bound), opening 13.5° |
 | `20261022-174228-geom-2239a9cb` | 2 | 5.8k | 11.66 → 7.41 (−36.4%) | 1.17 → 0.61 / 1.67 → 0.02 / 2.10 → 0.33 | row curve 30°, col 15° (both bounds), tent 32°, tilt −4°, opening 13.8° |
 
 Comparison, each board with the same 12 s SA from QWERTY (`gecko optimize -p hand -c english`):
 
-| board | score | G01 | G03 | G05 | run |
+| board | score | `reach` | `wrist` | `press_angle` | run |
 |---|---|---|---|---|---|
 | Corne, flat (search start, derived efforts) | 11.66 | 1.2 | 1.67 | 1.8–2.1 | above |
 | Corne keys, Dactyl shape (α 15°, β 5°, row pitch 18.4 mm, tent 15°, derived efforts) | 10.16 | 1.11 | 0.75 | 1.53 | `…174520-sa-0d99155b` |
@@ -192,12 +192,12 @@ Comparison, each board with the same 12 s SA from QWERTY (`gecko optimize -p han
 | H10 best (seed 2) | 7.52 | 0.60 | 0.02 | 0.33 | `…174550-sa-e7c7a720` |
 
 - The posture priors cost little: 7.41–7.48 against 7.24–7.29 with tilt free to −15° (G6 runs
-  above, with 2.4× the boards). G03 is ≈ 0 either way, so the extra tilt was not needed for the
-  wrist; the difference is in G01/G05.
+  above, with 2.4× the boards). `wrist` is ≈ 0 either way, so the extra tilt was not needed for the
+  wrist; the difference is in `reach`/`press_angle`.
 - The search beats a Dactyl shape on the same 36 keys by 26%, mostly hand model: deeper row
-  curvature (30° vs 15°) cuts G05 press angle by ~4/5, more tent (32–38° vs 15°) clears G03.
+  curvature (30° vs 15°) cuts `press_angle` by ~4/5, more tent (32–38° vs 15°) clears `wrist`.
   Both are far past what the Dactyl builds, and row curvature still sits on its bound, so this
-  is the uncalibrated hand model talking (no finger-vs-keycap clearance, G03 optimum), not a
+  is the uncalibrated hand model talking (no finger-vs-keycap clearance, `wrist` optimum), not a
   validated design.
 - Seeds again agree on the score (0.9%) but not on the shape: row vs column curvature and the
   thumb tent (39° vs 15°) trade off on a plateau.
@@ -215,9 +215,9 @@ needs `[build]` during the search, and keycap clearance is not yet a search cons
 
 **Invalid 3D boards fixed (2026-10-22).** 3D runs gave insane tents, vertical thumb clusters and keys
 buried under neighbours, with any profile (`20261022-230957-geom-51902824`: board mode, `default`,
-`code`: B14 stretch 2.84 → 0.34 of a 3.2 gain; split tent 5°, thumbs tent 40° / tilt 34°, row and
+`code`: `stretch` 2.84 → 0.34 of a 3.2 gain; split tent 5°, thumbs tent 40° / tilt 34°, row and
 column curve at their bounds, index columns 1.5 u below the middle). Three causes:
-1. B14/S04/S05/T09 stretch measured only in-plane x, y in the hand frame, so sinking, lifting and
+1. `stretch`/`skip_stretch`/`contortion` stretch measured only in-plane x, y in the hand frame, so sinking, lifting and
    curving columns hid stretch for free (and derived effort measured 2D). Now 3D distance.
 2. 3D collision tested solids only: a key under a neighbour's cap with vertical room clears it,
    though no finger can press it. Now each key has a finger access volume (see geometry.md).
@@ -228,7 +228,7 @@ Same command after the fix (`20261022-232354-geom-f7fdd84b`, 60 s): 28.47 → 25
 collisions, split tent 0°, row curve 0°, all keys accessible. Column curve still runs to its 15°
 bound and the index stretch column reaches the 60° key-angle limit: tilted caps nest closer
 (tops 0.88 u apart), which shortens true 3D fingertip distances. Nothing in a distance-only profile
-prices pressing a steep key (that is G05), so use `-p hand` or tighter `col_curve` bounds for
+prices pressing a steep key (that is `press_angle`), so use `-p hand` or tighter `col_curve` bounds for
 3D shape. With `-p hand`, 3D bilevel 90 s (`20261022-232628-geom-0a6a57dd`): 11.63 → 7.70
 (−33.8%), split tent 28°, row curve 30° (bound), every key ≤ 50°, thumbs ≈ 26°. Earlier 3D
 results above predate the fix (3D boards now score their out-of-plane stretch), so their
@@ -248,18 +248,18 @@ thumb keys pinned, `-p data/examples/my-hand.toml` (a 205 mm hand), `--evals 400
 
 - The case check costs 0.2% of score and ~30% more time (41 s vs 31 s); the unchecked board is
   not printable as is, so the guide turns it on.
-- Pin the thumb tokens: an unpinned 3D search moves them onto letter keys (G01 favours the
+- Pin the thumb tokens: an unpinned 3D search moves them onto letter keys (`reach` favours the
   home row for frequent keys, and space is the most frequent).
 - The `20261022-174*` H10 runs above no longer load as boards (keycap overlap under the
   current 2D/3D check); their numbers stand, their `run:<id>` boards do not.
 
 **Thumb cluster (I2, #71, 2026-10-23)**: `corne-36.param`, `-p hand -c english`, `--free
 '3d,fingers.row_curve=0:20,split.tent=0:30'`, `--evals 2000 --seed 1 --threads 5–6`, thumb tokens
-pinned. "G06" is the best board's G06 per keystroke under `hand` (G06 weight 1.0).
+pinned. "`thumb_arc`" is the best board's `thumb_arc` per keystroke under `hand` (`thumb_arc` weight 1.0).
 
-| run | thumb keys / side | pins | start → best | G06 | thumbs: rotate, tent, tilt, col curve |
+| run | thumb keys / side | pins | start → best | `thumb_arc` | thumbs: rotate, tent, tilt, col curve |
 |---|---|---|---|---|---|
-| `20261023-152222-geom-1e909629` | 3, G06 weight 0 | tokens | 10.90 → 7.36 | 0.155 | 8°, −24°, −12°, 5° |
+| `20261023-152222-geom-1e909629` | 3, `thumb_arc` weight 0 | tokens | 10.90 → 7.36 | 0.155 | 8°, −24°, −12°, 5° |
 | `20261023-152222-geom-467179ae` | 3 | tokens | 10.96 → 7.43 | 0.034 | 12°, −3°, −21°, 14° |
 | `20261023-152222-geom-7ac0d517` | 2 | tokens | 10.96 → 7.49 | | 10°, −2°, −27°, 20° |
 | `20261023-152222-geom-eb9527e1` | 4 | tokens | 10.15 → 6.61 | | 16°, 4°, −14°, 6° |
@@ -267,8 +267,8 @@ pinned. "G06" is the best board's G06 per keystroke under `hand` (G06 weight 1.0
 | `20261023-152424-geom-b6b0e0d2` | 3 | tokens + `{none}` | 12.31 → 8.86 | 0.012 | 8°, −9°, −20°, 17° |
 | `20261023-152424-geom-fa2d972c` | 4 | tokens + `{none}` | 12.31 → 9.00 | | 6°, 10°, −26°, 2° |
 
-- G06 does what it is for: weighted, the best board's thumb keys sit 4.5× closer to the arc
-  (0.155 → 0.034) for +0.10 G01, +0.08 G03 and −0.11 G05 (weighted), mostly by curving the
+- `thumb_arc` does what it is for: weighted, the best board's thumb keys sit 4.5× closer to the arc
+  (0.155 → 0.034) for +0.10 `reach`, +0.08 `wrist` and −0.11 `press_angle` (weighted), mostly by curving the
   cluster (col curve 5° → 14°) instead of tenting it (−24° → −3°).
 - Without `{none}` pinned the layout search puts letters on empty thumb keys: Corne's right
   outer key gets `s`, and the 4-key board's three empty keys get `x`, `r`, `l` (score 6.61).
@@ -282,9 +282,9 @@ pinned. "G06" is the best board's G06 per keystroke under `hand` (G06 weight 1.0
 **Free-form keys (I1, #70, 2026-10-23)**: from the post-fix 3D `-p hand` best
 (`run:20261022-232628-geom-0a6a57dd`), `-p hand -c english --evals 1500 --seed 1 --threads 5`, thumb
 tokens pinned, four runs in parallel (≈ 75 s each). Score after the equal final polish; "other" =
-everything but G01/G03/G05/G06.
+everything but `reach`/`wrist`/`press_angle`/`thumb_arc`.
 
-| run | free | start → best | G01 / G05 | other | roughness | largest moves |
+| run | free | start → best | `reach` / `press_angle` | other | roughness | largest moves |
 |---|---|---|---|---|---|---|
 | `20261023-165958-geom-e3882601` | `3d` (parametric, continued) | 7.33 → 7.28 (−0.7%) | 0.76 → 0.72 / 0.43 → 0.48 | 6.04 → 5.84 | | |
 | `20261023-165958-geom-9904e465` | `keys2d` | 7.33 → 6.54 (−10.9%) | 0.76 → 0.67 / 0.43 → 0.27 | 6.04 → 5.51 | 0.95 | 0.29 u, 8° |
@@ -293,7 +293,7 @@ everything but G01/G03/G05/G06.
 
 - The parametric optimum is a local one for the parameter space only: the same budget gains
   0.7% more in it and 17.5% with free keys, under the same hand model and collision checks.
-  Of the 1.29 gain, 0.53 is hand model (G05 press angle −0.31, G01 reach −0.22) and 0.71 is
+  Of the 1.29 gain, 0.53 is hand model (`press_angle` −0.31, `reach` −0.22) and 0.71 is
   the other metrics, which the moved keys and the new layout share.
 - Smoothness trades score for regularity: without it the search gains another 10 percentage
   points but the board is 5× rougher, with neighbouring keys moved up to 14° apart, which is

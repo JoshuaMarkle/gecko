@@ -317,7 +317,7 @@ effort = 1.2
         let mut corpus = Corpus::new("tiny", "abc");
         corpus.add_text("aaaaaabbbacabcacbabcabc");
         let layout = Layout::from_str_flat("tiny", "tiny", "abc").unwrap();
-        let profile = Profile::from_toml("name = 'tiny'\n[weights]\nM01 = 1.0\nB01 = 1.0").unwrap();
+        let profile = Profile::from_toml("name = 'tiny'\n[weights]\neffort = 1.0\nsfb = 1.0").unwrap();
         Scorer::new(&geometry, &corpus, &profile, &layout).unwrap()
     }
 

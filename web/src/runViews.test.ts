@@ -11,10 +11,10 @@ const axis = (bins: number): QdAxis => ({ name: "a", lo: 0, hi: 1, bins, auto: f
 
 describe("run view helpers", () => {
   it("reads metric columns", () => {
-    const rows = [ranked({ B01: 1, M01: 2, I: 3 }), ranked({ B01: 4 })];
-    expect([...metricColumn(rows, "B01")]).toEqual([1, 4]);
-    expect(Number.isNaN(metricColumn(rows, "M01")[1])).toBe(true);
-    expect(plotMetrics(rows).map((m) => m.id)).toEqual(["B01", "M01"]);
+    const rows = [ranked({ sfb: 1, effort: 2, I: 3 }), ranked({ sfb: 4 })];
+    expect([...metricColumn(rows, "sfb")]).toEqual([1, 4]);
+    expect(Number.isNaN(metricColumn(rows, "effort")[1])).toBe(true);
+    expect(plotMetrics(rows).map((m) => m.id)).toEqual(["sfb", "effort"]);
     expect(plotMetrics([])).toEqual([]);
   });
 

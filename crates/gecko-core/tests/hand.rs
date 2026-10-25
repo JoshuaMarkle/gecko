@@ -101,10 +101,10 @@ fn ergonomic_boards_beat_flat_ones() {
         breakdown(&sc, &sc.identity()).metrics.iter().find(|m| m.id == id).unwrap().value
     };
     let (ansi, ortho, corne, dactyl) =
-        (value("ansi-30", "G01"), value("ortho-30", "G01"), value("corne-36", "G01"), value("dactyl-manuform-5x6", "G01"));
-    assert!(dactyl < corne && corne < ortho && corne < ansi, "G01 ansi {ansi} ortho {ortho} corne {corne} dactyl {dactyl}");
-    let (corne, dactyl) = (value("corne-36", "G05"), value("dactyl-manuform-5x6", "G05"));
-    assert!(dactyl < 0.6 * corne, "G05 corne {corne} dactyl {dactyl}");
+        (value("ansi-30", "reach"), value("ortho-30", "reach"), value("corne-36", "reach"), value("dactyl-manuform-5x6", "reach"));
+    assert!(dactyl < corne && corne < ortho && corne < ansi, "reach ansi {ansi} ortho {ortho} corne {corne} dactyl {dactyl}");
+    let (corne, dactyl) = (value("corne-36", "press_angle"), value("dactyl-manuform-5x6", "press_angle"));
+    assert!(dactyl < 0.6 * corne, "press_angle corne {corne} dactyl {dactyl}");
 }
 
 #[test]
@@ -113,7 +113,7 @@ fn hand_profile_round_trips_and_scales_stretch() {
     let base = p.table_hash();
     assert_eq!(hand_spread(&p), SPREAD);
     p.hand = Some(HandSpec { size: HandSize::Average, dims: None, body: None });
-    assert_eq!(hand_spread(&p), SPREAD, "the average hand keeps B14 unchanged");
+    assert_eq!(hand_spread(&p), SPREAD, "the average hand keeps stretch unchanged");
     assert_ne!(p.table_hash(), base, "a hand shapes the tables");
     p.hand = Some(HandSpec { size: HandSize::Large, dims: None, body: None });
     let back: Profile = serde_json::from_str(&serde_json::to_string(&p).unwrap()).unwrap();
@@ -154,7 +154,7 @@ fn thumbs_reach_their_cluster_and_tilted_keys_press_better() {
     assert!(well < 0.5 * flat, "thumb press: dactyl {well} vs corne {flat}");
 }
 
-/// G03 (`research/sources/split-keyboard-ergonomics.md`): a flat one-piece board deviates the wrist
+/// wrist (`research/sources/split-keyboard-ergonomics.md`): a flat one-piece board deviates the wrist
 /// ≈ 12° ulnar with the palms flat; split halves remove the deviation and a tent the pronation.
 #[test]
 fn wrist_posture_ranks_split_and_tented_boards() {
@@ -174,7 +174,7 @@ fn wrist_posture_ranks_split_and_tented_boards() {
     assert!(cc.posture[1].deviation.abs() < 1.0, "{:?}", cc.posture);
     assert!(dc.posture[1].pronation < cc.posture[1].pronation - 10.0, "tent: {:?} vs {:?}", dc.posture, cc.posture);
     let (a, co, da) = (mean(&c.wrist), mean(&cc.wrist), mean(&dc.wrist));
-    assert!(da < co && co < a, "G03 ansi {a} corne {co} dactyl {da}");
+    assert!(da < co && co < a, "wrist ansi {a} corne {co} dactyl {da}");
     // Elbows farther apart angle the forearms inward more: more ulnar deviation on a flat board.
     let wide = costs_with(&ansi, &AVERAGE, &Body { elbow_width: BODY.elbow_width + 60.0, ..BODY });
     assert!(wide.posture[1].deviation > c.posture[1].deviation + 5.0);

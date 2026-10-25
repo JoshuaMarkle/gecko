@@ -90,7 +90,7 @@ export async function corpusFromText(name: string, charset: string, text: string
 export interface Posture { deviation: number; extension: number; pronation: number }
 
 /**
- * Hand-model costs per key (gecko-core `hand::costs_with`): G01 reach, G05 press angle, G03 wrist
+ * Hand-model costs per key (gecko-core `hand::costs_with`): `reach`, `press_angle`, `wrist`
  * posture, fingertip shortfall in mm; and each hand's resting posture (L, R).
  */
 export interface HandCosts { reach: number[]; align: number[]; wrist: number[]; miss: number[]; placed: [boolean, boolean]; posture: [Posture, Posture] }

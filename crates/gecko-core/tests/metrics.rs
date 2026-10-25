@@ -174,7 +174,7 @@ fn tiny_corpus() -> Corpus {
             ("a___f", 50),
             // trigrams, one per class
             ("aeb", 10), // alternate (LM R LI)
-            ("beb", 5),  // alternate: same finger but the same key, so not T02
+            ("beb", 5),  // alternate: same finger but the same key, so not alt_sfs
             ("bec", 8),  // alternate SFS (LI R LI, different keys)
             ("dae", 12), // roll in (LR → LM, then right)
             ("aef", 9),  // roll out (left, then RI → RM)
@@ -196,19 +196,19 @@ fn check_tiny(id: &str, want: f64) {
 #[test]
 fn m01_effort() {
     // (10·3 + 20·1 + 10·2 + 20·4 + 25·1 + 15·1) / 100 = 190 / 100
-    check_tiny("M01", 1.9);
+    check_tiny("effort", 1.9);
 }
 
 #[test]
 fn m05_home_row() {
     // Home row = row 1 (b's row): b + c + e + f = 20 + 10 + 25 + 15 (c counts by row, not flag)
-    check_tiny("M05", 70.0);
+    check_tiny("home_row", 70.0);
 }
 
 #[test]
 fn m06_center_columns() {
     // Stretch keys: c = 10
-    check_tiny("M06", 10.0);
+    check_tiny("center_cols", 10.0);
 }
 
 #[test]
@@ -216,17 +216,17 @@ fn m02_finger_load_error() {
     // Loads LP 0, LR d=20, LM a=10, LI b+c=30, RI e=25, RM f=15, RR 0, RP 0; targets
     // 8 11 15 16 | 16 15 11 8. Squared gaps: 64 + 81 + 25 + 196 + 81 + 0 + 121 + 64 = 632.
     // Cost = 632 / 8 = 79 (%²); value = √79.
-    let (v, score) = eval(&tiny(), &tiny_corpus(), &profile(""), &tiny_layout(), "M02");
-    close("M02", v, 79f64.sqrt());
-    close("M02", score, 79.0);
+    let (v, score) = eval(&tiny(), &tiny_corpus(), &profile(""), &tiny_layout(), "finger_target");
+    close("finger_target", v, 79f64.sqrt());
+    close("finger_target", score, 79.0);
 }
 
 #[test]
 fn m04_left_hand() {
     // Left = 60 of 100 → 60%; cost (60 − 50)² / 10 = 10.
-    let (v, score) = eval(&tiny(), &tiny_corpus(), &profile(""), &tiny_layout(), "M04");
-    close("M04", v, 60.0);
-    close("M04", score, 10.0);
+    let (v, score) = eval(&tiny(), &tiny_corpus(), &profile(""), &tiny_layout(), "hand_balance");
+    close("hand_balance", v, 60.0);
+    close("hand_balance", score, 10.0);
 }
 
 // ---- bigrams ----
@@ -234,40 +234,40 @@ fn m04_left_hand() {
 #[test]
 fn b01_sfb() {
     // bc + cb = 10 + 5 (bb is the same key, not an SFB)
-    check_tiny("B01", 15.0);
+    check_tiny("sfb", 15.0);
 }
 
 #[test]
 fn b02_same_key() {
     // bb = 5
-    check_tiny("B02", 5.0);
+    check_tiny("repeat", 5.0);
 }
 
 #[test]
 fn b03_finger_speed() {
     // bc + cb = 15% at distance 1u, index factor 1.0: 0.15 · 100 · 1 · 1.0
-    check_tiny("B03", 15.0);
+    check_tiny("sfb_distance", 15.0);
     // Squared distance, lateral ×2, index factor 1.5: d = 2·1 = 2 → 2² · 1.5 = 6 → 0.15 · 100 · 6
     let p = profile("[sfb]\ndistance = \"squared\"\nlateral = 2.0\nfinger_factor = [2.0, 1.538, 1.111, 1.5, 1.0]");
-    check(&tiny(), &tiny_corpus(), &p, &tiny_layout(), "B03", 90.0);
+    check(&tiny(), &tiny_corpus(), &p, &tiny_layout(), "sfb_distance", 90.0);
 }
 
 #[test]
 fn b04_lsb() {
     // ac + ca = 8 + 2
-    check_tiny("B04", 10.0);
+    check_tiny("lsb", 10.0);
 }
 
 #[test]
 fn b05_scissors() {
     // ad + da = 6 + 4 (LM row 0 ↔ LR row 2); ab is only one row apart
-    check_tiny("B05", 10.0);
+    check_tiny("scissor", 10.0);
 }
 
 #[test]
 fn b08_alternation() {
     // ae + fb = 20 + 15
-    check_tiny("B08", 35.0);
+    check_tiny("hand_switch", 35.0);
 }
 
 #[test]
@@ -275,7 +275,7 @@ fn b10_row_jump() {
     // Vertical travel from the finger's home key (LI: b; LM and LR have none, so the left hand's
     // home row): a −1, d +1, b c 0. ac/ca 1, ad/da 2, ab 1, bc and ef 0:
     // 8·1 + 2·1 + 6·2 + 4·2 + 15·1 = 45 per 100 bigrams.
-    check_tiny("B10", 45.0);
+    check_tiny("row_jump", 45.0);
 }
 
 #[test]
@@ -287,7 +287,7 @@ fn e01_typing_time() {
     // + ad 6·(0.0578 + 0.0476 + 2·0.0373 + 0.1004 + 4·0.0201) + da 4·(0.2804 + 3·0.0201)
     // + ae 20·0.0201 + fb 15·0.0201 + ef 10·(0.0578 + 0.0476 + 0.0201)
     // + ab 15·(0.0578 + 0.0476 + 0.0373 + 0.0201) + bb 0 = 18.5828
-    check_tiny("E01", 18.5828);
+    check_tiny("typing_time", 18.5828);
 }
 
 #[test]
@@ -299,8 +299,8 @@ fn b14_stretch() {
     //   a–d: dx 1, dy |0.25 − 2.35| = 2.1, x-overlap 0.4: 0.4 − 1.3 + 0.7 < 0 → no overlap term;
     //        √5.41 − 1.35 = 0.97594
     //   e–f: dx 1, dy |0.70 − 1.25| = 0.55 → √1.3025 − 1.35 < 0 → 0
-    // B14 = 100 · (0.10 · 0.70 + 0.10 · 0.97594)  (ac + ca = 10%, ad + da = 10%)
-    check_tiny("B14", 10.0 * 0.70 + 10.0 * (5.41f64.sqrt() - 1.35));
+    // stretch = 100 · (0.10 · 0.70 + 0.10 · 0.97594)  (ac + ca = 10%, ad + da = 10%)
+    check_tiny("stretch", 10.0 * 0.70 + 10.0 * (5.41f64.sqrt() - 1.35));
 }
 
 #[test]
@@ -311,20 +311,20 @@ fn b14_stretch_crossed_fingers() {
     let g = board(vec![key(Finger::LM, 1, 3, 3.0, 1.0), key(Finger::LI, 1, 2, 2.0, 1.0)]);
     let c = corpus("ab", &[("a", 1), ("b", 1), ("ab", 1)]);
     let l = Layout::from_str_flat("t", "tiny", "ab").unwrap();
-    check(&g, &c, &profile(""), &l, "B14", 100.0 * (1.3025f64.sqrt() + 0.1 + 1.3 + 0.55 / 3.0 - 1.35));
+    check(&g, &c, &profile(""), &l, "stretch", 100.0 * (1.3025f64.sqrt() + 0.1 + 1.3 + 0.55 / 3.0 - 1.35));
 }
 
 #[test]
 fn e04_e05_comfort() {
     // Comfort tables by (row, col); unlisted pairs score 1.0; same-key pairs are forced to 1.0.
     let mut g = tiny();
-    g.load_comfort("E04", "a_row,a_col,b_row,b_col,score\n# b→c\n1,3,1,4,0.2\n# a→e\n0,2,1,6,0.9\n# b→b (ignored)\n1,3,1,3,0.0").unwrap();
-    g.load_comfort("E05", "a_row,a_col,b_row,b_col,score\n# e→f\n1,6,1,7,0.5").unwrap();
+    g.load_comfort("engram_formula", "a_row,a_col,b_row,b_col,score\n# b→c\n1,3,1,4,0.2\n# a→e\n0,2,1,6,0.9\n# b→b (ignored)\n1,3,1,3,0.0").unwrap();
+    g.load_comfort("engram", "a_row,a_col,b_row,b_col,score\n# e→f\n1,6,1,7,0.5").unwrap();
     let (c, p, l) = (tiny_corpus(), profile(""), tiny_layout());
-    // E04: bc 10 · (1 − 0.2) + ae 20 · (1 − 0.9) = 8 + 2
-    check(&g, &c, &p, &l, "E04", 10.0);
-    // E05: ef 10 · (1 − 0.5)
-    check(&g, &c, &p, &l, "E05", 5.0);
+    // engram_formula: bc 10 · (1 − 0.2) + ae 20 · (1 − 0.9) = 8 + 2
+    check(&g, &c, &p, &l, "engram_formula", 10.0);
+    // engram: ef 10 · (1 − 0.5)
+    check(&g, &c, &p, &l, "engram", 5.0);
 }
 
 // ---- skipgrams ----
@@ -332,19 +332,19 @@ fn e04_e05_comfort() {
 #[test]
 fn s01_sfs() {
     // b_c + c_b = 30 + 10
-    check_tiny("S01", 40.0);
+    check_tiny("sfs", 40.0);
 }
 
 #[test]
 fn s02_far_sfs() {
     // gap 2: b__c = 20%; gap 3: c___b = 50%; decay 0.5 → 0.5 · 20 + 0.5² · 50 = 10 + 12.5
-    check_tiny("S02", 22.5);
+    check_tiny("sfs_far", 22.5);
 }
 
 #[test]
 fn s03_sfs_distance() {
     // b_c + c_b = 40% at 1u, index factor 1.0
-    check_tiny("S03", 40.0);
+    check_tiny("sfs_distance", 40.0);
 }
 
 // ---- trigrams (counts sum to 100) ----
@@ -352,49 +352,49 @@ fn s03_sfs_distance() {
 #[test]
 fn t01_alternates() {
     // aeb + beb = 10 + 5
-    check_tiny("T01", 15.0);
+    check_tiny("alternate", 15.0);
 }
 
 #[test]
 fn t02_alternate_sfs() {
     // bec
-    check_tiny("T02", 8.0);
+    check_tiny("alt_sfs", 8.0);
 }
 
 #[test]
 fn t03_rolls_in() {
     // dae
-    check_tiny("T03", 12.0);
+    check_tiny("inroll", 12.0);
 }
 
 #[test]
 fn t04_rolls_out() {
     // aef
-    check_tiny("T04", 9.0);
+    check_tiny("outroll", 9.0);
 }
 
 #[test]
 fn t05_onehand_rolls() {
     // dab (reported only: the folded score is 0)
-    check_tiny("T05", 11.0);
+    check_tiny("onehand", 11.0);
 }
 
 #[test]
 fn t06_redirects() {
     // dba
-    check_tiny("T06", 7.0);
+    check_tiny("redirect", 7.0);
 }
 
 #[test]
 fn t07_bad_redirects() {
     // ada
-    check_tiny("T07", 6.0);
+    check_tiny("bad_redirect", 6.0);
 }
 
 #[test]
 fn t08_sft() {
     // bcb
-    check_tiny("T08", 4.0);
+    check_tiny("sft", 4.0);
 }
 
 // ---- layers ----
@@ -447,7 +447,7 @@ fn layered_corpus() -> Corpus {
 fn y01_layer_switches() {
     let (g, l) = layered();
     // ;( 10 · 1 + d( 5 · 2 + ,= 10 · 1 = 30 presses per 100 bigrams
-    check(&g, &layered_corpus(), &profile(""), &l, "Y01", 30.0);
+    check(&g, &layered_corpus(), &profile(""), &l, "layer_switch", 30.0);
 }
 
 #[test]
@@ -455,27 +455,27 @@ fn y02_symbol_bigrams() {
     let (g, l) = layered();
     // Bad symbol bigrams: ;( 10 (layer change) + (; 15 (layer change) + ,= 10 (layer change)
     // + ;. 10 (same finger); () is fine. (10 + 15 + 10 + 10) / 80 = 56.25%
-    check(&g, &layered_corpus(), &profile(""), &l, "Y02", 56.25);
+    check(&g, &layered_corpus(), &profile(""), &l, "symbol_bigram", 56.25);
 }
 
 #[test]
 fn m02_m04_with_thumbs() {
     let (g, l) = layered();
     let (c, p) = (layered_corpus(), profile(""));
-    // M02 uses shares of non-thumb keystrokes (60): LI ; = 20/60, LM b = 20/60, RI , = 20/60,
+    // finger_target uses shares of non-thumb keystrokes (60): LI ; = 20/60, LM b = 20/60, RI , = 20/60,
     // i.e. 100/3 % each. Squared gaps: LP 8² + LR 11² + LM (100/3 − 15)² + LI (100/3 − 16)²
     // + RI (100/3 − 16)² + RM 15² + RR 11² + RP 8² = 64 + 121 + 3025/9 + 2 · 2704/9 + 225 + 121 + 64
     // = 595 + 937 = 1532; cost 1532 / 8 = 191.5.
-    let (v, score) = eval(&g, &c, &p, &l, "M02");
-    close("M02", v, 191.5f64.sqrt());
-    close("M02", score, 191.5);
-    // M04 counts thumbs: left = ; + b + d = 80% → (80 − 50)² / 10 = 90.
-    let (v, score) = eval(&g, &c, &p, &l, "M04");
-    close("M04", v, 80.0);
-    close("M04", score, 90.0);
+    let (v, score) = eval(&g, &c, &p, &l, "finger_target");
+    close("finger_target", v, 191.5f64.sqrt());
+    close("finger_target", score, 191.5);
+    // hand_balance counts thumbs: left = ; + b + d = 80% → (80 − 50)² / 10 = 90.
+    let (v, score) = eval(&g, &c, &p, &l, "hand_balance");
+    close("hand_balance", v, 80.0);
+    close("hand_balance", score, 90.0);
 }
 
-// ---- L01, L02 (symbol-on-slot costs) ----
+// ---- shortcuts, familiar (symbol-on-slot costs) ----
 
 fn ansi30() -> Geometry {
     Geometry::from_toml(include_str!("../../../data/geometries/ansi-30.toml")).unwrap()
@@ -485,31 +485,42 @@ fn ansi30() -> Geometry {
 fn l01_shortcut_placement_by_hand() {
     // Tiny board: slots 0–3 are left-hand keys, 4–5 right. z a c x on the left cost 0 (no
     // QWERTY spots on a 6-key board); v on the right costs 100. Weights: z c x v 1, a ½ → 4.5.
-    // L01 = 1 · 100 / 4.5 = 22.222…
+    // shortcuts = 1 · 100 / 4.5 = 22.222…
     let l = Layout::from_str_flat("t", "tiny", "zacxvb").unwrap();
     let c = corpus("zacxvb", &[("z", 10), ("a", 10)]);
-    check(&tiny(), &c, &profile(""), &l, "L01", 100.0 / 4.5);
+    check(&tiny(), &c, &profile(""), &l, "shortcuts", 100.0 / 4.5);
 }
 
 #[test]
 fn l01_distance_from_qwerty_spot() {
     // QWERTY with z and x swapped: both stay on the left hand, 1u from their QWERTY spot, so
     // each costs 50 · (1 / 2) = 25. All eight shortcut letters are present (weight 6):
-    // L01 = (25 + 25) / 6 = 8.333…
+    // shortcuts = (25 + 25) / 6 = 8.333…
     let g = ansi30();
     let l = Layout::from_str_flat("t", "ansi-30", "qwertyuiopasdfghjkl;xzcvbnm,./").unwrap();
     let c = corpus("qwertyuiopasdfghjkl;zxcvbnm,./", &[("q", 10)]);
-    check(&g, &c, &profile(""), &l, "L01", 50.0 / 6.0);
+    check(&g, &c, &profile(""), &l, "shortcuts", 50.0 / 6.0);
 }
 
 #[test]
 fn l02_familiarity_by_hand() {
     // w↔e swap: ring ↔ middle finger of one hand, 75 each; f↔g swap: both left index, 50 each.
-    // Mono shares w 30, e 20, f 25, g 25: L02 = 0.3 · 75 + 0.2 · 75 + 0.25 · 50 + 0.25 · 50 = 62.5
+    // Mono shares w 30, e 20, f 25, g 25: familiar = 0.3 · 75 + 0.2 · 75 + 0.25 · 50 + 0.25 · 50 = 62.5
     let g = ansi30();
     let l = Layout::from_str_flat("t", "ansi-30", "qewrtyuiopasdgfhjkl;zxcvbnm,./").unwrap();
     let c = corpus("qwertyuiopasdfghjkl;zxcvbnm,./", &[("w", 30), ("e", 20), ("f", 25), ("g", 25)]);
-    check(&g, &c, &profile("familiar_to = \"qwerty\""), &l, "L02", 62.5);
+    check(&g, &c, &profile("familiar_to = \"qwerty\""), &l, "familiar", 62.5);
     // Without a reference nothing is measured.
-    check(&g, &c, &profile(""), &l, "L02", 0.0);
+    check(&g, &c, &profile(""), &l, "familiar", 0.0);
+}
+
+#[test]
+fn legacy_codes_load_as_ids() {
+    let p = Profile::from_toml("name = 'old'\n[weights]\nB01 = 2.0\nS05 = 0.5\n[scale]\nM01 = 0.04\n").unwrap();
+    assert_eq!(p.weights, BTreeMap::from([("sfb".to_string(), 2.0), ("skip_stretch".to_string(), 0.5)]));
+    assert_eq!(p.scale, BTreeMap::from([("effort".to_string(), 0.04)]));
+    let json: Profile = serde_json::from_str(r#"{"name": "old", "weights": {"T03": 1.0}, "finger_target": [8, 11, 15, 16, 0, 0, 16, 15, 11, 8], "trigram_coverage": 1.0}"#).unwrap();
+    assert_eq!(json.weight("inroll"), 1.0);
+    assert!(Profile::from_toml("name = 'both'\n[weights]\nB01 = 1.0\nsfb = 1.0\n").is_err());
+    assert_eq!(def("E05").map(|d| (d.id, d.legacy)), Some(("engram", "E05")));
 }

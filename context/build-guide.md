@@ -12,8 +12,8 @@ cargo build --release                                       # ./target/release/g
 ## 1. Measure your hand → a profile
 
 The hand model ([hand-model.md](hand-model.md)) reads a profile's `[hand]` section. Start from
-the example, which is the bundled `hand` profile (layout metrics + G01 reach, G03 wrist
-posture, G05 press angle) with one measured hand and a case check:
+the example, which is the bundled `hand` profile (layout metrics + `reach`, `wrist`,
+`press_angle`) with one measured hand and a case check:
 
 ```
 cp data/examples/my-hand.toml my-hand.toml                  # then edit [hand.dims]
@@ -61,15 +61,15 @@ inner columns or thumbs hit the case.
   search moves them onto letter keys.
 - Optional `--thumb-keys auto` sizes each thumb cluster to the keys that fit along your thumb's
   natural arc (3 for an average hand, 4 for a large one), or `--thumb-keys N`. Add `{none}` to
-  `--pin` to keep letters off the empty keys it adds. Add `G06 = 1.0` under `[weights]` in your
+  `--pin` to keep letters off the empty keys it adds. Add `thumb_arc = 1.0` under `[weights]` in your
   profile to pull the thumb keys onto the arc ([hand-model.md](hand-model.md)).
 - `--evals 4000 --seed 1 --threads 8`: a fixed budget, so the run is reproducible (≈ 40 s on
   20 cores). `--time 5m` searches longer but cannot be re-run exactly.
 
 It writes `runs/<id>/` (the id is printed) with `geometry.toml`, `geometry.param.toml` and
 `best.json`. Reference run `20261023-121212-geom-e91bdfbb`: score 10.47 → 6.62 (−37%) against
-the flat Corne with the same layout effort; G03 wrist 1.68 → 0.12, G05 press angle 0.26 → 0.08,
-G01 reach 0.24 → 0.18, SFB 0.52% → 0.32%. Shape: rows curved 20° (bound), columns 6.8°, tent
+the flat Corne with the same layout effort; `wrist` 1.68 → 0.12, `press_angle` 0.26 → 0.08,
+`reach` 0.24 → 0.18, SFB 0.52% → 0.32%. Shape: rows curved 20° (bound), columns 6.8°, tent
 27°, opening 10°, thumbs tilted −21°. Layout:
 
 ```
@@ -115,6 +115,6 @@ ZMK) is not generated.
 ## Caveats
 
 The 3D shape is what the model prefers, not a validated design: the hand model has no
-finger-vs-keycap clearance and G03's optimum is uncalibrated ([hand-model.md](hand-model.md)).
+finger-vs-keycap clearance and `wrist`'s optimum is uncalibrated ([hand-model.md](hand-model.md)).
 Seeds agree on the score (≈ 1%) but not on the shape: curvature, tent and thumb pose trade
 off. Print a test half before a full build.

@@ -4,7 +4,7 @@
 //! `research/studies/search-space-visualization.md` §3–4.
 
 use super::distance::hamming;
-use crate::metrics::{Dir, METRICS};
+use crate::metrics::Dir;
 use crate::Profile;
 
 /// How one raw metric value turns into a score contribution.
@@ -13,9 +13,9 @@ enum Term {
     Off,
     /// `w · v` (negative w for metrics where higher is better).
     Linear(f64),
-    /// M02: `w · v²` (v is the RMS load error).
+    /// finger_target: `w · v²` (v is the RMS load error).
     Squared(f64),
-    /// M04, M09: `w · (v − target)² / 10` (v is the left-hand / thumb share, target 50 / `thumb_target`).
+    /// hand_balance, thumb_load: `w · (v − target)² / 10` (v is the left-hand / thumb share, target 50 / `thumb_target`).
     Target(f64, f64),
 }
 
@@ -32,16 +32,17 @@ impl Weights {
         let terms = metric_ids
             .iter()
             .map(|id| {
-                let Some(d) = METRICS.iter().find(|d| d.id == id) else { return Term::Off };
-                let w = profile.effective_weight(id) as f64;
+                // Atlases written before the rename list legacy codes.
+                let Some(d) = crate::metrics::def(id) else { return Term::Off };
+                let w = profile.effective_weight(d.id) as f64;
                 if w == 0.0 {
                     return Term::Off;
                 }
                 match (d.dir, d.id) {
                     (Dir::Info, _) => Term::Off,
-                    (_, "M02") => Term::Squared(w),
-                    (_, "M04") => Term::Target(w, 50.0),
-                    (_, "M09") => Term::Target(w, profile.thumb_target as f64),
+                    (_, "finger_target") => Term::Squared(w),
+                    (_, "hand_balance") => Term::Target(w, 50.0),
+                    (_, "thumb_load") => Term::Target(w, profile.thumb_target as f64),
                     (Dir::Min, _) => Term::Linear(w),
                     (Dir::Max, _) => Term::Linear(-w),
                 }

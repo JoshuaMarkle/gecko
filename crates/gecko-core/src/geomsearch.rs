@@ -77,7 +77,7 @@ pub struct GeomParams {
     /// Alternate: rounds of (board step, layout step).
     pub rounds: usize,
     /// Keep the parameter file's hand-entered key efforts; by default they are dropped and
-    /// derived from key positions on every candidate (`derive.rs`), so M01 follows moved keys.
+    /// derived from key positions on every candidate (`derive.rs`), so effort follows moved keys.
     pub keep_effort: bool,
     /// Free-form: objective added per unit of roughness (squared move differences of
     /// neighbouring keys, u and radians), in units of (|start score| + 1).
@@ -977,7 +977,7 @@ pub const MAX_THUMB_KEYS: usize = 8;
 
 /// The parametric board with `n` columns in each thumb zone (I2, #71), for searching thumb key
 /// count by running one geometry search per count. Shrinking keeps columns whose fill the corpus
-/// types (space, enter, …) first, then the cheapest by G01 + G06 on `board` (the board `params`
+/// types (space, enter, …) first, then the cheapest by reach + thumb_arc on `board` (the board `params`
 /// generates) for `hand`; kept columns keep their positions, so dropped fills leave the board.
 /// Growing clones the cheaper end column outward as 1 u keys with an empty fill, so a layout
 /// that fits the start board fits the new one; the search then moves them. Kept columns stay
@@ -1003,7 +1003,7 @@ pub fn resize_thumbs(
     for z in out.zone.iter_mut().filter(|z| !is_finger_zone(z)) {
         found = true;
         let m = z.column.len();
-        // Mean G01 + G06 of a column's keys (both halves of a mirrored zone).
+        // Mean reach + thumb_arc of a column's keys (both halves of a mirrored zone).
         let cost = |ci: usize| {
             let labels: Vec<i8> = std::iter::once(ci).chain(z.mirror.then_some(2 * m - 1 - ci)).map(|c| z.col_start + c as i8).collect();
             let ks: Vec<usize> = (0..board.len())

@@ -63,8 +63,8 @@ export function ExploreView(p: Props) {
   const [topN, setTopN] = usePref("explore.topN", 200);
   const [cut, setCut] = usePref("explore.cut", 8);
   const [enc, setEnc] = usePref<Encoding>("explore.encoding", "slots");
-  const [tx, setTx] = usePref("explore.tradeX", "B01");
-  const [ty, setTy] = usePref("explore.tradeY", "T03");
+  const [tx, setTx] = usePref("explore.tradeX", "sfb");
+  const [ty, setTy] = usePref("explore.tradeY", "inroll");
   const [brush, setBrush] = useState<number[] | null>(null);
   const [picked, setPicked] = useState<number | null>(null);
   const [swaps, setSwaps] = useState<Swap[] | null>(null);
@@ -271,10 +271,10 @@ export function ExploreView(p: Props) {
     const m = data.metrics.length;
     const prof = JSON.parse(profJson) as Profile;
     const w = (id: string) => (prof.weights[id] ?? 0) / (prof.scale?.[id] ?? 1);
-    const centre = (id: string) => (id === "M04" ? 50 : id === "M09" ? prof.thumb_target ?? 18 : null);
+    const centre = (id: string) => (id === "hand_balance" ? 50 : id === "thumb_load" ? prof.thumb_target ?? 18 : null);
     const contrib = (id: string, dir: string, v: number) => {
       const c = centre(id);
-      return id === "M02" ? w(id) * v * v : c !== null ? (w(id) * (v - c) * (v - c)) / 10 : dir === "max" ? -w(id) * v : w(id) * v;
+      return id === "finger_target" ? w(id) * v * v : c !== null ? (w(id) * (v - c) * (v - c)) / 10 : dir === "max" ? -w(id) * v : w(id) * v;
     };
     return {
       row: pick, rank: ranked.rank[pick], total: data.n, chars: rowChars(data.syms, data.slots, pick, data.alphabet),

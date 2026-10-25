@@ -21,7 +21,7 @@ fn qwerty_sfb(corpus: &str) -> f64 {
     let g = Geometry::from_toml(&read("data/geometries/ansi-30.toml")).unwrap();
     let p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
     let sc = Scorer::new(&g, &c, &p, &Layout::from_toml(&read("data/layouts/qwerty.toml")).unwrap()).unwrap();
-    breakdown(&sc, &sc.identity()).metrics.iter().find(|m| m.id == "B01").unwrap().value
+    breakdown(&sc, &sc.identity()).metrics.iter().find(|m| m.id == "sfb").unwrap().value
 }
 
 /// QWERTY SFB computed independently from cmini's raw bigram tables (folded to the charset):

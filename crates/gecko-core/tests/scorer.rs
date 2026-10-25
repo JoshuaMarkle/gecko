@@ -16,7 +16,7 @@ fn read(p: &str) -> String {
     std::fs::read_to_string(format!("{ROOT}/{p}")).unwrap()
 }
 
-/// ansi-30 with its comfort tables, as the store loads them (so E04/E05 are exercised).
+/// ansi-30 with its comfort tables, as the store loads them (so engram_formula/engram are exercised).
 fn ansi() -> Geometry {
     with_comfort("ansi-30")
 }
@@ -156,7 +156,7 @@ proptest! {
                     let want = sc.delta_linear(&st, u, v);
                     let got = before[u * 30 + v] + sc.delta_shift(&st, r, s, u, v);
                     // f32 pair tables valued 0–100: a cancelling sum can leave a few ULP (~6e-6 seen
-                    // on Y02); typical error is ~1e-9 and a wrong term is far above this bound.
+                    // on symbol_bigram); typical error is ~1e-9 and a wrong term is far above this bound.
                     prop_assert!((want - got).abs() < 3e-5 * want.abs().max(1.0), "({u},{v}) after ({r},{s}): {got} vs {want}");
                 }
             }
@@ -183,7 +183,7 @@ proptest! {
     }
 }
 
-/// Layered layouts: symbols move between layers and onto empty layer slots; Y01/Y02 weighted
+/// Layered layouts: symbols move between layers and onto empty layer slots; layer_switch/symbol_bigram weighted
 /// (all_weights), so the code-symbol channel is exercised.
 fn layered_scorer() -> (Scorer, Layout) {
     layered_scorer_for("corne-code")
@@ -243,12 +243,12 @@ fn shift_costs_effort_and_y01() {
     let st = sc.identity();
     let b = breakdown(&sc, &st);
     assert!((b.score - st.score).abs() < 1e-6 * st.score.abs().max(1.0));
-    // Shift is the only layer-like press on this layout: Y01 = presses per 100 keystrokes
-    // (×2 when Shift's finger is involved), M01 includes the Shift key's effort.
-    let y01 = value(&sc, &st, "Y01");
-    assert!(y01 > 5.0 && y01 < 60.0, "Y01 {y01}");
-    let m01 = sc.shift_value("M01", &st);
-    assert!(m01 > 0.0 && m01 < value(&sc, &st, "M01"), "Shift effort {m01}");
+    // Shift is the only layer-like press on this layout: layer_switch = presses per 100 keystrokes
+    // (×2 when Shift's finger is involved), effort includes the Shift key's effort.
+    let y01 = value(&sc, &st, "layer_switch");
+    assert!(y01 > 5.0 && y01 < 60.0, "layer_switch {y01}");
+    let m01 = sc.shift_value("effort", &st);
+    assert!(m01 > 0.0 && m01 < value(&sc, &st, "effort"), "Shift effort {m01}");
     // Shift keys never move.
     let ctx = Ctx::new(&sc, (0..sc.n).collect(), sc.identity());
     assert!(ctx.movable.iter().all(|&s| sc.chars[s] != SHIFT));
@@ -259,8 +259,8 @@ fn shift_costs_effort_and_y01() {
         Scorer::new(&g, &synthetic_cased(gecko_core::corpus::DEFAULT_CHARSET, 11), &all_weights(), &layout("qwerty").fit(&g).unwrap())
             .unwrap();
     let pst = plain.identity();
-    assert_eq!(value(&plain, &pst, "Y01"), 0.0);
-    assert_eq!(plain.shift_value("M01", &pst), 0.0);
+    assert_eq!(value(&plain, &pst, "layer_switch"), 0.0);
+    assert_eq!(plain.shift_value("effort", &pst), 0.0);
 }
 
 #[test]
@@ -281,14 +281,14 @@ fn layered_layouts_round_trip_and_score() {
     assert!((sc.state_for(&back).unwrap().score - st.score).abs() < 1e-9);
     let b = breakdown(&sc, &st);
     assert!((b.score - st.score).abs() < 1e-6 * st.score.abs().max(1.0));
-    let y01 = b.metrics.iter().find(|m| m.id == "Y01").unwrap().value;
-    assert!(y01 > 0.0 && y01 < 100.0, "Y01 {y01}");
-    // A layer keystroke also loads the layer key's finger and adds its effort (M01).
+    let y01 = b.metrics.iter().find(|m| m.id == "layer_switch").unwrap().value;
+    assert!(y01 > 0.0 && y01 < 100.0, "layer_switch {y01}");
+    // A layer keystroke also loads the layer key's finger and adds its effort (effort).
     let vg = &sc.geometry;
     let layer_share: f64 = (0..sc.n).filter(|&x| vg.holder(st.pos[x] as usize).is_some()).map(|x| 100.0 * sc.f1()[x] as f64).sum();
     assert!(layer_share > 0.0);
     assert!((st.load.iter().sum::<f64>() - 100.0 - layer_share).abs() < 1e-3);
-    let m01 = sc.table(gecko_core::metrics::index_of("M01").unwrap()).unwrap();
+    let m01 = sc.table(gecko_core::metrics::index_of("effort").unwrap()).unwrap();
     let v = (36..sc.n).find(|&v| vg.holder(v).is_some()).unwrap();
     let h = vg.holder(v).unwrap();
     assert!((m01[v] - m01[vg.phys(v)] - m01[h]).abs() < 1e-6);
@@ -306,7 +306,7 @@ fn layer_modes_parse_round_trip_and_cost() {
     use gecko_core::LayerMode::{Hold, Oneshot, Toggle};
     let g = thumb_board("corne-36");
     let p = all_weights();
-    let y01 = gecko_core::metrics::def("Y01").unwrap();
+    let y01 = gecko_core::metrics::def("layer_switch").unwrap();
     for (name, modes, n) in [
         ("corne-code", [Hold, Hold], 36 + 33 + 33),
         ("corne-code-oneshot", [Oneshot, Oneshot], 36 + 35 + 35),
@@ -322,7 +322,7 @@ fn layer_modes_parse_round_trip_and_cost() {
         let again = Layout::from_flat("x", &g, flat.clone()).unwrap();
         assert_eq!(again.holders().unwrap(), l.holders().unwrap());
         assert_eq!(vg.layer_modes, modes);
-        // Y01 per mode, from the expanded bigram table.
+        // layer_switch per mode, from the expanded bigram table.
         let t = gecko_core::metrics::table(&vg, &p, y01).unwrap();
         let at = |c: char| flat.iter().position(|&x| x == c).unwrap();
         let cost = |a: char, b: char| t[at(a) * vg.len() + at(b)];
@@ -352,7 +352,7 @@ fn layer_modes_parse_round_trip_and_cost() {
     assert!(Layout::from_toml(&bad).is_err());
 }
 
-/// L03 on QWERTY: h j k l sit in one row in order (row 0); h and l are not neighbours (pairs 50,
+/// vim on QWERTY: h j k l sit in one row in order (row 0); h and l are not neighbours (pairs 50,
 /// j–k fine); h and j share the right index finger (fingers: 1 of 6 pairs broken).
 #[test]
 fn vim_motion_policies_on_qwerty() {
@@ -368,7 +368,7 @@ fn vim_motion_policies_on_qwerty() {
         let st = sc.identity();
         let b = breakdown(&sc, &st);
         assert!((b.score - st.score).abs() < 1e-6 * st.score.abs().max(1.0));
-        b.metrics.iter().find(|m| m.id == "L03").unwrap().value
+        b.metrics.iter().find(|m| m.id == "vim").unwrap().value
     };
     assert!(l03("row", None).abs() < 1e-9);
     assert!((l03("pairs", None) - 50.0).abs() < 1e-4);
@@ -380,7 +380,7 @@ fn vim_motion_policies_on_qwerty() {
     assert!(Profile::from_toml(&toml::to_string(&p).unwrap()).is_err());
 }
 
-/// Y03: corne-code's brackets are adjacent and in order (0); reversing or splitting them costs.
+/// brackets: corne-code's brackets are adjacent and in order (0); reversing or splitting them costs.
 #[test]
 fn paired_symbols_adjacent_or_mirrored() {
     let g = thumb_board("corne-36");
@@ -392,7 +392,7 @@ fn paired_symbols_adjacent_or_mirrored() {
         let st = sc.identity();
         let b = breakdown(&sc, &st);
         assert!((b.score - st.score).abs() < 1e-6 * st.score.abs().max(1.0));
-        b.metrics.iter().find(|m| m.id == "Y03").unwrap().value
+        b.metrics.iter().find(|m| m.id == "brackets").unwrap().value
     };
     assert!(y03("{}()=+_?:\"").abs() < 1e-9);
     // `(` and `)` mirrored on the middle fingers, opener on the left hand: still 0.
@@ -420,11 +420,11 @@ fn thumb_layouts_score_and_round_trip() {
         let space = sc.chars.iter().position(|&ch| ch == gecko_core::layout::SPACE).unwrap();
         assert!(g.key[st.pos[space] as usize].finger.is_thumb());
         assert!(st.load[4] + st.load[5] > 10.0);
-        // Thumb trigrams get their own classes (T12/T13), and M09 reads the thumb share.
+        // Thumb trigrams get their own classes (thumb_roll/thumb_alt), and thumb_load reads the thumb share.
         let val = |id: &str| b.metrics.iter().find(|m| m.id == id).unwrap().value;
-        assert!(val("T12") > 0.0 && val("T13") > 0.0, "{name}: T12 {} T13 {}", val("T12"), val("T13"));
+        assert!(val("thumb_roll") > 0.0 && val("thumb_alt") > 0.0, "{name}: thumb_roll {} thumb_alt {}", val("thumb_roll"), val("thumb_alt"));
         let share = 100.0 * (st.load[4] + st.load[5]) / st.load.iter().sum::<f64>();
-        assert!((val("M09") - share).abs() < 1e-9);
+        assert!((val("thumb_load") - share).abs() < 1e-9);
         // Any arrangement, including empty slots holding letters, maps back to the same state.
         let mut st2 = sc.identity();
         let empty = sc.chars.iter().position(|&ch| ch == gecko_core::layout::EMPTY);
@@ -465,14 +465,14 @@ fn m09_scores_distance_from_thumb_target() {
     let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 5);
     let l = layout("graphite").fit(&g).unwrap();
     let mut p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
-    p.weights = [("M09".to_string(), 1.0)].into();
+    p.weights = [("thumb_load".to_string(), 1.0)].into();
     p.scale.clear();
     let score_at = |t: f32| {
         let mut p = p.clone();
         p.thumb_target = t;
         let sc = Scorer::new(&g, &c, &p, &l).unwrap();
         let st = sc.identity();
-        let share = breakdown(&sc, &st).metrics.iter().find(|m| m.id == "M09").unwrap().value;
+        let share = breakdown(&sc, &st).metrics.iter().find(|m| m.id == "thumb_load").unwrap().value;
         (share, st.score)
     };
     let (share, _) = score_at(15.0);
@@ -501,14 +501,14 @@ fn pair_kinds_match_metrics() {
     let value = |id: &str| a.breakdown.metrics.iter().find(|m| m.id == id).unwrap().value;
     let sum = |v: &[gecko_core::report::Pair], k: &str| v.iter().filter(|p| p.kind == k).map(|p| p.freq).sum::<f64>();
     for (got, want) in
-        [(sum(&a.bigrams, "sfb"), value("B01")), (sum(&a.bigrams, "alternate"), value("B08")), (sum(&a.skipgrams, "sfs"), value("S01"))]
+        [(sum(&a.bigrams, "sfb"), value("sfb")), (sum(&a.bigrams, "alternate"), value("hand_switch")), (sum(&a.skipgrams, "sfs"), value("sfs"))]
     {
         assert!((got - want).abs() < 1e-3, "{got} vs {want}");
     }
 }
 
 /// On a word-import corpus without `␣` on the layout every bigram is inside a word, so the
-/// words' SFBs (freq × cost) add up to B01 exactly.
+/// words' SFBs (freq × cost) add up to sfb exactly.
 #[test]
 fn worst_words_add_up_to_the_metric() {
     let counts: Vec<(String, u64)> = [("the", 50), ("world", 7), ("you're", 9), ("decided", 4), ("my", 11), ("ice", 3), ("tree", 5)]
@@ -531,9 +531,9 @@ fn worst_words_add_up_to_the_metric() {
         .map(|(w, n)| *n as f64 * w.as_bytes().windows(2).filter(|p| on(p[0] as char) && on(p[1] as char)).count() as f64)
         .sum();
     let ww = worst_words(&sc, &st, &words, 100);
-    let sfb = ww.iter().find(|m| m.id == "B01").unwrap();
+    let sfb = ww.iter().find(|m| m.id == "sfb").unwrap();
     let from_words: f64 = sfb.words.iter().map(|w| w.freq / 100.0 * words.total as f64 * w.cost).sum::<f64>() / bigrams * 100.0;
-    let b01 = breakdown(&sc, &st).metrics.iter().find(|m| m.id == "B01").unwrap().value;
+    let b01 = breakdown(&sc, &st).metrics.iter().find(|m| m.id == "sfb").unwrap().value;
     assert!((from_words - b01).abs() < 1e-4, "{from_words} vs {b01}");
     assert_eq!(sfb.words[0].word, "decided"); // de ec de ed: 4 SFBs
     assert_eq!(sfb.words[0].ngrams, ["de", "ec", "de", "ed"]);
@@ -549,7 +549,7 @@ fn semimak_worst_sfb_words_include_youre() {
     let p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
     let sc = Scorer::new(&ansi(), &c, &p, &layout("semimak")).unwrap();
     let ww = worst_words(&sc, &sc.identity(), &words, 5);
-    let sfb = ww.iter().find(|m| m.id == "B01").unwrap();
+    let sfb = ww.iter().find(|m| m.id == "sfb").unwrap();
     assert!(sfb.words.iter().any(|w| w.word == "you're" && w.ngrams == ["'r"]), "{:?}", sfb.words);
 }
 
@@ -702,8 +702,8 @@ fn ranking_sanity_on_english() {
         sc.identity().score
     };
     let modern = ["graphite", "sturdy", "semimak"].map(score).into_iter().fold(f64::NEG_INFINITY, f64::max);
-    // Colemak vs Dvorak is no longer pinned: B14 rates Colemak's D/H stretches about level with
-    // Dvorak, and measured comfort (E05) favours Dvorak's alternation; see context/decisions/scoring.md.
+    // Colemak vs Dvorak is no longer pinned: stretch rates Colemak's D/H stretches about level with
+    // Dvorak, and measured comfort (engram) favours Dvorak's alternation; see context/decisions/scoring.md.
     let (colemak, dvorak, qwerty) = (score("colemak-dh"), score("dvorak"), score("qwerty"));
     assert!(
         modern < colemak.min(dvorak) && colemak.max(dvorak) < qwerty,
@@ -713,7 +713,7 @@ fn ranking_sanity_on_english() {
     // Published QWERTY SFB is ≈ 6.6% on English prose.
     let sc = Scorer::new(&g, &c, &p, &layout("qwerty")).unwrap();
     let b = breakdown(&sc, &sc.identity());
-    let sfb = b.metrics.iter().find(|m| m.id == "B01").unwrap().value;
+    let sfb = b.metrics.iter().find(|m| m.id == "sfb").unwrap().value;
     assert!((5.8..7.4).contains(&sfb), "QWERTY SFB {sfb}%");
 }
 
@@ -787,23 +787,23 @@ fn skip_stretch_is_b14_on_skipgrams() {
     let g = ansi();
     let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 3);
     let sc = Scorer::new(&g, &c, &all_weights(), &layout("qwerty")).unwrap();
-    let (b14, s04) = (sc.table(index_of("B14").unwrap()).unwrap(), sc.table(index_of("S04").unwrap()).unwrap());
+    let (b14, s04) = (sc.table(index_of("stretch").unwrap()).unwrap(), sc.table(index_of("skip_stretch").unwrap()).unwrap());
     assert_eq!(b14, s04);
     let st = sc.identity();
     let n = sc.n;
     let want: f64 = (0..n * n).map(|xy| sc.fk()[xy] as f64 * b14[st.pos[xy / n] as usize * n + st.pos[xy % n] as usize] as f64).sum();
-    let got = breakdown(&sc, &st).metrics.iter().find(|m| m.id == "S04").unwrap().value;
-    assert!((got - want).abs() < 1e-4, "S04 {got} vs skipgram-weighted B14 {want}");
+    let got = breakdown(&sc, &st).metrics.iter().find(|m| m.id == "skip_stretch").unwrap().value;
+    assert!((got - want).abs() < 1e-4, "skip_stretch {got} vs skipgram-weighted stretch {want}");
 }
 
 #[test]
 fn engram_comfort_table() {
     let g = ansi();
-    let t = &g.comfort_tables["E04"];
+    let t = &g.comfort_tables["engram_formula"];
     let c = |a: usize, b: usize| t[a * 30 + b];
     assert_eq!(c(at(1, 2), at(1, 3)), 1.0, "home-row inward roll");
     assert!(c(at(0, 3), at(1, 3)) < 0.5, "same-finger reach");
-    assert_eq!(c(at(1, 1), at(1, 1)), 1.0, "repeats are left to B02");
+    assert_eq!(c(at(1, 1), at(1, 1)), 1.0, "repeats are left to repeat");
 }
 
 /// Column exchanges, 3-cycles and depth-2 swaps keep the delta-tracked score equal to a full
@@ -885,9 +885,9 @@ fn row_offsets_shift_effort_per_finger() {
     use gecko_core::metrics::{def, table};
     let g = ansi();
     let mut p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
-    let with = table(&g, &p, def("M01").unwrap()).unwrap();
+    let with = table(&g, &p, def("effort").unwrap()).unwrap();
     p.row_offset = Default::default();
-    let base = table(&g, &p, def("M01").unwrap()).unwrap();
+    let base = table(&g, &p, def("effort").unwrap()).unwrap();
     let delta = |r, c| with[at(r, c)] - base[at(r, c)];
     // Middle (col 2) and ring (col 1): top row cheaper, bottom dearer; index (col 3) the reverse.
     assert!(delta(0, 2) < 0.0 && delta(2, 2) > 0.0, "middle");
@@ -897,7 +897,7 @@ fn row_offsets_shift_effort_per_finger() {
     // The asymmetry now holds in the final effort, not just the offset.
     assert!(with[at(0, 7)] < with[at(2, 7)] && with[at(2, 6)] < with[at(0, 6)]);
 }
-/// Hand-computed values for the C4 metrics (B06 B07 B09 B10 S05 T09 T10, M03 M07) on ansi-30.
+/// Hand-computed values for the C4 metrics (half_scissor bigram_inroll pinky_ring row_jump skip_stretch contortion irregular, finger_evenness finger_peak) on ansi-30.
 #[test]
 fn c4_metrics_on_known_keys() {
     use gecko_core::metrics::{def, stretch, table};
@@ -906,42 +906,42 @@ fn c4_metrics_on_known_keys() {
     let t = |id: &str| table(&g, &p, def(id).unwrap()).unwrap();
     let n = 30;
     let bi = |id: &str, a: usize, b: usize| t(id)[a * n + b];
-    // B06: the shorter finger (pinky < index < ring < middle) on the upper row, one row apart.
-    assert_eq!(bi("B06", at(0, 0), at(1, 1)), 100.0, "pinky top, ring home");
-    assert_eq!(bi("B06", at(1, 0), at(0, 1)), 0.0, "pinky home, ring top");
-    assert_eq!(bi("B06", at(0, 1), at(1, 2)), 100.0, "ring top, middle home");
-    assert_eq!(bi("B06", at(1, 3), at(0, 2)), 0.0, "index home, middle top");
-    assert_eq!(bi("B06", at(0, 3), at(1, 2)), 100.0, "index top, middle home");
-    assert_eq!(bi("B06", at(0, 9), at(1, 8)), 100.0, "right pinky top, ring home");
-    assert_eq!(bi("B06", at(0, 0), at(2, 1)), 0.0, "two rows is a full scissor (B05)");
-    // B07: inward rolls only.
-    assert_eq!(bi("B07", at(1, 0), at(1, 1)), 100.0);
-    assert_eq!(bi("B07", at(1, 1), at(1, 0)), 0.0);
-    assert_eq!(bi("B07", at(1, 9), at(0, 6)), 100.0);
-    assert_eq!(bi("B07", at(1, 3), at(1, 6)), 0.0, "different hands");
-    // B09: pinky–ring on one hand, either direction.
-    assert_eq!(bi("B09", at(1, 1), at(1, 0)), 100.0);
-    assert_eq!(bi("B09", at(1, 9), at(0, 8)), 100.0);
-    assert_eq!(bi("B09", at(1, 1), at(1, 2)), 0.0);
-    assert_eq!(bi("B09", at(1, 0), at(1, 9)), 0.0, "different hands");
-    // B10: |Δy| × 100 on one hand.
-    assert_eq!(bi("B10", at(0, 0), at(2, 1)), 200.0);
-    assert_eq!(bi("B10", at(0, 3), at(1, 3)), 100.0);
-    assert_eq!(bi("B10", at(0, 0), at(2, 9)), 0.0, "different hands");
-    assert_eq!(bi("B10", at(1, 2), at(1, 3)), 0.0);
-    // S05 is B14's stretch on skipgrams.
-    assert_eq!(bi("S05", at(1, 2), at(1, 4)), 100.0 * stretch(&g, at(1, 2), at(1, 4)));
-    assert!(bi("S05", at(1, 2), at(1, 4)) > 0.0);
+    // half_scissor: the shorter finger (pinky < index < ring < middle) on the upper row, one row apart.
+    assert_eq!(bi("half_scissor", at(0, 0), at(1, 1)), 100.0, "pinky top, ring home");
+    assert_eq!(bi("half_scissor", at(1, 0), at(0, 1)), 0.0, "pinky home, ring top");
+    assert_eq!(bi("half_scissor", at(0, 1), at(1, 2)), 100.0, "ring top, middle home");
+    assert_eq!(bi("half_scissor", at(1, 3), at(0, 2)), 0.0, "index home, middle top");
+    assert_eq!(bi("half_scissor", at(0, 3), at(1, 2)), 100.0, "index top, middle home");
+    assert_eq!(bi("half_scissor", at(0, 9), at(1, 8)), 100.0, "right pinky top, ring home");
+    assert_eq!(bi("half_scissor", at(0, 0), at(2, 1)), 0.0, "two rows is a full scissor (scissor)");
+    // bigram_inroll: inward rolls only.
+    assert_eq!(bi("bigram_inroll", at(1, 0), at(1, 1)), 100.0);
+    assert_eq!(bi("bigram_inroll", at(1, 1), at(1, 0)), 0.0);
+    assert_eq!(bi("bigram_inroll", at(1, 9), at(0, 6)), 100.0);
+    assert_eq!(bi("bigram_inroll", at(1, 3), at(1, 6)), 0.0, "different hands");
+    // pinky_ring: pinky–ring on one hand, either direction.
+    assert_eq!(bi("pinky_ring", at(1, 1), at(1, 0)), 100.0);
+    assert_eq!(bi("pinky_ring", at(1, 9), at(0, 8)), 100.0);
+    assert_eq!(bi("pinky_ring", at(1, 1), at(1, 2)), 0.0);
+    assert_eq!(bi("pinky_ring", at(1, 0), at(1, 9)), 0.0, "different hands");
+    // row_jump: |Δy| × 100 on one hand.
+    assert_eq!(bi("row_jump", at(0, 0), at(2, 1)), 200.0);
+    assert_eq!(bi("row_jump", at(0, 3), at(1, 3)), 100.0);
+    assert_eq!(bi("row_jump", at(0, 0), at(2, 9)), 0.0, "different hands");
+    assert_eq!(bi("row_jump", at(1, 2), at(1, 3)), 0.0);
+    // skip_stretch is stretch on skipgrams.
+    assert_eq!(bi("skip_stretch", at(1, 2), at(1, 4)), 100.0 * stretch(&g, at(1, 2), at(1, 4)));
+    assert!(bi("skip_stretch", at(1, 2), at(1, 4)) > 0.0);
     // Trigrams.
     let tri = |id: &str, a: usize, b: usize, c: usize| t(id)[(a * n + b) * n + c];
     let s = stretch(&g, at(1, 2), at(1, 4)) + stretch(&g, at(1, 4), at(1, 2));
-    assert!((tri("T09", at(1, 2), at(1, 4), at(1, 2)) - 100.0 * s).abs() < 1e-4, "LSB there and back");
-    assert_eq!(tri("T09", at(1, 2), at(1, 4), at(1, 7)), 0.0, "second step changes hands");
-    assert_eq!(tri("T09", at(1, 1), at(1, 2), at(1, 3)), 0.0, "home-row roll");
-    assert_eq!(tri("T10", at(0, 1), at(2, 0), at(0, 1)), 100.0, "scissor twice");
-    assert_eq!(tri("T10", at(0, 2), at(2, 2), at(2, 4)), 100.0, "SFB then LSB");
-    assert_eq!(tri("T10", at(0, 2), at(2, 2), at(1, 7)), 0.0, "only one bad step");
-    assert_eq!(tri("T10", at(1, 0), at(1, 1), at(1, 2)), 0.0);
+    assert!((tri("contortion", at(1, 2), at(1, 4), at(1, 2)) - 100.0 * s).abs() < 1e-4, "LSB there and back");
+    assert_eq!(tri("contortion", at(1, 2), at(1, 4), at(1, 7)), 0.0, "second step changes hands");
+    assert_eq!(tri("contortion", at(1, 1), at(1, 2), at(1, 3)), 0.0, "home-row roll");
+    assert_eq!(tri("irregular", at(0, 1), at(2, 0), at(0, 1)), 100.0, "scissor twice");
+    assert_eq!(tri("irregular", at(0, 2), at(2, 2), at(2, 4)), 100.0, "SFB then LSB");
+    assert_eq!(tri("irregular", at(0, 2), at(2, 2), at(1, 7)), 0.0, "only one bad step");
+    assert_eq!(tri("irregular", at(1, 0), at(1, 1), at(1, 2)), 0.0);
 }
 
 #[test]
@@ -977,7 +977,7 @@ fn hrm_slots_and_misfire_table() {
     let g = ansi();
     let hrm: Vec<usize> = (0..g.len()).filter(|&i| g.hrm(i)).collect();
     assert_eq!(hrm, vec![at(1, 0), at(1, 1), at(1, 2), at(1, 3), at(1, 6), at(1, 7), at(1, 8), at(1, 9)], "home keys, not g/h");
-    let d = gecko_core::metrics::def("Y04").unwrap();
+    let d = gecko_core::metrics::def("hrm_misfire").unwrap();
     let t = gecko_core::metrics::table(&g, &all_weights(), d).unwrap();
     let c = |a: usize, b: usize| t[a * 30 + b];
     assert_eq!(c(at(1, 1), at(0, 3)), 100.0, "roll out of a mod onto another finger");
@@ -1072,7 +1072,7 @@ fn magic_rules_cut_sfbs_on_english() {
     let sfb = |l: &Layout| {
         let sc = Scorer::new(&g, &c, &p, l).unwrap();
         let b = breakdown(&sc, &sc.identity());
-        (b.score, b.metrics.iter().find(|m| m.id == "B01").unwrap().value)
+        (b.score, b.metrics.iter().find(|m| m.id == "sfb").unwrap().value)
     };
     let mut none = l.clone();
     none.magic[0].rules.clear();

@@ -123,7 +123,7 @@ fn rebuild_equals_fresh_build() {
 fn rebuild_keeps_refolded_weights() {
     let (g0, c, l) = cases().swap_remove(1);
     let p = all_weights();
-    let weights = [("B01", 2.0), ("T08", 1.0), ("M01", 0.5), ("Y01", 0.3), ("M02", 1.0)];
+    let weights = [("sfb", 2.0), ("sft", 1.0), ("effort", 0.5), ("layer_switch", 0.3), ("finger_target", 1.0)];
     let mut sc = Scorer::new(&g0, &c, &p, &l).unwrap().with_weights(&weights).unwrap();
     let mut g = g0.clone();
     nudge(&mut g, &mut Rng::new(3), 3);

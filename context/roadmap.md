@@ -21,4 +21,4 @@ Sizes are relative effort (S/M/L). Dependencies below list only unfinished work;
 the Export tab writes an ergogen config. [`context/build-guide.md`](build-guide.md) walks from
 hand measurements to an optimized board and its STL ([#77](https://github.com/JoshuaMarkle/gecko/issues/77)).
 Free-form search (`--free keys`, #70) refines a parametric best per key; it is not a prerequisite. Thumb clusters
-follow the thumb's arc with G06 and `--thumb-keys` (#71).
+follow the thumb's arc with `thumb_arc` and `--thumb-keys` (#71).

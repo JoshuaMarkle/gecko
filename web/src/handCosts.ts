@@ -1,4 +1,4 @@
-// Per-key hand-model costs (G01 reach, G05 press angle, G03 wrist posture) for a board and
+// Per-key hand-model costs (`reach`, `press_angle`, `wrist`) for a board and
 // hand, from the WASM scorer, for the Hand and Profile tabs. Null while loading or when WASM is
 // unavailable.
 

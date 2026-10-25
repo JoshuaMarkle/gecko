@@ -1,6 +1,6 @@
 //! G4: per-key costs from key positions, so a new board needs no hand-entered `effort` or
 //! `stretch` (`Geometry::derive_missing`). A 2D/3D reach proxy until the hand model's costs
-//! (G01) replace hand-entered effort entirely. Fitted to the bundled boards; see
+//! (reach) replace hand-entered effort entirely. Fitted to the bundled boards; see
 //! `context/geometry.md#derived-effort-and-stretch-g4`.
 
 use crate::geometry::{Geometry, Hand};

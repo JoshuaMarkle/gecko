@@ -13,7 +13,7 @@ pub fn fmt_val(v: f64) -> String {
 }
 
 pub fn print_breakdown(b: &Breakdown) {
-    println!("{:<5} {:<18} {:>9} {:>7} {:>9}", "id", "metric", "value", "weight", "score");
+    println!("{:<15} {:<18} {:>9} {:>7} {:>9}", "id", "metric", "value", "weight", "score");
     for m in &b.metrics {
         if m.weight == 0.0 && gecko_core::metrics::def(m.id).is_some_and(|d| d.retired) {
             continue;
@@ -25,7 +25,7 @@ pub fn print_breakdown(b: &Breakdown) {
             Dir::Info => " i",
         };
         println!(
-            "{:<5} {:<18} {:>8}{:1} {:>7} {:>9}",
+            "{:<15} {:<18} {:>8}{:1} {:>7} {:>9}",
             m.id,
             format!("{}{dir}", m.name),
             fmt_val(m.value),
@@ -34,7 +34,7 @@ pub fn print_breakdown(b: &Breakdown) {
             if m.weighted == 0.0 { "-".into() } else { format!("{:.3}", m.weighted) }
         );
     }
-    println!("{:<5} {:<18} {:>36.3}", "", "score (lower=better)", b.score);
+    println!("{:<15} {:<18} {:>36.3}", "", "score (lower=better)", b.score);
 }
 
 /// A layout's rows (then each layer and magic key), indented for printing under a title.

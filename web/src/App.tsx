@@ -385,7 +385,7 @@ export function App() {
         )}
         {(view === "shape" || view === "both") && (
           <BoardSearchView key={view} target={view === "shape" ? "board" : "both"} meta={meta} layouts={layouts} geometry={geometry} search={search} setSearch={setSearch}
-            locked={!!live?.running} geomVars={geomVars} handWeighted={["G01", "G03", "G05", "G06"].some((m) => (profile.weights[m] ?? 0) !== 0)}
+            locked={!!live?.running} geomVars={geomVars} handWeighted={["reach", "wrist", "press_angle", "thumb_arc"].some((m) => (profile.weights[m] ?? 0) !== 0)}
             chars={editChars} label={hasModel ? model!.label : label} pins={pins} onLoad={(c, l) => setChars(c, l)} liveBoard={liveBoard} />
         )}
         {view === "explore" && (

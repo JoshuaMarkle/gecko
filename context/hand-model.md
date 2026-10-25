@@ -1,8 +1,8 @@
 # Hand model
 
 `gecko_core::hand` turns a hand (preset size or measurements), arms and a board into per-key
-costs the scorer folds like any mono metric: **G01 reach**, **G05 press angle**, **G03 wrist
-posture** and **G06 thumb arc fit**. The hand also scales B14's relaxed finger spread. It is a port of the web's `hand.ts` (same skeleton,
+costs the scorer folds like any mono metric: **`reach`**, **`press_angle`**, **`wrist`**
+and **`thumb_arc`**. The hand also scales `stretch`'s relaxed finger spread. It is a port of the web's `hand.ts` (same skeleton,
 constants, placement and IK), so the Hand tab shows the hand the scorer measures.
 Background: `research/sources/hand-models.md`.
 
@@ -13,11 +13,11 @@ Profile `[hand]`: `size = "small" | "average" | "large"` (average × 0.92 / 1 / 
 `ring`, `pinky` (three segments each, base → tip), `palm_width`, `palm_length`, `span`, `reach`
 (`reach` is shown in the web, not used in costs). `[hand.body]` (optional, mm): `elbow_width`
 (elbow to elbow while typing, 100–1500) and `forearm` (elbow to wrist crease, 100–600); default
-490 / 255 scaled with hand length. Without `[hand]`, G01/G03/G05 use the average hand and arms
-and B14 is unchanged. The web's **Use hand in optimization** sends the Hand tab's hand (and arms,
-when edited under Advanced → Arms) as this block (`hand.ts` `withHand`) and adds G01 1.0 / G03 1.0
-/ G05 0.5 (with scales) when the profile has no weight for them. Bundled profile:
-`data/profiles/hand.toml` (default + G01 1.0, G05 0.5, G03 1.0 in natural units, M01 halved
+490 / 255 scaled with hand length. Without `[hand]`, `reach`/`wrist`/`press_angle` use the average hand and arms
+and `stretch` is unchanged. The web's **Use hand in optimization** sends the Hand tab's hand (and arms,
+when edited under Advanced → Arms) as this block (`hand.ts` `withHand`) and adds `reach` 1.0 / `wrist` 1.0
+/ `press_angle` 0.5 (with scales) when the profile has no weight for them. Bundled profile:
+`data/profiles/hand.toml` (default + `reach` 1.0, `press_angle` 0.5, `wrist` 1.0 in natural units, `effort` halved
 because its hand-entered key efforts also encode reach).
 
 ## Model
@@ -30,7 +30,7 @@ because its hand-entered key efforts also encode reach).
    errors taken in the hand's frame, pulled weakly toward 10° inward yaw and no roll. A hand without all four finger keys is not placed (its keys cost 0).
 3. **Fingertip targets:** keycap top centres (`pose::contact`). On 3D boards they are taken in
    each hand's frame (`Geometry::hand_frame`, the best-fit plane of its finger keys), like the
-   geometric metrics, so a rigid tent changes nothing: the forearm's roll belongs to G03.
+   geometric metrics, so a rigid tent changes nothing: the forearm's roll belongs to `wrist`.
 4. **IK** (`hand::solve`): planar 3-segment chain in the finger's flexion plane
    (`hand::plane`): the plane through knuckle and target that holds the finger's up axis. That
    axis is fixed in the hand (it rolls with the hand, as the MCP's flexion axis does) and leaned
@@ -46,7 +46,7 @@ because its hand-entered key efforts also encode reach).
    and IP near 17°. IK is damped least squares on the tip error plus each joint's deviation from
    rest, within limits (CMC flexion ±34°, abduction −29°…+40° about rest, MCP −11°…60°, IP
    −17°…80°; `research/sources/hand-models.md`).
-6. **Wrist** (G03): the placed hand's forward and up axes and wrist point are turned back from
+6. **Wrist** (`wrist`): the placed hand's forward and up axes and wrist point are turned back from
    the hand frame into board space (so a tent shows), the left hand mirrored about the board's
    middle. The elbow sits `elbow_width / 2` outside the middle, level with the wrist, `forearm`
    behind it; the forearm runs elbow → wrist. On a **split** board (≥ 1 u between the hands'
@@ -55,22 +55,22 @@ because its hand-entered key efforts also encode reach).
    forearm and the hand (+ ulnar), extension = the hand's pitch above the forearm's, pronation =
    90° + the back of the hand's roll about the forearm (90° palm down, 0° thumb up).
 
-## Costs (per key; layer copies use their physical key, plus the layer holder like M01)
+## Costs (per key; layer copies use their physical key, plus the layer holder like `effort`)
 
-- **G01 reach** = mean over MCP/PIP/DIP of ((angle − natural) / 29°)² + (splay / comfortable
+- **`reach`** = mean over MCP/PIP/DIP of ((angle − natural) / 29°)² + (splay / comfortable
   abduction)² + 2·(miss / 10 mm) + (miss / 10 mm)². Splay is the finger plane's turn (about its
   up axis) from its home key (thumb: from its rest point); comfortable abduction pinky 25°, ring/middle/index 21°,
   thumb 30°. Misses under 0.5 mm are IK rounding. ≈ 0 on home keys, ≈ 1 for a comfortable
   off-home key, 3–5 for keys the planted hand cannot reach.
   Thumbs: mean over the 4 joints of ((angle − rest) / scale)² (CMC 26°, MCP 34°, IP 46°) plus
   the same miss terms; no splay term (the CMC's two axes are the sideways motion).
-- **G05 press angle** = (angle / 45°)² between the distal phalanx (the fingertip presses along
+- **`press_angle`** = (angle / 45°)² between the distal phalanx (the fingertip presses along
   it) and the inward keycap normal, the normal projected into the finger's plane (sideways tilt is
   wrist roll). On flat boards home ≈ 0–0.4, top/bottom rows 0.5–2; keywells tilt keys toward the
   fingertip and score lower. Thumbs: the CMC pushes the tip anywhere across its CMC → tip line, so
   only the push along that line is misaligned: angle = asin |n̂ · CMC→tip|. Flat thumb keys ≈ 0.3
   (25°); the Dactyl's cluster, tilted toward the thumb, 0.04–0.12.
-- **G03 wrist posture** = (deviation / 15°)² ulnar or (/ 10°)² radial + (extension / 20°)² or
+- **`wrist`** = (deviation / 15°)² ulnar or (/ 10°)² radial + (extension / 20°)² or
   (flexion / 25°)² + ((pronation − 30°) / 45°)², from the resting hand (comfortable ranges from
   `research/sources/hand-models.md` and the posture studies in
   `research/sources/split-keyboard-ergonomics.md`). Per key, a key the planted hand falls short of
@@ -78,20 +78,20 @@ because its hand-entered key efforts also encode reach).
   wrist-to-key distance). Mostly a board metric: on one board it varies only through those
   sideways reaches (spread over reference layouts on ansi-30 ≈ 0.004), so the hand profile
   weights it in natural units (1.0, no scale): ≈ 1 point between a flat board and a tented split.
-- **G06 thumb arc fit** (thumb keys only, 0 elsewhere) = (gap / 10 mm)², the gap being the key's
+- **`thumb_arc`** (thumb keys only, 0 elsewhere) = (gap / 10 mm)², the gap being the key's
   distance in the key plane (the hand frame's on 3D boards) from the thumb's **natural arc**: the
   tip's path as the CMC sweeps its flexion range with the other joints at rest, cut to the
   operational workspace centred on the rest point (73 mm for the average thumb, scaled with thumb
   length; typing-like use covers ≈ 65–75 mm of the ≈ 130 mm the tip can sweep,
-  `research/sources/thumb-biomechanics.md`). Height is left to G01: the modelled thumb rests
-  ≈ 15 mm above the keycaps and curls down onto them. G01 asks whether the thumb reaches a key;
-  G06 asks whether the cluster follows the sweep, so keys off it (a second thumb row, a key
+  `research/sources/thumb-biomechanics.md`). Height is left to `reach`: the modelled thumb rests
+  ≈ 15 mm above the keycaps and curls down onto them. `reach` asks whether the thumb reaches a key;
+  `thumb_arc` asks whether the cluster follows the sweep, so keys off it (a second thumb row, a key
   past the workspace) cost more than their reach alone says. `hand::thumb_slots` = ⌊workspace /
   1 u⌋ is how many 1 u keys fit along it: 3 for the small and average hands, 4 for the large.
   Values (average hand): Kyria's curved thumb row 0.20–0.25, Lily58's row 0.01–0.4, Corne 0.02–2.0,
   the Dactyl-Manuform's upper pair 0.15 and 1.6 but its lower four 4–21 (the cluster's known
   hard-to-reach keys), Ergodox's six 0.01–19 (four above 7).
-- **B14 spread:** the relaxed spread per finger is 1.35 u × `span` / 200 mm with a `[hand]`
+- **`stretch` spread:** the relaxed spread per finger is 1.35 u × `span` / 200 mm with a `[hand]`
   (exactly 1.35 u for the average hand).
 
 Costs are computed once per scorer (n keys × ~100 IK evaluations, well under a millisecond), so
@@ -102,17 +102,17 @@ search speed is unchanged. WASM `hand_costs` returns the per-key tables for the 
 Natural curl recovered by the IK; far targets flagged with the exact shortfall; home keys the
 cheapest on every finger (within 0.2: the short pinky rests slightly below its home key);
 mirrored boards give mirrored costs; small > average > large mean reach on ANSI; a key moved 2 u
-away is unreachable and costly; a rigid tent changes no metric but G03, which it lowers
+away is unreachable and costly; a rigid tent changes no metric but `wrist`, which it lowers
 (`tests/three_d.rs`). Thumb: a cluster key near rest costs < 0.3, a key moved 3 u away is out of
 reach, Dactyl thumb keys press at < half Corne's angle. Wrist: ANSI 9–15° ulnar with palms flat,
-splits ≈ 0° deviation, the Dactyl's tent lowers pronation by > 10°, G03 Dactyl < Corne < ANSI,
-wider elbows deviate more, a sideways out-of-reach key adds G03, bad `[hand.body]` rejected.
-G06 (`tests/thumbs.rs`): Kyria's thumb row < 0.5, ≥ 3 of the Dactyl's lower thumb keys > 4,
+splits ≈ 0° deviation, the Dactyl's tent lowers pronation by > 10°, `wrist` Dactyl < Corne < ANSI,
+wider elbows deviate more, a sideways out-of-reach key adds `wrist`, bad `[hand.body]` rejected.
+`thumb_arc` (`tests/thumbs.rs`): Kyria's thumb row < 0.5, ≥ 3 of the Dactyl's lower thumb keys > 4,
 finger keys 0, mirrored halves equal; 3 / 3 / 4 thumb slots for small / average / large. Web
 (`hand.test.ts`): the TS thumb rests on its rest point, reaches near targets, keeps its segment
 lengths; `toLocal` inverts `toWorld`. QWERTY, english, average hand and arms:
 
-| board | G01 | G05 | G03 | resting wrist (R): deviation, pronation |
+| board | `reach` | `press_angle` | `wrist` | resting wrist (R): deviation, pronation |
 |---|---|---|---|---|
 | ortho-30 | 1.237 | 0.514 | 2.29 | 12° ulnar, 87° |
 | ansi-30 | 1.184 | 0.536 | 2.28 | 13° ulnar, 87° |
@@ -123,23 +123,23 @@ lengths; `toLocal` inverts `toWorld`. QWERTY, english, average hand and arms:
 | sweep-34 | 0.866 | 0.465 | 1.61 | 0°, 87° |
 | dactyl-manuform-5x6 | 0.661 | 0.201 | 1.02 | −2°, 72° |
 
-The 4-DoF thumb reaches Corne/Kyria clusters more cheaply than the old planar chain (Corne G01
+The 4-DoF thumb reaches Corne/Kyria clusters more cheaply than the old planar chain (Corne `reach`
 0.99 → 0.91) and finds Ergodox's outer thumb keys 4–6 mm out of reach (1.15 → 1.29), the cluster's
-known complaint; G05 now counts thumbs. The test pins Dactyl < Corne < ortho, ANSI on G01 and
-Dactyl < 0.6 × Corne on G05. On ANSI the
+known complaint; `press_angle` now counts thumbs. The test pins Dactyl < Corne < ortho, ANSI on `reach` and
+Dactyl < 0.6 × Corne on `press_angle`. On ANSI the
 left bottom row costs 2–2.4 for ring/middle vs 0.5–0.6 on the right (the stagger's known
 asymmetry); index top and centre-column keys, Q and P are out of reach for the planted average
-hand by 3–10 mm, matching the Hand tab. Reference layouts on ansi-30 (G01): Halmak 0.45,
+hand by 3–10 mm, matching the Hand tab. Reference layouts on ansi-30 (`reach`): Halmak 0.45,
 Canary/Graphite 0.49, Workman 0.51, Semimak 0.51, Sturdy 0.53, Colemak-DH 0.56, Colemak 0.64,
 Dvorak 0.77, QWERTY 1.18 (table and these with the leaned finger planes, 2026-10-23; before them
-G01 moved by ≤ 0.04 and the ranking was the same).
+`reach` moved by ≤ 0.04 and the ranking was the same).
 
 ## Results (english, SA, seed 1, 15 s, 2026-10-21)
 
-ANSI rows predate the thumb model and G03: ansi-30 has no thumb keys and G03 is constant there
+ANSI rows predate the thumb model and `wrist`: ansi-30 has no thumb keys and `wrist` is constant there
 up to sideways misses, so those optima stand. Corne was re-run with them:
 
-| board · profile | G01 | G05 | SFB % | SFS % | B14 | layout (rows) |
+| board · profile | `reach` | `press_angle` | SFB % | SFS % | `stretch` | layout (rows) |
 |---|---|---|---|---|---|---|
 | ansi-30 · default | 0.708 | 0.409 | 0.74 | 5.92 | 1.41 | `jqmpbzguo. rhtcfxseai lndwvyk/;,` |
 | ansi-30 · hand | 0.465 | 0.278 | 0.62 | 6.12 | 2.17 | `qhtvxzpuo. rndsfgceai lbkmjyw/;,` |
@@ -147,35 +147,35 @@ up to sideways misses, so those optima stand. Corne was re-run with them:
 | ansi-30 · hand, large | 0.471 | 0.242 | 0.51 | 6.27 | 1.79 | `blfkjzpea. hrstmwcuoi nxvdqyg/;,` |
 | corne-36 · default | 0.320 | 0.220 | 0.22 | 3.34 | 0.65 | runs `…-a2cfeb3a` |
 | corne-36 · hand (old planar thumb) | 0.308 | 0.181 | 0.34 | 3.28 | 0.65 | runs `…-83c23983` |
-| corne-36 · hand (4-DoF thumb, G03) | 0.247 | 0.231 | 0.22 | 3.32 | 0.89 | run `20261021-225227-sa-72390ea7` |
+| corne-36 · hand (4-DoF thumb, `wrist`) | 0.247 | 0.231 | 0.22 | 3.32 | 0.89 | run `20261021-225227-sa-72390ea7` |
 
 Runs `20261021-215352-sa-{dfcd41ae, 0458415f, 6182f076, 28b4c861, a2cfeb3a, 83c23983, b4af222d,
 50cb1ce4}` (8 searches in parallel, so the 15 s were contended). Reading: on ANSI the hand profile
 cuts reach by a third (0.71 → 0.47) and press angle by a third; its optimum scores only 1.9%
 worse under the default profile (18.19 vs 17.85), while the default optimum is 9% worse under
 the hand profile (23.02 vs 21.10). It keeps the index off the out-of-reach top-row keys and trades some stretch
-(B14 1.4 → 2.2). Hand size changes the optimum: the small hand gives up more reach (0.61), the
+(`stretch` 1.4 → 2.2). Hand size changes the optimum: the small hand gives up more reach (0.61), the
 large hand moves frequent letters to the middle/ring top row it reaches easily. On Corne the
-default optimum is already fairly reach-efficient; with the 4-DoF thumb it scores G01 0.280 /
-G05 0.257 (G05 now including thumbs) and the hand optimum 0.247 / 0.231, which costs 0.7% under
+default optimum is already fairly reach-efficient; with the 4-DoF thumb it scores `reach` 0.280 /
+`press_angle` 0.257 (`press_angle` now including thumbs) and the hand optimum 0.247 / 0.231, which costs 0.7% under
 the default profile (8.29 vs 8.24) while the default optimum costs 2.6% under the hand profile
-(11.91 vs 11.61). G03 is 1.666 for both: it ranks boards, not layouts.
+(11.91 vs 11.61). `wrist` is 1.666 for both: it ranks boards, not layouts.
 
 ## Limits and next steps
 
 - Planar finger IK: abduction is free within the cost, not a joint; the finger's axial rotation
   is only its plane's fixed lean (no PIP-axis obliquity growing with flexion); no MCP abduction/flexion
   coupling (abduction shrinks at full flexion). The thumb's CMC axes are fixed (no CMC axial
-  rotation/opposition coupling). G06's arc is the CMC flexion sweep alone; in real use the CMC
+  rotation/opposition coupling). `thumb_arc`'s arc is the CMC flexion sweep alone; in real use the CMC
   moves obliquely to its axes (Tang 2008), and the research note's asymmetry (keys near the
-  thumb base, strongly flexed, are worse than keys at extension) is left to G01.
-- G03: elbows level with the keys, one elbow width for every board; split halves assumed ideally
+  thumb base, strongly flexed, are worse than keys at extension) is left to `reach`.
+- `wrist`: elbows level with the keys, one elbow width for every board; split halves assumed ideally
   turned (a real user may not); no wrist-height or keyboard-slope input yet (extension comes from
   the board's shape only). Elbow width is calibrated to the ≈ 12° conventional-keyboard deviation
   and is sensitive (±10 mm ≈ ±1.3°).
 - The hand is planted on the home keys; real typing moves the wrist, which the miss term
   stands in for. The typing simulation (wrist follow, parallel motion) is view-only.
 - No per-pair hand cost yet (finger-to-finger transitions with the hand pose, #52's travel
-  part); B03/B14/B11 cover pairs heuristically.
+  part); `sfb_distance`/`stretch`/`movement` cover pairs heuristically.
 - Constants (curl, coupling, limits, cost scales) are heuristics from the sources above;
   population data and a measured hand would replace the presets (#103 optimizes over sizes).

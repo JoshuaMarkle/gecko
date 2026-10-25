@@ -40,11 +40,11 @@ fn rank_sum_over_runs() {
         .filter(|c| c.sources.iter().any(|s| s.starts_with(&ids[0])))
         .all(|c| c.sources.iter().any(|s| s.starts_with(&ids[2]))));
 
-    let ids_m: Vec<String> = ["B01", "T03", "M01"].map(String::from).to_vec();
+    let ids_m: Vec<String> = ["sfb", "inroll", "effort"].map(String::from).to_vec();
     let defs = select::metric_cols(&ids_m, &p).unwrap();
     let boards = BTreeMap::from([(g.name.clone(), g.clone())]);
     let (cols, ranked) = select::select(&cands, &boards, &g, &c, &p, &defs).unwrap();
-    assert_eq!(cols.iter().map(|m| (m.id, m.dir)).collect::<Vec<_>>(), [("B01", "min"), ("T03", "max"), ("M01", "min")]);
+    assert_eq!(cols.iter().map(|m| (m.id, m.dir)).collect::<Vec<_>>(), [("sfb", "min"), ("inroll", "max"), ("effort", "min")]);
     assert_eq!(ranked.len(), cands.len());
     let n = ranked.len() as f64;
     for (i, r) in ranked.iter().enumerate() {
@@ -54,7 +54,7 @@ fn rank_sum_over_runs() {
         assert!(r.ranks.iter().all(|&x| (1.0..=n).contains(&x)));
     }
     assert!(ranked.windows(2).all(|w| w[0].rank_sum <= w[1].rank_sum));
-    // Each metric's ranks are a permutation of 1..=n (sum n(n+1)/2), and higher T03 ranks better.
+    // Each metric's ranks are a permutation of 1..=n (sum n(n+1)/2), and higher inroll ranks better.
     for m in 0..3 {
         assert!((ranked.iter().map(|r| r.ranks[m]).sum::<f64>() - n * (n + 1.0) / 2.0).abs() < 1e-9);
     }

@@ -3,22 +3,22 @@ source: crates/gecko-core/tests/snapshots.rs
 expression: "table(\"engram\")"
 ---
 canary  score 7.2122
-  E05 Engram measured                  7.2122 %    x  1.000 =     7.2122
+  engram          Engram measured                  7.2122 %    x  1.000 =     7.2122
 colemak  score 8.8228
-  E05 Engram measured                  8.8228 %    x  1.000 =     8.8228
+  engram          Engram measured                  8.8228 %    x  1.000 =     8.8228
 colemak-dh  score 8.5201
-  E05 Engram measured                  8.5201 %    x  1.000 =     8.5201
+  engram          Engram measured                  8.5201 %    x  1.000 =     8.5201
 dvorak  score 6.1343
-  E05 Engram measured                  6.1343 %    x  1.000 =     6.1343
+  engram          Engram measured                  6.1343 %    x  1.000 =     6.1343
 graphite  score 5.2456
-  E05 Engram measured                  5.2456 %    x  1.000 =     5.2456
+  engram          Engram measured                  5.2456 %    x  1.000 =     5.2456
 halmak  score 6.3023
-  E05 Engram measured                  6.3023 %    x  1.000 =     6.3023
+  engram          Engram measured                  6.3023 %    x  1.000 =     6.3023
 qwerty  score 12.2260
-  E05 Engram measured                 12.2260 %    x  1.000 =    12.2260
+  engram          Engram measured                 12.2260 %    x  1.000 =    12.2260
 semimak  score 5.9363
-  E05 Engram measured                  5.9363 %    x  1.000 =     5.9363
+  engram          Engram measured                  5.9363 %    x  1.000 =     5.9363
 sturdy  score 6.5443
-  E05 Engram measured                  6.5443 %    x  1.000 =     6.5443
+  engram          Engram measured                  6.5443 %    x  1.000 =     6.5443
 workman  score 8.3264
-  E05 Engram measured                  8.3264 %    x  1.000 =     8.3264
+  engram          Engram measured                  8.3264 %    x  1.000 =     8.3264

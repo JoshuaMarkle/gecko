@@ -30,7 +30,7 @@ pub enum Cmd {
     Score(score::ScoreArgs),
     /// Rank several layouts side by side (all reference layouts when none are given).
     Compare(score::CompareArgs),
-    /// Independent judges per layout: E01 typing time, E05/E04 Engram comfort, home row, effort,
+    /// Independent judges per layout: `typing_time`, `engram` / `engram_formula` comfort, home row, effort,
     /// SFB; with --community, percentiles among the cmini layouts.
     Judge(judge::JudgeArgs),
     /// Unit-weight cost of every metric per layout, as JSON lines (score = Σ weight/scale × cost).

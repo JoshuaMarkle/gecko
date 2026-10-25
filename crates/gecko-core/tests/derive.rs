@@ -104,7 +104,7 @@ fn column_stagger_beats_row_stagger() {
     let col = grid([0.3, 0.1, 0.0, 0.1, 0.2], 1.0);
     assert_eq!(col.key.iter().filter(|k| k.stretch).count(), 6);
     // QWERTY is the exception (+0.56): its bottom-row bigrams were laid out for row stagger
-    // and stretch more (B14) without it. See `context/geometry.md`.
+    // and stretch more (stretch) without it. See `context/geometry.md`.
     for name in ["colemak-dh", "graphite", "semimak", "sturdy", "dvorak"] {
         let l = Layout::from_toml(&read(&format!("data/layouts/{name}.toml"))).unwrap();
         let score = |g: &Geometry| {

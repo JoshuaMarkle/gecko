@@ -186,7 +186,7 @@ impl Scorer {
         d
     }
 
-    /// The finger-load part of [`Scorer::delta`] (M02, M03, M04, M07).
+    /// The finger-load part of [`Scorer::delta`] (finger_target, finger_evenness, hand_balance, finger_peak).
     #[inline]
     pub fn delta_load(&self, st: &State, a: usize, b: usize) -> f64 {
         if !self.has_load {
@@ -276,7 +276,7 @@ impl Scorer {
             }
             d += acc;
         }
-        // Y03 and L03 are sparse, so update only pairs spanning the two swaps.
+        // brackets and vim are sparse, so update only pairs spanning the two swaps.
         for e in &self.brackets {
             let (x, y) = (e.x as usize, e.y as usize);
             if !((x == r || x == s) && (y == u || y == v) || (y == r || y == s) && (x == u || x == v)) {
@@ -380,13 +380,13 @@ impl Scorer {
 
     // ---- accessors for reports ----
 
-    /// Unweighted Shift and Ctrl part of metric `id` (M01, Y01; 0 otherwise or without either key).
+    /// Unweighted Shift and Ctrl part of metric `id` (effort, layer_switch; 0 otherwise or without either key).
     pub fn shift_value(&self, id: &str, st: &State) -> f64 {
         let (n, pos) = (self.n, &st.pos);
         let on = |f: &[f32], t: &[f32]| (0..n).map(|y| f[y] as f64 * t[pos[y] as usize] as f64).sum::<f64>();
         let ctrl = match id {
-            "M01" => on(&self.fct, &self.ctrl_effort),
-            "Y01" => on(&self.fct, &self.ctrl_press),
+            "effort" => on(&self.fct, &self.ctrl_effort),
+            "layer_switch" => on(&self.fct, &self.ctrl_press),
             _ => 0.0,
         };
         if !self.has_shift {
@@ -394,8 +394,8 @@ impl Scorer {
         }
         let mono = |t: &[f32]| on(&self.fsh, t);
         ctrl + match id {
-            "M01" => mono(&self.shift_effort),
-            "Y01" => {
+            "effort" => mono(&self.shift_effort),
+            "layer_switch" => {
                 let mut v = mono(&self.shift_press);
                 for x in 0..n {
                     for y in 0..n {

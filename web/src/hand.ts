@@ -33,11 +33,11 @@ export interface HandDims {
 export type Preset = "small" | "average" | "large" | "custom";
 export interface HandSettings { use: boolean; preset: Preset; custom: HandDims | null; wrist?: Wrist; body?: Body }
 
-/** Arms for G03 (mm): elbow-to-elbow distance while typing and forearm length. Unset: average arms scaled with the hand. */
+/** Arms for wrist (mm): elbow-to-elbow distance while typing and forearm length. Unset: average arms scaled with the hand. */
 export interface Body { elbowWidth: number; forearm: number }
 /** Average arms (`gecko_core::hand::BODY`). */
 export const BODY: Body = { elbowWidth: 490, forearm: 255 };
-/** The arms G03 uses for a hand: `body`, else `BODY` scaled with hand length. */
+/** The arms wrist uses for a hand: `body`, else `BODY` scaled with hand length. */
 export const bodyOf = (h: HandSettings): Body => {
   if (h.body) return h.body;
   const s = handLength(handDims(h)) / handLength(AVERAGE);
@@ -102,14 +102,14 @@ export function handSpec(h: HandSettings): HandSpec {
 }
 
 /**
- * G01 / G03 / G05 / G06 weights and reference spreads (english / ansi-30) added when a profile has
- * none (`data/profiles/hand.toml`); G03 and G06 are board metrics, weighted in natural units (scale 1).
+ * reach / wrist / press_angle / thumb_arc weights and reference spreads (english / ansi-30) added when a profile has
+ * none (`data/profiles/hand.toml`); wrist and thumb_arc are board metrics, weighted in natural units (scale 1).
  */
-export const HAND_WEIGHTS: Record<string, [number, number]> = { G01: [1, 0.1983], G03: [1, 1], G05: [0.5, 0.05973], G06: [1, 1] };
+export const HAND_WEIGHTS: Record<string, [number, number]> = { reach: [1, 0.1983], wrist: [1, 1], press_angle: [0.5, 0.05973], thumb_arc: [1, 1] };
 
 /**
- * The profile the scorer gets: with "Use hand in optimization" on, `hand` is this hand and G01 /
- * G03 / G05 / G06 get the hand profile's weights unless the profile already sets them (0 included);
+ * The profile the scorer gets: with "Use hand in optimization" on, `hand` is this hand and reach /
+ * wrist / press_angle / thumb_arc get the hand profile's weights unless the profile already sets them (0 included);
  * off, no `hand` (they then use the average hand, at whatever weight the profile gives them).
  */
 export function withHand(p: Profile, h: HandSettings): Profile {

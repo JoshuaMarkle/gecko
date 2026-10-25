@@ -65,7 +65,7 @@ export function useInputs() {
   /** The live (possibly edited) profile; returned with the hand merged in (`withHand`) and sent with each run as `profile_override`. */
   const [profile, setProfileRaw] = useState<Profile | null>(null);
   // Profiles come back from the views with the hand merged in; keep the stored one hand-free, and
-  // drop G01 / G05 weights `withHand` added unless they were edited.
+  // drop reach / press_angle weights `withHand` added unless they were edited.
   const setProfile = (p: Profile | null) => setProfileRaw((cur) => {
     if (!p) return null;
     const { hand: _h, ...rest } = withFingerEffort(p);
@@ -73,7 +73,7 @@ export function useInputs() {
     for (const [id, [w]] of Object.entries(HAND_WEIGHTS)) if (!(id in (cur?.weights ?? {})) && weights[id] === w) delete weights[id];
     return { ...rest, weights };
   });
-  /** A profile picked from the list (not edited in a view): its own G01 / G03 / G05 / G06 weights stay. */
+  /** A profile picked from the list (not edited in a view): its own reach / wrist / press_angle / thumb_arc weights stay. */
   const loadProfile = (p: Profile | null) => setProfileRaw(() => {
     if (!p) return null;
     const { hand: _h, ...rest } = withFingerEffort(p);

@@ -12,7 +12,7 @@ gecko score    <layout> [-g geometry] [-p profile] [-c corpus]   # per-metric br
 gecko compare  [<layout>...] [--corpora a,b,c]                   # rank layouts (all references if none);
                                                                   #   --corpora: score/rank per corpus (L05)
                [--robust [--sigma 0.5] [--draws 2000] [--seed 1]] #   --robust: rank confidence under weight noise
-gecko judge    [<layout>...] [--community]                        # independent judges: E01 typing time, E05/E04
+gecko judge    [<layout>...] [--community]                        # independent judges: typing_time typing time, engram/engram_formula
                                                                   #   Engram, home row, effort, SFB; cmini percentiles
 gecko features [<layout>...] [--community] [--random N] [--seed 1] # unit-weight cost of every metric, JSON lines
                                                                   #   (no layouts: stdin specs, or all references)
@@ -26,7 +26,7 @@ gecko optimize [--algo sa|hc|ga|memetic|bls|tabu|explore|qd|nsga2|rwsa] [--time 
                [--pin ",./;"] [--from <layout>] [--top 10] [--sa-steps N] [--ga-pop N]
                [--memetic-pop 24] [--local-search hc|tabu] [--local-steps 12] [--islands N]
                [--migration-interval 5] [--migrants 2]
-               [--objectives B01,T03,M01] [--nsga-generations N] [--front-size N]
+               [--objectives sfb,inroll,effort] [--nsga-generations N] [--front-size N]
                [--moves swap|columns,cycle3,depth2|all] [--depth2-width 32]
                [--holdout shai]                                   # also score results on a corpus the search never sees (L06)
                [--fidelity K]                                     # search on the K most frequent trigrams, confirm on all (B8)
@@ -52,7 +52,7 @@ gecko landscape [--samples 4000] [--walks 64] [--walk-len 400] [--seed 1] [--fro
 gecko atlas    <run> [--top 10] [--cut 8] [--pool 300] [-p profile]
                                                                   # summary, ranked, families, consensus,
                                                                   #   funnels, FDC; -p re-ranks under a profile
-gecko select   <run>... [--metrics B01,T03,M01] [--top 10] [--pool 300] [-g -p -c]
+gecko select   <run>... [--metrics sfb,inroll,effort] [--top 10] [--pool 300] [-g -p -c]
                                                                   # rank-sum pick over optimize / pareto / atlas / qd runs
 gecko magic    <layout> [--key 1] [--on <symbol>] [--keep] [--max-rules 32] [--min-gain 0.01] [--out name|path.toml]
                                                                   # greedy rule search for an adaptive key
@@ -97,7 +97,7 @@ gecko layouts import-cmini <cmini checkout>                           # → data
 gecko layouts likes [--top 10] [--dups] [--no-angle] [-g -p -c]        # GECKO rank vs cmini likes; angle boards on <g>-angle
 gecko corpus nav <corpus> [--share 0.03] [--seed 1] --out <name>        # add modelled arrow keys
 gecko profile normalize [-p profile] [--layouts a,b] [--out name]   # weights → spread units
-gecko profile fit [--target E05] [--layouts a,b] [--out name]       # fit weights to a judge metric
+gecko profile fit [--target engram] [--layouts a,b] [--out name]       # fit weights to a judge metric
 gecko profile fit --target likes [--seed 1] [--out <name>] --json   # pairwise fit, 20% layout holdout; ranking aid only
 gecko list     layouts|geometries|profiles|corpora|runs|metrics     # metrics: retired ones marked (JSON `retired`)
 gecko serve    [--port 7777] [--web web/dist]                          # serves embedded web UI (with embed-web) or filesystem dist; API inputs are store names only (no file paths)
@@ -118,7 +118,7 @@ Layered layouts: `--from layered/corne-code`; their rows print per layer (`[sym]
 non-hold layers add their mode, `[num, toggle]`),
 and JSON `rows` lists the base rows then each layer's. Runs store the flat layered string.
 Keysets (`gecko keyset`, `optimize --keyset`, [keysets.md](keysets.md)): print the symbols placed,
-the ones left out with their keystroke share, the profile changes (thumb zone, L04 and Y01
+the ones left out with their keystroke share, the profile changes (thumb zone, `zones` and `layer_switch`
 weights) and, with placement, each accepted fixed-key move. `--out` writes the start layout to
 `data/layouts/keyset/<name>.toml` (kept out of `compare`, like `layered/`). Layouts with Shift
 pairs print them as `⇧ ,< .> -_` under their rows; `score --json` adds `shifted`.
@@ -145,13 +145,13 @@ is on the layout, else bare; symbols not on the layout break n-grams; n-grams sp
 words belong to neither. `--top` sets the words per metric. JSON adds a top-level field:
 
 ```
-"worst_words": [ { "id": "B01", "name": "SFB", "unit": "%",
+"worst_words": [ { "id": "sfb", "name": "SFB", "unit": "%",
                    "words": [ { "word": "you're", "freq": 0.049, "cost": 1.0, "share": 2.2, "ngrams": ["'r"] } ] } ]
 ```
 
 - `freq`: % of all word occurrences in the source (including words cut from the list).
 - `cost`: per occurrence, summed over the word's n-grams: offending n-grams for `%` metrics
-  (2 = two SFBs), distance for `u` metrics, raw effort for M01. Far SFS (S02) weighs gap 2/3
+  (2 = two SFBs), distance for `u` metrics, raw effort for `effort`. Far SFS (`sfs_far`) weighs gap 2/3
   by `skip_decay` / `skip_decay²`.
 - `share`: % of the metric's total word cost (Σ freq × cost over the whole word list).
 - `ngrams`: the word's n-grams with non-zero cost, in typing order.
@@ -171,8 +171,8 @@ runs are refused), the first run's corpus and full profile (a warning when runs 
 every metric the profile weights. Informational metrics are refused.
 
 ```
-{ "schema": 1, "geometry": "ansi-30", "corpus": "english", "profile": "default",
-  "metrics": [ { "id": "B01", "name": "SFB", "unit": "%", "dir": "min" } ],
+{ "schema": 2, "geometry": "ansi-30", "corpus": "english", "profile": "default",
+  "metrics": [ { "id": "sfb", "name": "SFB", "unit": "%", "dir": "min" } ],
   "runs": [ { "id": "…", "kind": "optimize|pareto|atlas|qd", "geometry": "…", "corpus": "…",
               "profile": "…", "layouts": 300 } ],
   "candidates": 972,
@@ -204,7 +204,7 @@ pins can't be freed. The run's geometry, corpus and profile must still hash as r
 The result is written to `runs/<id>/certify-<kind>.json` and printed with `--json`:
 
 ```
-{ "schema": 1, "run": "…", "created": "…", "gecko_version": "0.1.0", "seed": 1,
+{ "schema": 2, "run": "…", "created": "…", "gecko_version": "0.1.0", "seed": 1,
   "geometry": {"name": "ansi-30", "hash": "…"}, "corpus": {"name": "english", "hash": "…"},
   "profile": "default", "profile_hash": "…", "pins": "", "layout": "<run's best, slot order>",
   "covers": "the real objective (Scorer::full)", "limits": {"time_ms": 60000, "nodes": null},
@@ -217,7 +217,7 @@ The result is written to `runs/<id>/certify-<kind>.json` and printed with `--jso
 
 ### Multi-objective optimization (NSGA-II / RWSA)
 
-When `--algo nsga2` or `--algo rwsa` is selected, `best.json` contains the non-dominated Pareto front over the chosen `--objectives` (default `B01,T03,M01`):
+When `--algo nsga2` or `--algo rwsa` is selected, `best.json` contains the non-dominated Pareto front over the chosen `--objectives` (default `sfb,inroll,effort`):
 - `objectives`: list of evaluated criteria with their unit, optimization direction (`min`/`max`), and cost description.
 - `front`: list of non-dominated layouts with standard layout fields (`rank`, `score`, `chars`, `rows`, `hash`, `breakdown`) plus:
   - `raw`: vector of metric values in native units (e.g. percentages or effort).
@@ -226,7 +226,7 @@ When `--algo nsga2` or `--algo rwsa` is selected, `best.json` contains the non-d
 
 ## Conventions
 
-- `--json` on every command; stable schema with `"schema": 1`.
+- `--json` on every command; stable schema with `"schema": 2` (2 since metric ids became names, 2026-10-24).
 - Human output is compact tables. Progress goes to stderr, results to stdout.
 - Exit code 0 on success, non-zero with a one-line `error:` on failure.
 - `optimize` always writes `runs/<timestamp>-<algo>-<hash>/` and prints its id. It then prints
@@ -259,7 +259,7 @@ When `--algo nsga2` or `--algo rwsa` is selected, `best.json` contains the non-d
 - Defaults (geometry, corpus, profile, reference layout, data/runs dirs) come from `gecko.toml`.
 
 `profile fit --target likes` uses unique positively liked cmini layouts, not `--layouts`.
-Its schema-1 JSON has `fit` (weights/scales, seed, input hashes, training/held-out layout
+Its JSON has `fit` (weights/scales, seed, input hashes, training/held-out layout
 names, pair counts, logistic loss, training/test accuracy and default/Engram baselines) and
 `profile`. Prediction ties count half, like ties are excluded; absent test pairs report null.
 JSON adds `warning`, and text output prints it: the fit ranks existing layouts, but optimizing it
@@ -271,14 +271,14 @@ accuracy and limitations.
 
 A score is linear in the weights: `score = Σ (weight / scale) · u`, with `u` the metric's signed
 cost at unit weight (rewards negative). `gecko features` prints `u` for every metric and layout,
-one JSON object per line: `{"layout", "chars", "score", "costs": {"B01": …}}` (`score` under
+one JSON object per line: `{"layout", "chars", "score", "costs": {"sfb": …}}` (`score` under
 `-p`). Layout specs come from the arguments, `--community` (every cmini layout that fits the
 board), `--random N` (shuffles of the reference layout's symbols), or stdin one per line.
 
-`gecko judge` reports judges no bundled profile optimizes toward: E01 typing time (% of a median
-keystroke interval), E05 / E04 Engram discomfort, M05 home row, M01 effort and B01 SFB, sorted by
+`gecko judge` reports judges no bundled profile optimizes toward: `typing_time` (% of a median
+keystroke interval), `engram` / `engram_formula` Engram discomfort, `home_row`, `effort` and `sfb`, sorted by
 score. `--community` adds each judge's percentile among the cmini layouts (0 = best). JSON:
-`{"layouts": [{"layout", "score", "judges": {"E01": {"value", "percentile"}, …}}], "community": n}`.
+`{"layouts": [{"layout", "score", "judges": {"typing_time": {"value", "percentile"}, …}}], "community": n}`.
 
 `gecko compare --robust` multiplies every weight by `exp(σ·z)` per draw and re-ranks the
 layouts from their unit costs (no re-scoring). Per layout: unperturbed rank, `p_rank` (share of
@@ -289,7 +289,7 @@ draws keeping it), `p_beats_next` (still ahead of the next layout), `rank_lo`/`r
 under each weight dropped, halved and doubled, plus `--draws` log-normal draws. It reports the
 optimum's families (single linkage at `--family-keys` keys, mirror-invariant), each vector's
 regret (what keeping the base optimum costs under that vector), keys moved, base-profile cost and
-judges (E01, E05, B01, M05), per-weight sensitivity, and median / p90 regret over the draws.
+judges (`typing_time`, `engram`, `sfb`, `home_row`), per-weight sensitivity, and median / p90 regret over the draws.
 `--out` writes the full report with input hashes. Deterministic for a seed and thread count.
 Measured: `bench/sweep-2026-10-22/`.
 

@@ -216,14 +216,14 @@ fn store_discovers_params_resolves_comfort_and_preserves_explicit_precedence() {
     std::fs::create_dir_all(root.join("data/comfort")).unwrap();
     std::fs::write(root.join("gecko.toml"), "").unwrap();
     let mut p = tiny();
-    p.comfort.insert("E04".into(), "tiny".into());
+    p.comfort.insert("engram_formula".into(), "tiny".into());
     let path = root.join("data/geometries/tiny.param.toml");
     std::fs::write(&path, toml::to_string(&p).unwrap()).unwrap();
     std::fs::write(root.join("data/comfort/tiny.csv"), "a_row,a_col,b_row,b_col,score\n0,0,1,0,0.25\n").unwrap();
     let store = Store::open(root).unwrap();
     assert_eq!(store.list("geometries"), ["tiny"]);
     let generated = store.geometry("tiny").unwrap();
-    assert_eq!(generated.comfort_tables["E04"][1], 0.25);
+    assert_eq!(generated.comfort_tables["engram_formula"][1], 0.25);
     assert_eq!(store.geometry(path.to_str().unwrap()).unwrap().hash(), generated.hash());
     let mut explicit = p.generate().unwrap();
     explicit.description = "explicit wins".into();

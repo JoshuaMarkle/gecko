@@ -6,7 +6,7 @@
 
 pub mod trigram;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::profile::{DistanceFn, SfbParams};
 use crate::{Geometry, Hand, LayerMode, Profile};
@@ -24,11 +24,11 @@ pub enum Order {
     /// Bigrams of two code symbols (ASCII punctuation, e.g. `()`, `->`), normalized on their own.
     SymBi,
     /// Sparse symbol pairs, not corpus n-grams, each metric with its own cost-table block
-    /// ([`SPARSE`]): Y03's bracket pairs (`()`, `[]`, `{}`, `<>`, by symbol frequency) and
-    /// L03's Vim motion pairs (equal weights).
-    Brackets,
+    /// ([`SPARSE`]): `brackets` (`()`, `[]`, `{}`, `<>`, by symbol frequency) and `vim`
+    /// (motion-key pairs, equal weights).
+    Pairs,
     /// A cost for symbol x on slot i (a table of n × n, symbol-major), already weighted by the
-    /// symbols it concerns: L01, L02.
+    /// symbols it concerns: `shortcuts`, `familiar`.
     Place,
     /// Non-linear: computed from per-finger load accumulators.
     Load,
@@ -53,13 +53,16 @@ pub struct MetricDef {
     pub order: Order,
     pub dir: Dir,
     pub desc: &'static str,
+    /// The metric's code before 2026-10-24 (`B01`, …): still accepted on input, so old runs,
+    /// profiles and geometries load (`context/metrics-catalog.md`).
+    pub legacy: &'static str,
     /// Kept so old runs and profiles still score, but no bundled profile weights it and the web
     /// UI hides it (`context/metrics-catalog.md`).
     pub retired: bool,
 }
 
-const fn m(id: &'static str, name: &'static str, unit: &'static str, order: Order, dir: Dir, desc: &'static str) -> MetricDef {
-    MetricDef { id, name, unit, order, dir, desc, retired: false }
+const fn m(id: &'static str, legacy: &'static str, name: &'static str, unit: &'static str, order: Order, dir: Dir, desc: &'static str) -> MetricDef {
+    MetricDef { id, name, unit, order, dir, desc, legacy, retired: false }
 }
 
 const fn retired(d: MetricDef) -> MetricDef {
@@ -68,17 +71,19 @@ const fn retired(d: MetricDef) -> MetricDef {
 
 /// Every metric GECKO knows, in report order.
 pub static METRICS: &[MetricDef] = &[
-    m("B01", "SFB", "%", Order::Bi, Dir::Min, "Same-finger bigrams: consecutive keys on one finger (different keys)."),
-    m("S01", "SFS", "%", Order::Skip, Dir::Min, "Same-finger skipgrams: two keys on one finger with any one symbol between (space too)."),
+    m("sfb", "B01", "SFB", "%", Order::Bi, Dir::Min, "Same-finger bigrams: consecutive keys on one finger (different keys)."),
+    m("sfs", "S01", "SFS", "%", Order::Skip, Dir::Min, "Same-finger skipgrams: two keys on one finger with any one symbol between (space too)."),
     retired(m(
+        "sfb_distance",
         "B03",
         "Finger speed",
         "u",
         Order::Bi,
         Dir::Min,
-        "Retired: same-finger distance per 100 bigrams, g(distance) × finger factor (profile `sfb`). Keystroke timing shows no distance effect beyond B01.",
+        "Retired: same-finger distance per 100 bigrams, g(distance) × finger factor (profile `sfb`). Keystroke timing shows no distance effect beyond sfb.",
     )),
     m(
+        "sfs_far",
         "S02",
         "Far SFS",
         "%",
@@ -86,10 +91,11 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Same finger with 2–3 keys between, decayed per extra key (profile `sfb.skip_decay`).",
     ),
-    retired(m("S03", "SFS distance", "u", Order::Skip, Dir::Min, "Retired: finger speed (B03) applied to skipgrams with one key between.")),
-    m("B04", "LSB", "%", Order::Bi, Dir::Min, "Lateral stretch: index on a center-column key next to the middle finger."),
-    m("B05", "Scissors", "%", Order::Bi, Dir::Min, "Adjacent fingers, same hand, two-row jump."),
+    retired(m("sfs_distance", "S03", "SFS distance", "u", Order::Skip, Dir::Min, "Retired: finger speed (sfb_distance) applied to skipgrams with one key between.")),
+    m("lsb", "B04", "LSB", "%", Order::Bi, Dir::Min, "Lateral stretch: index on a center-column key next to the middle finger."),
+    m("scissor", "B05", "Scissors", "%", Order::Bi, Dir::Min, "Adjacent fingers, same hand, two-row jump."),
     m(
+        "half_scissor",
         "B06",
         "Half scissors",
         "%",
@@ -97,9 +103,10 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Adjacent fingers, same hand, one-row jump with the shorter finger on the upper row.",
     ),
-    m("B07", "Bigram rolls in", "%", Order::Bi, Dir::Max, "Same hand, different fingers, moving toward the index finger."),
-    m("B09", "Pinky–ring pairs", "%", Order::Bi, Dir::Min, "Consecutive keys on the pinky and ring finger of one hand."),
+    m("bigram_inroll", "B07", "Bigram rolls in", "%", Order::Bi, Dir::Max, "Same hand, different fingers, moving toward the index finger."),
+    m("pinky_ring", "B09", "Pinky–ring pairs", "%", Order::Bi, Dir::Min, "Consecutive keys on the pinky and ring finger of one hand."),
     m(
+        "row_jump",
         "B10",
         "Row jump",
         "u",
@@ -108,14 +115,7 @@ pub static METRICS: &[MetricDef] = &[
         "Vertical travel between consecutive same-hand keys, each measured from its finger's home key, per 100 bigrams.",
     ),
     m(
-        "S05",
-        "Skip stretch",
-        "u",
-        Order::Skip,
-        Dir::Min,
-        "Geometric stretch (B14) between keys 1 and 3 of a trigram, per 100 skipgrams.",
-    ),
-    m(
+        "stretch",
         "B14",
         "Stretch",
         "u",
@@ -124,6 +124,7 @@ pub static METRICS: &[MetricDef] = &[
         "Geometric stretch between same-hand fingers per 100 bigrams (Oxeylyzer 2); covers LSB, scissors, crossings.",
     ),
     m(
+        "movement",
         "B11",
         "Movement",
         "u",
@@ -132,14 +133,16 @@ pub static METRICS: &[MetricDef] = &[
         "Same-hand finger-pair movement cost per 100 bigrams (KLO table, finger-length scissor rule, ring coupling).",
     ),
     m(
+        "skip_stretch",
         "S04",
         "Skip stretch",
         "u",
         Order::Skip,
         Dir::Min,
-        "Stretch (B14) between keys 1 and 3 of a trigram per 100 skipgrams: disjoint LSB / scissors (Kühlmak).",
+        "Stretch (stretch) between keys 1 and 3 of a trigram per 100 skipgrams: disjoint LSB / scissors (Kühlmak).",
     ),
     m(
+        "effort",
         "M01",
         "Effort",
         "",
@@ -147,9 +150,10 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Average key effort per keystroke: geometry base effort plus the profile's per-finger `row_offset`, plus layer key effort and Shift key effort per Shift press.",
     ),
-    m("M02", "Finger load error", "%", Order::Load, Dir::Min, "RMS gap between finger loads and the profile's target loads."),
-    m("M03", "Finger balance", "%", Order::Load, Dir::Min, "Root-sum-square of non-thumb finger shares; lowest when load is even."),
+    m("finger_target", "M02", "Finger load error", "%", Order::Load, Dir::Min, "RMS gap between finger loads and the profile's target loads."),
+    m("finger_evenness", "M03", "Finger balance", "%", Order::Load, Dir::Min, "Root-sum-square of non-thumb finger shares; lowest when load is even."),
     m(
+        "finger_peak",
         "M07",
         "Peak finger load",
         "%",
@@ -157,8 +161,9 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Highest non-thumb finger load as % of that finger's target load (profile `finger_target`).",
     ),
-    m("M04", "Left hand", "%", Order::Load, Dir::Min, "Share of keystrokes on the left hand; scored as squared distance from 50%."),
+    m("hand_balance", "M04", "Left hand", "%", Order::Load, Dir::Min, "Share of keystrokes on the left hand; scored as squared distance from 50%."),
     m(
+        "thumb_load",
         "M09",
         "Thumb load",
         "%",
@@ -167,6 +172,7 @@ pub static METRICS: &[MetricDef] = &[
         "Share of keystrokes on the thumbs; scored as squared distance from the profile's `thumb_target`.",
     ),
     m(
+        "reach",
         "G01",
         "Reach",
         "",
@@ -175,6 +181,7 @@ pub static METRICS: &[MetricDef] = &[
         "Hand-model reach cost per keystroke: joint deviation from the natural curl, sideways splay and fingertip shortfall with the hand placed on the home keys (profile `hand`, default average).",
     ),
     m(
+        "press_angle",
         "G05",
         "Press angle",
         "",
@@ -183,6 +190,7 @@ pub static METRICS: &[MetricDef] = &[
         "Hand-model press misalignment per keystroke: (angle / 45°)² between the fingertip's press direction and the keycap normal (fingers: the distal phalanx, within the finger's plane; thumbs: a push along the CMC→tip line).",
     ),
     m(
+        "wrist",
         "G03",
         "Wrist posture",
         "",
@@ -191,6 +199,7 @@ pub static METRICS: &[MetricDef] = &[
         "Hand-model wrist cost per keystroke: ulnar/radial deviation, extension and forearm pronation of the resting hand (elbows from profile `hand.body`; split halves placed to suit the arm), plus the extra deviation of sideways reaches.",
     ),
     m(
+        "thumb_arc",
         "G06",
         "Thumb arc fit",
         "",
@@ -198,52 +207,57 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Hand-model thumb cost per keystroke: (distance off the thumb's natural arc / 10 mm)², the arc being the tip's path as the CMC sweeps its flexion range with the other joints at rest; 0 on finger keys.",
     ),
-    m("M05", "Home row", "%", Order::Mono, Dir::Max, "Share of keystrokes on the home row."),
-    m("M06", "Center columns", "%", Order::Mono, Dir::Min, "Share of keystrokes on the index stretch columns."),
-    m("B08", "Hand alternation", "%", Order::Bi, Dir::Max, "Consecutive keys on different hands."),
-    m("T01", "Alternates", "%", Order::Tri, Dir::Max, "Trigrams that alternate hands L-R-L / R-L-R (no same-finger skip)."),
-    m("T02", "Alternate SFS", "%", Order::Tri, Dir::Min, "Alternating trigrams whose first and third keys share a finger."),
-    m("T03", "Rolls in", "%", Order::Tri, Dir::Max, "Two same-hand keys rolling toward the thumb plus one other-hand key."),
-    m("T04", "Rolls out", "%", Order::Tri, Dir::Max, "Two same-hand keys rolling away from the thumb plus one other-hand key."),
-    m("T05", "One-hand rolls", "%", Order::Tri, Dir::Info, "Three same-hand keys in one direction."),
-    m("T06", "Redirects", "%", Order::Tri, Dir::Min, "Three same-hand keys that change direction."),
-    m("T07", "Bad redirects", "%", Order::Tri, Dir::Min, "Redirects that do not use the index finger."),
-    m("T08", "SFT", "%", Order::Tri, Dir::Min, "Same-finger trigrams: all three keys on one finger."),
-    m("T12", "Thumb rolls", "%", Order::Tri, Dir::Max, "Trigrams with a thumb key next to a key on the same hand (other finger)."),
-    m("T13", "Thumb alternates", "%", Order::Tri, Dir::Max, "Trigrams with a thumb where every step into or out of the thumb changes hands."),
+    m("home_row", "M05", "Home row", "%", Order::Mono, Dir::Max, "Share of keystrokes on the home row."),
+    m("center_cols", "M06", "Center columns", "%", Order::Mono, Dir::Min, "Share of keystrokes on the index stretch columns."),
+    m("hand_switch", "B08", "Hand alternation", "%", Order::Bi, Dir::Max, "Consecutive keys on different hands."),
+    m("alternate", "T01", "Alternates", "%", Order::Tri, Dir::Max, "Trigrams that alternate hands L-R-L / R-L-R (no same-finger skip)."),
+    m("alt_sfs", "T02", "Alternate SFS", "%", Order::Tri, Dir::Min, "Alternating trigrams whose first and third keys share a finger."),
+    m("inroll", "T03", "Rolls in", "%", Order::Tri, Dir::Max, "Two same-hand keys rolling toward the thumb plus one other-hand key."),
+    m("outroll", "T04", "Rolls out", "%", Order::Tri, Dir::Max, "Two same-hand keys rolling away from the thumb plus one other-hand key."),
+    m("onehand", "T05", "One-hand rolls", "%", Order::Tri, Dir::Info, "Three same-hand keys in one direction."),
+    m("redirect", "T06", "Redirects", "%", Order::Tri, Dir::Min, "Three same-hand keys that change direction."),
+    m("bad_redirect", "T07", "Bad redirects", "%", Order::Tri, Dir::Min, "Redirects that do not use the index finger."),
+    m("sft", "T08", "SFT", "%", Order::Tri, Dir::Min, "Same-finger trigrams: all three keys on one finger."),
+    m("thumb_roll", "T12", "Thumb rolls", "%", Order::Tri, Dir::Max, "Trigrams with a thumb key next to a key on the same hand (other finger)."),
+    m("thumb_alt", "T13", "Thumb alternates", "%", Order::Tri, Dir::Max, "Trigrams with a thumb where every step into or out of the thumb changes hands."),
     m(
+        "contortion",
         "T09",
         "Contortions",
         "u",
         Order::Tri,
         Dir::Min,
-        "Chained stretches: both steps of a trigram have geometric stretch (B14); their sum per 100 trigrams.",
+        "Chained stretches: both steps of a trigram have geometric stretch (stretch); their sum per 100 trigrams.",
     ),
     m(
+        "irregular",
         "T10",
         "Irregular trigrams",
         "%",
         Order::Tri,
         Dir::Min,
-        "Both bigrams of the trigram are bad: same finger, lateral stretch (B04) or a full/half scissor (B05/B06).",
+        "Both bigrams of the trigram are bad: same finger, lateral stretch (lsb) or a full/half scissor (scissor/half_scissor).",
     ),
     m(
+        "engram_formula",
         "E04",
         "Engram formula",
         "%",
         Order::Bi,
         Dir::Min,
-        "Bigram discomfort, mean of 1 − comfort, from Engram's hand-built pair formula (geometry `comfort.E04`).",
+        "Bigram discomfort, mean of 1 − comfort, from Engram's hand-built pair formula (geometry `comfort.engram_formula`).",
     ),
     m(
+        "engram",
         "E05",
         "Engram measured",
         "%",
         Order::Bi,
         Dir::Min,
-        "Bigram discomfort, mean of 1 − comfort, fitted from Engram's pairwise choices (geometry `comfort.E05`).",
+        "Bigram discomfort, mean of 1 − comfort, fitted from Engram's pairwise choices (geometry `comfort.engram`).",
     ),
     m(
+        "typing_time",
         "E01",
         "Typing time",
         "%",
@@ -251,8 +265,9 @@ pub static METRICS: &[MetricDef] = &[
         Dir::Min,
         "Predicted extra time per bigram, % of a median keystroke interval: a geometric model fitted to fast touch typists (Aalto 136M keystrokes). A judge; weight 0 in the bundled profiles.",
     ),
-    m("B02", "Same-key repeats", "%", Order::Bi, Dir::Info, "The same key twice in a row."),
+    m("repeat", "B02", "Same-key repeats", "%", Order::Bi, Dir::Info, "The same key twice in a row."),
     m(
+        "layer_switch",
         "Y01",
         "Layer switches",
         "%",
@@ -261,6 +276,7 @@ pub static METRICS: &[MetricDef] = &[
         "Layer-key presses per 100 bigrams: hold and toggle layers cost a press on entry, toggle layers another to leave, one-shot layers one per symbol; a press next to another key of the layer key's finger counts double. Plus Shift and Ctrl presses per 100 keystrokes (with a ⇧ / ⎈ key), double when the modifier's finger also types the key (Shift: or the key before).",
     ),
     m(
+        "symbol_bigram",
         "Y02",
         "Symbol bigrams",
         "%",
@@ -269,14 +285,16 @@ pub static METRICS: &[MetricDef] = &[
         "Code-symbol bigrams (`()`, `->`, `!=`, …) typed with one finger on two keys or across a layer change, as % of symbol bigrams.",
     ),
     m(
+        "brackets",
         "Y03",
         "Paired symbols",
         "%",
-        Order::Brackets,
+        Order::Pairs,
         Dir::Min,
         "Bracket pairs (`()`, `[]`, `{}`, `<>`) not adjacent or mirrored on one layer, weighted by use; reversed order counts half.",
     ),
     m(
+        "hrm_misfire",
         "Y04",
         "HRM misfires",
         "%",
@@ -285,6 +303,7 @@ pub static METRICS: &[MetricDef] = &[
         "Same-hand rolls out of a home-row mod key (geometry `hrm`) onto another finger, where the hold can misfire.",
     ),
     m(
+        "shortcuts",
         "L01",
         "Shortcut placement",
         "%",
@@ -293,6 +312,7 @@ pub static METRICS: &[MetricDef] = &[
         "Shortcut letters Z X C V (and A S Q W at half weight) away from the left hand: 100 off it, up to 50 on it by distance from the QWERTY spot. Per shortcut letter, not per keystroke.",
     ),
     m(
+        "familiar",
         "L02",
         "Familiarity",
         "%",
@@ -301,14 +321,16 @@ pub static METRICS: &[MetricDef] = &[
         "Distance from the reference layout (profile `familiar_to`), % of keystrokes: 0 on the reference key, 50 on another key of its finger, 75 on its hand, 100 otherwise.",
     ),
     m(
+        "vim",
         "L03",
         "Vim motions",
         "%",
-        Order::Brackets,
+        Order::Pairs,
         Dir::Min,
         "Vim motion keys h j k l against the profile's `vim` policy: row (one row, h j k l left to right on neighbouring keys), pairs (h left of l, j left of k, each on neighbouring keys) or fingers (four different fingers of one hand). % of the policy's key pairs broken; reversed neighbours count half. Weighted high it is a constraint.",
     ),
     m(
+        "zones",
         "L04",
         "Key zones",
         "keys",
@@ -318,13 +340,13 @@ pub static METRICS: &[MetricDef] = &[
     ),
 ];
 
-/// Shortcut letters scored by L01 and their weights.
+/// Shortcut letters scored by shortcuts and their weights.
 pub const SHORTCUTS: [(char, f32); 8] = [('z', 1.0), ('x', 1.0), ('c', 1.0), ('v', 1.0), ('a', 0.5), ('s', 0.5), ('q', 0.5), ('w', 0.5)];
 
 /// The QWERTY letter keys in slot order of a 3-row, 10-column board.
 const QWERTY: &str = "qwertyuiopasdfghjkl;zxcvbnm,./";
 
-/// Key pairs L03 checks for a profile `vim` policy (`None`: unknown policy).
+/// Key pairs vim checks for a profile `vim` policy (`None`: unknown policy).
 pub fn vim_pairs(policy: &str) -> Option<&'static [(char, char)]> {
     match policy {
         "row" => Some(&[('h', 'j'), ('j', 'k'), ('k', 'l')]),
@@ -334,14 +356,14 @@ pub fn vim_pairs(policy: &str) -> Option<&'static [(char, char)]> {
     }
 }
 
-/// Sparse symbol-pair metrics (`Order::Brackets`) and their cost-table block in the scorer.
-pub const SPARSE: [&str; 2] = ["Y03", "L03"];
+/// Sparse symbol-pair metrics (`Order::Pairs`) and their cost-table block in the scorer.
+pub const SPARSE: [&str; 2] = ["brackets", "vim"];
 
 pub fn sparse_block(id: &str) -> usize {
     SPARSE.iter().position(|&s| s == id).unwrap_or(0)
 }
 
-/// L03 cost of `x` on slot `i` and `y` on slot `j` under a `vim` policy. Neighbour policies
+/// vim cost of `x` on slot `i` and `y` on slot `j` under a `vim` policy. Neighbour policies
 /// (row, pairs): 0 when both are on one layer, hand and row in neighbouring columns with `x`
 /// left of `y`, 50 reversed, 100 otherwise. Fingers: 0 on two different non-thumb fingers of
 /// one hand on one layer, else 100.
@@ -361,19 +383,55 @@ pub fn vim_cost_at(g: &Geometry, pts: &[[f32; 3]], policy: &str, i: usize, j: us
     }
 }
 
-/// Open/close symbol pairs scored by Y03.
+/// Open/close symbol pairs scored by brackets.
 pub const BRACKET_PAIRS: [(char, char); 4] = [('(', ')'), ('[', ']'), ('{', '}'), ('<', '>')];
 
+/// Comfort and timing models (the old E codes): judges that weight fits keep independent.
+pub fn is_model(id: &str) -> bool {
+    matches!(id, "typing_time" | "engram" | "engram_formula")
+}
+
+/// Legacy codes without a metric of their own: S05 built the same table as S04.
+const ALIASES: [(&str, &str); 1] = [("S05", "skip_stretch")];
+
+/// The metric id for `id`, which may be an id or a legacy code (`B01` → `sfb`).
+pub fn canonical(id: &str) -> Option<&'static str> {
+    let alias = ALIASES.iter().find(|a| a.0 == id).map(|a| a.1);
+    METRICS.iter().find(|d| d.id == id || d.legacy == id).map(|d| d.id).or(alias)
+}
+
+/// Looks up an id or a legacy code.
 pub fn def(id: &str) -> Option<&'static MetricDef> {
+    let id = canonical(id)?;
     METRICS.iter().find(|d| d.id == id)
 }
 
 pub fn index_of(id: &str) -> Option<usize> {
+    let id = canonical(id)?;
     METRICS.iter().position(|d| d.id == id)
 }
 
+/// Deserializes a map keyed by metric id with legacy codes renamed to ids, so profiles, runs
+/// and geometries written before the rename still load. Unknown keys pass through for the
+/// caller's validation; two keys naming one metric are an error.
+pub fn canonical_keys<'de, D, V>(d: D) -> Result<std::collections::BTreeMap<String, V>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    V: serde::Deserialize<'de>,
+{
+    let raw = std::collections::BTreeMap::<String, V>::deserialize(d)?;
+    let mut out = std::collections::BTreeMap::new();
+    for (k, v) in raw {
+        let id = canonical(&k).map_or(k.clone(), str::to_string);
+        if out.insert(id.clone(), v).is_some() {
+            return Err(serde::de::Error::custom(format!("metric '{id}' is given twice ('{k}' is its legacy code)")));
+        }
+    }
+    Ok(out)
+}
+
 /// Per-metric cost table for a geometry and profile, aligned with [`METRICS`]. `None` for
-/// `Order::Load`, and for E04/E05 when the geometry has no comfort table for them.
+/// `Order::Load`, and for engram_formula/engram when the geometry has no comfort table for them.
 pub fn table(g: &Geometry, p: &Profile, d: &MetricDef) -> Option<Vec<f32>> {
     let mut t = Vec::new();
     update_table(g, p, &Prep::new(g), d, &mut t, None).then_some(t)
@@ -428,39 +486,39 @@ pub fn update_table(g: &Geometry, p: &Profile, prep: &Prep, d: &MetricDef, t: &m
     };
     let pct = |b: bool| if b { 100.0 } else { 0.0 };
     match d.id {
-        "M01" => mono(t, n, &|i| key_effort(g, p, i) + g.holder(i).map_or(0.0, |h| key_effort(g, p, h))),
-        "G01" | "G03" | "G05" | "G06" => {
+        "effort" => mono(t, n, &|i| key_effort(g, p, i) + g.holder(i).map_or(0.0, |h| key_effort(g, p, h))),
+        "reach" | "wrist" | "press_angle" | "thumb_arc" => {
             let c = prep.hand.get_or_init(|| {
                 let h = p.hand.clone().unwrap_or_default();
                 crate::hand::costs_with(g, &h.dims(), &h.body())
             });
             let v = match d.id {
-                "G01" => &c.reach,
-                "G03" => &c.wrist,
-                "G06" => &c.arc,
+                "reach" => &c.reach,
+                "wrist" => &c.wrist,
+                "thumb_arc" => &c.arc,
                 _ => &c.align,
             };
             mono(t, n, &|i| v[i] + g.holder(i).map_or(0.0, |h| v[h]))
         }
-        "M05" => mono(t, n, &|i| pct(k[i].home || k[i].row == home_row(g))),
-        "M06" => mono(t, n, &|i| pct(k[i].stretch)),
-        "B01" | "S01" | "S02" => pair(t, n, fresh, ch, &idx, &|i, j| pct(same_finger(i, j))),
-        "B02" => pair(t, n, fresh, ch, &idx, &|i, j| pct(g.same_key(i, j))),
-        "B03" | "S03" => pair(t, n, fresh, ch, &idx, &|i, j| {
+        "home_row" => mono(t, n, &|i| pct(k[i].home || k[i].row == home_row(g))),
+        "center_cols" => mono(t, n, &|i| pct(k[i].stretch)),
+        "sfb" | "sfs" | "sfs_far" => pair(t, n, fresh, ch, &idx, &|i, j| pct(same_finger(i, j))),
+        "repeat" => pair(t, n, fresh, ch, &idx, &|i, j| pct(g.same_key(i, j))),
+        "sfb_distance" | "sfs_distance" => pair(t, n, fresh, ch, &idx, &|i, j| {
             if same_finger(i, j) {
                 100.0 * finger_speed_at(g, pts, &p.sfb, i, j)
             } else {
                 0.0
             }
         }),
-        "B14" | "S04" | "S05" => pair(t, n, fresh, ch, &idx, &|i, j| 100.0 * stretch_at(g, pts, spread, i, j)),
-        "B11" => pair(t, n, fresh, ch, &idx, &|i, j| 100.0 * movement(g, i, j)),
-        "E04" | "E05" => {
+        "stretch" | "skip_stretch" => pair(t, n, fresh, ch, &idx, &|i, j| 100.0 * stretch_at(g, pts, spread, i, j)),
+        "movement" => pair(t, n, fresh, ch, &idx, &|i, j| 100.0 * movement(g, i, j)),
+        "engram_formula" | "engram" => {
             let Some(c) = g.comfort_tables.get(d.id) else { return false };
             pair(t, n, fresh, ch, &idx, &|i, j| 100.0 * (1.0 - c[i * n + j]))
         }
         // Key effort reads board-wide fields (home row, home keys, layer holders): rebuild whole.
-        "E01" => pair(t, n, true, &all, &(0..n).collect::<Vec<_>>(), &|i, j| {
+        "typing_time" => pair(t, n, true, &all, &(0..n).collect::<Vec<_>>(), &|i, j| {
             if g.same_key(i, j) {
                 return 0.0;
             }
@@ -479,17 +537,17 @@ pub fn update_table(g: &Geometry, p: &Profile, prep: &Prep, d: &MetricDef, t: &m
                     + E01_PINKY_RING * f32::from(pinky_ring)
                     + E01_EFFORT * effort)
         }),
-        "B04" => pair(t, n, fresh, ch, &idx, &|i, j| {
+        "lsb" => pair(t, n, fresh, ch, &idx, &|i, j| {
             let lsb = |a: usize, b: usize| k[a].stretch && k[a].finger.ord() == 3 && k[b].finger.ord() == 2;
             pct(same_hand(i, j) && (lsb(i, j) || lsb(j, i)))
         }),
-        "B05" => pair(t, n, fresh, ch, &idx, &|i, j| pct(adjacent(i, j) && (k[i].row - k[j].row).abs() >= 2)),
-        "B06" => pair(t, n, fresh, ch, &idx, &|i, j| pct(half_scissor(g, i, j))),
-        "B07" => pair(t, n, fresh, ch, &idx, &|i, j| pct(rolls(g, i, j) && k[j].finger.ord() > k[i].finger.ord())),
-        "B09" => pair(t, n, fresh, ch, &idx, &|i, j| pct(rolls(g, i, j) && k[i].finger.ord() + k[j].finger.ord() == 1)),
+        "scissor" => pair(t, n, fresh, ch, &idx, &|i, j| pct(adjacent(i, j) && (k[i].row - k[j].row).abs() >= 2)),
+        "half_scissor" => pair(t, n, fresh, ch, &idx, &|i, j| pct(half_scissor(g, i, j))),
+        "bigram_inroll" => pair(t, n, fresh, ch, &idx, &|i, j| pct(rolls(g, i, j) && k[j].finger.ord() > k[i].finger.ord())),
+        "pinky_ring" => pair(t, n, fresh, ch, &idx, &|i, j| pct(rolls(g, i, j) && k[i].finger.ord() + k[j].finger.ord() == 1)),
         // Vertical travel from each finger's own home key, so a column stagger that follows
         // finger length is not a jump. Reads the home keys too: rebuild whole.
-        "B10" => {
+        "row_jump" => {
             let lift = home_lift(g, pts);
             pair(t, n, true, &all, &(0..n).collect::<Vec<_>>(), &|i, j| {
                 let sh = same_hand(i, j) && !g.same_key(i, j) && !k[i].finger.is_thumb() && !k[j].finger.is_thumb();
@@ -500,7 +558,7 @@ pub fn update_table(g: &Geometry, p: &Profile, prep: &Prep, d: &MetricDef, t: &m
                 }
             })
         }
-        "T09" => {
+        "contortion" => {
             let st: Vec<f32> = (0..n * n).map(|ij| stretch_at(g, pts, spread, ij / n, ij % n)).collect();
             tri(t, n, fresh, ch, &idx, &|i, j, l| {
                 let (s1, s2) = (st[i * n + j], st[j * n + l]);
@@ -511,35 +569,34 @@ pub fn update_table(g: &Geometry, p: &Profile, prep: &Prep, d: &MetricDef, t: &m
                 }
             })
         }
-        "T10" => {
+        "irregular" => {
             let bad: Vec<bool> = (0..n * n).map(|ij| bad_bigram(g, ij / n, ij % n)).collect();
             tri(t, n, fresh, ch, &idx, &|i, j, l| pct(bad[i * n + j] && bad[j * n + l]))
         }
-        "B08" => pair(t, n, fresh, ch, &idx, &|i, j| pct(!same_hand(i, j))),
-        "Y01" => pair(t, n, fresh, ch, &idx, &|i, j| layer_presses(g, i, j)),
-        "Y02" => pair(t, n, fresh, ch, &idx, &|i, j| {
+        "hand_switch" => pair(t, n, fresh, ch, &idx, &|i, j| pct(!same_hand(i, j))),
+        "layer_switch" => pair(t, n, fresh, ch, &idx, &|i, j| layer_presses(g, i, j)),
+        "symbol_bigram" => pair(t, n, fresh, ch, &idx, &|i, j| {
             let oneshot = k[i].layer != 0 && layer_mode(g, k[i].layer as usize) == LayerMode::Oneshot;
             pct(same_finger(i, j) || k[i].layer != k[j].layer || oneshot)
         }),
-        "Y03" => pair(t, n, fresh, ch, &idx, &|i, j| bracket_cost_at(g, pts, i, j)),
-        "L03" => {
+        "brackets" => pair(t, n, fresh, ch, &idx, &|i, j| bracket_cost_at(g, pts, i, j)),
+        "vim" => {
             let Some(policy) = p.vim.as_deref() else { return false };
             pair(t, n, fresh, ch, &idx, &|i, j| vim_cost_at(g, pts, policy, i, j))
         }
         // The mod key is still down when another finger of its hand presses: a fast roll that
         // a tap-hold resolver can read as a hold. Same-finger pairs release first.
-        "Y04" => pair(t, n, fresh, ch, &idx, &|i, j| pct(g.hrm(i) && same_hand(i, j) && k[i].finger != k[j].finger)),
-        id if id.starts_with('T') => {
+        "hrm_misfire" => pair(t, n, fresh, ch, &idx, &|i, j| pct(g.hrm(i) && same_hand(i, j) && k[i].finger != k[j].finger)),
+        id => {
             let Some(cls) = trigram::class_for(id) else { return false };
             tri(t, n, fresh, ch, &idx, &|i, j, l| pct(trigram::classify(g, i, j, l) == cls))
         }
-        _ => false,
     }
 }
 
-// E01 coefficients, in median relative inter-key intervals, controlling log bigram frequency:
+// typing_time coefficients, in median relative inter-key intervals, controlling log bigram frequency:
 // fast touch typists (≥ 70 WPM, 18.5k people, 351 letter bigrams; cross-validated R² 0.67 with
-// log frequency). `bench/cost-validity-2026-10-22/`, `context/objective.md` (E01).
+// log frequency). `bench/cost-validity-2026-10-22/`, `context/objective.md` (typing_time).
 const E01_SFB: f32 = 0.5522;
 const E01_SAME_HAND: f32 = 0.0578;
 const E01_ADJACENT: f32 = 0.0476;
@@ -552,7 +609,7 @@ const E01_EFFORT: f32 = 0.0201;
 /// other pair/triple table reads only logical key fields (finger, row, column, flags), so a
 /// pose-only move leaves it unchanged.
 pub fn reads_points(id: &str) -> bool {
-    matches!(id, "B03" | "S03" | "B14" | "S04" | "S05" | "B10" | "Y03" | "L03" | "T09")
+    matches!(id, "sfb_distance" | "sfs_distance" | "stretch" | "skip_stretch" | "row_jump" | "brackets" | "vim" | "contortion")
 }
 
 /// Each slot's metric-point y minus the mean y of its finger's home keys; for a finger without
@@ -634,7 +691,7 @@ fn layer_mode(g: &Geometry, l: usize) -> LayerMode {
     g.layer_modes.get(l - 1).copied().unwrap_or_default()
 }
 
-/// Y01 cost of typing slot `j` right after slot `i`: 100 per layer-key press in between (a
+/// layer_switch cost of typing slot `j` right after slot `i`: 100 per layer-key press in between (a
 /// toggle layer's key to leave `i`'s layer, then the key to reach `j`'s layer unless it is
 /// already active, always for one-shot), plus 100 per press adjacent to another key on the
 /// same finger. A hold layer is released for free; its finger's keys are not on the layer.
@@ -668,7 +725,7 @@ fn length_rank(ord: u8) -> u8 {
     [0, 2, 3, 1, 4][ord as usize]
 }
 
-/// B06: adjacent non-thumb fingers on one hand, rows one apart, the shorter finger on the upper row.
+/// half_scissor: adjacent non-thumb fingers on one hand, rows one apart, the shorter finger on the upper row.
 pub fn half_scissor(g: &Geometry, i: usize, j: usize) -> bool {
     let (a, b) = (&g.key[i], &g.key[j]);
     if !rolls(g, i, j) || a.finger.ord().abs_diff(b.finger.ord()) != 1 || (a.row - b.row).abs() != 1 {
@@ -678,7 +735,7 @@ pub fn half_scissor(g: &Geometry, i: usize, j: usize) -> bool {
     short.row < long.row
 }
 
-/// T10's "bad bigram": same finger on two keys, a lateral stretch (B04), or a full/half scissor.
+/// irregular's "bad bigram": same finger on two keys, a lateral stretch (lsb), or a full/half scissor.
 pub fn bad_bigram(g: &Geometry, i: usize, j: usize) -> bool {
     let (a, b) = (&g.key[i], &g.key[j]);
     if g.same_key(i, j) || a.hand() != b.hand() || a.finger.is_thumb() || b.finger.is_thumb() {
@@ -692,7 +749,7 @@ pub fn bad_bigram(g: &Geometry, i: usize, j: usize) -> bool {
     lsb(a, b) || lsb(b, a) || (adjacent && (a.row - b.row).abs() >= 2) || half_scissor(g, i, j)
 }
 
-/// Y03 cost of the opener on slot `i` and the closer on slot `j`: 0 when both are on one
+/// brackets cost of the opener on slot `i` and the closer on slot `j`: 0 when both are on one
 /// layer and either adjacent (same hand and row, neighbouring columns, opener on the left) or
 /// mirrored (same row, finger and column kind on opposite hands, opener on the left hand);
 /// 50 for the same shapes in reversed order; 100 otherwise.
@@ -719,7 +776,7 @@ pub fn bracket_cost_at(g: &Geometry, pts: &[[f32; 3]], i: usize, j: usize) -> f3
     }
 }
 
-/// Same-finger movement cost `g(d) · finger_factor` for slots `i`, `j` (B03, S03).
+/// Same-finger movement cost `g(d) · finger_factor` for slots `i`, `j` (sfb_distance, sfs_distance).
 pub fn finger_speed(g: &Geometry, s: &SfbParams, i: usize, j: usize) -> f32 {
     finger_speed_at(g, &g.metric_points(), s, i, j)
 }
@@ -813,7 +870,7 @@ fn move_pair(from: usize, to: usize) -> f32 {
     MOVE_SEED[from][to] * if ring { c(from, to) / (sum / 6.0) } else { 1.0 }
 }
 
-/// B11: KLO-style movement cost for two keys on the same hand and different non-thumb fingers;
+/// movement: KLO-style movement cost for two keys on the same hand and different non-thumb fingers;
 /// 0 otherwise. `pair · direction · (0.1 + rows² + lateral)`: `rows` is the logical row change;
 /// `direction` = 1 + 2·|Δlength| when a shorter finger goes down to a longer one or a longer
 /// finger goes up to a shorter one (the scissor that hurts); `lateral` = columns spanned beyond
@@ -899,7 +956,7 @@ pub fn place_table(id: &str, g: &Geometry, p: &Profile, chars: &[char], qwerty: 
     let mut t = vec![0.0f32; n * n];
     let k = &g.key;
     match id {
-        "L01" => {
+        "shortcuts" => {
             let total: f32 = SHORTCUTS.iter().filter(|(c, _)| chars.contains(c)).map(|(_, w)| w).sum();
             for (x, c) in chars.iter().enumerate() {
                 let Some((_, w)) = SHORTCUTS.iter().find(|(s, _)| s == c) else { continue };
@@ -917,7 +974,7 @@ pub fn place_table(id: &str, g: &Geometry, p: &Profile, chars: &[char], qwerty: 
                 }
             }
         }
-        "L04" => {
+        "zones" => {
             let zone: Vec<char> = p.thumb_zone.as_deref().map(|z| crate::layout::parse_symbols(z).unwrap_or_default()).unwrap_or_default();
             for (x, &c) in chars.iter().enumerate() {
                 let (in_zone, typed) = (zone.contains(&c), c.is_ascii_alphanumeric() || c.is_ascii_punctuation());
@@ -934,7 +991,7 @@ pub fn place_table(id: &str, g: &Geometry, p: &Profile, chars: &[char], qwerty: 
                 }
             }
         }
-        "L02" if p.familiar_to.is_some() => {
+        "familiar" if p.familiar_to.is_some() => {
             for x in 0..n {
                 let Some(q) = qwerty[x] else { continue };
                 for i in 0..n {

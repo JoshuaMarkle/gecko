@@ -58,7 +58,7 @@ impl Engine {
 }
 
 /// Hand-model costs per key for a geometry and a profile `hand` spec (`{size, dims?}`), as JSON
-/// `{reach, align, miss, placed}`: the G01 / G05 tables before layer holders are added.
+/// `{reach, align, miss, placed}`: the reach / press_angle tables before layer holders are added.
 #[wasm_bindgen]
 pub fn hand_costs(geometry_json: &str, hand_json: &str) -> Result<String, JsError> {
     let geometry: Geometry = serde_json::from_str(geometry_json).map_err(js)?;

@@ -1,8 +1,8 @@
 // Hand tab (web-screens.md "Hand"): hand settings | 3D hands placed over the board's home keys
 // (mirrored skeletons, finger IK), with a typing simulation whose fingers move in parallel |
 // reach (the scorer's per-key hand costs), measurements, typing timeline and stats, size
-// distribution, similarity. "Use hand in optimization" sends this hand to the scorer (G01, G03, G05, G06,
-// B14 spread); the wrist and typing simulation stay view-only.
+// distribution, similarity. "Use hand in optimization" sends this hand to the scorer (reach, wrist, press_angle, thumb_arc,
+// stretch spread); the wrist and typing simulation stay view-only.
 
 import { useMemo, useRef, useState } from "react";
 import type { Geometry } from "../../api";
@@ -91,8 +91,8 @@ export function HandView(p: Props) {
       side={
         sideTab === "hand" ? <>
           <div className="pad">
-            <Toggle label="Use in optimization" help="Score and optimize with this hand: its reach (G01), press angle (G05), wrist posture (G03) and thumb arc fit (G06) per key, and B14's stretch allowance scaled by its span. Adds G01 / G03 / G05 / G06 to the profile at the hand profile's weights unless the profile sets them." value={h.use} onChange={(use) => p.setHand({ ...h, use })} />
-            {off ? <div className="hint">Off: the scorer uses the average hand for G01 / G03 / G05 / G06, at the profile's weights (0 in the default). The views on the right still preview this hand.</div>
+            <Toggle label="Use in optimization" help="Score and optimize with this hand: its reach, press angle, wrist posture and thumb arc fit per key, and stretch allowance scaled by its span. Adds reach / wrist / press_angle / thumb_arc to the profile at the hand profile's weights unless the profile sets them." value={h.use} onChange={(use) => p.setHand({ ...h, use })} />
+            {off ? <div className="hint">Off: the scorer uses the average hand for reach / wrist / press_angle / thumb_arc, at the profile's weights (0 in the default). The views on the right still preview this hand.</div>
               : <div className="hint">On: runs and scores use this hand. Reach, Press angle and Wrist posture are in the Profile tab's Hand model section.</div>}
           </div>
           <fieldset className="plain" disabled={off}>
@@ -122,7 +122,7 @@ export function HandView(p: Props) {
                 <Num label="Reach" help="Comfortable fingertip travel from the home key." value={+d.reach.toFixed(1)} step={1} unit="mm" disabled={off} onChange={(x) => setDims({ ...d, reach: Math.max(5, x) })} />
               </div>
               <div className="subgroup">
-                <div className="subhead">Arms (wrist posture, G03)</div>
+                <div className="subhead">Arms (wrist posture)</div>
                 <Num label="Elbow width" help="Elbow to elbow while typing. Wider elbows angle the forearms inward and bend the wrists more toward the pinky on a one-piece board." value={+arms.elbowWidth.toFixed(0)} step={5} unit="mm" disabled={off} onChange={(x) => p.setHand({ ...h, body: { ...arms, elbowWidth: Math.min(1500, Math.max(100, x)) } })} />
                 <Num label="Forearm" help="Elbow to wrist crease." value={+arms.forearm.toFixed(0)} step={5} unit="mm" disabled={off} onChange={(x) => p.setHand({ ...h, body: { ...arms, forearm: Math.min(600, Math.max(100, x)) } })} />
               </div>
@@ -157,7 +157,7 @@ export function HandView(p: Props) {
             <span className="muted">{playing && plan ? `typing · ${plan.stats.wpm.toFixed(0)} of ${wpm} wpm reached · ${(100 * plan.stats.early).toFixed(0)}% of keys started early` : reach ? `${reach.side === "L" ? "left" : "right"} ${reach.finger} reaching (IK)` : "fingertips on the home keys (IK) · hover a key to reach it"}</span>
           </div>
           <div className="viewctl">
-            <div className="seg inline"><button className={reachHeat ? "on" : ""} onClick={() => setReachHeat(!reachHeat)} title="Color keys by this hand's reach cost (G01): darker = harder to reach from the home keys">Reach</button></div>
+            <div className="seg inline"><button className={reachHeat ? "on" : ""} onClick={() => setReachHeat(!reachHeat)} title="Color keys by this hand's reach cost: darker = harder to reach from the home keys">Reach</button></div>
             <div className="seg inline"><button className={skin ? "on" : ""} onClick={() => setSkin(!skin)} title="Skinned hand meshes (off: joint skeletons)">Skin</button></div>
             <div className="seg inline"><button className={labels ? "on" : ""} onClick={() => setLabels(!labels)} title="Segment lengths (mm) on the resting hands">Lengths</button></div>
             <div className="seg inline"><button className={mode === "3d" ? "on" : ""} onClick={() => setMode(mode === "3d" ? "top" : "3d")} title="3D view (off: flat top-down)">3D</button></div>

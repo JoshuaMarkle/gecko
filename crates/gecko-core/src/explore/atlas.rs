@@ -55,21 +55,20 @@ const OPT_MAGIC: &[u8; 8] = b"GKATLAS1";
 const EDGE_MAGIC: &[u8; 8] = b"GKEDGES1";
 const SAMPLE_MAGIC: &[u8; 8] = b"GKSAMPL1";
 
+/// Metric ids: version 2 writes a u8 length and the bytes; version 1 had 4 zero-padded bytes
+/// (the legacy codes, renamed to ids on read).
 fn put_ids(out: &mut Vec<u8>, ids: &[String]) {
     for id in ids {
-        let mut b = [0u8; 4];
-        for (d, s) in b.iter_mut().zip(id.bytes()) {
-            *d = s;
-        }
-        out.extend_from_slice(&b);
+        out.push(id.len() as u8);
+        out.extend_from_slice(id.as_bytes());
     }
 }
 
 pub fn write_optima(slots: usize, metrics: &[String], optima: &[Optimum]) -> Vec<u8> {
     let m = metrics.len();
-    let mut out = Vec::with_capacity(28 + 4 * m + optima.len() * (18 + slots + 4 * m));
+    let mut out = Vec::with_capacity(28 + 16 * m + optima.len() * (18 + slots + 4 * m));
     out.extend_from_slice(OPT_MAGIC);
-    for v in [1u32, slots as u32, m as u32, optima.len() as u32] {
+    for v in [2u32, slots as u32, m as u32, optima.len() as u32] {
         out.extend_from_slice(&v.to_le_bytes());
     }
     put_ids(&mut out, metrics);
@@ -149,10 +148,15 @@ impl<'a> Reader<'a> {
 pub fn read_optima(b: &[u8], limit: Option<usize>) -> Result<(usize, Vec<String>, Vec<Optimum>)> {
     let mut r = Reader { b, at: 0, what: "optima.bin" };
     r.magic(OPT_MAGIC)?;
-    let _version = r.u32()?;
+    let version = r.u32()?;
     let (slots, m, count) = (r.u32()? as usize, r.u32()? as usize, r.u32()? as usize);
-    let metrics: Vec<String> =
-        (0..m).map(|_| r.take(4).map(|b| String::from_utf8_lossy(b).trim_end_matches('\0').to_string())).collect::<Result<_>>()?;
+    let metrics: Vec<String> = (0..m)
+        .map(|_| {
+            let len = if version == 1 { 4 } else { r.take(1)?[0] as usize };
+            let id = String::from_utf8_lossy(r.take(len)?).trim_end_matches('\0').to_string();
+            Ok(crate::metrics::canonical(&id).map_or(id, str::to_string))
+        })
+        .collect::<Result<_>>()?;
     let count = limit.map_or(count, |l| l.min(count));
     let mut optima = Vec::with_capacity(count);
     for _ in 0..count {
@@ -286,7 +290,7 @@ mod tests {
 
     #[test]
     fn binary_roundtrip() {
-        let metrics = vec!["B01".to_string(), "M02".to_string()];
+        let metrics = vec!["sfb".to_string(), "finger_target".to_string()];
         let optima = vec![
             Optimum { sym: vec![2, 0, 1], score: 1.5, raw: vec![0.25, 3.0], hits: 4, first_ms: 10, flags: 0 },
             Optimum { sym: vec![0, 2, 1], score: 2.5, raw: vec![1.25, -3.0], hits: 1, first_ms: 99, flags: CONSTRAINED },

@@ -120,7 +120,7 @@ fn explore_finds_every_local_optimum_of_a_tiny_board() {
     let g = tiny();
     let c = synthetic("etaoin", 11);
     let mut prof = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
-    prof.weights.retain(|k, _| ["B01", "M01", "B08", "M04"].contains(&k.as_str()));
+    prof.weights.retain(|k, _| ["sfb", "effort", "hand_switch", "hand_balance"].contains(&k.as_str()));
     let start = Layout::from_str_flat("start", "tiny", "etaoin").unwrap();
     let sc = Scorer::new(&g, &c, &prof, &start).unwrap();
     let mirror = distance::score_symmetry(&sc);

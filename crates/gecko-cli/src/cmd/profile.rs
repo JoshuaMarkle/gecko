@@ -21,11 +21,11 @@ pub enum ProfileCmd {
         #[command(flatten)]
         inputs: Inputs,
     },
-    /// Fit non-negative spread-unit weights to a judge metric (e.g. E05), or use
+    /// Fit non-negative spread-unit weights to a judge metric (e.g. engram), or use
     /// --target likes for pairwise cmini ranking with 20% of layouts held out. A likes fit is a
     /// ranking aid: optimizing it finds degenerate layouts (home row 8% in the 2026-10-22 study).
     Fit {
-        #[arg(long, default_value = "E05")]
+        #[arg(long, default_value = "engram")]
         target: String,
         #[arg(long, value_delimiter = ',')]
         layouts: Vec<String>,

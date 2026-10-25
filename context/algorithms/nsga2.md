@@ -18,11 +18,11 @@ then apply rank-sum selection (Kühlmak) or extract the non-dominated set.
 ## Usage
 
 ```sh
-./target/release/gecko optimize --algo nsga2 --objectives B01,T03,M01 --time 30s
-./target/release/gecko optimize --algo rwsa --objectives B01,T03,M01 --evals 50000
+./target/release/gecko optimize --algo nsga2 --objectives sfb,inroll,effort --time 30s
+./target/release/gecko optimize --algo rwsa --objectives sfb,inroll,effort --evals 50000
 ```
 
 ## Results
 
-NSGA-II and RWSA discover non-dominated Pareto sets across conflicting metrics (such as SFB B01 vs inward rolls T03 vs home effort M01). Each layout on the front records both raw metric values and normalized minimization costs; verified replays reproduce identical fronts deterministically.
+NSGA-II and RWSA discover non-dominated Pareto sets across conflicting metrics (such as `sfb` vs `inroll` vs `effort`). Each layout on the front records both raw metric values and normalized minimization costs; verified replays reproduce identical fronts deterministically.
 

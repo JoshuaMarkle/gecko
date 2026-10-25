@@ -224,7 +224,7 @@ pub struct SweepRow {
     pub base_cost: f64,
     /// Score under the base profile.
     pub score: f64,
-    /// Judges: E01 typing time, E05 Engram discomfort, and the raw B01 / M05 values.
+    /// Judges: `typing_time`, engram Engram discomfort, and the raw sfb / home_row values.
     pub judges: std::collections::BTreeMap<String, f64>,
 }
 
@@ -260,8 +260,8 @@ pub struct SweepReport {
     pub draw_keys_moved: [usize; 2],
 }
 
-/// The judges reported for every optimum: E01, E05, and raw B01 and M05 values.
-pub const JUDGES: [&str; 4] = ["E01", "E05", "B01", "M05"];
+/// The judges reported for every optimum: typing_time, engram, and raw sfb and home_row values.
+pub const JUDGES: [&str; 4] = ["typing_time", "engram", "sfb", "home_row"];
 
 /// Re-optimize under `p` and under perturbed weight vectors (each weight dropped, halved,
 /// doubled; `spec.draws` log-normal draws), then compare the optima: families, regret, keys

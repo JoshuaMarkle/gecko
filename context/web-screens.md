@@ -47,8 +47,8 @@ runs** lists each finished geometry run's best board (`run:<id>`, newest first).
 
 ## Hand
 Sidebar tabs: **Hand** (default) and **Simulation**. Hand contains **Use hand in optimization** (default off; off greys out the settings, the views
-still preview; on, every score and run gets this hand as the profile's `hand` plus G01 1.0 / G03 1.0 /
-G05 0.5 when the profile has no weight for them, `hand.ts` `withHand` applied in `inputs.ts`), presets Average / Large / Small (Custom appears after an edit), Advanced:
+still preview; on, every score and run gets this hand as the profile's `hand` plus `reach` 1.0 / `wrist` 1.0 /
+`press_angle` 0.5 when the profile has no weight for them, `hand.ts` `withHand` applied in `inputs.ts`), presets Average / Large / Small (Custom appears after an edit), Advanced:
 every segment length, palm width / length, span, reach, and Arms (elbow width, forearm; sent as
 `hand.body` once edited, "Arms from hand size" clears them). The 3D thumb is the scorer's 4-DoF
 thumb (`hand.ts` `Thumb`, solved in hand-local mm via `toLocal`). Main: skeletal hands in 3D on the
@@ -74,8 +74,8 @@ keys started early, overlap, alternation, travel, per-finger load), Size distrib
 Small / Average / Large bands, this hand marked), Similarity (typicality of this hand among
 a synthetic population). A **Reach** bottom tab (first) lists the scorer's per-key hand costs
 (WASM `hand_costs`, `handCosts.ts`) per finger: home, mean, hardest key, press angle and keys out
-of reach (mm short), then each wrist's resting deviation, extension, pronation and mean G03; the
-**Reach** view toggle (default on) colours the 3D keys by G01.
+of reach (mm short), then each wrist's resting deviation, extension, pronation and mean `wrist`; the
+**Reach** view toggle (default on) colours the 3D keys by `reach`.
 
 ## Language
 Sidebar "Languages · N", grouped Languages (recipes to optimize on) / Components / References /
@@ -96,11 +96,11 @@ bigrams, trigrams, skipgrams (`corpus_stats`). Local languages cannot be used fo
 
 ## Profile
 Sidebar: profile picker + reset, then every parameter in sections (Finger load with
-relative effort inputs, Rows and reach, Hand model (G01/G05/G03 weights; visual: G01 per key for the
+relative effort inputs, Rows and reach, Hand model (`reach`/`press_angle`/`wrist` weights; visual: `reach` per key for the
 profile's hand, ringed keys out of reach), Same-finger with skip decay, Stretches and scissors,
-Rolls and alternation, Redirects, Measured comfort and timing (E01 is a judge, weight 0 by
-default), Layers, Shortcuts and familiarity (with the Vim h j k l policy for L03),
-Precision); each field has a tooltip. Retired metrics (B03, S03) are not shown. Scroll-spy marks the focused section (click a title to
+Rolls and alternation, Redirects, Measured comfort and timing (`typing_time` is a judge, weight 0 by
+default), Layers, Shortcuts and familiarity (with the Vim h j k l policy for `vim`),
+Precision); each field has a tooltip. Retired metrics (`sfb_distance`, `sfs_distance`) are not shown. Scroll-spy marks the focused section (click a title to
 jump). Main: a visual of the focused section on the current layout (finger heat + finger
 load, effort heat, SFB/SFS arcs, stretch arcs, roll arcs, a redirect example, layer keys,
 Z X C V and keys moved from QWERTY). Bottom: what it measures, why, how weights act, and the
@@ -110,7 +110,7 @@ each run (`profile_override`).
 Finger load uses five fingers with symmetric hands by default; disable symmetry to edit
 each hand. Each finger has typing, side-to-side, and up/down effort. Generated target
 percentages are read-only, normalized from inverse typing costs over fingers on the board;
-M09 uses the combined generated thumb target. Turning symmetry back on copies left to
+`thumb_load` uses the combined generated thumb target. Turning symmetry back on copies left to
 right. Web profiles acquire these defaults on selection/reset; legacy CLI profiles keep
 their percentage targets unless `finger_effort` is supplied.
 

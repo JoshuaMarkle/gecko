@@ -6,8 +6,8 @@ description = "The 30 main alpha keys of a standard row-staggered (ANSI) keyboar
 
 # Key-pair comfort tables in data/comfort/ for the comfort metrics.
 [comfort]
-E04 = "engram-2key"   # Engram's hand-built formula
-E05 = "engram-bt"     # fitted from Engram's raw pairwise choices
+engram_formula = "engram-2key" # Engram's hand-built formula
+engram = "engram-bt"           # fitted from Engram's raw pairwise choices
 
 [[key]]
 pos = [0.00, 0.00, 0.0]

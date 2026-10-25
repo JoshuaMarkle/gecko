@@ -17,8 +17,8 @@ fn ansi() -> Geometry {
 }
 
 /// GECKO classes that a cmini class may map to. cmini splits same-finger redirects
-/// (`dsfb-red`) out of redirects; GECKO keeps them in T06/T07 and counts the same-finger skip
-/// in S01 (decision 2026-10-21). Everything with a same-finger bigram is GECKO's `Other`.
+/// (`dsfb-red`) out of redirects; GECKO keeps them in redirect/bad_redirect and counts the same-finger skip
+/// in sfs (decision 2026-10-21). Everything with a same-finger bigram is GECKO's `Other`.
 fn expected(cmini: &str) -> &'static [TriClass] {
     match cmini {
         "alternate" => &[TriClass::Alternate],

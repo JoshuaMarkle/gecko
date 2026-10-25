@@ -1,7 +1,7 @@
 //! Hand model (#33, #40, #52, #63): a skeleton from measurements, each hand placed over its
 //! home keys, planar finger IK and a 4-DoF thumb within joint limits, and per-key costs for the
-//! scorer: G01 reach (joint deviation from rest, sideways splay, and how far the fingertip falls
-//! short), G05 press alignment (keycap normal vs the fingertip's pressing direction) and G03
+//! scorer: `reach` (joint deviation from rest, sideways splay, and how far the fingertip falls
+//! short), press_angle press alignment (keycap normal vs the fingertip's pressing direction) and wrist
 //! wrist posture (the resting hand against the forearm, plus sideways reaches).
 //!
 //! Port of `web/src/hand.ts` with the same constants, so the Hand tab shows the hand the scorer
@@ -34,7 +34,7 @@ pub struct HandDims {
     pub palm_width: f32,
     /// Wrist crease to the middle knuckle.
     pub palm_length: f32,
-    /// Thumb tip to pinky tip, spread flat. Scales B14's relaxed finger spread.
+    /// Thumb tip to pinky tip, spread flat. Scales stretch's relaxed finger spread.
     pub span: f32,
     /// Comfortable fingertip travel from the home key (shown in the web; not used in costs).
     pub reach: f32,
@@ -74,7 +74,7 @@ impl HandSize {
 }
 
 /// Profile `[hand]`: a preset size, or explicit measurements (which win), and optionally the
-/// arms G03 measures the wrist against.
+/// arms wrist measures the wrist against.
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct HandSpec {
     #[serde(default)]
@@ -85,7 +85,7 @@ pub struct HandSpec {
     pub body: Option<Body>,
 }
 
-/// Arms for G03, mm: elbow-to-elbow distance while typing and forearm length (elbow to wrist
+/// Arms for wrist, mm: elbow-to-elbow distance while typing and forearm length (elbow to wrist
 /// crease). The elbows sit at keyboard height, so the forearms are level.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Body {
@@ -335,7 +335,7 @@ const THUMB_LIMIT: [[f64; 2]; 4] = [[-0.6, 0.6], [-0.5, 0.7], [-0.2, 1.05], [-0.
 const THUMB_SCALE: [f64; 4] = [0.45, 0.45, 0.6, 0.8];
 /// Points sampled across the CMC's flexion range for the natural arc (68°, ≈ 0.3° apart).
 const ARC_POINTS: usize = 241;
-/// G06: distance off the thumb's natural arc that costs 1 (mm), squared like the miss term.
+/// thumb_arc: distance off the thumb's natural arc that costs 1 (mm), squared like the miss term.
 const ARC: f64 = 10.0;
 /// Operational thumb workspace along its flexion/extension sweep for the average thumb (mm):
 /// typing-like use covers 73 ± 18 mm of the 131 mm the tip can sweep (Tang 2008,
@@ -476,7 +476,7 @@ impl Thumb {
         (q, dot(miss, miss).sqrt())
     }
 
-    /// G01 for a thumb key at `p`: mean over the 4 joints of ((angle − rest) / scale)² plus the
+    /// reach for a thumb key at `p`: mean over the 4 joints of ((angle − rest) / scale)² plus the
     /// miss terms. Returns the cost, the pose and the shortfall (mm; 0 when reachable).
     pub fn reach(&self, p: V3) -> (f64, [f64; 4], f64) {
         let (q, miss) = self.solve(p);
@@ -486,7 +486,7 @@ impl Thumb {
         (joints + 2.0 * mm + mm * mm, q, shortfall)
     }
 
-    /// The thumb's natural arc (G06): the tip as the CMC sweeps its flexion range with the other
+    /// The thumb's natural arc (thumb_arc): the tip as the CMC sweeps its flexion range with the other
     /// joints at rest, cut to the operational workspace (`WORKSPACE` of path, measured on the key
     /// plane, centred on the rest point), from the outer end (away from the fingers) inward.
     pub fn arc(&self) -> Vec<V3> {
@@ -515,7 +515,7 @@ impl Thumb {
     /// Distance (mm) from `p` to the natural arc ([`Thumb::arc`] as a polyline) within the key
     /// plane (viewer x, z: the hand frame's plane on 3D boards): how far a key sits to the side
     /// of, or beyond the ends of, the path the thumb sweeps in normal use without abducting or
-    /// curling. Height is left to G01: the resting thumb hovers above the keycaps and curls down
+    /// curling. Height is left to reach: the resting thumb hovers above the keycaps and curls down
     /// onto them.
     pub fn arc_gap(&self, p: V3) -> f64 {
         let flat = |v: V3| [v[0], 0.0, v[2]];
@@ -667,7 +667,7 @@ pub struct Posture {
 }
 
 impl Posture {
-    /// G03 cost: squared deviation from neutral over a comfortable range per axis: ulnar 15°,
+    /// wrist cost: squared deviation from neutral over a comfortable range per axis: ulnar 15°,
     /// radial 10°, extension 20°, flexion 25°, pronation ±45° about 30° (a forearm turned a
     /// third of the way from thumb-up to palm-down rests easiest).
     pub fn cost(&self) -> f32 {
@@ -702,7 +702,7 @@ fn posture(fwd: V3, up: V3, wrist: V3, mid: f64, body: &Body, split: bool) -> Po
 }
 
 /// Whether the board's halves are separate (≥ 1 u between the hands' finger keys): a split half's
-/// drawn position is illustrative, so G03 lets the user place it (`posture`).
+/// drawn position is illustrative, so wrist lets the user place it (`posture`).
 pub fn split(g: &Geometry) -> bool {
     let (mut l, mut r) = (f32::MIN, f32::MAX);
     for k in g.key.iter().filter(|k| k.phys.is_none() && !k.finger.is_thumb()) {
@@ -730,16 +730,16 @@ const MISS_TOL: f64 = 0.5;
 /// Per-key hand costs for one geometry and hand, aligned with `Geometry::key`.
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct HandCosts {
-    /// G01 reach cost per key (layer copies: their physical key).
+    /// `reach` cost per key (layer copies: their physical key).
     pub reach: Vec<f32>,
-    /// G05 press misalignment per key: (angle / 45°)² between the fingertip's press direction
+    /// press_angle press misalignment per key: (angle / 45°)² between the fingertip's press direction
     /// (fingers: the distal phalanx, within the finger's plane; thumbs: palmar abduction) and the
     /// key's normal.
     pub align: Vec<f32>,
-    /// G03 wrist posture cost per key: the hand's resting posture, with the extra ulnar or
+    /// `wrist` cost per key: the hand's resting posture, with the extra ulnar or
     /// radial deviation of reaching sideways for a key the planted hand falls short of.
     pub wrist: Vec<f32>,
-    /// G06 thumb arc fit per key: (distance off the thumb's natural arc / 10 mm)²; 0 on finger
+    /// `thumb_arc` per key: (distance off the thumb's natural arc / 10 mm)²; 0 on finger
     /// keys.
     pub arc: Vec<f32>,
     /// Fingertip shortfall per key (mm; 0 when reachable).
@@ -752,7 +752,7 @@ pub struct HandCosts {
 
 /// A key's fingertip target (keycap top centre) and press normal in viewer axes, mm. On 3D
 /// boards both are taken in the key's hand frame (`Geometry::hand_frame`), as the geometric
-/// metrics are, so a rigid tent changes no finger cost; G03 turns the hand back into board space.
+/// metrics are, so a rigid tent changes no finger cost; wrist turns the hand back into board space.
 pub fn target(g: &Geometry, frame: Option<&Frame>, i: usize) -> (V3, V3) {
     let k = &g.key[g.phys(i)];
     let (mut c, mut n) = (pose::contact(k), pose::normal(k));

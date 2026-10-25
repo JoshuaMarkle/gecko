@@ -10,7 +10,7 @@ const chars = "ab①␣<2·";
 
 const metric = (id: string, value: number, weight: number) => ({ id, name: `Metric ${id}`, unit: "%", dir: "min" as const, value, weight, weighted: value * weight });
 const analysis = (score: number, v: number): Analysis => ({
-  breakdown: { score, metrics: [metric("B01", v, 1), metric("X01", 7, 0)] },
+  breakdown: { score, metrics: [metric("sfb", v, 1), metric("X01", 7, 0)] },
   finger_load: [60, 40], finger_target: [50, 50], fingers: ["LP", "LR"], heat: [4, 2, 0, 1, 1, 0, 0],
   worst_sfb: [], worst_sfs: [], worst_lsb: [], worst_scissors: [], bigrams: [], skipgrams: [],
 });
@@ -68,13 +68,13 @@ describe("export", () => {
   it("writes stats", () => {
     const csv = statsCsv(info).trim().split("\n");
     expect(csv[0]).toBe("id,name,unit,direction,value,weight,weighted,QWERTY value");
-    expect(csv[1]).toBe("B01,Metric B01,%,min,2,1,2,3");
+    expect(csv[1]).toBe("sfb,Metric sfb,%,min,2,1,2,3");
     expect(csv[3]).toBe("score,Total score,,min,1.5,,,2");
     expect(statsCsv({ ...info, a: null })).toBe("");
     const md = statsMarkdown(info);
     expect(md).toContain("```\nab\n");
     expect(md).toContain("Score **1.500** (lower is better), -0.500 vs QWERTY.");
-    expect(md).toContain("| Metric B01 | 2.00% | 3.00% |");
+    expect(md).toContain("| Metric sfb | 2.00% | 3.00% |");
     expect(md).not.toContain("X01");
   });
   it("draws the board as standalone svg", () => {

@@ -52,11 +52,11 @@ export function SummaryView({ inputs: i, meta, geometry: g, corpus, profile: p, 
   const profileRows: Row[] = [
     ["Profile", p.name, true, "Current edits included"],
     ["Trigram coverage", `${number(p.trigram_coverage * 100)}%`, true, "Most frequent trigrams retained"],
-    ["Skip decay", skipDecay, weighted("S02"), "Gap 2 × decay; gap 3 × decay²"],
+    ["Skip decay", skipDecay, weighted("sfs_far"), "Gap 2 × decay; gap 3 × decay²"],
     ["Symmetric finger effort", e?.symmetric ?? false, !!e, "Left costs mirrored to right when on"],
-    ["Thumb target", `${number(e ? targets[4] + targets[5] : p.thumb_target ?? 18)}%`, weighted("M09"), e ? "Derived from typing effort" : "Profile target"],
-    ["Familiarity reference", p.familiar_to ?? "None", weighted("L02") && !!p.familiar_to, "L02 requires QWERTY reference"],
-    ...["Pinky", "Ring", "Middle", "Index"].flatMap((f, n) => ["Above", "Below"].map((dir, k): Row => [`${f} · ${dir.toLowerCase()} home`, p.row_offset?.[n]?.[k] ?? 0, weighted("M01") && (p.row_offset?.[n]?.[k] ?? 0) !== 0, "Added row effort · M01"])),
+    ["Thumb target", `${number(e ? targets[4] + targets[5] : p.thumb_target ?? 18)}%`, weighted("thumb_load"), e ? "Derived from typing effort" : "Profile target"],
+    ["Familiarity reference", p.familiar_to ?? "None", weighted("familiar") && !!p.familiar_to, "Familiarity needs a QWERTY reference"],
+    ...["Pinky", "Ring", "Middle", "Index"].flatMap((f, n) => ["Above", "Below"].map((dir, k): Row => [`${f} · ${dir.toLowerCase()} home`, p.row_offset?.[n]?.[k] ?? 0, weighted("effort") && (p.row_offset?.[n]?.[k] ?? 0) !== 0, "Added row effort"])),
   ];
   return <div className="input-summary">
     <header className="input-summary-heading"><div><h1>Input summary</h1><p>Optimizer reference sheet · current inputs for your next layout search</p></div><span>{active} / {meta.metrics.length} metrics weighted</span></header>
@@ -70,24 +70,24 @@ export function SummaryView({ inputs: i, meta, geometry: g, corpus, profile: p, 
         ["Language", corpus?.name ?? i.corpusId, !!corpus, corpus ? "Corpus frequencies" : "Local language; runs not supported"],
         ["Corpus symbols", corpus?.charset ?? "—", !!corpus, "Symbols represented in the corpus"],
         ["Frequency channels", "Characters / bigrams / skipgrams / trigrams", true, "Normalized over layout symbols"],
-        ...["E04", "E05"].map((id): Row => [`${id} comfort table`, g.comfort?.[id] ?? "None", weighted(id) && !!g.comfort_tables?.[id]?.length, "Geometry-specific key-pair comfort"]),
+        ...["engram_formula", "engram"].map((id): Row => [`${id} comfort table`, g.comfort?.[id] ?? "None", weighted(id) && !!g.comfort_tables?.[id]?.length, "Geometry-specific key-pair comfort"]),
       ]} /></Sheet>
       </div>
       <Sheet title="Scoring parameters"><Settings rows={profileRows} /></Sheet>
       <Sheet title="Finger effort & load targets"><table className="tbl summary-table"><thead><tr><th>Finger</th><th>Typing</th><th>Sideways</th><th>Vertical</th><th>Target %</th></tr></thead><tbody>
         {FINGERS.map((f, n) => { const k = e?.symmetric && n >= 5 ? 9 - n : n; const present = g.key.some(key => key.finger === f); return <tr key={f} className={present ? "" : "off"}><th scope="row">{f}{!present && " · absent"}</th>
-          <td className={!weighted("M02", "M07", "M09") ? "inactive" : ""}>{value(e?.typing[k])}</td>
-          <td className={!weighted("M01") ? "inactive" : ""}>{value(e?.lateral[k])}</td><td className={!weighted("M01") ? "inactive" : ""}>{value(e?.vertical[k])}</td>
-          <td className={!weighted("M02", "M07") ? "inactive" : ""}>{number(targets[n])}</td></tr>; })}
-      </tbody></table><p className="hint">Typing effort generates load targets (M02, M07, M09). Sideways and vertical effort add reach costs (M01). LP → RP: left pinky through right pinky.</p></Sheet>
+          <td className={!weighted("finger_target", "finger_peak", "thumb_load") ? "inactive" : ""}>{value(e?.typing[k])}</td>
+          <td className={!weighted("effort") ? "inactive" : ""}>{value(e?.lateral[k])}</td><td className={!weighted("effort") ? "inactive" : ""}>{value(e?.vertical[k])}</td>
+          <td className={!weighted("finger_target", "finger_peak") ? "inactive" : ""}>{number(targets[n])}</td></tr>; })}
+      </tbody></table><p className="hint">Typing effort generates load targets (finger_target, finger_peak, thumb_load). Sideways and vertical effort add to key effort. LP → RP: left pinky through right pinky.</p></Sheet>
       <Sheet title="Every scoring factor" wide><table className="tbl summary-table metrics-summary"><thead><tr><th>ID</th><th>Factor</th><th>Status</th><th>Weight</th><th>Scale</th><th>Weight / scale</th><th>Direction</th><th>Measures</th></tr></thead><tbody>
-        {meta.metrics.map(m => { const w = p.weights[m.id] ?? 0, scale = p.scale?.[m.id] ?? 1; const missing = m.id === "L02" && !p.familiar_to ? "No reference" : ["E04", "E05"].includes(m.id) && !g.comfort_tables?.[m.id]?.length ? "No comfort table" : null; const on = w !== 0 && m.dir !== "info" && !missing; return <tr key={m.id} className={on ? "" : "off"}>
+        {meta.metrics.map(m => { const w = p.weights[m.id] ?? 0, scale = p.scale?.[m.id] ?? 1; const missing = m.id === "familiar" && !p.familiar_to ? "No reference" : ["engram_formula", "engram"].includes(m.id) && !g.comfort_tables?.[m.id]?.length ? "No comfort table" : null; const on = w !== 0 && m.dir !== "info" && !missing; return <tr key={m.id} className={on ? "" : "off"}>
           <th scope="row">{m.id}</th><td>{m.name}</td><td>{m.dir === "info" ? "Report only" : !w ? "Off" : !on ? missing : "Weighted"}</td><td>{number(w)}</td><td>{number(scale)}</td><td>{number(w / scale)}</td><td>{m.dir === "max" ? "Reward" : m.dir === "min" ? "Penalize" : "Report"}</td><td>{m.desc} {m.unit && `(${m.unit})`}</td>
         </tr>; })}
       </tbody></table></Sheet>
       <Sheet title="Hand & simulation"><Settings rows={[
-        ["Use hand in optimization", i.hand.use, i.hand.use, i.hand.use ? "Profile hand for G01 / G03 / G05 / G06" : "Off: the average hand, at the profile's weights"],
-        ["Hand-model metrics", weighted("G01", "G03", "G05", "G06") ? "Weighted" : "Unweighted", weighted("G01", "G03", "G05", "G06"), "G01 reach · G03 wrist · G05 press angle · G06 thumb arc"],
+        ["Use hand in optimization", i.hand.use, i.hand.use, i.hand.use ? "Profile hand for reach / wrist / press_angle / thumb_arc" : "Off: the average hand, at the profile's weights"],
+        ["Hand-model metrics", weighted("reach", "wrist", "press_angle", "thumb_arc") ? "Weighted" : "Unweighted", weighted("reach", "wrist", "press_angle", "thumb_arc"), "reach · wrist · press_angle · thumb_arc"],
         ["Hand preset", i.hand.preset, i.hand.use, i.hand.use ? "Sent with every score and run" : "Preview only"],
         ...Object.entries(handDims(i.hand)).map(([k, v]): Row => [k, `${value(v)} mm`, i.hand.use, Array.isArray(v) ? "Segments, base → tip" : "Measurement"]),
         ...Object.entries(wristOf(i.hand)).map(([k, v]): Row => [`Wrist ${k}`, v, false, "Simulation only"]),

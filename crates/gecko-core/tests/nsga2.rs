@@ -56,7 +56,7 @@ fn tiny(shift: bool) -> (Geometry, Corpus, Layout, Profile) {
         c.tri[36] = 1; // cba
     }
     let l = Layout::from_flat("tiny", &g, if shift { "abcd⇧␣" } else { "abcd" }.chars().collect()).unwrap();
-    let p = Profile::from_toml("name='tiny'\n[weights]\nM01=2.0\nT03=0.25\n[scale]\nM01=100.0\nT03=3.0").unwrap();
+    let p = Profile::from_toml("name='tiny'\n[weights]\neffort=2.0\ninroll=0.25\n[scale]\neffort=100.0\ninroll=3.0").unwrap();
     (g, c, l, p)
 }
 
@@ -68,7 +68,7 @@ fn params(algo: Algo) -> Params {
         evals: Some(20_000),
         time_ms: None,
         top: 5,
-        nsga2: NsgaParams { objectives: vec!["M01".into(), "T03".into()], pop_size: 24, archive_size: 128, ..Default::default() },
+        nsga2: NsgaParams { objectives: vec!["effort".into(), "inroll".into()], pop_size: 24, archive_size: 128, ..Default::default() },
         ..Default::default()
     }
 }
@@ -126,14 +126,14 @@ fn refolding_matches_fresh_scorers_including_shift_and_nonlinear_costs() {
             assert!((unit.full(&st) - st.score).abs() < tol, "{}: delta/full diff {}", metric.id, (unit.full(&st) - st.score).abs());
         }
     }
-    let m04 = sc.objective("M04").unwrap();
+    let m04 = sc.objective("hand_balance").unwrap();
     let st = m04.identity();
-    let raw = breakdown(&m04, &st).metrics.iter().find(|m| m.id == "M04").unwrap().value;
+    let raw = breakdown(&m04, &st).metrics.iter().find(|m| m.id == "hand_balance").unwrap().value;
     assert!((st.score - gecko_core::scorer::hand_cost(&st.load)).abs() < 1e-9);
     assert!((st.score - raw).abs() > 1.0, "target cost differs from raw left-hand share");
-    let rolls = sc.objective("T03").unwrap();
+    let rolls = sc.objective("inroll").unwrap();
     let st = rolls.identity();
-    let raw = breakdown(&rolls, &st).metrics.iter().find(|m| m.id == "T03").unwrap().value;
+    let raw = breakdown(&rolls, &st).metrics.iter().find(|m| m.id == "inroll").unwrap().value;
     assert!((st.score + raw).abs() < 1e-8, "max direction is negated");
 }
 
@@ -142,7 +142,7 @@ fn nsga_front_equals_bruteforce_on_a_tiny_min_max_tradeoff() {
     let (g, c, l, p) = tiny(false);
     let sc = Scorer::new(&g, &c, &p, &l).unwrap();
     let ctx = Ctx::new(&sc, (0..sc.n).collect(), sc.identity());
-    let unit = [sc.objective("M01").unwrap(), sc.objective("T03").unwrap()];
+    let unit = [sc.objective("effort").unwrap(), sc.objective("inroll").unwrap()];
     let mut all = Vec::new();
     permutations(&mut [0, 1, 2, 3], 0, &mut all);
     let costs: Vec<_> = all.iter().map(|sym| unit.iter().map(|sc| sc.state_from_sym(sym.clone()).score).collect::<Vec<_>>()).collect();
@@ -177,7 +177,7 @@ fn both_searches_are_deterministic_pinned_and_return_nondominated_costs() {
     for algo in [Algo::Nsga2, Algo::Rwsa] {
         let mut p = params(algo);
         p.sa.steps = 500;
-        p.nsga2.objectives = vec!["M04".into(), "M09".into(), "T03".into()];
+        p.nsga2.objectives = vec!["hand_balance".into(), "thumb_load".into(), "inroll".into()];
         let a = optimize::run(&ctx, &p, Duration::from_secs(60), &Control::default(), |_| {});
         let b = optimize::run(&ctx, &p, Duration::from_secs(60), &Control::default(), |_| {});
         assert_eq!(a.evals, p.evals.unwrap());
@@ -239,9 +239,9 @@ fn saved_front_replays_and_tampering_is_rejected() {
         assert!(verified.checks.iter().any(|c| c.name.starts_with("front#") && !c.ok));
     }
     let mut invalid = params(Algo::Nsga2);
-    invalid.nsga2.objectives = vec!["B01".into(), "B01".into()];
+    invalid.nsga2.objectives = vec!["sfb".into(), "sfb".into()];
     assert!(gecko_core::optimize::nsga2::validate(&invalid.nsga2).is_err());
-    invalid.nsga2.objectives = vec!["B01".into(), "B02".into()]; // B02 is informational.
+    invalid.nsga2.objectives = vec!["sfb".into(), "repeat".into()]; // repeat is informational.
     assert!(gecko_core::optimize::nsga2::validate(&invalid.nsga2).is_err());
     let _ = std::fs::remove_dir_all(&store.runs);
 }

@@ -34,8 +34,8 @@ describe("explore helpers", () => {
   });
 
   it("compares profile tables", () => {
-    const p = { name: "a", description: "", weights: { B01: 1 }, finger_target: [1], trigram_coverage: 0.99 } as Profile;
-    expect(sameTables(p, { ...p, weights: { B01: 2 } })).toBe(true);
+    const p = { name: "a", description: "", weights: { sfb: 1 }, finger_target: [1], trigram_coverage: 0.99 } as Profile;
+    expect(sameTables(p, { ...p, weights: { sfb: 2 } })).toBe(true);
     expect(sameTables(p, { ...p, trigram_coverage: 1 })).toBe(false);
   });
 });
