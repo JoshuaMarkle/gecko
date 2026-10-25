@@ -1,0 +1,301 @@
+{
+ "profile": "default",
+ "board": "ansi-30",
+ "corpus": "reddit",
+ "set": "apos",
+ "evals": 25000000,
+ "best": 10.17311157426822,
+ "at_best": 10,
+ "rows": [
+  {
+   "seed": 1,
+   "run": "20261025-035742-bls-95f39300",
+   "score": 10.17311157426822,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.17311157426822,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.18806428661621,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.200145579352291,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.22230435799776,
+     "bwdlzjyouqgstnvphaiecfmrx'k.,/"
+    ],
+    [
+     10.2346965166484,
+     "bwdlqjyou.gstnvpheiacfmrx'kz/,"
+    ]
+   ]
+  },
+  {
+   "seed": 2,
+   "run": "20261025-035742-bls-8131ac4a",
+   "score": 10.17311157426822,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.17311157426822,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.18806428661621,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.200145579352291,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.211134267477757,
+     "cwdlxjyou.gstnvpheiafbmrq'kz/,"
+    ],
+    [
+     10.21767824163265,
+     "cwdlxqyou/gstnvphaiefbmrj'k.,z"
+    ]
+   ]
+  },
+  {
+   "seed": 3,
+   "run": "20261025-035742-bls-27890126",
+   "score": 10.17311157426822,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.17311157426822,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.18806428661621,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.200145579352291,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.241014992679135,
+     "bwdljqyou/gstnvphaiecfmrx'k.,z"
+    ],
+    [
+     10.300724874553344,
+     "cbdlxjyou,gstnvphaeiwfmrzqk'/."
+    ]
+   ]
+  },
+  {
+   "seed": 4,
+   "run": "20261025-035742-bls-30f6ce17",
+   "score": 10.17311157426822,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.17311157426822,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.18806428661621,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.200145579352291,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.211134267477757,
+     "cwdlxjyou.gstnvpheiafbmrq'kz/,"
+    ],
+    [
+     10.2346965166484,
+     "bwdlqjyou.gstnvpheiacfmrx'kz/,"
+    ]
+   ]
+  },
+  {
+   "seed": 5,
+   "run": "20261025-035742-bls-117c035d",
+   "score": 10.17311157426822,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.17311157426822,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.18806428661621,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.197669501103526,
+     "cwdlxjyouqgstnvphaiefbmrz'k.,/"
+    ],
+    [
+     10.200145579352291,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.241014992679135,
+     "bwdljqyou/gstnvphaiecfmrx'k.,z"
+    ]
+   ]
+  },
+  {
+   "seed": 6,
+   "run": "20261025-035811-bls-f9d42f80",
+   "score": 10.17311157426822,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.17311157426822,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.18806428661621,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.197669501103526,
+     "cwdlxjyouqgstnvphaiefbmrz'k.,/"
+    ],
+    [
+     10.200145579352291,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.211134267477757,
+     "cwdlxjyou.gstnvpheiafbmrq'kz/,"
+    ]
+   ]
+  },
+  {
+   "seed": 7,
+   "run": "20261025-035814-bls-2a327f0d",
+   "score": 10.17311157426822,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.17311157426822,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.18806428661621,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.197669501103526,
+     "cwdlxjyouqgstnvphaiefbmrz'k.,/"
+    ],
+    [
+     10.200145579352291,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.211134267477757,
+     "cwdlxjyou.gstnvpheiafbmrq'kz/,"
+    ]
+   ]
+  },
+  {
+   "seed": 8,
+   "run": "20261025-035814-bls-6bdb86a6",
+   "score": 10.17311157426822,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.17311157426822,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.18806428661621,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.197669501103526,
+     "cwdlxjyouqgstnvphaiefbmrz'k.,/"
+    ],
+    [
+     10.200145579352291,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.211134267477757,
+     "cwdlxjyou.gstnvpheiafbmrq'kz/,"
+    ]
+   ]
+  },
+  {
+   "seed": 9,
+   "run": "20261025-035816-bls-98ef0617",
+   "score": 10.17311157426822,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.17311157426822,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.18806428661621,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.200145579352291,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.211134267477757,
+     "cwdlxjyou.gstnvpheiafbmrq'kz/,"
+    ],
+    [
+     10.21767824163265,
+     "cwdlxqyou/gstnvphaiefbmrj'k.,z"
+    ]
+   ]
+  },
+  {
+   "seed": 10,
+   "run": "20261025-035816-bls-f13adc49",
+   "score": 10.17311157426822,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.17311157426822,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.18806428661621,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.200145579352291,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.211134267477757,
+     "cwdlxjyou.gstnvpheiafbmrq'kz/,"
+    ],
+    [
+     10.22230435799776,
+     "bwdlzjyouqgstnvphaiecfmrx'k.,/"
+    ]
+   ]
+  }
+ ]
+}

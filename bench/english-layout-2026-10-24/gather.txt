@@ -1,0 +1,26 @@
+GECKO prose (qwerty)     qwerty   9.138  J_B +0.1837
+GECKO prose (semi)       semi     9.485  J_B +0.1839
+GECKO prose (apos)       apos     9.521  J_B +0.1839
+GECKO prose-web          apos     9.666  J_B +0.1792
+GECKO shai               apos     9.666  J_B +0.1792
+GECKO prose-books        apos     9.930  J_B +0.1769
+GECKO english            apos     9.930  J_B +0.1769
+GECKO prose-chat         apos    10.066  J_B +0.1897
+GECKO reddit             apos    10.066  J_B +0.1897
+Gallium                  semi    11.600  J_B +0.1736
+Galite                   qwerty  11.942  J_B +0.1752
+Graphite                 apos    12.434  J_B +0.1766
+Dhorf                    semi    12.707  J_B +0.1731
+Focal                    semi    13.463  J_B +0.1773
+Hands Down (ref)         apos    15.760  J_B +0.1854
+Sturdy                   semi    16.998  J_B +0.1843
+Semimak-JQ               apos    17.322  J_B +0.1750
+Canary                   qwerty  18.122  J_B +0.1793
+MTGAP                    semi    18.818  J_B +0.1890
+APTv3                    apos    19.767  J_B +0.1905
+Dvorak                   semi    21.921  J_B +0.1782
+Halmak                   qwerty  25.713  J_B +0.1915
+Colemak-DH               qwerty  25.965  J_B +0.1883
+Colemak                  qwerty  27.283  J_B +0.1846
+Workman                  qwerty  31.039  J_B +0.2015
+QWERTY                   qwerty  65.119  J_B +0.2095

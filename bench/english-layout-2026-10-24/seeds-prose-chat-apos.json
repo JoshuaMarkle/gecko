@@ -1,0 +1,301 @@
+{
+ "profile": "default",
+ "board": "ansi-30",
+ "corpus": "prose-chat",
+ "set": "apos",
+ "evals": 25000000,
+ "best": 10.173832025431478,
+ "at_best": 10,
+ "rows": [
+  {
+   "seed": 1,
+   "run": "20261025-035440-bls-b8722967",
+   "score": 10.173832025431478,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.173832025431478,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.188682136252321,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.200860632512445,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.223023608820812,
+     "bwdlzjyouqgstnvphaiecfmrx'k.,/"
+    ],
+    [
+     10.235313212662017,
+     "bwdlqjyou.gstnvpheiacfmrx'kz/,"
+    ]
+   ]
+  },
+  {
+   "seed": 2,
+   "run": "20261025-035440-bls-527e6b56",
+   "score": 10.173832025431478,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.173832025431478,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.188682136252321,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.200860632512445,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.21175130177569,
+     "cwdlxjyou.gstnvpheiafbmrq'kz/,"
+    ],
+    [
+     10.218392585728402,
+     "cwdlxqyou/gstnvphaiefbmrj'k.,z"
+    ]
+   ]
+  },
+  {
+   "seed": 3,
+   "run": "20261025-035440-bls-30d3c5f0",
+   "score": 10.173832025431478,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.173832025431478,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.188682136252321,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.200860632512445,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.241729021926922,
+     "bwdljqyou/gstnvphaiecfmrx'k.,z"
+    ],
+    [
+     10.301343408404618,
+     "cbdlxjyou,gstnvphaeiwfmrzqk'/."
+    ]
+   ]
+  },
+  {
+   "seed": 4,
+   "run": "20261025-035440-bls-6af52088",
+   "score": 10.173832025431478,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.173832025431478,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.188682136252321,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.200860632512445,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.301343408404618,
+     "cbdlxjyou,gstnvphaeiwfmrzqk'/."
+    ],
+    [
+     10.323760636836703,
+     ".uoyjzldwbieahpvntsg,/'kqxrmfc"
+    ]
+   ]
+  },
+  {
+   "seed": 5,
+   "run": "20261025-035440-bls-e9b4370b",
+   "score": 10.173832025431478,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.173832025431478,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.188682136252321,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.198389108678061,
+     "cwdlxjyouqgstnvphaiefbmrz'k.,/"
+    ],
+    [
+     10.200860632512445,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.235313212662017,
+     "bwdlqjyou.gstnvpheiacfmrx'kz/,"
+    ]
+   ]
+  },
+  {
+   "seed": 6,
+   "run": "20261025-035510-bls-66967d50",
+   "score": 10.173832025431478,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.173832025431478,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.188682136252321,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.198389108678061,
+     "cwdlxjyouqgstnvphaiefbmrz'k.,/"
+    ],
+    [
+     10.200860632512445,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.21175130177569,
+     "cwdlxjyou.gstnvpheiafbmrq'kz/,"
+    ]
+   ]
+  },
+  {
+   "seed": 7,
+   "run": "20261025-035511-bls-86aca96f",
+   "score": 10.173832025431478,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.173832025431478,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.188682136252321,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.198389108678061,
+     "cwdlxjyouqgstnvphaiefbmrz'k.,/"
+    ],
+    [
+     10.200860632512445,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.21175130177569,
+     "cwdlxjyou.gstnvpheiafbmrq'kz/,"
+    ]
+   ]
+  },
+  {
+   "seed": 8,
+   "run": "20261025-035511-bls-239ad2cd",
+   "score": 10.173832025431478,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.173832025431478,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.188682136252321,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.198389108678061,
+     "cwdlxjyouqgstnvphaiefbmrz'k.,/"
+    ],
+    [
+     10.200860632512445,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.21175130177569,
+     "cwdlxjyou.gstnvpheiafbmrq'kz/,"
+    ]
+   ]
+  },
+  {
+   "seed": 9,
+   "run": "20261025-035512-bls-b576b650",
+   "score": 10.173832025431478,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.173832025431478,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.188682136252321,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.200860632512445,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.21175130177569,
+     "cwdlxjyou.gstnvpheiafbmrq'kz/,"
+    ],
+    [
+     10.223023608820812,
+     "bwdlzjyouqgstnvphaiecfmrx'k.,/"
+    ]
+   ]
+  },
+  {
+   "seed": 10,
+   "run": "20261025-035513-bls-96971d6b",
+   "score": 10.173832025431478,
+   "chars": "cbdlxjyouqgstnvphaiewfmrz'k.,/",
+   "holdout": 10.066351780154132,
+   "top": [
+    [
+     10.173832025431478,
+     "cbdlxjyouqgstnvphaiewfmrz'k.,/"
+    ],
+    [
+     10.188682136252321,
+     "cbdlxjyou.gstnvpheiawfmrq'kz/,"
+    ],
+    [
+     10.200860632512445,
+     "cbdlxqyou/gstnvphaiewfmrj'k.,z"
+    ],
+    [
+     10.21175130177569,
+     "cwdlxjyou.gstnvpheiafbmrq'kz/,"
+    ],
+    [
+     10.223023608820812,
+     "bwdlzjyouqgstnvphaiecfmrx'k.,/"
+    ]
+   ]
+  }
+ ]
+}
