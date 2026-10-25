@@ -76,6 +76,10 @@ pub struct Profile {
     /// pins (`--pin hjkl`), not this.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vim: Option<String>,
+    /// Related symbols for sym_groups: space-separated two-symbol groups, e.g. `"+- */ != ^$"`.
+    /// Unset = sym_groups costs nothing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sym_groups: Option<String>,
     /// G07 build limits (`geometry/manufacture.rs`). Set: the geometry search penalizes and
     /// hard-fails boards past them like keycap collisions. Not a scoring metric.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -276,6 +280,11 @@ impl Profile {
                 return Err(Error::invalid("profile", format!("vim '{v}' is unknown (row, pairs or fingers)")));
             }
         }
+        if let Some(gr) = &p.sym_groups {
+            if crate::metrics::sym_group_pairs(gr).is_none() {
+                return Err(Error::invalid("profile", format!("sym_groups '{gr}': each group must be two different symbols")));
+            }
+        }
         if let Some(r) = &p.familiar_to {
             if r != "qwerty" {
                 return Err(Error::invalid("profile", format!("familiar_to '{r}' is unknown (only \"qwerty\")")));
@@ -319,6 +328,9 @@ impl Profile {
         }
         if let Some(m) = &self.vim {
             v["vim"] = serde_json::json!(m);
+        }
+        if let Some(gr) = &self.sym_groups {
+            v["sym_groups"] = serde_json::json!(gr);
         }
         if let Some(h) = &self.hand {
             v["hand"] = serde_json::json!(h);

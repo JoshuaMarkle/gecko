@@ -11,7 +11,7 @@ Full metric list with IDs (and the old `B01`-style codes, still accepted on inpu
 (a judge, below), `engram_formula` / `engram` key-pair discomfort (geometry `[comfort]`
 tables), `reach`, `press_angle`, `wrist` and `thumb_arc` (hand model, profile `[hand]`;
 `context/hand-model.md`), `repeat` (info), `layer_switch` (and Shift), `symbol_bigram`,
-`brackets`, `hrm_misfire`, and the placement metrics `shortcuts`, `familiar`, `vim`, `zones`.
+`brackets`, `hrm_misfire`, and the placement metrics `shortcuts`, `familiar`, `vim`, `sym_groups`, `zones`.
 Profile `[sfb]`'s `skip_decay` sets `sfs_far`. Profile `row_offset` (pinky ring middle index ×
 [above, below] home) adds per-finger row costs to `effort`'s geometry effort.
 
@@ -466,6 +466,13 @@ the key no longer counts. Not modeled: the learning cost of rules (only `gecko m
   `fingers` 0 on different non-thumb fingers of one hand and layer, else 100. Pairs weigh equally,
   so `vim` is "% of the policy broken" and needs no corpus. No `vim` = 0. QWERTY: row 0, pairs 50,
   fingers 16.7. [vim.md](vim.md).
+- **`sym_groups`** related symbols (`Order::Pairs`, its own sparse block like `vim`): profile
+  `sym_groups` lists two-symbol groups (`"+- +* != &| -_ :; ^$"`); each group on the layout costs
+  0 when both are on one layer and neighbours (same hand, neighbouring columns of a row or rows of
+  a column) or mirrored (same row, finger and stretch flag on opposite hands), in either order;
+  100 otherwise. Equal weights: "% of groups broken". Unset = 0. A learnability rule from the
+  published symbol layers ([research](../research/sources/symbol-layers.md)); weighted 100 it is a
+  constraint.
 - **`shortcuts`, `familiar`** (`Order::Place`, an n × n symbol-on-slot table `Cp` folded like a mono term: `full` sums
   `Cp[x, p(x)]`, a swap delta touches two entries, QAP terms add it to the mono matrix). Tables
   are built in the scorer (they need the symbols) and already carry their weights. The QWERTY

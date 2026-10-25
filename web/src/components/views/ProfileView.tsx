@@ -67,7 +67,7 @@ const SECTIONS: Section[] = [
     what: "Key-pair discomfort from Engram's formula and its measured typing data, and typing time predicted from 136M keystrokes of fast touch typists.",
     why: "Measured comfort and timing catch pairs the geometric metrics miss, and check that the other weights point the right way.",
     how: "A light weight nudges ties toward measured-comfortable pairs. Typing time is a judge, unweighted by default: weighting it makes the score chase the model that checks it." },
-  { id: "layers", title: "Layers", ids: ["layer_switch", "symbol_bigram", "brackets", "hrm_misfire"],
+  { id: "layers", title: "Layers", ids: ["layer_switch", "symbol_bigram", "brackets", "sym_groups", "hrm_misfire"],
     what: "Layer switches, symbol bigrams across layers, paired brackets and home-row-mod misfires.",
     why: "On small boards symbols live on layers; each switch is an extra key press.",
     how: "Only layered layouts score here. Raise Layer switches to keep frequent symbols on the base." },

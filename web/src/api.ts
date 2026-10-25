@@ -53,6 +53,8 @@ export interface Profile {
   trigram_coverage: number;
   /** Vim motion policy for vim: "row" (h j k l in order), "pairs" (h l and j k), "fingers" (four fingers). */
   vim?: string;
+  /** Related-symbol groups for sym_groups, space-separated pairs (e.g. "+- != ^$"). */
+  sym_groups?: string;
   /** Adaptive fidelity: search on the `top_k` most frequent trigrams, confirm on the full tables. */
   fidelity?: { top_k: number; grow: number; misses: number };
   /** Metric id → reference spread; the scorer uses weight / scale (weights in spread units). */

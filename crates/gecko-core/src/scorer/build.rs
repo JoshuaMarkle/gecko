@@ -109,6 +109,13 @@ impl Scorer {
             let t = (metrics::sparse_block("vim") * n * n) as u32;
             bracket_all.extend(on.iter().map(|&(x, y)| PairEntry { x: x as u8, y: y as u8, f: 1.0 / on.len() as f32, t }));
         }
+        // sym_groups: the profile's related-symbol pairs on the layout, equal weights.
+        if let Some(pairs) = profile.sym_groups.as_deref().and_then(metrics::sym_group_pairs) {
+            let at = |c: char| chars.iter().position(|&ch| ch == c);
+            let on: Vec<(usize, usize)> = pairs.iter().filter_map(|&(a, b)| Some((at(a)?, at(b)?))).collect();
+            let t = (metrics::sparse_block("sym_groups") * n * n) as u32;
+            bracket_all.extend(on.iter().map(|&(x, y)| PairEntry { x: x as u8, y: y as u8, f: 1.0 / on.len() as f32, t }));
+        }
 
         let qwerty = metrics::qwerty_slots(board, &chars);
         let prep = metrics::Prep::new(geometry);

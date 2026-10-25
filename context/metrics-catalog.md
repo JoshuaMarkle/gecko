@@ -105,6 +105,7 @@ Per keystroke, from the hand model (`context/hand-model.md`).
 | `shortcuts` | L01 | place | − | Z X C V (and A S Q W at half weight): 100 off the left hand, up to 50 on it by distance from the QWERTY spot. Per shortcut letter. |
 | `familiar` | L02 | place | ± | Distance from profile `familiar_to = "qwerty"`, per keystroke: 0 on the reference key, 50 same finger, 75 same hand, 100 otherwise. |
 | `vim` | L03 | pairs | − | h j k l keep the profile `vim` shape: `row` in order on one row, `pairs` h←l and j←k on neighbours, `fingers` four fingers of one hand. % of the policy's pairs broken (reversed neighbours half). [vim.md](vim.md). |
+| `sym_groups` | L07 | pairs | − | Related symbols from profile `sym_groups` (e.g. `+- != ^$`) neighbours on a row or column of one hand, or mirrored, on one layer; % of groups broken, equal weights. |
 | `zones` | L04 | place | − | Count of keys out of their zone (soft pins): profile `thumb_zone` (those symbols on thumb keys, letters/digits/punctuation off them) and `base_letters` (letters off layer keys). Keysets weight it 100. Fixed positions remain `--pin`. |
 
 ## Comfort and timing models
@@ -136,7 +137,6 @@ given so older notes can be traced.
 | E03 | Profile weights fit to measured speed/comfort | a command: `gecko profile fit --target engram` / `likes` |
 | L05 | Score spread across corpora | a report: `gecko compare --corpora` |
 | L06 | Score on a held-out corpus | a report: `--holdout` |
-| L07 | Related symbols grouped or mirrored | open; `vim` and `brackets` cover Vim keys and brackets |
 | G02 | Euclidean fingertip travel between key tops | open |
 | G04 | Keycap/switch collision | a hard check (`context/geometry.md`) |
 | G07 | Manufacturability | a feasibility check, profile `[build]` (`context/geometry.md`) |

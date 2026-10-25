@@ -64,7 +64,7 @@ pub const TOKENS: &[(char, &[&str])] = &[
     (DOWN, &["down"]),
     (UP, &["up"]),
     (RIGHT, &["right"]),
-    (EMPTY, &["none", "empty", "_"]),
+    (EMPTY, &["none", "empty"]),
     (SHIFT, &["shift", "sft"]),
     (CTRL, &["ctrl", "control"]),
     (LAYER_KEYS[0], &["layer1", "l1"]),
@@ -142,7 +142,9 @@ pub fn token_name(c: char) -> Option<&'static str> {
 }
 
 /// Slot-ordered symbols from text: one char per symbol, `{name}` for a token, whitespace
-/// ignored. A brace not around a name (`{}`, `{(`) is the symbol itself.
+/// ignored. A brace not around a name (`{}`, `{(`) is the symbol itself, and so is a brace
+/// around one character that names no token (`{_}`, `{1}`: three symbols), so symbol layers
+/// round-trip. A longer unknown name is an error.
 pub fn parse_symbols(s: &str) -> Result<Vec<char>> {
     let cs: Vec<char> = s.chars().filter(|c| !c.is_whitespace()).collect();
     let mut out = Vec::new();
@@ -152,9 +154,15 @@ pub fn parse_symbols(s: &str) -> Result<Vec<char>> {
             let len = cs[i + 1..].iter().take_while(|c| c.is_ascii_alphanumeric() || **c == '_').count();
             if len > 0 && cs.get(i + 1 + len) == Some(&'}') {
                 let name: String = cs[i + 1..i + 1 + len].iter().collect();
-                out.push(token(&name).ok_or_else(|| Error::invalid("layout", format!("unknown token '{{{name}}}'")))?);
-                i += len + 2;
-                continue;
+                match token(&name) {
+                    Some(c) => {
+                        out.push(c);
+                        i += len + 2;
+                        continue;
+                    }
+                    None if len > 1 => return Err(Error::invalid("layout", format!("unknown token '{{{name}}}'"))),
+                    None => {}
+                }
             }
         }
         out.push(cs[i]);
@@ -533,8 +541,11 @@ mod tests {
 
     #[test]
     fn tokens_and_empty_slots() {
-        let l = Layout::from_str_flat("x", "g", "ab {space}{Enter} {none}{_}·").unwrap();
+        let l = Layout::from_str_flat("x", "g", "ab {space}{Enter} {none}{empty}·").unwrap();
         assert_eq!(l.chars, vec!['a', 'b', SPACE, ENTER, EMPTY, EMPTY, EMPTY]);
+        // One character in braces that names no token is three symbols (symbol layers).
+        assert_eq!(parse_symbols("{_}{1}").unwrap(), vec!['{', '_', '}', '{', '1', '}']);
+        assert!(parse_symbols("{spcae}").is_err());
         assert!(Layout::from_str_flat("x", "g", "a{hyper}").is_err());
         assert_eq!(Layout::from_str_flat("x", "g", "a{shift}{sft}").unwrap().chars, vec!['a', SHIFT, SHIFT]);
         assert_eq!(parse_symbols("{}{(}{l1}").unwrap(), vec!['{', '}', '{', '(', '}', LAYER_KEYS[0]]);

@@ -24,8 +24,8 @@ pub enum Order {
     /// Bigrams of two code symbols (ASCII punctuation, e.g. `()`, `->`), normalized on their own.
     SymBi,
     /// Sparse symbol pairs, not corpus n-grams, each metric with its own cost-table block
-    /// ([`SPARSE`]): `brackets` (`()`, `[]`, `{}`, `<>`, by symbol frequency) and `vim`
-    /// (motion-key pairs, equal weights).
+    /// ([`SPARSE`]): `brackets` (`()`, `[]`, `{}`, `<>`, by symbol frequency), `vim`
+    /// (motion-key pairs, equal weights) and `sym_groups` (profile symbol pairs, equal weights).
     Pairs,
     /// A cost for symbol x on slot i (a table of n × n, symbol-major), already weighted by the
     /// symbols it concerns: `shortcuts`, `familiar`.
@@ -330,6 +330,15 @@ pub static METRICS: &[MetricDef] = &[
         "Vim motion keys h j k l against the profile's `vim` policy: row (one row, h j k l left to right on neighbouring keys), pairs (h left of l, j left of k, each on neighbouring keys) or fingers (four different fingers of one hand). % of the policy's key pairs broken; reversed neighbours count half. Weighted high it is a constraint.",
     ),
     m(
+        "sym_groups",
+        "L07",
+        "Symbol groups",
+        "%",
+        Order::Pairs,
+        Dir::Min,
+        "Related symbols (profile `sym_groups`, e.g. `+- */ != ^$`) not next to each other on one layer: neighbours on a row or a column of one hand, or mirrored on the other hand, in either order. % of the pairs on the layout, equal weights. Makes a layer learnable; weighted high it is a constraint.",
+    ),
+    m(
         "zones",
         "L04",
         "Key zones",
@@ -356,8 +365,39 @@ pub fn vim_pairs(policy: &str) -> Option<&'static [(char, char)]> {
     }
 }
 
+/// Symbol pairs of a profile `sym_groups` string: space-separated two-symbol groups such as
+/// `"+- */ != ^$"` (`None`: a group is not two distinct symbols).
+pub fn sym_group_pairs(groups: &str) -> Option<Vec<(char, char)>> {
+    groups
+        .split_whitespace()
+        .map(|g| {
+            let c: Vec<char> = g.chars().collect();
+            (c.len() == 2 && c[0] != c[1]).then(|| (c[0], c[1]))
+        })
+        .collect()
+}
+
+/// sym_groups cost of two related symbols on slots `i` and `j`: 0 when both are on one layer
+/// and neighbours (same hand and row, neighbouring columns; or same hand and column,
+/// neighbouring rows) or mirrored (same row, finger and column kind on opposite hands), in
+/// either order; 100 otherwise.
+pub fn group_cost(g: &Geometry, i: usize, j: usize) -> f32 {
+    let (a, b) = (&g.key[i], &g.key[j]);
+    if a.layer != b.layer || g.same_key(i, j) {
+        return 100.0;
+    }
+    let row_pair = a.hand() == b.hand() && a.row == b.row && (a.col - b.col).abs() == 1;
+    let col_pair = a.hand() == b.hand() && a.col == b.col && (a.row - b.row).abs() == 1;
+    let mirrored = a.hand() != b.hand() && a.row == b.row && a.finger.ord() == b.finger.ord() && a.stretch == b.stretch;
+    if row_pair || col_pair || mirrored {
+        0.0
+    } else {
+        100.0
+    }
+}
+
 /// Sparse symbol-pair metrics (`Order::Pairs`) and their cost-table block in the scorer.
-pub const SPARSE: [&str; 2] = ["brackets", "vim"];
+pub const SPARSE: [&str; 3] = ["brackets", "vim", "sym_groups"];
 
 pub fn sparse_block(id: &str) -> usize {
     SPARSE.iter().position(|&s| s == id).unwrap_or(0)
@@ -583,6 +623,12 @@ pub fn update_table(g: &Geometry, p: &Profile, prep: &Prep, d: &MetricDef, t: &m
         "vim" => {
             let Some(policy) = p.vim.as_deref() else { return false };
             pair(t, n, fresh, ch, &idx, &|i, j| vim_cost_at(g, pts, policy, i, j))
+        }
+        "sym_groups" => {
+            if p.sym_groups.is_none() {
+                return false;
+            }
+            pair(t, n, fresh, ch, &idx, &|i, j| group_cost(g, i, j))
         }
         // The mod key is still down when another finger of its hand presses: a fast roll that
         // a tap-hold resolver can read as a hold. Same-finger pairs release first.

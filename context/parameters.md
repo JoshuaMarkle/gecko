@@ -164,6 +164,7 @@ Build limits come from the profile's `[build]` (below).
 | `ctrl` | 0.01 | Ctrl shortcut presses per keystroke, charged only with a `⎈` key |
 | `thumb_zone`, `base_letters` | none, false | `zones`: symbols that belong on thumbs; letters on the base layer ([keysets.md](keysets.md#special-keys)) |
 | `vim` | none | `row`, `pairs` or `fingers` policy for `h j k l` ([vim.md](vim.md)) |
+| `sym_groups` | none | Related-symbol groups for `sym_groups`, space-separated pairs, e.g. `"+- */ != ^$"` |
 | `[build]` | off | Geometry-search build limits: `min_pitch` 0.82 u, `max_key_angle` 60°, `max_height` 4 u, `max_plate` [12, 12] u, `piece_gap` 1.25 u, `max_column_keys` 6, `max_columns` 0 (off), `case` off (`mx` / `choc`) ([geometry.md](geometry.md#manufacturability-g07)) |
 
 Runs record the whole profile and its hash (`config.json`). `Profile::table_hash` covers
