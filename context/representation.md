@@ -253,7 +253,8 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 ## Results
 
 A run directory `runs/<timestamp>-<algo>-<short-hash>/` contains:
-- `config.json` (params, input names + hashes, full profile, start layout, pins, version;
+- `config.json` (params, input names + hashes, full profile, start layout (a layered start
+  flattened like results: base, then each layer's keys), pins, version;
   `holdout` corpus name + hash when set)
 - `best.json` (resolved params, top-K layouts with full metric breakdown, evals, speed, and
   `bound`: lower bound + optimality gap of the best layout, `context/algorithms/bounds.md`;

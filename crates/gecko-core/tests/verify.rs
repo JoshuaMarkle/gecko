@@ -115,3 +115,22 @@ fn holdout_scores_results_and_verifies() {
     assert!(v.ok && v.checks.iter().any(|c| c.name == "holdout" && c.ok), "{:#?}", v.checks);
     let _ = std::fs::remove_dir_all(&s.runs);
 }
+
+/// A layered start (base plus layers) is recorded whole in config.json, so the run replays.
+#[test]
+fn layered_start_is_recorded_and_verifies() {
+    let s = store("layered");
+    let g = s.geometry("corne-36").unwrap();
+    let c = s.corpus("programmer").unwrap();
+    let p = s.profile("code").unwrap();
+    let start = s.layout("layered/corne-code", &g.name).unwrap().fit(&g).unwrap();
+    assert!(!start.layers.is_empty());
+    let params = Params { algo: Algo::Sa, seed: 2, threads: 1, time_ms: None, evals: Some(20_000), top: 2, ..Default::default() };
+    let spec = RunSpec { geometry: &g, corpus: &c, profile: &p, start: &start, pins: "", params, holdout: None };
+    let prep = run::prepare(&s.runs, &spec).unwrap();
+    assert_eq!(prep.config.start, start.flat(&g).unwrap().1.into_iter().collect::<String>());
+    run::execute(&prep, &spec, &Control::default(), |_| {}).unwrap();
+    let v = run::verify(&s, &prep.dir).unwrap();
+    assert!(v.ok, "{:#?}", v.checks);
+    let _ = std::fs::remove_dir_all(&s.runs);
+}

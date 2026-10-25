@@ -28,6 +28,7 @@ pub struct RunConfig {
     pub corpus: Input,
     pub profile: Profile,
     pub profile_hash: String,
+    /// Start layout, slot-ordered; a layered start is flattened (base, then each layer's keys).
     pub start: String,
     /// Pinned symbols (they keep their start slot).
     pub pins: String,
@@ -186,12 +187,14 @@ pub fn prepare(runs: &Path, spec: &RunSpec) -> Result<Prepared> {
         return Err(Error::invalid("holdout", "the holdout corpus must differ from the search corpus"));
     }
     let (stamp, iso) = now_stamp();
+    // Base and layers, flattened as results store them (the base alone when there are no layers).
+    let start: String = spec.start.flat(spec.geometry)?.1.into_iter().collect();
     let key = format!(
         "{}|{}|{}|{}|{}|{}",
         spec.geometry.hash(),
         spec.corpus.hash(),
         spec.profile.hash(),
-        spec.start.chars.iter().collect::<String>()
+        start.clone()
             + &crate::magic::format_rules(&spec.start.magic.iter().flat_map(|m| m.rules.clone()).collect::<Vec<_>>())
             + &spec.start.shifted.join(" "),
         spec.pins,
@@ -216,7 +219,7 @@ pub fn prepare(runs: &Path, spec: &RunSpec) -> Result<Prepared> {
         corpus: Input { name: spec.corpus.name.clone(), hash: hash::hex(spec.corpus.hash()) },
         profile: spec.profile.clone(),
         profile_hash: hash::hex(spec.profile.hash()),
-        start: spec.start.chars.iter().collect(),
+        start,
         pins: spec.pins.to_string(),
         magic: spec.start.magic.clone(),
         shifted: spec.start.shifted.clone(),
