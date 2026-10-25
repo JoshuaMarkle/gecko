@@ -1,0 +1,72 @@
+{
+ "tag": "long-row",
+ "start": "layouts/best-row.toml",
+ "corpus": "vim-programmer-typed",
+ "profile": "profiles/vim-row.toml",
+ "pin": "",
+ "evals": 160000000,
+ "best": 174.19644823143574,
+ "at_best": 1,
+ "rows": [
+  {
+   "seed": 1,
+   "run": "20261025-061907-bls-713a72c0",
+   "score": 174.56862789636688,
+   "chars": "yuoczqpm'xieaswfdtrn,=.bgvhjkl\u238b\u232b\u21e7\u2460\u2423\u2461;[:#|!\\%]^-/(){}*\u23ce_`4780+&123695$\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7~",
+   "rows": [
+    "yuoczqpm'x",
+    "ieaswfdtrn",
+    ",=.bgvhjkl",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    ";[:#|!\\%]^",
+    "-/(){}*\u23ce_`",
+    "4780+&1236",
+    "95$\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7~\u00b7\u00b7\u00b7"
+   ]
+  },
+  {
+   "seed": 2,
+   "run": "20261025-061907-bls-abf06e6d",
+   "score": 174.19644823143574,
+   "chars": "yuobzqvcmxiaetwpdsnr.,'g=fhjkl\u238b\u232b\u21e7\u2460\u2423\u2461#;2[|!]+%^:(/_*&0\u23ce)`94{}1\\68$375-\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7@~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+   "rows": [
+    "yuobzqvcmx",
+    "iaetwpdsnr",
+    ".,'g=fhjkl",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "#;2[|!]+%^",
+    ":(/_*&0\u23ce)`",
+    "94{}1\\68$3",
+    "75-\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7@~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ]
+  },
+  {
+   "seed": 3,
+   "run": "20261025-061907-bls-3bb1b779",
+   "score": 174.3875962574925,
+   "chars": "yuobzqpcmxieatgfdsnr'=.w,vhjkl\u238b\u232b\u21e7\u2460\u2423\u24617{}+|!\\$%^/(:_[]0\u23ce)`24#*1&68935;-\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+   "rows": [
+    "yuobzqpcmx",
+    "ieatgfdsnr",
+    "'=.w,vhjkl",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "7{}+|!\\$%^",
+    "/(:_[]0\u23ce)`",
+    "24#*1&6893",
+    "5;-\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ]
+  }
+ ]
+}

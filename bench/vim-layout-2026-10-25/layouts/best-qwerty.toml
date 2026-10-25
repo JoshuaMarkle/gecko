@@ -1,0 +1,13 @@
+name = "20261025-053940-bls-9f7731a7"
+geometry = "corne-36"
+source = "bench/programming-layout-2026-10-25/variant.py 20261025-053940-bls-9f7731a7 "
+rows = ["p'mf=qxa.z", "nrtsdhjkle", "bwgcvyio,u", "{esc}{bspc}{shift}{layer1}{space}{layer2}"]
+shifted = ["'\"", ",<", ".>", "/?"]
+
+[[layer]]
+name = "sym"
+rows = ["[]07|\\_1*%", "-/()#`2:;$", "63849&{}!^", "5+{enter}···"]
+
+[[layer]]
+name = "num"
+rows = ["··~·······", "··@·······", "··········", "······"]

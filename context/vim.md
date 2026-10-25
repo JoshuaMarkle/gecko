@@ -53,6 +53,15 @@ focus events) break the n-grams.
 
 ## Results
 
+**2026-10-25, corne-36 with a symbol layer** (`docs/papers/vim-layout/`, `vim-programmer-typed`,
+measured layer cost, BLS 3 × 160 M per policy): every shaped policy is within 0.1 % of free
+(pairs +0.05 %, fingers +0.09 %, row +0.11 %) and QWERTY spots +0.7 %. Esc goes on a base thumb
+and Enter onto the symbol layer; `:` and `/` on the layer's home row. At 40 M evaluations the
+seeds spread 3–5 %, more than the policies differ, so the ansi-30 table below (SA 60 s) may
+overstate the policy costs.
+
+**2026-10-24, ansi-30:**
+
 2026-10-24, `vim-programmer`, ansi-30, SA 60 s × 20 threads, seeds 1 and 2; each best layout
 rescored with profile `default` (no `vim`), so the numbers are what the policy costs in typing
 score (lower is better). The best of the two seeds is shown. Under the weight-100 constraint SA

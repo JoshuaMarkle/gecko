@@ -1,0 +1,13 @@
+name = "programming optimum + Esc"
+geometry = "corne-36"
+source = "bench/programming-layout-2026-10-25 full-cal (run 20261025-040445-bls-0aec6d68) with Esc on layer 1, left middle thumb"
+rows = ["yuokjqxlfb", "ieatgmnrsc", ",=.dzvh'wp", "{enter}{bspc}{shift}{layer1}{space}{layer2}"]
+shifted = ["'\"", ",<", ".>", "/?"]
+
+[[layer]]
+name = "sym"
+rows = ["··········", "···~······", "··········", "·{esc}····"]
+
+[[layer]]
+name = "num"
+rows = ["%\\:|@98026", "_-()&#;/*!", "[4137^`{}]", "+5$···"]

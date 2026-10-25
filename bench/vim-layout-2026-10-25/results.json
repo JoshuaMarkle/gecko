@@ -1,0 +1,1648 @@
+{
+ "cells": {
+  "long-fingers": {
+   "best": 174.14984829617046,
+   "at_best": 1,
+   "n": 3,
+   "scores": [
+    174.14984829617046,
+    174.40864623535495,
+    175.7747748246177
+   ],
+   "run": "20261025-061907-bls-f03d7e81",
+   "rows": [
+    "yuobzqprxm",
+    "ieatgfdnsl",
+    "'=.w,jchkv",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "`#({|!})+%",
+    "/_:[*\\]$\u23ce2",
+    "048;19&36^",
+    "75-\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "vim-programmer-typed",
+   "profile": "vim-fingers"
+  },
+  "long-free": {
+   "best": 173.9979935581929,
+   "at_best": 1,
+   "n": 3,
+   "scores": [
+    173.9979935581929,
+    173.99932790877043,
+    174.40556991872182
+   ],
+   "run": "20261025-061907-bls-c76aaf99",
+   "rows": [
+    "juobzqpyml",
+    "aietwfdsnr",
+    ".,'g=vckhx",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7@\u00b7\u00b7\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "7;[]|!9+%^",
+    ":(/_*\\0\u23ce)$",
+    "`421{}&368",
+    "5#-\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "vim-programmer-typed",
+   "profile": "vim-free"
+  },
+  "long-pairs": {
+   "best": 174.0828045244823,
+   "at_best": 1,
+   "n": 3,
+   "scores": [
+    174.0828045244823,
+    174.31210981510856,
+    174.90229636915006
+   ],
+   "run": "20261025-061907-bls-108c69fa",
+   "rows": [
+    "yuobzqpmvx",
+    "iaetwfdsnr",
+    ".,'g=cjkhl",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "9;{}[]%+!^",
+    ":(/_*\\#\u23ce)$",
+    "`401|&2836",
+    "75-\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7@\u00b7\u00b7\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "vim-programmer-typed",
+   "profile": "vim-pairs"
+  },
+  "long-qwerty": {
+   "best": 175.2255429472138,
+   "at_best": 1,
+   "n": 3,
+   "scores": [
+    175.2255429472138,
+    175.69976741604776,
+    176.13095141908937
+   ],
+   "run": "20261025-061907-bls-2b91eb3e",
+   "rows": [
+    "yuofzqpsrc",
+    "iaetwhjkld",
+    ".,'g=bnmxv",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    ";[`#|!_\u23ce]%",
+    "(:/*0\\1$2)",
+    "974{+&}8^6",
+    "53-\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "@\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "vim-programmer-typed",
+   "profile": "vim-free"
+  },
+  "long-row": {
+   "best": 174.19644823143574,
+   "at_best": 1,
+   "n": 3,
+   "scores": [
+    174.19644823143574,
+    174.3875962574925,
+    174.56862789636688
+   ],
+   "run": "20261025-061907-bls-abf06e6d",
+   "rows": [
+    "yuobzqvcmx",
+    "iaetwpdsnr",
+    ".,'g=fhjkl",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "#;2[|!]+%^",
+    ":(/_*&0\u23ce)`",
+    "94{}1\\68$3",
+    "75-\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7@~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "vim-programmer-typed",
+   "profile": "vim-row"
+  },
+  "share-00": {
+   "best": 145.8832814977623,
+   "at_best": 1,
+   "n": 6,
+   "scores": [
+    145.8832814977623,
+    146.44955666691794,
+    147.86980241870273,
+    147.90529180069646,
+    148.0692952698968,
+    149.29693868241168
+   ],
+   "run": "20261025-061207-bls-de6cae3a",
+   "rows": [
+    "yuobqjk'vw",
+    "ieatgmnrsc",
+    ".=,dzxhlfp",
+    "\u23ce\u232b\u21e7\u2460\u2423\u2461",
+    "|9(!%^$)#\\",
+    "[;:*&`_-/]",
+    "4{}1@82706",
+    "+53\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u238b\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "programmer-typed",
+   "profile": "vim-pairs"
+  },
+  "share-11": {
+   "best": 160.45485850281116,
+   "at_best": 1,
+   "n": 6,
+   "scores": [
+    160.45485850281116,
+    162.0418749215899,
+    163.81269674814965,
+    166.89903678423303,
+    167.52758197484488,
+    168.33245168653428
+   ],
+   "run": "20261025-054951-bls-1fe02e93",
+   "rows": [
+    ".=',zvjkxq",
+    "ieatgdcsnr",
+    "yuowbfpmhl",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "4()0+!7326",
+    "[:/*#\\`\u23ce_]",
+    "98{}|&1^%$",
+    "5;-\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7@\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "vimshare-11",
+   "profile": "vim-pairs"
+  },
+  "share-33": {
+   "best": 187.99338081144464,
+   "at_best": 1,
+   "n": 6,
+   "scores": [
+    187.99338081144464,
+    188.53401828466224,
+    188.65162420267197,
+    193.32082597665902,
+    193.32754710858066,
+    193.56190912358318
+   ],
+   "run": "20261025-060017-bls-e9135c70",
+   "rows": [
+    "vbcgzqxjk:",
+    "\u23censtfhleai",
+    "ypdwm/ro.u",
+    "\u238b\u2423\u21e7\u2460\u232b\u2461",
+    "40[67%1]$!",
+    "'-2(*#)_,;",
+    "5^{}+&=\\|`",
+    "938\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7@\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "vimshare-33",
+   "profile": "vim-pairs"
+  },
+  "vim-fingers": {
+   "best": 175.9382783102633,
+   "at_best": 1,
+   "n": 6,
+   "scores": [
+    175.9382783102633,
+    176.19898322263103,
+    176.49704925382485,
+    176.7029457637911,
+    178.88073695174373,
+    182.6653005228689
+   ],
+   "run": "20261025-052853-bls-4cbc81ce",
+   "rows": [
+    ",ugmfzjl.b",
+    "ietsc'arnp",
+    "y=wdvqoxhk",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "4*/#|^3$1&",
+    "(:[]2\\_\u23ce`)",
+    ";9{}6!08+%",
+    "75-\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "vim-programmer-typed",
+   "profile": "vim-fingers"
+  },
+  "vim-free": {
+   "best": 174.43139558415817,
+   "at_best": 1,
+   "n": 6,
+   "scores": [
+    174.43139558415817,
+    175.00127835993567,
+    175.02827717371753,
+    176.16847765993944,
+    178.60889715540608,
+    182.10081892441147
+   ],
+   "run": "20261025-044631-bls-dfb4a42a",
+   "rows": [
+    "xwdgvzuojq",
+    "rnstfyheai",
+    "lmcpb=k',.",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "+;{}|%^37!",
+    "/()*#_\u23ce`-$",
+    "2[106&48]\\",
+    "95:\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7@\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "vim-programmer-typed",
+   "profile": "vim-free"
+  },
+  "vim-pairs": {
+   "best": 176.32972230257047,
+   "at_best": 1,
+   "n": 6,
+   "scores": [
+    176.32972230257047,
+    176.38655171630245,
+    176.4694520756658,
+    180.26483222424307,
+    182.644481013899,
+    183.88377881883235
+   ],
+   "run": "20261025-050300-bls-036a81a7",
+   "rows": [
+    "yufpgzx.'q",
+    "ietscmnrao",
+    ",=wdbvhljk",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    ";()#|%^0\\!",
+    "-:[]*&\u23ce/_`",
+    "47{26+3}81",
+    "95$\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "vim-programmer-typed",
+   "profile": "vim-pairs"
+  },
+  "vim-qwerty": {
+   "best": 179.43909843672466,
+   "at_best": 1,
+   "n": 6,
+   "scores": [
+    179.43909843672466,
+    179.53164496031857,
+    179.57334564946467,
+    182.10809492514994,
+    183.25767176706614,
+    185.38790826745492
+   ],
+   "run": "20261025-053940-bls-9f7731a7",
+   "rows": [
+    "p'mf=qxa.z",
+    "nrtsdhjkle",
+    "bwgcvyio,u",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "[]07|\\_1*%",
+    "-/()#`2:;$",
+    "63849&{}!^",
+    "5+\u23ce\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "vim-programmer-typed",
+   "profile": "vim-free"
+  },
+  "vim-row": {
+   "best": 176.38963906913747,
+   "at_best": 1,
+   "n": 6,
+   "scores": [
+    176.38963906913747,
+    176.63772776352573,
+    177.07500789339792,
+    182.78776080249253,
+    183.71760891447363,
+    185.13898427657702
+   ],
+   "run": "20261025-051627-bls-6481880c",
+   "rows": [
+    ",ucmgzpo'x",
+    "iestfbnar.",
+    "y=wdvqhjkl",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "2[-#+^$%]\\",
+    "*:/(03)\u23ce_1",
+    ";|{}6&847!",
+    "95`\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "@\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "vim-programmer-typed",
+   "profile": "vim-row"
+  }
+ },
+ "best_of": {
+  "free": "long-free",
+  "pairs": "long-pairs",
+  "row": "long-row",
+  "fingers": "long-fingers",
+  "qwerty": "long-qwerty"
+ },
+ "layouts": {
+  "ref:us-layer-esc": {
+   "spec": "/home/josh/projects/gecko/bench/vim-layout-2026-10-25/layouts/us-layer-esc.toml",
+   "scores": {
+    "vim-programmer-typed": 192.73692738468216,
+    "programmer-typed": 161.8771425092496,
+    "vimshare-11": 177.31529187237248,
+    "vimshare-33": 208.20959197315977,
+    "vim": 315.1103147046452
+   },
+   "costs": {
+    "vim-programmer-typed": {
+     "layer_switch": 12.542324445234133,
+     "symbol_bigram": 32.88779298990221,
+     "sfb": 2.703310622128008,
+     "typing_time": 7.469806097989145,
+     "engram": 0.0,
+     "hand_switch": -50.480499056476,
+     "vim": 0.0
+    },
+    "programmer-typed": {
+     "layer_switch": 10.636684885399106,
+     "symbol_bigram": 32.36791443345055,
+     "sfb": 1.6368196373474753,
+     "typing_time": 6.651764299436888,
+     "engram": 0.0,
+     "hand_switch": -50.99257050261987,
+     "vim": 0.0
+    },
+    "vimshare-11": {
+     "layer_switch": 11.59055344682335,
+     "symbol_bigram": 32.61282503608527,
+     "sfb": 2.1730856346152905,
+     "typing_time": 7.062579567601215,
+     "engram": 0.0,
+     "hand_switch": -50.73342465079253,
+     "vim": 0.0
+    },
+    "vimshare-33": {
+     "layer_switch": 13.495264432299226,
+     "symbol_bigram": 33.22535138155445,
+     "sfb": 3.233042870540892,
+     "typing_time": 7.876028239408104,
+     "engram": 0.0,
+     "hand_switch": -50.218678604509016,
+     "vim": 0.0
+    },
+    "vim": {
+     "layer_switch": 20.036706326777676,
+     "symbol_bigram": 35.206034288421506,
+     "sfb": 6.999948494950559,
+     "typing_time": 11.062279120970587,
+     "engram": 0.0,
+     "hand_switch": -49.601480706348866,
+     "vim": 0.0
+    }
+   },
+   "rows": [
+    "qwfpbjluy'",
+    "arstgmneio",
+    "zxcdvkh,./",
+    "\u23ce\u2423\u21e7\u2460\u232b\u2461",
+    "!@#$%^&*()",
+    "-=[]\\;`~:\u00b7",
+    "_+{}|\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u238b\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "1234567890",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "where": {
+    "\u238b": "layer 1, L outer thumb",
+    ":": "layer 1, home R ring",
+    "/": "base, bottom R pinky",
+    "h": "base, bottom R index",
+    "j": "base, top R index",
+    "k": "base, bottom R index",
+    "l": "base, top R index",
+    "\u23ce": "base, L outer thumb",
+    "w": "base, top L ring",
+    "b": "base, top L index",
+    "e": "base, home R middle"
+   }
+  },
+  "ref:prog-esc": {
+   "spec": "/home/josh/projects/gecko/bench/vim-layout-2026-10-25/layouts/prog-esc.toml",
+   "scores": {
+    "vim-programmer-typed": 182.20894163419402,
+    "programmer-typed": 145.75096336520713,
+    "vimshare-11": 163.99675813692284,
+    "vimshare-33": 200.451414548974,
+    "vim": 329.23192401935563
+   },
+   "costs": {
+    "vim-programmer-typed": {
+     "layer_switch": 12.25122738101514,
+     "symbol_bigram": 27.046813959947613,
+     "sfb": 2.1074236375807853,
+     "typing_time": 6.656145954959142,
+     "engram": 0.0,
+     "hand_switch": -57.67964480148662,
+     "vim": 0.0
+    },
+    "programmer-typed": {
+     "layer_switch": 9.909270547254302,
+     "symbol_bigram": 26.297976445642135,
+     "sfb": 1.2538594821573268,
+     "typing_time": 5.860868030264265,
+     "engram": 0.0,
+     "hand_switch": -59.16563725386646,
+     "vim": 0.0
+    },
+    "vimshare-11": {
+     "layer_switch": 11.081948043965795,
+     "symbol_bigram": 26.65971675469052,
+     "sfb": 1.6831935898140915,
+     "typing_time": 6.260799314088343,
+     "engram": 0.0,
+     "hand_switch": -58.4156624939253,
+     "vim": 0.0
+    },
+    "vimshare-33": {
+     "layer_switch": 13.418840994647852,
+     "symbol_bigram": 27.511404030575193,
+     "sfb": 2.5350871732304103,
+     "typing_time": 7.053344185355797,
+     "engram": 0.0,
+     "hand_switch": -56.93355121308999,
+     "vim": 0.0
+    },
+    "vim": {
+     "layer_switch": 21.735831812725337,
+     "symbol_bigram": 30.492122213217954,
+     "sfb": 5.243523978839448,
+     "typing_time": 9.925044428465634,
+     "engram": 0.0,
+     "hand_switch": -54.546708987965076,
+     "vim": 0.0
+    }
+   },
+   "rows": [
+    "yuokjqxlfb",
+    "ieatgmnrsc",
+    ",=.dzvh'wp",
+    "\u23ce\u232b\u21e7\u2460\u2423\u2461",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u238b\u00b7\u00b7\u00b7\u00b7",
+    "%\\:|@98026",
+    "_-()&#;/*!",
+    "[4137^`{}]",
+    "+5$\u00b7\u00b7\u00b7"
+   ],
+   "where": {
+    "\u238b": "layer 1, L middle thumb",
+    ":": "layer 2, top L middle",
+    "/": "layer 2, home R middle",
+    "h": "base, bottom R index",
+    "j": "base, top L index",
+    "k": "base, top L index",
+    "l": "base, top R middle",
+    "\u23ce": "base, L outer thumb",
+    "w": "base, bottom R ring",
+    "b": "base, top R pinky",
+    "e": "base, home L ring"
+   }
+  },
+  "long-fingers": {
+   "spec": "run:20261025-061907-bls-f03d7e81",
+   "scores": {
+    "vim-programmer-typed": 174.14984125424533,
+    "programmer-typed": 145.73940924097107,
+    "vimshare-11": 159.9740212928686,
+    "vimshare-33": 188.36697775572168,
+    "vim": 289.1512870057238
+   },
+   "costs": {
+    "vim-programmer-typed": {
+     "layer_switch": 11.67755699499895,
+     "symbol_bigram": 27.663457261639124,
+     "sfb": 2.02416476005407,
+     "typing_time": 6.73541217733396,
+     "engram": 0.0,
+     "hand_switch": -58.69422841610232,
+     "vim": 0.0
+    },
+    "programmer-typed": {
+     "layer_switch": 9.870500480934364,
+     "symbol_bigram": 26.929964222449954,
+     "sfb": 1.273660302007107,
+     "typing_time": 6.010770506746233,
+     "engram": 0.0,
+     "hand_switch": -60.44002811948515,
+     "vim": 0.0
+    },
+    "vimshare-11": {
+     "layer_switch": 10.777759554757639,
+     "symbol_bigram": 27.287788508269273,
+     "sfb": 1.6486280756104144,
+     "typing_time": 6.374056814808918,
+     "engram": 0.0,
+     "hand_switch": -59.56742563087123,
+     "vim": 0.0
+    },
+    "vimshare-33": {
+     "layer_switch": 12.577877129362713,
+     "symbol_bigram": 28.120624722491527,
+     "sfb": 2.3997756825266947,
+     "typing_time": 7.097492639414731,
+     "engram": 0.0,
+     "hand_switch": -57.83126974631204,
+     "vim": 0.0
+    },
+    "vim": {
+     "layer_switch": 18.98392187870286,
+     "symbol_bigram": 31.035912480911065,
+     "sfb": 4.733531348665565,
+     "typing_time": 9.73178653508619,
+     "engram": 0.0,
+     "hand_switch": -54.313112483583836,
+     "vim": 0.0
+    }
+   },
+   "rows": [
+    "yuobzqprxm",
+    "ieatgfdnsl",
+    "'=.w,jchkv",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "`#({|!})+%",
+    "/_:[*\\]$\u23ce2",
+    "048;19&36^",
+    "75-\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "where": {
+    "\u238b": "base, L outer thumb",
+    ":": "layer 1, home L middle",
+    "/": "layer 1, home L pinky",
+    "h": "base, bottom R middle",
+    "j": "base, bottom R index",
+    "k": "base, bottom R ring",
+    "l": "base, home R pinky",
+    "\u23ce": "layer 1, home R ring",
+    "w": "base, bottom L index",
+    "b": "base, top L index",
+    "e": "base, home L ring"
+   }
+  },
+  "long-free": {
+   "spec": "run:20261025-061907-bls-c76aaf99",
+   "scores": {
+    "vim-programmer-typed": 173.9979864383847,
+    "programmer-typed": 146.00701727189184,
+    "vimshare-11": 160.03538508900652,
+    "vimshare-33": 188.007411340823,
+    "vim": 287.0232643185771
+   },
+   "costs": {
+    "vim-programmer-typed": {
+     "layer_switch": 11.680738881983267,
+     "symbol_bigram": 27.41518315861562,
+     "sfb": 1.8506450800277463,
+     "typing_time": 6.655855829815067,
+     "engram": 0.0,
+     "hand_switch": -58.31444385700463,
+     "vim": 0.0
+    },
+    "programmer-typed": {
+     "layer_switch": 9.873109063443785,
+     "symbol_bigram": 26.69689383362801,
+     "sfb": 1.2286803939128177,
+     "typing_time": 5.96925945445624,
+     "engram": 0.0,
+     "hand_switch": -59.94874295802062,
+     "vim": 0.0
+    },
+    "vimshare-11": {
+     "layer_switch": 10.780651866240389,
+     "symbol_bigram": 27.041574199014917,
+     "sfb": 1.5408882122642353,
+     "typing_time": 6.31401248919927,
+     "engram": 0.0,
+     "hand_switch": -59.13227504355543,
+     "vim": 0.0
+    },
+    "vimshare-33": {
+     "layer_switch": 12.581286945160485,
+     "symbol_bigram": 27.867004352019364,
+     "sfb": 2.162137518545215,
+     "typing_time": 6.998447266240434,
+     "engram": 0.0,
+     "hand_switch": -57.50463744024291,
+     "vim": 0.0
+    },
+    "vim": {
+     "layer_switch": 18.98982179014297,
+     "symbol_bigram": 30.731326141176396,
+     "sfb": 4.030241562435322,
+     "typing_time": 9.478713436880996,
+     "engram": 0.0,
+     "hand_switch": -54.49140988850445,
+     "vim": 0.0
+    }
+   },
+   "rows": [
+    "juobzqpyml",
+    "aietwfdsnr",
+    ".,'g=vckhx",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7@\u00b7\u00b7\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "7;[]|!9+%^",
+    ":(/_*\\0\u23ce)$",
+    "`421{}&368",
+    "5#-\u00b7\u00b7\u00b7"
+   ],
+   "where": {
+    "\u238b": "base, L outer thumb",
+    ":": "layer 2, home L pinky",
+    "/": "layer 2, home L middle",
+    "h": "base, bottom R ring",
+    "j": "base, top L pinky",
+    "k": "base, bottom R middle",
+    "l": "base, top R pinky",
+    "\u23ce": "layer 2, home R middle",
+    "w": "base, home L index",
+    "b": "base, top L index",
+    "e": "base, home L middle"
+   }
+  },
+  "long-pairs": {
+   "spec": "run:20261025-061907-bls-108c69fa",
+   "scores": {
+    "vim-programmer-typed": 174.0827974366681,
+    "programmer-typed": 146.31522645723481,
+    "vimshare-11": 160.23055959873375,
+    "vimshare-33": 187.97685291957595,
+    "vim": 286.5248177802204
+   },
+   "costs": {
+    "vim-programmer-typed": {
+     "layer_switch": 11.67755699499895,
+     "symbol_bigram": 27.55429474103188,
+     "sfb": 1.952827074220309,
+     "typing_time": 6.656779368787011,
+     "engram": 0.0,
+     "hand_switch": -58.59669338178513,
+     "vim": 0.0
+    },
+    "programmer-typed": {
+     "layer_switch": 9.870500480934364,
+     "symbol_bigram": 26.820029591965877,
+     "sfb": 1.2897335435914314,
+     "typing_time": 6.005550869800042,
+     "engram": 0.0,
+     "hand_switch": -60.280763647037446,
+     "vim": 0.0
+    },
+    "vimshare-11": {
+     "layer_switch": 10.777759554757639,
+     "symbol_bigram": 27.173930351361264,
+     "sfb": 1.6220793265599553,
+     "typing_time": 6.332376868231813,
+     "engram": 0.0,
+     "hand_switch": -59.43945271034259,
+     "vim": 0.0
+    },
+    "vimshare-33": {
+     "layer_switch": 12.577877129362713,
+     "symbol_bigram": 28.015865706254672,
+     "sfb": 2.2833782344097164,
+     "typing_time": 6.981086980190278,
+     "engram": 0.0,
+     "hand_switch": -57.76319196439008,
+     "vim": 0.0
+    },
+    "vim": {
+     "layer_switch": 18.98392187870286,
+     "symbol_bigram": 30.95139375236613,
+     "sfb": 4.297187693509841,
+     "typing_time": 9.352462804184206,
+     "engram": 0.0,
+     "hand_switch": -54.469210221640196,
+     "vim": 0.0
+    }
+   },
+   "rows": [
+    "yuobzqpmvx",
+    "iaetwfdsnr",
+    ".,'g=cjkhl",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "9;{}[]%+!^",
+    ":(/_*\\#\u23ce)$",
+    "`401|&2836",
+    "75-\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7@\u00b7\u00b7\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "where": {
+    "\u238b": "base, L outer thumb",
+    ":": "layer 1, home L pinky",
+    "/": "layer 1, home L middle",
+    "h": "base, bottom R ring",
+    "j": "base, bottom R index",
+    "k": "base, bottom R middle",
+    "l": "base, bottom R pinky",
+    "\u23ce": "layer 1, home R middle",
+    "w": "base, home L index",
+    "b": "base, top L index",
+    "e": "base, home L middle"
+   }
+  },
+  "long-qwerty": {
+   "spec": "run:20261025-061907-bls-2b91eb3e",
+   "scores": {
+    "vim-programmer-typed": 175.2255358663536,
+    "programmer-typed": 147.45808954043918,
+    "vimshare-11": 161.37564118541616,
+    "vimshare-33": 189.09506618954768,
+    "vim": 287.48957900396425
+   },
+   "costs": {
+    "vim-programmer-typed": {
+     "layer_switch": 11.679741550583023,
+     "symbol_bigram": 27.286030927642813,
+     "sfb": 2.036402314398056,
+     "typing_time": 6.985965078654447,
+     "engram": 0.0,
+     "hand_switch": -58.7820165273057,
+     "vim": 0.0
+    },
+    "programmer-typed": {
+     "layer_switch": 9.872924447534782,
+     "symbol_bigram": 26.58957794717498,
+     "sfb": 1.3174536772746048,
+     "typing_time": 6.36426448368135,
+     "engram": 0.0,
+     "hand_switch": -60.524200519538425,
+     "vim": 0.0
+    },
+    "vimshare-11": {
+     "layer_switch": 10.780024213499418,
+     "symbol_bigram": 26.924602896824013,
+     "sfb": 1.676945782244843,
+     "typing_time": 6.6756356781570645,
+     "engram": 0.0,
+     "hand_switch": -59.657698895831786,
+     "vim": 0.0
+    },
+    "vimshare-33": {
+     "layer_switch": 12.579904428162303,
+     "symbol_bigram": 27.723063241387358,
+     "sfb": 2.3919809032481143,
+     "typing_time": 7.2946895161162075,
+     "engram": 0.0,
+     "hand_switch": -57.91220659645398,
+     "vim": 0.0
+    },
+    "vim": {
+     "layer_switch": 18.98527185848593,
+     "symbol_bigram": 30.509663834163803,
+     "sfb": 4.603833249080935,
+     "typing_time": 9.601544191821878,
+     "engram": 0.0,
+     "hand_switch": -54.39531130214732,
+     "vim": 0.0
+    }
+   },
+   "rows": [
+    "yuofzqpsrc",
+    "iaetwhjkld",
+    ".,'g=bnmxv",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    ";[`#|!_\u23ce]%",
+    "(:/*0\\1$2)",
+    "974{+&}8^6",
+    "53-\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "@\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "where": {
+    "\u238b": "base, L outer thumb",
+    ":": "layer 1, home L ring",
+    "/": "layer 1, home L middle",
+    "h": "base, home R index",
+    "j": "base, home R index",
+    "k": "base, home R middle",
+    "l": "base, home R ring",
+    "\u23ce": "layer 1, top R middle",
+    "w": "base, home L index",
+    "b": "base, bottom R index",
+    "e": "base, home L middle"
+   }
+  },
+  "long-row": {
+   "spec": "run:20261025-061907-bls-abf06e6d",
+   "scores": {
+    "vim-programmer-typed": 174.19644111273905,
+    "programmer-typed": 146.46694431385853,
+    "vimshare-11": 160.37152242378073,
+    "vimshare-33": 188.05037427578665,
+    "vim": 286.14127412196586
+   },
+   "costs": {
+    "vim-programmer-typed": {
+     "layer_switch": 11.67755699499895,
+     "symbol_bigram": 27.41449152036388,
+     "sfb": 1.9751447548154388,
+     "typing_time": 6.694206157610156,
+     "engram": 0.0,
+     "hand_switch": -58.65667490751578,
+     "vim": 0.0
+    },
+    "programmer-typed": {
+     "layer_switch": 9.870500480934364,
+     "symbol_bigram": 26.659011114111664,
+     "sfb": 1.4037428973927124,
+     "typing_time": 6.054489760397764,
+     "engram": 0.0,
+     "hand_switch": -60.330403277418625,
+     "vim": 0.0
+    },
+    "vimshare-11": {
+     "layer_switch": 10.777759554757639,
+     "symbol_bigram": 27.020642911824666,
+     "sfb": 1.6911660464831169,
+     "typing_time": 6.3758476979897445,
+     "engram": 0.0,
+     "hand_switch": -59.49370318594734,
+     "vim": 0.0
+    },
+    "vimshare-33": {
+     "layer_switch": 12.577877129362713,
+     "symbol_bigram": 27.88383090990436,
+     "sfb": 2.2586480986959145,
+     "typing_time": 7.012436644132176,
+     "engram": 0.0,
+     "hand_switch": -57.82974647602682,
+     "vim": 0.0
+    },
+    "vim": {
+     "layer_switch": 18.98392187870286,
+     "symbol_bigram": 30.873253805475542,
+     "sfb": 3.9578926181434326,
+     "typing_time": 9.344839330543003,
+     "engram": 0.0,
+     "hand_switch": -54.582408576283115,
+     "vim": 0.0
+    }
+   },
+   "rows": [
+    "yuobzqvcmx",
+    "iaetwpdsnr",
+    ".,'g=fhjkl",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "#;2[|!]+%^",
+    ":(/_*&0\u23ce)`",
+    "94{}1\\68$3",
+    "75-\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7@~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "where": {
+    "\u238b": "base, L outer thumb",
+    ":": "layer 1, home L pinky",
+    "/": "layer 1, home L middle",
+    "h": "base, bottom R index",
+    "j": "base, bottom R middle",
+    "k": "base, bottom R ring",
+    "l": "base, bottom R pinky",
+    "\u23ce": "layer 1, home R middle",
+    "w": "base, home L index",
+    "b": "base, top L index",
+    "e": "base, home L middle"
+   }
+  },
+  "share-00": {
+   "spec": "run:20261025-061207-bls-de6cae3a",
+   "scores": {
+    "vim-programmer-typed": 182.42794330383873,
+    "programmer-typed": 145.88327543301824,
+    "vimshare-11": 164.16294129138987,
+    "vimshare-33": 200.73272435386906,
+    "vim": 331.2310517572473
+   },
+   "costs": {
+    "vim-programmer-typed": {
+     "layer_switch": 12.182184272436514,
+     "symbol_bigram": 27.26985416915717,
+     "sfb": 2.2570731096800634,
+     "typing_time": 6.840605164174677,
+     "engram": 0.0,
+     "hand_switch": -57.28297117624983,
+     "vim": 0.0
+    },
+    "programmer-typed": {
+     "layer_switch": 9.909270547254302,
+     "symbol_bigram": 26.41522185350631,
+     "sfb": 1.2708113177791969,
+     "typing_time": 5.862693172011784,
+     "engram": 0.0,
+     "hand_switch": -58.81930242451935,
+     "vim": 0.0
+    },
+    "vimshare-11": {
+     "layer_switch": 11.04746462278844,
+     "symbol_bigram": 26.832368003644547,
+     "sfb": 1.7660684153437023,
+     "typing_time": 6.35390515001468,
+     "engram": 0.0,
+     "hand_switch": -58.04434965166301,
+     "vim": 0.0
+    },
+    "vimshare-33": {
+     "layer_switch": 13.315185069307134,
+     "symbol_bigram": 27.800068189741012,
+     "sfb": 2.7513626015888804,
+     "typing_time": 7.329176441960195,
+     "engram": 0.0,
+     "hand_switch": -56.52067089391902,
+     "vim": 0.0
+    },
+    "vim": {
+     "layer_switch": 21.372437265267763,
+     "symbol_bigram": 31.20335523108224,
+     "sfb": 5.966713495763543,
+     "typing_time": 10.852513110813499,
+     "engram": 0.0,
+     "hand_switch": -53.27787742356804,
+     "vim": 0.0
+    }
+   },
+   "rows": [
+    "yuobqjk'vw",
+    "ieatgmnrsc",
+    ".=,dzxhlfp",
+    "\u23ce\u232b\u21e7\u2460\u2423\u2461",
+    "|9(!%^$)#\\",
+    "[;:*&`_-/]",
+    "4{}1@82706",
+    "+53\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u238b\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "where": {
+    "\u238b": "layer 2, bottom R ring",
+    ":": "layer 1, home L middle",
+    "/": "layer 1, home R ring",
+    "h": "base, bottom R index",
+    "j": "base, top R index",
+    "k": "base, top R index",
+    "l": "base, bottom R middle",
+    "\u23ce": "base, L outer thumb",
+    "w": "base, top R pinky",
+    "b": "base, top L index",
+    "e": "base, home L ring"
+   }
+  },
+  "share-11": {
+   "spec": "run:20261025-054951-bls-1fe02e93",
+   "scores": {
+    "vim-programmer-typed": 174.64786346988785,
+    "programmer-typed": 146.1876863779237,
+    "vimshare-11": 160.45485184758678,
+    "vimshare-33": 188.87539372044253,
+    "vim": 289.73612582590056
+   },
+   "costs": {
+    "vim-programmer-typed": {
+     "layer_switch": 11.682814512836837,
+     "symbol_bigram": 27.614270010825592,
+     "sfb": 2.04638841508753,
+     "typing_time": 6.739972581335448,
+     "engram": 0.0,
+     "hand_switch": -58.61333110374862,
+     "vim": 0.0
+    },
+    "programmer-typed": {
+     "layer_switch": 9.870797924551567,
+     "symbol_bigram": 26.901235531750167,
+     "sfb": 1.2759196163500963,
+     "typing_time": 6.004450783653515,
+     "engram": 0.0,
+     "hand_switch": -60.294745126131836,
+     "vim": 0.0
+    },
+    "vimshare-11": {
+     "layer_switch": 10.780492973559697,
+     "symbol_bigram": 27.246229903684593,
+     "sfb": 1.6630706646100446,
+     "typing_time": 6.373720877959183,
+     "engram": 0.0,
+     "hand_switch": -59.45507558637195,
+     "vim": 0.0
+    },
+    "vimshare-33": {
+     "layer_switch": 12.585659249938308,
+     "symbol_bigram": 28.066053896827547,
+     "sfb": 2.4285094878610525,
+     "typing_time": 7.105946898089998,
+     "engram": 0.0,
+     "hand_switch": -57.78330458362646,
+     "vim": 0.0
+    },
+    "vim": {
+     "layer_switch": 19.010871474580426,
+     "symbol_bigram": 30.87963257512456,
+     "sfb": 4.826280020876084,
+     "typing_time": 9.77295557565378,
+     "engram": 0.0,
+     "hand_switch": -54.47681009434291,
+     "vim": 0.0
+    }
+   },
+   "rows": [
+    ".=',zvjkxq",
+    "ieatgdcsnr",
+    "yuowbfpmhl",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "4()0+!7326",
+    "[:/*#\\`\u23ce_]",
+    "98{}|&1^%$",
+    "5;-\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7@\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "where": {
+    "\u238b": "base, L outer thumb",
+    ":": "layer 1, home L ring",
+    "/": "layer 1, home L middle",
+    "h": "base, bottom R ring",
+    "j": "base, top R index",
+    "k": "base, top R middle",
+    "l": "base, bottom R pinky",
+    "\u23ce": "layer 1, home R middle",
+    "w": "base, bottom L index",
+    "b": "base, bottom L index",
+    "e": "base, home L ring"
+   }
+  },
+  "share-33": {
+   "spec": "run:20261025-060017-bls-e9135c70",
+   "scores": {
+    "vim-programmer-typed": 179.81040199966333,
+    "programmer-typed": 163.52859395186195,
+    "vimshare-11": 171.65831890822153,
+    "vimshare-33": 187.99337328717763,
+    "vim": 246.9247202008002
+   },
+   "costs": {
+    "vim-programmer-typed": {
+     "layer_switch": 12.03050274710713,
+     "symbol_bigram": 21.531676799856214,
+     "sfb": 2.2002304205791745,
+     "typing_time": 7.160774440842862,
+     "engram": 0.0,
+     "hand_switch": -53.25668060718991,
+     "vim": 0.0
+    },
+    "programmer-typed": {
+     "layer_switch": 11.099857956195859,
+     "symbol_bigram": 20.258284623639966,
+     "sfb": 1.5711058595456961,
+     "typing_time": 6.540477496555029,
+     "engram": 0.0,
+     "hand_switch": -53.77618664170339,
+     "vim": 0.0
+    },
+    "vimshare-11": {
+     "layer_switch": 11.564227515127202,
+     "symbol_bigram": 20.858902626738995,
+     "sfb": 1.887664721240867,
+     "typing_time": 6.852185649017253,
+     "engram": 0.0,
+     "hand_switch": -53.51730302342814,
+     "vim": 0.0
+    },
+    "vimshare-33": {
+     "layer_switch": 12.49799422947624,
+     "symbol_bigram": 22.22034379179867,
+     "sfb": 2.513865376802804,
+     "typing_time": 7.469415430945402,
+     "engram": 0.0,
+     "hand_switch": -52.99236819460181,
+     "vim": 0.0
+    },
+    "vim": {
+     "layer_switch": 15.938715884516341,
+     "symbol_bigram": 26.97741906886222,
+     "sfb": 4.6971318927433,
+     "typing_time": 9.930010808195508,
+     "engram": 0.0,
+     "hand_switch": -52.79018444208532,
+     "vim": 0.0
+    }
+   },
+   "rows": [
+    "vbcgzqxjk:",
+    "\u23censtfhleai",
+    "ypdwm/ro.u",
+    "\u238b\u2423\u21e7\u2460\u232b\u2461",
+    "40[67%1]$!",
+    "'-2(*#)_,;",
+    "5^{}+&=\\|`",
+    "938\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7@\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "where": {
+    "\u238b": "base, L outer thumb",
+    ":": "base, top R pinky",
+    "/": "base, bottom R index",
+    "h": "base, home R index",
+    "j": "base, top R middle",
+    "k": "base, top R ring",
+    "l": "base, home R index",
+    "\u23ce": "base, home L pinky",
+    "w": "base, bottom L index",
+    "b": "base, top L ring",
+    "e": "base, home R middle"
+   }
+  },
+  "vim-fingers": {
+   "spec": "run:20261025-052853-bls-4cbc81ce",
+   "scores": {
+    "vim-programmer-typed": 175.9382714383303,
+    "programmer-typed": 147.91411936749196,
+    "vimshare-11": 161.96909820640093,
+    "vimshare-33": 189.93073492507455,
+    "vim": 288.87973028117744
+   },
+   "costs": {
+    "vim-programmer-typed": {
+     "layer_switch": 11.67755699499895,
+     "symbol_bigram": 27.61037588271087,
+     "sfb": 2.103253855010756,
+     "typing_time": 7.292675473249117,
+     "engram": 0.0,
+     "hand_switch": -53.78267114221926,
+     "vim": 0.0
+    },
+    "programmer-typed": {
+     "layer_switch": 9.870500480934364,
+     "symbol_bigram": 26.833073872899504,
+     "sfb": 1.4928761429412907,
+     "typing_time": 6.627742715385776,
+     "engram": 0.0,
+     "hand_switch": -54.96309252090075,
+     "vim": 0.0
+    },
+    "vimshare-11": {
+     "layer_switch": 10.777759554757639,
+     "symbol_bigram": 27.206542392488586,
+     "sfb": 1.7997649447191844,
+     "typing_time": 6.961405513830738,
+     "engram": 0.0,
+     "hand_switch": -54.376458760313255,
+     "vim": 0.0
+    },
+    "vimshare-33": {
+     "layer_switch": 12.577877129362713,
+     "symbol_bigram": 28.08975807543419,
+     "sfb": 2.406333021638929,
+     "typing_time": 7.6233993644342855,
+     "engram": 0.0,
+     "hand_switch": -53.19310100134974,
+     "vim": 0.0
+    },
+    "vim": {
+     "layer_switch": 18.98392187870286,
+     "symbol_bigram": 31.169866683012515,
+     "sfb": 4.2528883414036045,
+     "typing_time": 10.108464627519298,
+     "engram": 0.0,
+     "hand_switch": -51.0839593411049,
+     "vim": 0.0
+    }
+   },
+   "rows": [
+    ",ugmfzjl.b",
+    "ietsc'arnp",
+    "y=wdvqoxhk",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "4*/#|^3$1&",
+    "(:[]2\\_\u23ce`)",
+    ";9{}6!08+%",
+    "75-\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "where": {
+    "\u238b": "base, L outer thumb",
+    ":": "layer 1, home L ring",
+    "/": "layer 1, top L middle",
+    "h": "base, bottom R ring",
+    "j": "base, top R index",
+    "k": "base, bottom R pinky",
+    "l": "base, top R middle",
+    "\u23ce": "layer 1, home R middle",
+    "w": "base, bottom L middle",
+    "b": "base, top R pinky",
+    "e": "base, home L ring"
+   }
+  },
+  "vim-free": {
+   "spec": "run:20261025-044631-bls-dfb4a42a",
+   "scores": {
+    "vim-programmer-typed": 174.43138839313207,
+    "programmer-typed": 146.18750743091425,
+    "vimshare-11": 160.35090938885838,
+    "vimshare-33": 188.55416861577046,
+    "vim": 288.12535607891675
+   },
+   "costs": {
+    "vim-programmer-typed": {
+     "layer_switch": 11.677238455442351,
+     "symbol_bigram": 27.36804272954636,
+     "sfb": 2.138554112152291,
+     "typing_time": 6.626737659708618,
+     "engram": 0.0,
+     "hand_switch": -59.061896390760225,
+     "vim": 0.0
+    },
+    "programmer-typed": {
+     "layer_switch": 9.870180299136134,
+     "symbol_bigram": 26.681609148727503,
+     "sfb": 1.4310373618924288,
+     "typing_time": 5.91051378794519,
+     "engram": 0.0,
+     "hand_switch": -60.731228535981785,
+     "vim": 0.0
+    },
+    "vimshare-11": {
+     "layer_switch": 10.777424616231302,
+     "symbol_bigram": 27.019107984617108,
+     "sfb": 1.7867479878458048,
+     "typing_time": 6.270199054341661,
+     "engram": 0.0,
+     "hand_switch": -59.90179804253733,
+     "vim": 0.0
+    },
+    "vimshare-33": {
+     "layer_switch": 12.577605841661876,
+     "symbol_bigram": 27.807805954289222,
+     "sfb": 2.489919193683754,
+     "typing_time": 6.983237318865887,
+     "engram": 0.0,
+     "hand_switch": -58.233803895932404,
+     "vim": 0.0
+    },
+    "vim": {
+     "layer_switch": 18.98372188171038,
+     "symbol_bigram": 30.579830320675683,
+     "sfb": 4.571783736076895,
+     "typing_time": 9.508053457126552,
+     "engram": 0.0,
+     "hand_switch": -55.133650528171074,
+     "vim": 0.0
+    }
+   },
+   "rows": [
+    "xwdgvzuojq",
+    "rnstfyheai",
+    "lmcpb=k',.",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "+;{}|%^37!",
+    "/()*#_\u23ce`-$",
+    "2[106&48]\\",
+    "95:\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7@\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "where": {
+    "\u238b": "base, L outer thumb",
+    ":": "layer 1, L inner thumb",
+    "/": "layer 1, home L pinky",
+    "h": "base, home R index",
+    "j": "base, top R ring",
+    "k": "base, bottom R index",
+    "l": "base, bottom L pinky",
+    "\u23ce": "layer 1, home R index",
+    "w": "base, top L ring",
+    "b": "base, bottom L index",
+    "e": "base, home R middle"
+   }
+  },
+  "vim-pairs": {
+   "spec": "run:20261025-050300-bls-036a81a7",
+   "scores": {
+    "vim-programmer-typed": 176.32971535493465,
+    "programmer-typed": 148.2943853834363,
+    "vimshare-11": 162.35858513413177,
+    "vimshare-33": 190.3377529833012,
+    "vim": 288.9938248187817
+   },
+   "costs": {
+    "vim-programmer-typed": {
+     "layer_switch": 11.677238455442351,
+     "symbol_bigram": 27.489385529583288,
+     "sfb": 2.265388379916633,
+     "typing_time": 7.18091900023735,
+     "engram": 0.0,
+     "hand_switch": -54.24435905948863,
+     "vim": 0.0
+    },
+    "programmer-typed": {
+     "layer_switch": 9.870180299136134,
+     "symbol_bigram": 26.770467119314745,
+     "sfb": 1.673646945570173,
+     "typing_time": 6.525856548701798,
+     "engram": 0.0,
+     "hand_switch": -55.51688656577417,
+     "vim": 0.0
+    },
+    "vimshare-11": {
+     "layer_switch": 10.777424616231302,
+     "symbol_bigram": 27.115895975487092,
+     "sfb": 1.971748285547159,
+     "typing_time": 6.854862251648515,
+     "engram": 0.0,
+     "hand_switch": -54.883429689994784,
+     "vim": 0.0
+    },
+    "vimshare-33": {
+     "layer_switch": 12.577605841661876,
+     "symbol_bigram": 27.94295968890026,
+     "sfb": 2.562047907434062,
+     "typing_time": 7.5091187265504065,
+     "engram": 0.0,
+     "hand_switch": -53.60885843791664,
+     "vim": 0.0
+    },
+    "vim": {
+     "layer_switch": 18.98372188171038,
+     "symbol_bigram": 30.81106077952427,
+     "sfb": 4.337987099233942,
+     "typing_time": 9.935989976660062,
+     "engram": 0.0,
+     "hand_switch": -51.336255657975016,
+     "vim": 0.0
+    }
+   },
+   "rows": [
+    "yufpgzx.'q",
+    "ietscmnrao",
+    ",=wdbvhljk",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    ";()#|%^0\\!",
+    "-:[]*&\u23ce/_`",
+    "47{26+3}81",
+    "95$\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "where": {
+    "\u238b": "base, L outer thumb",
+    ":": "layer 1, home L ring",
+    "/": "layer 1, home R middle",
+    "h": "base, bottom R index",
+    "j": "base, bottom R ring",
+    "k": "base, bottom R pinky",
+    "l": "base, bottom R middle",
+    "\u23ce": "layer 1, home R index",
+    "w": "base, bottom L middle",
+    "b": "base, bottom L index",
+    "e": "base, home L ring"
+   }
+  },
+  "vim-qwerty": {
+   "spec": "run:20261025-053940-bls-9f7731a7",
+   "scores": {
+    "vim-programmer-typed": 179.43909142411493,
+    "programmer-typed": 152.16044781965348,
+    "vimshare-11": 165.85879438365276,
+    "vimshare-33": 193.07452601580235,
+    "vim": 289.25238735936665
+   },
+   "costs": {
+    "vim-programmer-typed": {
+     "layer_switch": 11.676919804886543,
+     "symbol_bigram": 28.08168251767178,
+     "sfb": 2.4965705345034728,
+     "typing_time": 7.2010464102196945,
+     "engram": 0.0,
+     "hand_switch": -57.24605927114952,
+     "vim": 0.0
+    },
+    "programmer-typed": {
+     "layer_switch": 9.869852932596569,
+     "symbol_bigram": 27.267513406934896,
+     "sfb": 1.9271464288975526,
+     "typing_time": 6.664300319447903,
+     "engram": 0.0,
+     "hand_switch": -58.40145490824343,
+     "vim": 0.0
+    },
+    "vimshare-11": {
+     "layer_switch": 10.777124805290429,
+     "symbol_bigram": 27.663224333903713,
+     "sfb": 2.216862989231938,
+     "typing_time": 6.936020536528864,
+     "engram": 0.0,
+     "hand_switch": -57.82753243868837,
+     "vim": 0.0
+    },
+    "vimshare-33": {
+     "layer_switch": 12.577245213487709,
+     "symbol_bigram": 28.595047188092337,
+     "sfb": 2.780450561146175,
+     "typing_time": 7.468321902023695,
+     "engram": 0.0,
+     "hand_switch": -56.66995775340946,
+     "vim": 0.0
+    },
+    "vim": {
+     "layer_switch": 18.98332188771974,
+     "symbol_bigram": 31.884289069967053,
+     "sfb": 4.299237665486544,
+     "typing_time": 9.377938717524726,
+     "engram": 0.0,
+     "hand_switch": -55.025002098022924,
+     "vim": 0.0
+    }
+   },
+   "rows": [
+    "p'mf=qxa.z",
+    "nrtsdhjkle",
+    "bwgcvyio,u",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "[]07|\\_1*%",
+    "-/()#`2:;$",
+    "63849&{}!^",
+    "5+\u23ce\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "where": {
+    "\u238b": "base, L outer thumb",
+    ":": "layer 1, home R middle",
+    "/": "layer 1, home L ring",
+    "h": "base, home R index",
+    "j": "base, home R index",
+    "k": "base, home R middle",
+    "l": "base, home R ring",
+    "\u23ce": "layer 1, L inner thumb",
+    "w": "base, bottom L ring",
+    "b": "base, bottom L pinky",
+    "e": "base, home R pinky"
+   }
+  },
+  "vim-row": {
+   "spec": "run:20261025-051627-bls-6481880c",
+   "scores": {
+    "vim-programmer-typed": 176.38963219211118,
+    "programmer-typed": 148.23649798716198,
+    "vimshare-11": 162.36328222541198,
+    "vimshare-33": 190.43661276448202,
+    "vim": 289.71810416263935
+   },
+   "costs": {
+    "vim-programmer-typed": {
+     "layer_switch": 11.677238455442351,
+     "symbol_bigram": 27.494870660438053,
+     "sfb": 2.1436707343852612,
+     "typing_time": 7.422308672182966,
+     "engram": 0.0,
+     "hand_switch": -53.99963379369503,
+     "vim": 0.0
+    },
+    "programmer-typed": {
+     "layer_switch": 9.870180299136134,
+     "symbol_bigram": 26.753007227898884,
+     "sfb": 1.4865222309080828,
+     "typing_time": 6.777109584342854,
+     "engram": 0.0,
+     "hand_switch": -55.26050169118119,
+     "vim": 0.0
+    },
+    "vimshare-11": {
+     "layer_switch": 10.777424616231302,
+     "symbol_bigram": 27.11452015156226,
+     "sfb": 1.8170031517478202,
+     "typing_time": 7.101061790916853,
+     "engram": 0.0,
+     "hand_switch": -54.63573048769307,
+     "vim": 0.0
+    },
+    "vimshare-33": {
+     "layer_switch": 12.577605841661876,
+     "symbol_bigram": 27.955240637720458,
+     "sfb": 2.4694389658424964,
+     "typing_time": 7.743238972957455,
+     "engram": 0.0,
+     "hand_switch": -53.372782885590176,
+     "vim": 0.0
+    },
+    "vim": {
+     "layer_switch": 18.98372188171038,
+     "symbol_bigram": 30.87006441455742,
+     "sfb": 4.481335044351908,
+     "typing_time": 10.182752799012238,
+     "engram": 0.0,
+     "hand_switch": -51.01816029952033,
+     "vim": 0.0
+    }
+   },
+   "rows": [
+    ",ucmgzpo'x",
+    "iestfbnar.",
+    "y=wdvqhjkl",
+    "\u238b\u232b\u21e7\u2460\u2423\u2461",
+    "2[-#+^$%]\\",
+    "*:/(03)\u23ce_1",
+    ";|{}6&847!",
+    "95`\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "@\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "where": {
+    "\u238b": "base, L outer thumb",
+    ":": "layer 1, home L ring",
+    "/": "layer 1, home L middle",
+    "h": "base, bottom R index",
+    "j": "base, bottom R middle",
+    "k": "base, bottom R ring",
+    "l": "base, bottom R pinky",
+    "\u23ce": "layer 1, home R middle",
+    "w": "base, bottom L middle",
+    "b": "base, home R index",
+    "e": "base, home L ring"
+   }
+  }
+ }
+}

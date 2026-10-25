@@ -1,0 +1,218 @@
+{
+  "schema": 2,
+  "id": "20261025-061907-bls-abf06e6d",
+  "created": "2026-10-25T06:19:07Z",
+  "gecko_version": "0.1.0",
+  "params": {
+    "algo": "bls",
+    "seed": 2,
+    "threads": 4,
+    "time_ms": null,
+    "evals": 160000000,
+    "top": 3,
+    "sa": {
+      "steps": 0,
+      "accept0": 0.5,
+      "t_end_ratio": 0.002
+    },
+    "ga": {
+      "pop_size": 128,
+      "tournament": 3,
+      "elitism": 4,
+      "crossover_rate": 0.9,
+      "mutation_rate": 1.0
+    },
+    "memetic": {
+      "ga": {
+        "pop_size": 24,
+        "tournament": 3,
+        "elitism": 2,
+        "crossover_rate": 0.9,
+        "mutation_rate": 1.0
+      },
+      "local_search": "hc",
+      "local_steps": 12,
+      "islands": 0,
+      "migration_interval": 5,
+      "migrants": 2,
+      "collapse_generations": 3
+    },
+    "bls": {
+      "kick_min": 2,
+      "kick_max": 0,
+      "accept_worse": 0.1,
+      "stagnation": 150,
+      "column_kick": 0.2,
+      "exclusion": 0.5,
+      "exclusion_dist": 8
+    },
+    "explore": {
+      "samples": 2000,
+      "walks": 64,
+      "walk_len": 400,
+      "max_optima": 100000,
+      "snapshot_ms": 2000,
+      "within": 0.01
+    },
+    "tabu": {
+      "tenure_min": 0.9,
+      "tenure_max": 1.1,
+      "diversify": 5.0,
+      "stagnation": 100.0,
+      "refresh": 1000
+    },
+    "moves": {
+      "columns": false,
+      "cycle3": false,
+      "depth2": false,
+      "depth2_width": 32
+    },
+    "qd": {
+      "axes": [
+        "roll_ratio",
+        "index_load"
+      ],
+      "bins": 16,
+      "seeds": 64,
+      "kick_min": 2,
+      "kick_max": 6,
+      "descent": 0,
+      "snapshot_ms": 2000
+    },
+    "nsga2": {
+      "objectives": [
+        "sfb",
+        "inroll",
+        "effort"
+      ],
+      "pop_size": 128,
+      "generations": 0,
+      "archive_size": 512,
+      "crossover_rate": 0.9,
+      "mutation_rate": 1.0
+    }
+  },
+  "geometry": {
+    "name": "corne-36",
+    "hash": "7ab925ac13918c0b"
+  },
+  "corpus": {
+    "name": "vim-programmer-typed",
+    "hash": "74ad7d97e4f668d0"
+  },
+  "profile": {
+    "name": "vim-row",
+    "description": "Default profile plus layer costs for programming: few layer switches (layer_switch), comfortable code-symbol bigrams (symbol_bigram), brackets adjacent or mirrored (brackets).",
+    "weights": {
+      "alternate": 0.06432,
+      "bad_redirect": 0.5674,
+      "brackets": 0.5,
+      "effort": 0.3206,
+      "engram": 2.08,
+      "finger_target": 0.19,
+      "half_scissor": 0.02398,
+      "hand_balance": 0.4181,
+      "hand_switch": 1.003,
+      "home_row": 0.03744,
+      "inroll": 0.3051,
+      "layer_switch": 26.8,
+      "movement": 0.08619,
+      "outroll": 0.7151,
+      "pinky_ring": 1.176,
+      "redirect": 0.00602,
+      "row_jump": 0.2852,
+      "scissor": 0.09229,
+      "sfb": 2.867,
+      "sfs": 0.03916,
+      "sfs_far": 0.064,
+      "skip_stretch": 0.01843,
+      "stretch": 0.5046,
+      "symbol_bigram": 1.0,
+      "vim": 100.0,
+      "zones": 100.0
+    },
+    "scale": {
+      "alternate": 5.475,
+      "bad_redirect": 0.6505,
+      "brackets": 25.0,
+      "effort": 0.03799,
+      "engram": 1.206,
+      "finger_target": 2.018,
+      "half_scissor": 0.6859,
+      "hand_balance": 1.789,
+      "hand_switch": 5.126,
+      "home_row": 3.573,
+      "inroll": 2.119,
+      "layer_switch": 2.0,
+      "movement": 18.14,
+      "outroll": 4.039,
+      "pinky_ring": 0.9029,
+      "redirect": 2.672,
+      "row_jump": 3.366,
+      "scissor": 0.5297,
+      "sfb": 0.7908,
+      "sfs": 1.209,
+      "sfs_far": 0.4285,
+      "skip_stretch": 1.341,
+      "stretch": 1.316,
+      "symbol_bigram": 8.0
+    },
+    "scale_basis": "stdev over 9 layouts (canary, colemak, colemak-dh, dvorak, graphite, halmak, semimak, sturdy, workman) on english / ansi-30",
+    "finger_target": [
+      8.0,
+      11.0,
+      15.0,
+      16.0,
+      0.0,
+      0.0,
+      16.0,
+      15.0,
+      11.0,
+      8.0
+    ],
+    "thumb_target": 18.0,
+    "trigram_coverage": 0.99,
+    "sfb": {
+      "distance": "linear",
+      "lateral": 1.0,
+      "finger_factor": [
+        2.0,
+        1.538,
+        1.111,
+        1.0,
+        1.0
+      ],
+      "skip_decay": 0.5
+    },
+    "row_offset": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        -0.1,
+        0.1
+      ],
+      [
+        -0.2,
+        0.2
+      ],
+      [
+        0.2,
+        -0.2
+      ]
+    ],
+    "thumb_zone": "␣⌫",
+    "base_letters": true,
+    "vim": "row"
+  },
+  "profile_hash": "24bde1552e755b08",
+  "start": ",ucmgzpo'xiestfbnar.y=wdvqhjkl⎋⌫⇧①␣②2[-#+^$%]\\*:/(03)⏎_1;|{}6&847!95`··········@·~····················",
+  "pins": "",
+  "shifted": [
+    "'\"",
+    ",<",
+    ".>",
+    "/?"
+  ]
+}
