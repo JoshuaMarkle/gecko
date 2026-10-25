@@ -1,0 +1,25 @@
+description = "Source code as typed in an editor: block closers auto-inserted, identifiers completed after 4 characters. Rust 25, Python 25, JS/TS 25, C 8, shell 9, Lua 8."
+
+[[part]]
+corpus = "code-rust-typed"
+weight = 25.0
+
+[[part]]
+corpus = "code-python-typed"
+weight = 25.0
+
+[[part]]
+corpus = "code-js-typed"
+weight = 25.0
+
+[[part]]
+corpus = "code-c-typed"
+weight = 8.0
+
+[[part]]
+corpus = "code-shell-typed"
+weight = 9.0
+
+[[part]]
+corpus = "code-lua-typed"
+weight = 8.0

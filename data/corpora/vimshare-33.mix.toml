@@ -1,0 +1,18 @@
+description = "Sensitivity: programmer-typed with 33 % Vim sessions."
+edits = 0.056
+
+[[part]]
+corpus = "prose"
+weight = 30.06
+
+[[part]]
+corpus = "markdown"
+weight = 6.87
+
+[[part]]
+corpus = "code-typed"
+weight = 30.06
+
+[[part]]
+corpus = "vim"
+weight = 33.0

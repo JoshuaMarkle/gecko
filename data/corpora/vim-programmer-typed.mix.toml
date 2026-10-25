@@ -1,0 +1,18 @@
+description = "Vim programmer, typed in an editor: the programmer-typed mix plus 22 % Vim editing sessions (motions, operators, Esc, :commands), with Backspace."
+edits = 0.056
+
+[[part]]
+corpus = "prose"
+weight = 35.0
+
+[[part]]
+corpus = "markdown"
+weight = 8.0
+
+[[part]]
+corpus = "code-typed"
+weight = 35.0
+
+[[part]]
+corpus = "vim"
+weight = 22.0

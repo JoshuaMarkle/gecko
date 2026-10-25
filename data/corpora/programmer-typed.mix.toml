@@ -1,0 +1,14 @@
+description = "Programmer, typed in an editor: prose 45, Markdown 10, code as typed (block closers auto-inserted, identifiers completed after 4 characters) 45, with Backspace."
+edits = 0.056
+
+[[part]]
+corpus = "prose"
+weight = 45.0
+
+[[part]]
+corpus = "markdown"
+weight = 10.0
+
+[[part]]
+corpus = "code-typed"
+weight = 45.0
