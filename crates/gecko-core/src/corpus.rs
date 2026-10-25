@@ -271,6 +271,53 @@ pub fn strip_markup(text: &str) -> String {
     out
 }
 
+/// Source code as typed in an editor rather than as written (`corpus build --editor`).
+/// `autoclose`: a closing `}` `)` `]` that starts a line (after indentation) is dropped; the
+/// editor inserted it when its opener and Enter were typed. Closers on the opener's line are
+/// kept (typing over an auto-inserted closer is still a keystroke). `complete = Some(k)`: an
+/// identifier (`[A-Za-z_][A-Za-z0-9_]*`) longer than k is typed up to k characters, then a
+/// completion accept that is not a charset symbol (`\u{1}`, an "other" token: it breaks the
+/// n-grams). Every identifier is completed, including the first use: mix with the plain corpus
+/// for a partial completion rate.
+pub fn editor_typed(text: &str, autoclose: bool, complete: Option<usize>) -> String {
+    let mut out = String::with_capacity(text.len());
+    for line in text.split_inclusive('\n') {
+        let mut line = line;
+        if autoclose {
+            let t = line.trim_start();
+            if let Some(rest) = t.strip_prefix(['}', ')', ']']) {
+                out.push_str(&line[..line.len() - t.len()]);
+                line = rest;
+            }
+        }
+        let Some(k) = complete else {
+            out.push_str(line);
+            continue;
+        };
+        let chars: Vec<char> = line.chars().collect();
+        let mut i = 0;
+        while i < chars.len() {
+            let c = chars[i];
+            let start = (c.is_ascii_alphabetic() || c == '_') && (i == 0 || !(chars[i - 1].is_ascii_alphanumeric() || chars[i - 1] == '_'));
+            if !start {
+                out.push(c);
+                i += 1;
+                continue;
+            }
+            let mut j = i;
+            while j < chars.len() && (chars[j].is_ascii_alphanumeric() || chars[j] == '_') {
+                j += 1;
+            }
+            out.extend(&chars[i..j.min(i + k)]);
+            if j - i > k {
+                out.push('\u{1}');
+            }
+            i = j;
+        }
+    }
+    out
+}
+
 /// Hard-wrapped text → one line per paragraph: lines join with a space, blank lines (one or
 /// more) become one `\n`.
 pub fn join_paragraphs(text: &str) -> String {
@@ -1257,6 +1304,14 @@ mod tests {
         l.add_text("ab ba");
         assert_eq!(Corpus::from_bytes(&l.to_file_bytes()).unwrap().to_bytes(), l.to_bytes());
         assert!(Corpus::from_bytes(&f[..f.len() - 1]).is_err());
+    }
+
+    #[test]
+    fn editor_typing_drops_line_closers_and_completes_identifiers() {
+        let src = "fn main() {\n    let total_count = f(x);\n    }) ok\n}\n";
+        assert_eq!(editor_typed(src, true, None), "fn main() {\n    let total_count = f(x);\n    ) ok\n\n");
+        assert_eq!(editor_typed("let total_count = a1;", false, Some(3)), "let tot\u{1} = a1;");
+        assert_eq!(editor_typed("x9_long", false, Some(4)), "x9_l\u{1}");
     }
 
     #[test]

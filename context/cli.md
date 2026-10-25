@@ -64,8 +64,10 @@ gecko verify   run:<id>                                           # re-run an --
 gecko perf     [--layout qwerty] [--record]                       # full evals/s, swap deltas/s, scorer builds/s, 1-key rebuilds/s (1 thread); --record appends to bench/history.jsonl
 gecko corpus build <files or dirs...> [--out english] [--charset default|code|nav|<symbols>] [--ext txt] [--fold] [--paragraphs]
                [--strip-markup] [--list <file>]                        # --paragraphs: wrapped prose, blank line = one ⏎;
-                                                                       #   --strip-markup: Gutenberg _emphasis_, [Illustration];
-                                                                       #   --list: one path per line; identical files count once
+               [--editor autoclose,complete=4]                         #   --strip-markup: Gutenberg _emphasis_, [Illustration];
+                                                                       #   --list: one path per line; identical files count once;
+                                                                       #   --editor: code as typed (closers that start a line
+                                                                       #   dropped; identifiers cut to K chars + a completion)
 gecko corpus edits <corpus> [--share 0.056] [--seed 1] --out <name>    # add Backspace from a typing-error model
 gecko corpus mix <corpus>[:weight]... --out <name> [--edits 0.056] [--nav 0] [--description ...]
                                                                        # language recipe → <name>.mix.toml + <name>.gkc (union charset);

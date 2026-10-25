@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
 use clap::Subcommand;
-use gecko_core::corpus::{charset_named, fold_diacritics, strip_markup, WordList, WORDS_KEEP};
+use gecko_core::corpus::{charset_named, editor_typed, fold_diacritics, strip_markup, WordList, WORDS_KEEP};
 use gecko_core::recipe::Recipe;
 use gecko_core::{Corpus, SCHEMA};
 use serde_json::json;
@@ -38,6 +38,10 @@ pub enum CorpusCmd {
         /// Read more source paths from this file, one per line.
         #[arg(long)]
         list: Option<PathBuf>,
+        /// Count code as typed in an editor: `autoclose` (drop closers that start a line),
+        /// `complete=K` (identifiers typed up to K characters), comma-separated.
+        #[arg(long)]
+        editor: Option<String>,
     },
     /// Weighted mix of corpora (each normalized first; the charset is their union), e.g.
     /// `gecko corpus mix code-rs:1 code-py:1 --out code`. Writes the recipe
@@ -127,12 +131,12 @@ pub enum CorpusCmd {
 impl CorpusCmd {
     pub fn run(self, ctx: &Ctx) -> Result<()> {
         match self {
-            CorpusCmd::Build { mut sources, out, charset, ext, fold, paragraphs, strip_markup, list } => {
+            CorpusCmd::Build { mut sources, out, charset, ext, fold, paragraphs, strip_markup, list, editor } => {
                 if let Some(l) = list {
                     let text = std::fs::read_to_string(&l).with_context(|| format!("reading {}", l.display()))?;
                     sources.extend(text.lines().map(str::trim).filter(|l| !l.is_empty()).map(PathBuf::from));
                 }
-                build(ctx, &sources, &out, &charset, &ext, fold, paragraphs, strip_markup)
+                build(ctx, &sources, &out, &charset, &ext, fold, paragraphs, strip_markup, editor.as_deref())
             }
             CorpusCmd::Mix { all: true, .. } => {
                 for name in recipe_order(ctx)? {
@@ -284,9 +288,20 @@ fn fold_if(fold: bool, s: String) -> String {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn build(ctx: &Ctx, sources: &[PathBuf], out: &str, charset: &str, ext: &str, fold: bool, paragraphs: bool, strip: bool) -> Result<()> {
+fn build(
+    ctx: &Ctx, sources: &[PathBuf], out: &str, charset: &str, ext: &str, fold: bool, paragraphs: bool, strip: bool,
+    editor: Option<&str>,
+) -> Result<()> {
     if sources.is_empty() {
         bail!("give at least one text file or directory");
+    }
+    let (mut autoclose, mut complete) = (false, None);
+    for opt in editor.into_iter().flat_map(|e| e.split(',')).map(str::trim).filter(|o| !o.is_empty()) {
+        match opt.split_once('=') {
+            None if opt == "autoclose" => autoclose = true,
+            Some(("complete", k)) => complete = Some(k.parse::<usize>().context("--editor complete=K needs a number")?),
+            _ => bail!("unknown --editor option `{opt}` (autoclose, complete=K)"),
+        }
     }
     let mut c = Corpus::new(out, charset_named(charset));
     let exts: Vec<&str> = ext.split(',').map(str::trim).collect();
@@ -313,6 +328,9 @@ fn build(ctx: &Ctx, sources: &[PathBuf], out: &str, charset: &str, ext: &str, fo
         let mut text = fold_if(fold, String::from_utf8_lossy(&bytes).into_owned());
         if strip {
             text = strip_markup(&text);
+        }
+        if autoclose || complete.is_some() {
+            text = editor_typed(&text, autoclose, complete);
         }
         if paragraphs {
             c.add_prose(&text);

@@ -203,18 +203,22 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   | language | `writer` | `prose` + ⌫ 5.6 % |
   | language | `programmer` | `prose` 45, `markdown` 10, `code-all` 45 + ⌫ 5.6 % |
   | language | `vim-programmer` | `prose` 35, `markdown` 8, `code-all` 35, `vim` 22 + ⌫ 5.6 % |
+  | language | `programmer-typed`, `vim-programmer-typed` | as above with `code-typed` for `code-all` (the programming and Vim layout studies) |
   | component | `prose` | `prose-web` 50, `prose-chat` 30, `prose-books` 20 |
   | component | `prose-web` / `prose-chat` | cmini shai / reddit `words.json` re-imported with `--charset code` (punctuation, digits, case) |
   | component | `prose-books` | the 10 novels, `--paragraphs --strip-markup` (the only prose with `⏎`) |
   | component | `code-all` | `code-rust` 25, `code-python` 25, `code-js` 25, `code-c` 8, `code-shell` 9, `code-lua` 8 |
+  | component | `code-typed` | the same mix of `code-<lang>-typed`: each `code-<lang>` list built with `--editor autoclose,complete=4` |
   | component | `markdown` | READMEs and docs of crates and npm packages |
   | component | `vim` | synthetic Vim sessions (`gecko corpus vim`, [vim.md](vim.md)) |
   | reference | `english`, `shai`, `reddit`, `french` | 33-symbol, no case; kept for earlier results |
+  | reference | `vimshare-11`, `vimshare-33` | `vim-programmer-typed` with 11 / 33 % Vim (sensitivity, Vim layout study) |
 
   All languages and components use `--charset code` (every printable ASCII symbol, digits, `⏎`,
   `⇥`, case); `vim` adds `⎋`. Code sources are picked by `data/corpora/build/select_sources.py`
   (size caps per package, generated / minified / test files out). Limits: word imports estimate
-  cross-word n-grams; code is text, not keystrokes (editor auto-pairs are not modelled); the
+  cross-word n-grams; code is text, not keystrokes, except in the `-typed` components (`--editor`: a closer that starts
+  a line is dropped, identifiers are completed after K characters; a model, not a log); the
   code components depend on what the build machine has installed.
 - Retired corpora (`english-cased`, `english-full`, `english-full-bspc`, `code`, `code-nav`,
   `mt-10k`, `mt-450k`) live in `data/corpora/legacy/`: they load by name (store fallback) so old

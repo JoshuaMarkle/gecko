@@ -18,6 +18,9 @@ $G corpus build --charset code --paragraphs --strip-markup --out prose-books dat
 for k in code-rust code-c code-python code-js code-shell code-lua markdown; do
   $G corpus build --charset code --list "$LISTS/$k.list" --out "$k"
 done
+for k in code-rust code-c code-python code-js code-shell code-lua; do  # code as typed in an editor
+  $G corpus build --charset code --list "$LISTS/$k.list" --editor autoclose,complete=4 --out "$k-typed"
+done
 $G corpus mix --out prose
 $G corpus mix --out code-all
 $G corpus vim --text code-all --out vim

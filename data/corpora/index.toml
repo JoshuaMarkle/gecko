@@ -19,6 +19,16 @@ kind = "language"
 description = "Vim programmer: the programmer mix plus 22 % Vim editing sessions (motions, operators, Esc, :commands), with Backspace."
 source = "recipe: prose 35, markdown 8, code-all 35, vim 22 + Backspace model"
 
+[programmer-typed]
+kind = "language"
+description = "Programmer, code as typed in an editor: prose 45, Markdown 10, code-typed 45 (block closers auto-inserted, identifiers completed after 4 characters), with Backspace."
+source = "recipe: prose 45, markdown 10, code-typed 45 + Backspace model"
+
+[vim-programmer-typed]
+kind = "language"
+description = "Vim programmer, code as typed in an editor: programmer-typed plus 22 % Vim editing sessions, with Backspace."
+source = "recipe: prose 35, markdown 8, code-typed 35, vim 22 + Backspace model"
+
 # ---- Components ----
 [prose]
 kind = "component"
@@ -75,6 +85,41 @@ kind = "component"
 description = "Lua and Vimscript: the Neovim runtime (plugins, ftplugins, autoload; no docs or syntax files)."
 source = "/usr/share/nvim/runtime"
 
+[code-typed]
+kind = "component"
+description = "Source code as typed in an editor: a closer that starts a line is dropped (auto-inserted), identifiers longer than 4 characters are typed to 4 and completed. Same mix as code-all."
+source = "recipe: code-rust-typed, code-python-typed, code-js-typed, code-c-typed, code-shell-typed, code-lua-typed"
+
+[code-rust-typed]
+kind = "component"
+description = "Rust as typed in an editor (code-rust sources)."
+source = "`corpus build --charset code --editor autoclose,complete=4`, code-rust list"
+
+[code-python-typed]
+kind = "component"
+description = "Python as typed in an editor (code-python sources)."
+source = "`corpus build --charset code --editor autoclose,complete=4`, code-python list"
+
+[code-js-typed]
+kind = "component"
+description = "JavaScript/TypeScript as typed in an editor (code-js sources)."
+source = "`corpus build --charset code --editor autoclose,complete=4`, code-js list"
+
+[code-c-typed]
+kind = "component"
+description = "C as typed in an editor (code-c sources)."
+source = "`corpus build --charset code --editor autoclose,complete=4`, code-c list"
+
+[code-shell-typed]
+kind = "component"
+description = "Shell as typed in an editor (code-shell sources)."
+source = "`corpus build --charset code --editor autoclose,complete=4`, code-shell list"
+
+[code-lua-typed]
+kind = "component"
+description = "Lua/Vimscript as typed in an editor (code-lua sources)."
+source = "`corpus build --charset code --editor autoclose,complete=4`, code-lua list"
+
 [markdown]
 kind = "component"
 description = "Technical English in Markdown: READMEs and docs of crates and npm packages (no changelogs or licenses)."
@@ -105,3 +150,13 @@ source = "cmini corpora/reddit"
 kind = "reference"
 description = "French, diacritics folded to their base letter (dead-key typing), 33-symbol charset."
 source = "cmini corpora/french, `corpus import --fold`"
+
+[vimshare-11]
+kind = "reference"
+description = "Sensitivity corpus for the Vim layout study: programmer-typed with 11 % Vim sessions."
+source = "recipe: prose, markdown, code-typed, vim 11 + Backspace model"
+
+[vimshare-33]
+kind = "reference"
+description = "Sensitivity corpus for the Vim layout study: programmer-typed with 33 % Vim sessions."
+source = "recipe: prose, markdown, code-typed, vim 33 + Backspace model"
