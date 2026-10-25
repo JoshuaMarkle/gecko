@@ -1,0 +1,59 @@
+description = "Weights under which Focal is closest to optimal (gecko fit-layout from default)."
+finger_target = [8.0, 11.0, 15.0, 16.0, 0.0, 0.0, 16.0, 15.0, 11.0, 8.0]
+name = "focal-fit"
+row_offset = [[0.0, 0.0], [-0.1, 0.1], [-0.2, 0.2], [0.2, -0.2]]
+scale_basis = "stdev over 9 layouts (canary, colemak, colemak-dh, dvorak, graphite, halmak, semimak, sturdy, workman) on english / ansi-30"
+thumb_target = 18.0
+trigram_coverage = 0.99
+
+[scale]
+alternate = 5.475
+bad_redirect = 0.6505
+effort = 0.03799
+engram = 1.206
+finger_target = 2.018
+half_scissor = 0.6859
+hand_balance = 1.789
+hand_switch = 5.126
+home_row = 3.573
+inroll = 2.119
+movement = 18.14
+outroll = 4.039
+pinky_ring = 0.9029
+redirect = 2.672
+row_jump = 3.366
+scissor = 0.5297
+sfb = 0.7908
+sfs = 1.209
+sfs_far = 0.4285
+skip_stretch = 1.341
+stretch = 1.316
+
+[sfb]
+distance = "linear"
+finger_factor = [2.0, 1.538, 1.111, 1.0, 1.0]
+lateral = 1.0
+skip_decay = 0.5
+
+[weights]
+alternate = 0.8021983
+bad_redirect = 1.4836518
+effort = 0.4915618
+engram = 0.17529623
+finger_target = 0.044303536
+half_scissor = 0.007632219
+hand_balance = 2.6770794
+hand_switch = 0.13791965
+home_row = 0.040880635
+inroll = 0.7120787
+movement = 0.40183967
+outroll = 1.1822524
+pinky_ring = 0.75322807
+redirect = 0.46898848
+row_jump = 0.020912081
+scissor = 0.0997019
+sfb = 3.5503144
+sfs = 0.048470475
+sfs_far = 0.022796111
+skip_stretch = 0.021994084
+stretch = 0.03622671

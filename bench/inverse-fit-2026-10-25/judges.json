@@ -1,0 +1,152 @@
+[
+ {
+  "name": "inroll x1",
+  "chars": "cwdlxjyou.gstnvpheiafbmrqzk'/,",
+  "J_B": -12.199217372063142,
+  "J_B_letters": 63.12464773460811
+ },
+ {
+  "name": "inroll x2",
+  "chars": "lwcdbzuoyjrnstgkhaiexmfpv,.'q/",
+  "J_B": -7.471775174343964,
+  "J_B_letters": 78.8549682692939
+ },
+ {
+  "name": "inroll x4",
+  "chars": "wlcdkqouyprnstg,aeihxmfbv'./jz",
+  "J_B": -7.8665698288555745,
+  "J_B_letters": 102.40267030765482
+ },
+ {
+  "name": "inroll x8",
+  "chars": "pyou'kdclbhiea,gtsnrjqz./vmfxw",
+  "J_B": -11.890244813952444,
+  "J_B_letters": 48.05103122448817
+ },
+ {
+  "name": "inroll x16",
+  "chars": "mblpyzquojcsthkrniaegfwdvx.,'/",
+  "J_B": -5.228761370789292,
+  "J_B_letters": 86.14278823831711
+ },
+ {
+  "name": "QWERTY",
+  "chars": "qwertyuiopasdfghjkl;zxcvbnm,./",
+  "J_B": 0.0,
+  "J_B_letters": 0.0
+ },
+ {
+  "name": "Dvorak",
+  "chars": "',.pyfgcrlaoeuidhtns;qjkxbmwvz",
+  "J_B": -14.953401698833503,
+  "J_B_letters": 14.582102868177028
+ },
+ {
+  "name": "Colemak",
+  "chars": "qwfpgjluy;arstdhneiozxcvbkm,./",
+  "J_B": -11.861151712762542,
+  "J_B_letters": 21.795384624590785
+ },
+ {
+  "name": "Colemak-DH",
+  "chars": "qwfpbjluy;arstgmneiozxcdvkh,./",
+  "J_B": -10.101088913721801,
+  "J_B_letters": 36.81015480147973
+ },
+ {
+  "name": "Workman",
+  "chars": "qdrwbjfup;ashtgyneoizxmcvkl,./",
+  "J_B": -3.8009462006417416,
+  "J_B_letters": 67.60455548515863
+ },
+ {
+  "name": "Halmak",
+  "chars": "wlrbz;qudjshnt,.aeoifmvc/gpxky",
+  "J_B": -8.582557052196071,
+  "J_B_letters": 108.97648106897412
+ },
+ {
+  "name": "Canary",
+  "chars": "wlypkzxou;crstbfneiajvdgqmh/,.",
+  "J_B": -14.435272344653772,
+  "J_B_letters": 24.517815409235233
+ },
+ {
+  "name": "Graphite",
+  "chars": "bldwz'foujnrtsgyhaeiqxmcvkp,./",
+  "J_B": -15.710452836590338,
+  "J_B_letters": 1.2191793271614237
+ },
+ {
+  "name": "Gallium",
+  "chars": "bldcvjfou,nrtsgyhaeixqmwzkp';.",
+  "J_B": -17.154012030853693,
+  "J_B_letters": -14.011573665959165
+ },
+ {
+  "name": "Galite",
+  "chars": "bldwzjfou;nrtsgyhaeixqmcvkp,./",
+  "J_B": -16.376172645653153,
+  "J_B_letters": -2.3954039530017956
+ },
+ {
+  "name": "Sturdy",
+  "chars": "vmlcpxfoujstrdy.naeizkqgwbh';,",
+  "J_B": -12.044273921352477,
+  "J_B_letters": 10.774836910837738
+ },
+ {
+  "name": "Semimak-JQ",
+  "chars": "flhvz'wuoysrntkcdeaixjbmqpg,./",
+  "J_B": -16.47350254346238,
+  "J_B_letters": -23.36745736983692
+ },
+ {
+  "name": "Dhorf",
+  "chars": "vlhkqjfou,srntwycaeizxmdbpg';.",
+  "J_B": -17.35374860720861,
+  "J_B_letters": -25.585342817437407
+ },
+ {
+  "name": "Focal",
+  "chars": "vlhgkqfoujsrntbycaeizxmdp'w.;,",
+  "J_B": -15.364768417038931,
+  "J_B_letters": -13.98098456164213
+ },
+ {
+  "name": "Hands Down (ref)",
+  "chars": "qchpvkyoj/rsntgwueiaxmldbzf',.",
+  "J_B": -11.506653414045708,
+  "J_B_letters": 21.61385378431968
+ },
+ {
+  "name": "MTGAP",
+  "chars": "ypoujkdlcwinea,mhtsrqz'.;bfgvx",
+  "J_B": -9.767531223549653,
+  "J_B_letters": 32.522418349700935
+ },
+ {
+  "name": "APTv3",
+  "chars": "wgdfbqluoyrsthkjneaixcmpvz,.'/",
+  "J_B": -9.088914340477771,
+  "J_B_letters": 67.25364643385632
+ },
+ {
+  "name": "GECKO prose (apos)",
+  "chars": "cwdlxjyou.gstnvpheiafbmrqzk'/,",
+  "J_B": -12.199217372063142,
+  "J_B_letters": 63.12464773460811
+ },
+ {
+  "name": "GECKO prose (qwerty)",
+  "chars": "cwdlxjyou.gstnvpheiafbmrqzk/;,",
+  "J_B": -12.28919189783877,
+  "J_B_letters": 62.219554944557665
+ },
+ {
+  "name": "GECKO prose (semi)",
+  "chars": "cwdlxjyou.gstnvpheiafbmrqzk';,",
+  "J_B": -12.198331076922553,
+  "J_B_letters": 62.81469152812213
+ }
+]

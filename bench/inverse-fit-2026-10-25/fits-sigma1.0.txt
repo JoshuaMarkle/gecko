@@ -1,0 +1,602 @@
+wrote profiles-sigma1.0/qwerty-fit.toml
+wrote profiles-sigma1.0/dvorak-fit.toml
+wrote profiles-sigma1.0/colemak-fit.toml
+wrote profiles-sigma1.0/colemak-dh-fit.toml
+wrote profiles-sigma1.0/workman-fit.toml
+wrote profiles-sigma1.0/halmak-fit.toml
+wrote profiles-sigma1.0/canary-fit.toml
+wrote profiles-sigma1.0/graphite-fit.toml
+wrote profiles-sigma1.0/gallium-fit.toml
+wrote profiles-sigma1.0/galite-fit.toml
+wrote profiles-sigma1.0/sturdy-fit.toml
+wrote profiles-sigma1.0/semimak-jq-fit.toml
+wrote profiles-sigma1.0/dhorf-fit.toml
+wrote profiles-sigma1.0/focal-fit.toml
+wrote profiles-sigma1.0/hands-down--ref--fit.toml
+wrote profiles-sigma1.0/mtgap-fit.toml
+wrote profiles-sigma1.0/aptv3-fit.toml
+wrote profiles-sigma1.0/gecko-prose--apos--fit.toml
+wrote profiles-sigma1.0/gecko-prose--qwerty--fit.toml
+wrote profiles-sigma1.0/gecko-prose--semi--fit.toml
+wrote fits-sigma1.0.json
+
+QWERTY  qwertyuiop asdfghjkl; zxcvbnm,./
+  base profile:   score 65.119  better layout 612.63 % lower, 28 keys away
+  fitted weights: score 9.703  better layout 296.48 % lower, 29 keys away
+    best found: xmdgbjfou, rntspyehia lwvcqzk/;.
+  still finding better layouts (raise --rounds) after 12 rounds; log distance from the base profile 1.74 (tolerance 0.1124)
+  weight             base   fitted       ×    95 % interval
+  redirect         0.0060   0.2172   36.09   35.93 – 36.24 
+  half_scissor     0.0240   0.6488   27.06   26.94 – 27.17 
+  sfb              2.8670   0.1256    0.04    0.04 – 0.04  
+  engram           2.0800   0.1187    0.06    0.06 – 0.06  
+  skip_stretch     0.0184   0.1423    7.72    7.69 – 7.76  
+  effort           0.3206   0.0605    0.19    0.19 – 0.19  
+  stretch          0.5046   0.0975    0.19    0.19 – 0.19  
+  alternate        0.0643   0.3176    4.94    4.92 – 4.96  
+  sfs              0.0392   0.1649    4.21    4.19 – 4.23  
+  hand_switch      1.0030   0.2605    0.26    0.26 – 0.26  
+  row_jump         0.2852   0.0831    0.29    0.29 – 0.29  
+  pinky_ring       1.1760   0.4137    0.35    0.35 – 0.35  
+  sfs_far          0.0640   0.1742    2.72    2.71 – 2.73  
+  movement         0.0862   0.1904    2.21    2.20 – 2.22  
+  home_row         0.0374   0.0788    2.11    2.10 – 2.11  
+  finger_target    0.1900   0.1087    0.57    0.57 – 0.57  
+  bad_redirect     0.5674   0.3473    0.61    0.61 – 0.61  
+  scissor          0.0923   0.0634    0.69    0.68 – 0.69  
+  hand_balance     0.4181   0.3190    0.76    0.76 – 0.77  
+  inroll           0.3051   0.3929    1.29    1.28 – 1.29  
+  outroll          0.7151   0.6276    0.88    0.87 – 0.88  
+
+Dvorak  ',.pyfgcrl aoeuidhtns ;qjkxbmwvz
+  base profile:   score 21.921  better layout 131.11 % lower, 26 keys away
+  fitted weights: score -14.989  better layout 8.93 % lower, 25 keys away
+    best found: xwdfv;yg.q rnthsuieao lmcbkzpj',
+  still finding better layouts (raise --rounds) after 12 rounds; log distance from the base profile 1.86 (tolerance 0.2456)
+  weight             base   fitted       ×    95 % interval
+  redirect         0.0060   0.4672   77.60   69.39 – 86.79 
+  alternate        0.0643   1.3756   21.39   19.78 – 23.13 
+  engram           2.0800   0.1051    0.05    0.04 – 0.06  
+  sfb              2.8670   0.1661    0.06    0.05 – 0.06  
+  scissor          0.0923   0.9785   10.60    9.43 – 11.91 
+  effort           0.3206   0.0439    0.14    0.12 – 0.16  
+  home_row         0.0374   0.2353    6.28    5.68 – 6.95  
+  stretch          0.5046   0.0895    0.18    0.16 – 0.20  
+  hand_balance     0.4181   0.0850    0.20    0.18 – 0.23  
+  sfs              0.0392   0.1924    4.91    4.34 – 5.56  
+  bad_redirect     0.5674   0.1298    0.23    0.20 – 0.26  
+  sfs_far          0.0640   0.1712    2.68    2.37 – 3.03  
+  outroll          0.7151   0.2775    0.39    0.35 – 0.43  
+  skip_stretch     0.0184   0.0439    2.38    2.10 – 2.70  
+  pinky_ring       1.1760   0.5976    0.51    0.46 – 0.56  
+  hand_switch      1.0030   0.5419    0.54    0.48 – 0.61  
+  movement         0.0862   0.1241    1.44    1.27 – 1.63  
+  row_jump         0.2852   0.1984    0.70    0.61 – 0.79  
+  half_scissor     0.0240   0.0315    1.31    1.16 – 1.49  
+  finger_target    0.1900   0.1484    0.78    0.69 – 0.88  
+  inroll           0.3051   0.2439    0.80    0.75 – 0.85  
+
+Colemak  qwfpgjluy; arstdhneio zxcvbkm,./
+  base profile:   score 27.283  better layout 198.57 % lower, 26 keys away
+  fitted weights: score -14.046  better layout 16.06 % lower, 26 keys away
+    best found: mpdgv;quyj hntsloaeir bfkcz,./xw
+  still finding better layouts (raise --rounds) after 12 rounds; log distance from the base profile 1.77 (tolerance 0.2504)
+  weight             base   fitted       ×    95 % interval
+  home_row         0.0374   1.9744   52.74   50.05 – 55.56 
+  engram           2.0800   0.0719    0.03    0.03 – 0.04  
+  redirect         0.0060   0.0891   14.80   13.97 – 15.67 
+  skip_stretch     0.0184   0.1985   10.77   10.18 – 11.39 
+  pinky_ring       1.1760   0.1097    0.09    0.09 – 0.10  
+  hand_switch      1.0030   0.1321    0.13    0.12 – 0.14  
+  bad_redirect     0.5674   0.1049    0.18    0.17 – 0.20  
+  stretch          0.5046   0.0948    0.19    0.18 – 0.20  
+  sfb              2.8670   0.5855    0.20    0.19 – 0.22  
+  scissor          0.0923   0.2982    3.23    3.05 – 3.42  
+  sfs              0.0392   0.1094    2.79    2.64 – 2.96  
+  half_scissor     0.0240   0.0623    2.60    2.45 – 2.75  
+  finger_target    0.1900   0.0737    0.39    0.37 – 0.41  
+  row_jump         0.2852   0.1187    0.42    0.39 – 0.44  
+  alternate        0.0643   0.1532    2.38    2.25 – 2.52  
+  hand_balance     0.4181   0.2020    0.48    0.46 – 0.51  
+  movement         0.0862   0.1680    1.95    1.84 – 2.06  
+  effort           0.3206   0.6243    1.95    1.86 – 2.04  
+  sfs_far          0.0640   0.1129    1.76    1.66 – 1.87  
+  inroll           0.3051   0.4102    1.34    1.30 – 1.39  
+  outroll          0.7151   0.7201    1.01    0.97 – 1.04  
+
+Colemak-DH  qwfpbjluy; arstgmneio zxcdvkh,./
+  base profile:   score 25.965  better layout 184.15 % lower, 26 keys away
+  fitted weights: score 45.937  better layout 5.42 % lower, 22 keys away
+    best found: q.um/kfcyb oaenlptsir x,;hzwdgjv
+  still finding better layouts (raise --rounds) after 12 rounds; log distance from the base profile 1.70 (tolerance 0.2630)
+  weight             base   fitted       ×    95 % interval
+  engram           2.0800   0.0816    0.04    0.04 – 0.04  
+  redirect         0.0060   0.0951   15.79   14.69 – 16.98 
+  pinky_ring       1.1760   0.0774    0.07    0.06 – 0.07  
+  skip_stretch     0.0184   0.2320   12.59   11.74 – 13.50 
+  home_row         0.0374   0.3851   10.29    9.64 – 10.98 
+  bad_redirect     0.5674   0.0709    0.12    0.12 – 0.13  
+  hand_switch      1.0030   0.1343    0.13    0.12 – 0.14  
+  scissor          0.0923   0.6077    6.58    6.15 – 7.05  
+  effort           0.3206   1.2450    3.88    3.72 – 4.06  
+  sfb              2.8670   0.7400    0.26    0.24 – 0.27  
+  sfs              0.0392   0.1332    3.40    3.16 – 3.66  
+  stretch          0.5046   0.1688    0.33    0.31 – 0.36  
+  half_scissor     0.0240   0.0648    2.70    2.51 – 2.91  
+  finger_target    0.1900   0.0753    0.40    0.37 – 0.43  
+  alternate        0.0643   0.1590    2.47    2.30 – 2.65  
+  hand_balance     0.4181   0.1822    0.44    0.41 – 0.47  
+  row_jump         0.2852   0.1338    0.47    0.44 – 0.50  
+  movement         0.0862   0.1722    2.00    1.86 – 2.15  
+  sfs_far          0.0640   0.1062    1.66    1.54 – 1.78  
+  outroll          0.7151   0.5420    0.76    0.72 – 0.80  
+  inroll           0.3051   0.3386    1.11    1.06 – 1.17  
+
+Workman  qdrwbjfup; ashtgyneoi zxmcvkl,./
+  base profile:   score 31.039  better layout 239.68 % lower, 26 keys away
+  fitted weights: score 24.375  better layout 10.88 % lower, 25 keys away
+    best found: bgdmzjfyu. sotrlpneia xvkhqwc,/;
+  still finding better layouts (raise --rounds) after 12 rounds; log distance from the base profile 1.91 (tolerance 0.2230)
+  weight             base   fitted       ×    95 % interval
+  hand_balance     0.4181  41.5944   99.48   54.23 – 182.52  at bound
+  engram           2.0800   0.0813    0.04    0.04 – 0.04  
+  hand_switch      1.0030   0.0768    0.08    0.07 – 0.08  
+  redirect         0.0060   0.0780   12.96   12.22 – 13.75 
+  sfb              2.8670   0.2296    0.08    0.08 – 0.08  
+  pinky_ring       1.1760   0.0978    0.08    0.08 – 0.09  
+  bad_redirect     0.5674   0.0829    0.15    0.14 – 0.16  
+  home_row         0.0374   0.2522    6.74    6.34 – 7.15  
+  stretch          0.5046   0.0925    0.18    0.17 – 0.19  
+  half_scissor     0.0240   0.1120    4.67    4.38 – 4.98  
+  sfs              0.0392   0.1420    3.63    3.41 – 3.86  
+  row_jump         0.2852   0.0814    0.29    0.27 – 0.30  
+  skip_stretch     0.0184   0.0593    3.22    3.03 – 3.42  
+  sfs_far          0.0640   0.1603    2.50    2.35 – 2.67  
+  effort           0.3206   0.6751    2.11    1.98 – 2.24  
+  alternate        0.0643   0.1029    1.60    1.51 – 1.70  
+  outroll          0.7151   0.4792    0.67    0.64 – 0.71  
+  movement         0.0862   0.1249    1.45    1.36 – 1.54  
+  finger_target    0.1900   0.2712    1.43    1.35 – 1.51  
+  scissor          0.0923   0.1009    1.09    1.03 – 1.16  
+  inroll           0.3051   0.3302    1.08    1.04 – 1.13  
+
+Halmak  wlrbz;qudj shnt,.aeoi fmvc/gpxky
+  base profile:   score 25.713  better layout 181.39 % lower, 28 keys away
+  fitted weights: score 7.603  better layout 26.14 % lower, 24 keys away
+    best found: mldwf;jyu. rntsgpoeai bxvczqhk/,
+  still finding better layouts (raise --rounds) after 12 rounds; log distance from the base profile 2.12 (tolerance 0.1927)
+  weight             base   fitted       ×    95 % interval
+  hand_balance     0.4181  41.5944   99.48   85.43 – 115.86  at bound
+  redirect         0.0060   0.2075   34.47   31.99 – 37.14 
+  pinky_ring       1.1760   0.0385    0.03    0.03 – 0.04  
+  alternate        0.0643   1.2790   19.89   18.85 – 20.98 
+  engram           2.0800   0.1292    0.06    0.06 – 0.07  
+  sfb              2.8670   0.2586    0.09    0.08 – 0.10  
+  skip_stretch     0.0184   0.2017   10.95   10.22 – 11.72 
+  sfs_far          0.0640   0.5135    8.02    7.55 – 8.53  
+  stretch          0.5046   0.0662    0.13    0.12 – 0.14  
+  hand_switch      1.0030   0.1891    0.19    0.18 – 0.20  
+  row_jump         0.2852   0.0692    0.24    0.23 – 0.26  
+  sfs              0.0392   0.1388    3.54    3.29 – 3.82  
+  home_row         0.0374   0.1237    3.30    3.07 – 3.55  
+  outroll          0.7151   0.2232    0.31    0.29 – 0.33  
+  bad_redirect     0.5674   0.1906    0.34    0.31 – 0.36  
+  movement         0.0862   0.0322    0.37    0.35 – 0.40  
+  inroll           0.3051   0.1399    0.46    0.43 – 0.49  
+  scissor          0.0923   0.0498    0.54    0.50 – 0.58  
+  half_scissor     0.0240   0.0307    1.28    1.19 – 1.38  
+  finger_target    0.1900   0.2310    1.22    1.14 – 1.30  
+  effort           0.3206   0.2746    0.86    0.80 – 0.91  
+
+Canary  wlypkzxou; crstbfneia jvdgqmh/,.
+  base profile:   score 18.122  better layout 98.32 % lower, 23 keys away
+  fitted weights: score 12.001  better layout 15.96 % lower, 22 keys away
+    best found: wfpmqzjou/ csntglraei yvbdkxh.;,
+  still finding better layouts (raise --rounds) after 12 rounds; log distance from the base profile 1.56 (tolerance 0.2779)
+  weight             base   fitted       ×    95 % interval
+  redirect         0.0060   0.2590   43.02   38.41 – 48.19 
+  engram           2.0800   0.0904    0.04    0.04 – 0.05  
+  skip_stretch     0.0184   0.1572    8.53    7.60 – 9.57  
+  hand_balance     0.4181   0.0504    0.12    0.11 – 0.14  
+  half_scissor     0.0240   0.1568    6.54    5.83 – 7.34  
+  row_jump         0.2852   0.0516    0.18    0.16 – 0.20  
+  alternate        0.0643   0.3398    5.28    4.74 – 5.89  
+  hand_switch      1.0030   0.2036    0.20    0.18 – 0.23  
+  stretch          0.5046   0.1238    0.25    0.22 – 0.28  
+  sfb              2.8670   1.0074    0.35    0.32 – 0.38  
+  home_row         0.0374   0.1054    2.81    2.50 – 3.17  
+  scissor          0.0923   0.0353    0.38    0.34 – 0.43  
+  pinky_ring       1.1760   0.6374    0.54    0.49 – 0.60  
+  bad_redirect     0.5674   1.0385    1.83    1.63 – 2.05  
+  sfs              0.0392   0.0713    1.82    1.61 – 2.06  
+  inroll           0.3051   0.4614    1.51    1.43 – 1.60  
+  effort           0.3206   0.4630    1.44    1.32 – 1.59  
+  outroll          0.7151   0.8194    1.15    1.08 – 1.22  
+  finger_target    0.1900   0.2110    1.11    1.00 – 1.23  
+  movement         0.0862   0.0786    0.91    0.81 – 1.03  
+  sfs_far          0.0640   0.0617    0.96    0.86 – 1.09  
+
+Graphite  bldwz'fouj nrtsgyhaei qxmcvkp,./
+  base profile:   score 12.434  better layout 30.60 % lower, 24 keys away
+  fitted weights: score 45.583  better layout 0.47 % lower, 5 keys away
+    best found: bldwz'fouj nrtsgphaei qxmcvky./,
+  still finding better layouts (raise --rounds) after 12 rounds; log distance from the base profile 0.95 (tolerance 0.2936)
+  weight             base   fitted       ×    95 % interval
+  sfs              0.0392   0.7817   19.96    9.55 – 41.74 
+  sfb              2.8670   0.6789    0.24    0.14 – 0.41  
+  engram           2.0800   0.5355    0.26    0.08 – 0.79  
+  effort           0.3206   1.2425    3.88    2.40 – 6.26  
+  finger_target    0.1900   0.0619    0.33    0.12 – 0.88  
+  home_row         0.0374   0.1047    2.80    0.42 – 18.50   (prior)
+  hand_balance     0.4181   0.2065    0.49    0.15 – 1.67  
+  pinky_ring       1.1760   0.6634    0.56    0.28 – 1.14  
+  row_jump         0.2852   0.1616    0.57    0.16 – 1.96  
+  alternate        0.0643   0.1059    1.65    0.25 – 10.82   (prior)
+  bad_redirect     0.5674   0.4021    0.71    0.19 – 2.58  
+  redirect         0.0060   0.0085    1.40    0.21 – 9.29    (prior)
+  sfs_far          0.0640   0.0458    0.71    0.17 – 2.93  
+  hand_switch      1.0030   0.7528    0.75    0.28 – 2.01  
+  half_scissor     0.0240   0.0319    1.33    0.22 – 8.14    (prior)
+  movement         0.0862   0.1096    1.27    0.23 – 7.10    (prior)
+  inroll           0.3051   0.3656    1.20    0.50 – 2.85  
+  skip_stretch     0.0184   0.0157    0.85    0.18 – 3.93  
+  scissor          0.0923   0.1075    1.17    0.28 – 4.91  
+  stretch          0.5046   0.4538    0.90    0.44 – 1.82  
+  outroll          0.7151   0.6652    0.93    0.30 – 2.90  
+
+Gallium  bldcvjfou, nrtsgyhaei xqmwzkp';.
+  base profile:   score 11.600  better layout 22.30 % lower, 21 keys away
+  fitted weights: score 11.586  better layout 1.16 % lower, 6 keys away
+    best found: bldwvjfou, nrtsgphaei qxmczky';.
+  not optimal under any nearby weights after 10 rounds; log distance from the base profile 0.43 (tolerance 0.3015)
+  weight             base   fitted       ×    95 % interval
+  engram           2.0800   0.5969    0.29    0.10 – 0.81  
+  pinky_ring       1.1760   0.5924    0.50    0.19 – 1.32  
+  finger_target    0.1900   0.3729    1.96    0.78 – 4.95  
+  sfs              0.0392   0.0741    1.89    0.30 – 11.93   (prior)
+  hand_switch      1.0030   0.6307    0.63    0.21 – 1.87  
+  home_row         0.0374   0.0550    1.47    0.23 – 9.53    (prior)
+  inroll           0.3051   0.4246    1.39    0.71 – 2.74  
+  bad_redirect     0.5674   0.4204    0.74    0.15 – 3.54  
+  sfs_far          0.0640   0.0839    1.31    0.21 – 8.26    (prior)
+  hand_balance     0.4181   0.3321    0.79    0.16 – 4.00    (prior)
+  effort           0.3206   0.4020    1.25    0.47 – 3.34  
+  sfb              2.8670   3.4658    1.21    0.68 – 2.16  
+  alternate        0.0643   0.0769    1.20    0.18 – 7.85    (prior)
+  scissor          0.0923   0.1100    1.19    0.19 – 7.42    (prior)
+  half_scissor     0.0240   0.0202    0.84    0.15 – 4.62    (prior)
+  outroll          0.7151   0.8463    1.18    0.61 – 2.29  
+  movement         0.0862   0.0749    0.87    0.16 – 4.72    (prior)
+  row_jump         0.2852   0.2495    0.87    0.26 – 2.99  
+  redirect         0.0060   0.0066    1.09    0.16 – 7.33    (prior)
+  stretch          0.5046   0.5389    1.07    0.37 – 3.05  
+  skip_stretch     0.0184   0.0181    0.98    0.16 – 6.06    (prior)
+
+Galite  bldwzjfou; nrtsgyhaei xqmcvkp,./
+  base profile:   score 11.942  better layout 30.69 % lower, 23 keys away
+  fitted weights: score 41.974  better layout 0.48 % lower, 8 keys away
+    best found: bldwzjfou/ nrtsgphaei qxmcvky.;,
+  still finding better layouts (raise --rounds) after 12 rounds; log distance from the base profile 0.96 (tolerance 0.2922)
+  weight             base   fitted       ×    95 % interval
+  sfs              0.0392   0.7242   18.49    8.94 – 38.26 
+  sfb              2.8670   0.6442    0.22    0.13 – 0.40  
+  home_row         0.0374   0.1443    3.85    0.59 – 25.00   (prior)
+  effort           0.3206   1.1888    3.71    2.35 – 5.85  
+  engram           2.0800   0.5814    0.28    0.10 – 0.75  
+  finger_target    0.1900   0.0643    0.34    0.12 – 0.95  
+  row_jump         0.2852   0.1126    0.39    0.12 – 1.30  
+  hand_balance     0.4181   0.2186    0.52    0.15 – 1.85  
+  alternate        0.0643   0.1096    1.70    0.26 – 11.12   (prior)
+  pinky_ring       1.1760   0.7498    0.64    0.33 – 1.22  
+  hand_switch      1.0030   0.7091    0.71    0.27 – 1.87  
+  redirect         0.0060   0.0084    1.39    0.21 – 9.28    (prior)
+  sfs_far          0.0640   0.0481    0.75    0.18 – 3.17  
+  half_scissor     0.0240   0.0313    1.31    0.22 – 7.84    (prior)
+  inroll           0.3051   0.3943    1.29    0.67 – 2.48  
+  stretch          0.5046   0.3965    0.79    0.37 – 1.68  
+  scissor          0.0923   0.1132    1.23    0.27 – 5.67  
+  bad_redirect     0.5674   0.4636    0.82    0.26 – 2.61  
+  skip_stretch     0.0184   0.0158    0.86    0.18 – 4.08  
+  movement         0.0862   0.0834    0.97    0.21 – 4.39  
+  outroll          0.7151   0.6938    0.97    0.44 – 2.14  
+
+Sturdy  vmlcpxfouj strdy.naei zkqgwbh';,
+  base profile:   score 16.998  better layout 79.21 % lower, 25 keys away
+  fitted weights: score -16.778  better layout 3.90 % lower, 11 keys away
+    best found: ,uofxwylmv ieanbpdrts .;'hzgcjkq
+  still finding better layouts (raise --rounds) after 12 rounds; log distance from the base profile 2.10 (tolerance 0.3078)
+  weight             base   fitted       ×    95 % interval
+  redirect         0.0060   0.2454   40.76   19.95 – 83.26 
+  alternate        0.0643   2.3921   37.19   28.65 – 48.28 
+  pinky_ring       1.1760   0.0323    0.03    0.02 – 0.04  
+  engram           2.0800   0.0751    0.04    0.02 – 0.06  
+  hand_balance     0.4181   0.0264    0.06    0.04 – 0.10  
+  hand_switch      1.0030   0.0850    0.08    0.05 – 0.14  
+  sfs              0.0392   0.4395   11.22    7.69 – 16.37 
+  movement         0.0862   0.9456   10.97    8.52 – 14.13 
+  row_jump         0.2852   0.0277    0.10    0.06 – 0.15  
+  inroll           0.3051   1.6151    5.29    4.32 – 6.48  
+  skip_stretch     0.0184   0.0874    4.74    2.93 – 7.67  
+  outroll          0.7151   2.9401    4.11    3.33 – 5.07  
+  stretch          0.5046   0.1515    0.30    0.20 – 0.45  
+  scissor          0.0923   0.0283    0.31    0.19 – 0.50  
+  finger_target    0.1900   0.1093    0.58    0.39 – 0.84  
+  effort           0.3206   0.5528    1.72    1.41 – 2.11  
+  sfs_far          0.0640   0.0400    0.62    0.38 – 1.02  
+  bad_redirect     0.5674   0.8235    1.45    1.06 – 1.98  
+  sfb              2.8670   2.2848    0.80    0.69 – 0.92  
+  half_scissor     0.0240   0.0299    1.25    0.76 – 2.05  
+  home_row         0.0374   0.0458    1.22    0.74 – 2.02  
+
+Semimak-JQ  flhvz'wuoy srntkcdeai xjbmqpg,./
+  base profile:   score 17.322  better layout 81.94 % lower, 28 keys away
+  fitted weights: score 31.790  better layout 4.95 % lower, 27 keys away
+    best found: pmlwzxfou. ntrsgyhaei bvjcqkd'/,
+  still finding better layouts (raise --rounds) after 12 rounds; log distance from the base profile 1.75 (tolerance 0.2724)
+  weight             base   fitted       ×    95 % interval
+  sfs              0.0392   1.7307   44.20   39.81 – 49.06 
+  pinky_ring       1.1760   0.0543    0.05    0.04 – 0.05  
+  redirect         0.0060   0.1117   18.55   15.67 – 21.96 
+  engram           2.0800   0.1726    0.08    0.07 – 0.10  
+  alternate        0.0643   0.5515    8.57    7.38 – 9.97  
+  stretch          0.5046   0.0739    0.15    0.12 – 0.17  
+  hand_balance     0.4181   0.0643    0.15    0.13 – 0.18  
+  half_scissor     0.0240   0.1356    5.66    4.77 – 6.70  
+  home_row         0.0374   0.1654    4.42    3.73 – 5.23  
+  hand_switch      1.0030   0.2338    0.23    0.20 – 0.28  
+  skip_stretch     0.0184   0.0780    4.23    3.57 – 5.01  
+  row_jump         0.2852   0.0915    0.32    0.27 – 0.38  
+  movement         0.0862   0.0345    0.40    0.34 – 0.47  
+  outroll          0.7151   0.3361    0.47    0.42 – 0.53  
+  effort           0.3206   0.6463    2.02    1.79 – 2.27  
+  finger_target    0.1900   0.1017    0.54    0.46 – 0.63  
+  sfs_far          0.0640   0.1121    1.75    1.48 – 2.08  
+  inroll           0.3051   0.1853    0.61    0.54 – 0.69  
+  scissor          0.0923   0.1409    1.53    1.30 – 1.79  
+  sfb              2.8670   2.2266    0.78    0.71 – 0.85  
+  bad_redirect     0.5674   0.4614    0.81    0.69 – 0.96  
+
+Dhorf  vlhkqjfou, srntwycaei zxmdbpg';.
+  base profile:   score 12.707  better layout 33.96 % lower, 24 keys away
+  fitted weights: score 28.435  better layout 0.77 % lower, 7 keys away
+    best found: vlhwqjfou. srntbpcaei zxmdkyg';,
+  not optimal under any nearby weights after 5 rounds; log distance from the base profile 0.74 (tolerance 0.2895)
+  weight             base   fitted       ×    95 % interval
+  engram           2.0800   0.3152    0.15    0.06 – 0.40  
+  stretch          0.5046   0.1586    0.31    0.10 – 0.97  
+  row_jump         0.2852   0.1018    0.36    0.11 – 1.18  
+  hand_balance     0.4181   1.0455    2.50    0.68 – 9.13  
+  inroll           0.3051   0.1277    0.42    0.14 – 1.30  
+  finger_target    0.1900   0.4480    2.36    0.77 – 7.20  
+  effort           0.3206   0.6835    2.13    1.18 – 3.85  
+  scissor          0.0923   0.1926    2.09    0.35 – 12.41   (prior)
+  sfb              2.8670   5.4416    1.90    1.00 – 3.61  
+  alternate        0.0643   0.1166    1.81    0.28 – 11.81   (prior)
+  half_scissor     0.0240   0.0413    1.72    0.26 – 11.46   (prior)
+  outroll          0.7151   0.4464    0.62    0.29 – 1.34  
+  home_row         0.0374   0.0598    1.60    0.24 – 10.58   (prior)
+  movement         0.0862   0.1330    1.54    0.24 – 9.93    (prior)
+  hand_switch      1.0030   0.6747    0.67    0.22 – 2.06  
+  redirect         0.0060   0.0076    1.26    0.19 – 8.32    (prior)
+  sfs_far          0.0640   0.0531    0.83    0.17 – 4.05    (prior)
+  bad_redirect     0.5674   0.4767    0.84    0.18 – 3.99  
+  sfs              0.0392   0.0373    0.95    0.18 – 5.11    (prior)
+  pinky_ring       1.1760   1.2204    1.04    0.46 – 2.32  
+  skip_stretch     0.0184   0.0186    1.01    0.18 – 5.64    (prior)
+
+Focal  vlhgkqfouj srntbycaei zxmdp'w.;,
+  base profile:   score 13.463  better layout 41.93 % lower, 25 keys away
+  fitted weights: score 9.150  better layout 4.30 % lower, 13 keys away
+    best found: vlhbqzfou, srntgwcaei xjmdkyp';.
+  still finding better layouts (raise --rounds) after 12 rounds; log distance from the base profile 1.72 (tolerance 0.2611)
+  weight             base   fitted       ×    95 % interval
+  redirect         0.0060   0.4690   77.91   19.47 – 311.80
+  stretch          0.5046   0.0362    0.07    0.04 – 0.14  
+  row_jump         0.2852   0.0209    0.07    0.04 – 0.15  
+  alternate        0.0643   0.8022   12.47    3.76 – 41.32 
+  engram           2.0800   0.1753    0.08    0.04 – 0.16  
+  hand_switch      1.0030   0.1379    0.14    0.06 – 0.30  
+  hand_balance     0.4181   2.6771    6.40    3.20 – 12.80 
+  movement         0.0862   0.4018    4.66    2.52 – 8.63  
+  finger_target    0.1900   0.0443    0.23    0.12 – 0.47  
+  half_scissor     0.0240   0.0076    0.32    0.14 – 0.70  
+  sfs_far          0.0640   0.0228    0.36    0.16 – 0.81  
+  bad_redirect     0.5674   1.4837    2.61    1.51 – 4.53  
+  inroll           0.3051   0.7121    2.33    1.50 – 3.64  
+  outroll          0.7151   1.1823    1.65    0.87 – 3.14  
+  pinky_ring       1.1760   0.7532    0.64    0.47 – 0.88  
+  effort           0.3206   0.4916    1.53    1.10 – 2.15  
+  sfb              2.8670   3.5503    1.24    0.94 – 1.64  
+  sfs              0.0392   0.0485    1.24    0.49 – 3.12  
+  skip_stretch     0.0184   0.0220    1.19    0.47 – 3.02  
+  home_row         0.0374   0.0409    1.09    0.43 – 2.76  
+  scissor          0.0923   0.0997    1.08    0.56 – 2.10  
+
+Hands Down (ref)  qchpvkyoj/ rsntgwueia xmldbzf',.
+  base profile:   score 15.760  better layout 65.53 % lower, 22 keys away
+  fitted weights: score -0.513  better layout 78.51 % lower, 21 keys away
+    best found: .uofjkbcml aiehpdtsnr ',/yzgwvqx
+  still finding better layouts (raise --rounds) after 12 rounds; log distance from the base profile 1.49 (tolerance 0.2423)
+  weight             base   fitted       ×    95 % interval
+  redirect         0.0060   0.3583   59.52   54.87 – 64.56 
+  stretch          0.5046   0.0355    0.07    0.06 – 0.08  
+  alternate        0.0643   0.5151    8.01    7.42 – 8.65  
+  row_jump         0.2852   0.0387    0.14    0.12 – 0.15  
+  engram           2.0800   0.3505    0.17    0.16 – 0.18  
+  hand_switch      1.0030   0.2699    0.27    0.25 – 0.29  
+  half_scissor     0.0240   0.0890    3.71    3.41 – 4.03  
+  skip_stretch     0.0184   0.0593    3.22    2.96 – 3.50  
+  finger_target    0.1900   0.0621    0.33    0.30 – 0.35  
+  home_row         0.0374   0.1105    2.95    2.71 – 3.21  
+  bad_redirect     0.5674   1.5203    2.68    2.48 – 2.90  
+  scissor          0.0923   0.0361    0.39    0.36 – 0.42  
+  sfb              2.8670   1.1945    0.42    0.39 – 0.44  
+  inroll           0.3051   0.5566    1.82    1.75 – 1.90  
+  hand_balance     0.4181   0.2325    0.56    0.51 – 0.60  
+  sfs              0.0392   0.0680    1.74    1.60 – 1.89  
+  pinky_ring       1.1760   0.6939    0.59    0.55 – 0.63  
+  effort           0.3206   0.2356    0.73    0.68 – 0.80  
+  outroll          0.7151   0.9191    1.29    1.21 – 1.37  
+  sfs_far          0.0640   0.0581    0.91    0.83 – 0.99  
+  movement         0.0862   0.0934    1.08    1.00 – 1.18  
+
+MTGAP  ypoujkdlcw inea,mhtsr qz'.;bfgvx
+  base profile:   score 18.818  better layout 98.39 % lower, 24 keys away
+  fitted weights: score 26.114  better layout 4.92 % lower, 22 keys away
+    best found: pyou'vwdlb hiea,gstrn kjz.;fcmxq
+  still finding better layouts (raise --rounds) after 12 rounds; log distance from the base profile 1.77 (tolerance 0.2565)
+  weight             base   fitted       ×    95 % interval
+  redirect         0.0060   0.4883   81.12   69.98 – 94.03 
+  pinky_ring       1.1760   0.0355    0.03    0.03 – 0.04  
+  bad_redirect     0.5674   0.0192    0.03    0.03 – 0.04  
+  hand_switch      1.0030   0.0747    0.07    0.06 – 0.09  
+  home_row         0.0374   0.3281    8.76    7.56 – 10.16 
+  sfb              2.8670   0.5595    0.20    0.17 – 0.22  
+  skip_stretch     0.0184   0.0719    3.90    3.26 – 4.67  
+  sfs              0.0392   0.1445    3.69    3.08 – 4.42  
+  engram           2.0800   0.7183    0.35    0.30 – 0.40  
+  half_scissor     0.0240   0.0626    2.61    2.17 – 3.14  
+  hand_balance     0.4181   1.0648    2.55    2.13 – 3.04  
+  effort           0.3206   0.7677    2.39    2.14 – 2.68  
+  alternate        0.0643   0.1296    2.01    1.68 – 2.42  
+  finger_target    0.1900   0.1101    0.58    0.49 – 0.68  
+  inroll           0.3051   0.4639    1.52    1.39 – 1.66  
+  movement         0.0862   0.0614    0.71    0.59 – 0.86  
+  stretch          0.5046   0.3683    0.73    0.63 – 0.84  
+  row_jump         0.2852   0.3482    1.22    1.04 – 1.43  
+  sfs_far          0.0640   0.0532    0.83    0.69 – 1.00  
+  outroll          0.7151   0.8304    1.16    1.06 – 1.27  
+  scissor          0.0923   0.1015    1.10    0.92 – 1.32  
+
+APTv3  wgdfbqluoy rsthkjneai xcmpvz,.'/
+  base profile:   score 19.767  better layout 107.62 % lower, 24 keys away
+  fitted weights: score 10.942  better layout 17.95 % lower, 23 keys away
+    best found: bwgfvq,ouj nsthdlraie pcmyk'.x/z
+  still finding better layouts (raise --rounds) after 12 rounds; log distance from the base profile 1.63 (tolerance 0.2653)
+  weight             base   fitted       ×    95 % interval
+  redirect         0.0060   0.2320   38.54   34.33 – 43.27 
+  engram           2.0800   0.0870    0.04    0.04 – 0.05  
+  sfs              0.0392   0.5516   14.09   12.66 – 15.67 
+  pinky_ring       1.1760   0.0973    0.08    0.07 – 0.09  
+  hand_switch      1.0030   0.1555    0.16    0.14 – 0.17  
+  sfs_far          0.0640   0.3768    5.89    5.35 – 6.49  
+  skip_stretch     0.0184   0.0972    5.27    4.67 – 5.96  
+  alternate        0.0643   0.2769    4.31    3.85 – 4.82  
+  scissor          0.0923   0.3221    3.49    3.12 – 3.91  
+  hand_balance     0.4181   0.1283    0.31    0.27 – 0.35  
+  stretch          0.5046   0.1577    0.31    0.28 – 0.35  
+  sfb              2.8670   1.0512    0.37    0.34 – 0.40  
+  row_jump         0.2852   0.1077    0.38    0.33 – 0.43  
+  finger_target    0.1900   0.1108    0.58    0.52 – 0.65  
+  bad_redirect     0.5674   0.3346    0.59    0.52 – 0.66  
+  home_row         0.0374   0.0585    1.56    1.38 – 1.77  
+  outroll          0.7151   0.4752    0.66    0.60 – 0.73  
+  half_scissor     0.0240   0.0358    1.49    1.32 – 1.69  
+  effort           0.3206   0.2220    0.69    0.62 – 0.78  
+  inroll           0.3051   0.4219    1.38    1.31 – 1.46  
+  movement         0.0862   0.0934    1.08    0.96 – 1.23  
+
+GECKO prose (apos)  cwdlxjyou. gstnvpheia fbmrqzk'/,
+  base profile:   score 9.521  nothing better found
+  fitted weights: score 9.521  nothing better found
+  self-consistent after 1 rounds; log distance from the base profile 0.00 (tolerance 0.2885)
+  weight             base   fitted       ×    95 % interval
+  alternate        0.0643   0.0643    1.00    0.15 – 6.77    (prior)
+  bad_redirect     0.5674   0.5674    1.00    0.15 – 6.77    (prior)
+  effort           0.3206   0.3206    1.00    0.15 – 6.77    (prior)
+  engram           2.0800   2.0800    1.00    0.15 – 6.77    (prior)
+  finger_target    0.1900   0.1900    1.00    0.15 – 6.77    (prior)
+  half_scissor     0.0240   0.0240    1.00    0.15 – 6.77    (prior)
+  hand_balance     0.4181   0.4181    1.00    0.15 – 6.77    (prior)
+  hand_switch      1.0030   1.0030    1.00    0.15 – 6.77    (prior)
+  home_row         0.0374   0.0374    1.00    0.15 – 6.77    (prior)
+  inroll           0.3051   0.3051    1.00    0.15 – 6.77    (prior)
+  movement         0.0862   0.0862    1.00    0.15 – 6.77    (prior)
+  outroll          0.7151   0.7151    1.00    0.15 – 6.77    (prior)
+  pinky_ring       1.1760   1.1760    1.00    0.15 – 6.77    (prior)
+  redirect         0.0060   0.0060    1.00    0.15 – 6.77    (prior)
+  row_jump         0.2852   0.2852    1.00    0.15 – 6.77    (prior)
+  scissor          0.0923   0.0923    1.00    0.15 – 6.77    (prior)
+  sfb              2.8670   2.8670    1.00    0.15 – 6.77    (prior)
+  sfs              0.0392   0.0392    1.00    0.15 – 6.77    (prior)
+  sfs_far          0.0640   0.0640    1.00    0.15 – 6.77    (prior)
+  skip_stretch     0.0184   0.0184    1.00    0.15 – 6.77    (prior)
+  stretch          0.5046   0.5046    1.00    0.15 – 6.77    (prior)
+
+GECKO prose (qwerty)  cwdlxjyou. gstnvpheia fbmrqzk/;,
+  base profile:   score 9.138  nothing better found
+  fitted weights: score 9.138  nothing better found
+  self-consistent after 1 rounds; log distance from the base profile 0.00 (tolerance 0.2907)
+  weight             base   fitted       ×    95 % interval
+  alternate        0.0643   0.0643    1.00    0.15 – 6.77    (prior)
+  bad_redirect     0.5674   0.5674    1.00    0.15 – 6.77    (prior)
+  effort           0.3206   0.3206    1.00    0.15 – 6.77    (prior)
+  engram           2.0800   2.0800    1.00    0.15 – 6.77    (prior)
+  finger_target    0.1900   0.1900    1.00    0.15 – 6.77    (prior)
+  half_scissor     0.0240   0.0240    1.00    0.15 – 6.77    (prior)
+  hand_balance     0.4181   0.4181    1.00    0.15 – 6.77    (prior)
+  hand_switch      1.0030   1.0030    1.00    0.15 – 6.77    (prior)
+  home_row         0.0374   0.0374    1.00    0.15 – 6.77    (prior)
+  inroll           0.3051   0.3051    1.00    0.15 – 6.77    (prior)
+  movement         0.0862   0.0862    1.00    0.15 – 6.77    (prior)
+  outroll          0.7151   0.7151    1.00    0.15 – 6.77    (prior)
+  pinky_ring       1.1760   1.1760    1.00    0.15 – 6.77    (prior)
+  redirect         0.0060   0.0060    1.00    0.15 – 6.77    (prior)
+  row_jump         0.2852   0.2852    1.00    0.15 – 6.77    (prior)
+  scissor          0.0923   0.0923    1.00    0.15 – 6.77    (prior)
+  sfb              2.8670   2.8670    1.00    0.15 – 6.77    (prior)
+  sfs              0.0392   0.0392    1.00    0.15 – 6.77    (prior)
+  sfs_far          0.0640   0.0640    1.00    0.15 – 6.77    (prior)
+  skip_stretch     0.0184   0.0184    1.00    0.15 – 6.77    (prior)
+  stretch          0.5046   0.5046    1.00    0.15 – 6.77    (prior)
+
+GECKO prose (semi)  cwdlxjyou. gstnvpheia fbmrqzk';,
+  base profile:   score 9.485  nothing better found
+  fitted weights: score 9.485  nothing better found
+  self-consistent after 1 rounds; log distance from the base profile 0.00 (tolerance 0.2885)
+  weight             base   fitted       ×    95 % interval
+  alternate        0.0643   0.0643    1.00    0.15 – 6.77    (prior)
+  bad_redirect     0.5674   0.5674    1.00    0.15 – 6.77    (prior)
+  effort           0.3206   0.3206    1.00    0.15 – 6.77    (prior)
+  engram           2.0800   2.0800    1.00    0.15 – 6.77    (prior)
+  finger_target    0.1900   0.1900    1.00    0.15 – 6.77    (prior)
+  half_scissor     0.0240   0.0240    1.00    0.15 – 6.77    (prior)
+  hand_balance     0.4181   0.4181    1.00    0.15 – 6.77    (prior)
+  hand_switch      1.0030   1.0030    1.00    0.15 – 6.77    (prior)
+  home_row         0.0374   0.0374    1.00    0.15 – 6.77    (prior)
+  inroll           0.3051   0.3051    1.00    0.15 – 6.77    (prior)
+  movement         0.0862   0.0862    1.00    0.15 – 6.77    (prior)
+  outroll          0.7151   0.7151    1.00    0.15 – 6.77    (prior)
+  pinky_ring       1.1760   1.1760    1.00    0.15 – 6.77    (prior)
+  redirect         0.0060   0.0060    1.00    0.15 – 6.77    (prior)
+  row_jump         0.2852   0.2852    1.00    0.15 – 6.77    (prior)
+  scissor          0.0923   0.0923    1.00    0.15 – 6.77    (prior)
+  sfb              2.8670   2.8670    1.00    0.15 – 6.77    (prior)
+  sfs              0.0392   0.0392    1.00    0.15 – 6.77    (prior)
+  sfs_far          0.0640   0.0640    1.00    0.15 – 6.77    (prior)
+  skip_stretch     0.0184   0.0184    1.00    0.15 – 6.77    (prior)
+  stretch          0.5046   0.5046    1.00    0.15 – 6.77    (prior)
+
+each layout (row) under each fit's weights (column): % above the best layout known under them
+                           QWERTY           Dvorak          Colemak       Colemak-DH          Workman           Halmak           Canary         Graphite          Gallium           Galite           Sturdy       Semimak-JQ            Dhorf            Focal Hands Down (ref)            MTGAP            APTv3 GECKO prose (apo GECKO prose (qwe GECKO prose (sem
+QWERTY                 296.5 (20)       186.9 (20)       262.4 (20)        92.1 (20)       523.4 (20)      1888.5 (20)       249.4 (20)        88.9 (20)       433.8 (20)        93.9 (20)       265.1 (20)       140.7 (20)       230.8 (20)       593.9 (20)      1096.6 (20)       144.1 (20)       283.1 (20)       612.6 (20)       612.6 (20)       612.6 (20)
+Dvorak                  92.0 (13)          8.9 (1)         37.6 (9)        16.9 (19)       240.3 (16)       854.4 (16)        59.3 (14)        15.9 (16)        97.4 (17)        17.1 (16)        67.9 (17)        31.2 (17)        58.4 (17)       170.9 (17)       251.2 (14)        27.5 (19)        52.1 (14)       139.9 (15)       139.9 (15)       139.9 (15)
+Colemak                152.7 (19)        59.8 (18)         16.1 (1)         8.7 (10)       133.2 (15)       548.9 (15)        72.0 (18)        20.6 (19)        86.7 (16)        22.5 (19)        64.3 (16)        31.8 (18)        42.4 (16)       144.4 (16)       391.7 (18)        26.0 (17)        64.9 (18)       198.6 (18)       198.6 (18)       198.6 (18)
+Colemak-DH             148.5 (18)        59.1 (17)         23.7 (2)          5.4 (4)       130.3 (14)       542.9 (14)        65.9 (16)        16.4 (17)        77.2 (15)        18.2 (17)        59.6 (15)        29.5 (16)        38.9 (15)       137.2 (15)       379.3 (17)        22.0 (15)        59.7 (17)       184.1 (17)       184.1 (17)       184.1 (17)
+Workman                129.5 (17)        67.0 (19)        38.3 (10)        11.4 (16)         10.9 (1)        109.6 (8)        78.1 (19)        18.7 (18)       131.9 (19)        20.3 (18)        93.9 (19)        41.8 (19)        70.1 (19)       195.5 (19)       450.4 (19)        26.9 (18)        81.2 (19)       239.7 (19)       239.7 (19)       239.7 (19)
+Halmak                 116.4 (16)        37.3 (13)        46.5 (16)        13.6 (17)         14.4 (5)         26.1 (1)        68.3 (17)        15.3 (15)       115.0 (18)        17.1 (15)        80.7 (18)        29.4 (15)        66.5 (18)       171.9 (18)       336.2 (15)        21.0 (13)        59.0 (16)       181.4 (16)       181.4 (16)       181.4 (16)
+Canary                   74.2 (9)        58.5 (16)        43.3 (12)        10.7 (15)       430.0 (19)      1613.5 (19)         16.0 (6)         9.5 (10)        36.9 (11)        10.2 (10)        23.1 (10)        19.4 (13)        21.7 (12)        97.4 (13)       101.4 (11)        24.8 (16)        47.3 (13)        98.3 (12)        98.3 (12)        98.3 (12)
+Graphite                 39.3 (3)         17.4 (4)         26.7 (5)          4.6 (2)        53.8 (11)       202.0 (11)         10.8 (3)          0.7 (2)         12.3 (7)          1.3 (2)          8.4 (4)          5.4 (4)          9.0 (8)         24.1 (8)         36.2 (6)          3.9 (3)         18.0 (4)         36.1 (6)         36.1 (6)         36.1 (6)
+Gallium                  39.9 (5)         16.6 (2)         25.6 (4)          4.7 (3)        53.5 (10)       190.8 (10)          8.6 (2)          1.4 (3)          1.2 (1)          2.1 (3)          3.5 (1)          1.9 (1)          3.0 (2)         13.4 (3)         24.5 (3)          3.5 (2)         10.0 (1)         26.9 (4)         26.9 (4)         26.9 (4)
+Galite                   36.7 (2)         17.2 (3)         24.8 (3)          4.0 (1)         46.2 (9)        175.6 (9)          8.1 (1)          0.0 (1)          9.6 (4)          0.5 (1)          6.9 (3)          5.0 (3)          7.3 (7)         18.4 (5)         23.0 (1)          2.8 (1)         16.7 (2)         30.7 (5)         30.7 (5)         30.7 (5)
+Sturdy                   66.9 (8)        41.3 (14)         37.0 (7)          8.1 (7)       337.7 (18)      1253.4 (18)        19.4 (10)          7.7 (9)         25.9 (9)          8.8 (9)          3.9 (2)          7.3 (6)         18.5 (9)        71.5 (10)        93.9 (10)        17.8 (10)         23.1 (6)        86.0 (10)        86.0 (10)        86.0 (10)
+Semimak-JQ              92.2 (14)        36.8 (12)        44.1 (13)        10.6 (14)       241.1 (17)       868.7 (17)        36.0 (12)         9.6 (11)        36.7 (10)        10.9 (11)        30.3 (12)          4.9 (2)        19.9 (11)        83.1 (12)       151.8 (12)        20.9 (12)         29.8 (8)        89.6 (11)        89.6 (11)        89.6 (11)
+Dhorf                    48.0 (7)         26.8 (8)         37.5 (8)          7.2 (6)         24.8 (8)         85.9 (6)         13.2 (4)          5.4 (7)          8.2 (3)          6.1 (7)         11.4 (6)          6.5 (5)          0.8 (1)          6.1 (2)         37.2 (7)         11.1 (8)         21.4 (5)         39.1 (7)         39.1 (7)         39.1 (7)
+Focal                   75.5 (10)         31.0 (9)        39.7 (11)          8.1 (9)         20.3 (6)         80.9 (5)         18.4 (9)          6.6 (8)         17.6 (8)          7.1 (8)          9.9 (5)         11.2 (7)          6.5 (4)          4.3 (1)         38.1 (8)         11.8 (9)         27.6 (7)         47.3 (8)         47.3 (8)         47.3 (8)
+Hands Down (ref)        85.9 (11)        45.8 (15)        50.2 (19)        15.0 (18)        99.4 (12)       369.4 (12)        30.4 (11)        12.9 (14)        45.9 (12)        13.4 (13)        31.4 (13)        25.2 (14)        19.4 (10)         43.1 (9)         78.5 (9)        21.2 (14)        58.2 (15)         72.5 (9)         72.5 (9)         72.5 (9)
+MTGAP                  100.3 (15)        33.7 (10)         34.6 (6)          6.3 (5)         21.8 (7)        103.5 (7)        65.2 (15)        10.7 (12)        48.1 (14)        12.8 (12)        42.8 (14)        19.0 (12)        33.1 (14)       113.3 (14)       343.8 (16)          4.9 (4)        37.0 (12)       105.9 (13)       105.9 (13)       105.9 (13)
+APTv3                   91.9 (12)        34.8 (11)        45.0 (15)        10.4 (13)       123.3 (13)       464.2 (13)        43.0 (13)        12.5 (13)        47.0 (13)        14.0 (14)        28.2 (11)         13.8 (8)        30.9 (13)        78.1 (11)       179.3 (13)        18.0 (11)         17.9 (3)       116.3 (14)       116.3 (14)       116.3 (14)
+GECKO prose (apo         40.0 (6)         20.4 (7)        46.7 (18)         8.8 (12)         14.3 (4)         42.3 (3)         16.3 (8)          4.5 (6)         10.1 (6)          5.2 (6)         23.0 (9)        16.0 (11)          7.2 (6)         22.4 (7)         35.9 (5)          6.6 (7)        35.5 (11)          4.2 (3)          4.2 (3)          4.2 (3)
+GECKO prose (qwe         35.7 (1)         19.2 (5)        44.8 (14)          8.1 (8)         13.0 (2)         38.8 (2)         13.4 (5)          3.7 (4)          6.2 (2)          4.3 (4)         19.8 (7)         14.3 (9)          5.3 (3)         17.1 (4)         23.7 (2)          5.6 (5)         32.4 (9)          0.0 (1)          0.0 (1)          0.0 (1)
+GECKO prose (sem         39.7 (4)         20.3 (6)        46.7 (17)         8.8 (11)         14.3 (3)         42.3 (4)         16.1 (7)          4.5 (5)          9.8 (5)          5.1 (5)         22.7 (8)        15.9 (10)          7.0 (5)         21.9 (6)         34.8 (4)          6.6 (6)        35.4 (10)          3.8 (2)          3.8 (2)          3.8 (2)
+(rank among these layouts in brackets)

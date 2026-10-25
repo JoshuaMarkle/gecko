@@ -1,0 +1,59 @@
+description = "Weights under which Dhorf is closest to optimal (gecko fit-layout from default)."
+finger_target = [8.0, 11.0, 15.0, 16.0, 0.0, 0.0, 16.0, 15.0, 11.0, 8.0]
+name = "dhorf-fit"
+row_offset = [[0.0, 0.0], [-0.1, 0.1], [-0.2, 0.2], [0.2, -0.2]]
+scale_basis = "stdev over 9 layouts (canary, colemak, colemak-dh, dvorak, graphite, halmak, semimak, sturdy, workman) on english / ansi-30"
+thumb_target = 18.0
+trigram_coverage = 0.99
+
+[scale]
+alternate = 5.475
+bad_redirect = 0.6505
+effort = 0.03799
+engram = 1.206
+finger_target = 2.018
+half_scissor = 0.6859
+hand_balance = 1.789
+hand_switch = 5.126
+home_row = 3.573
+inroll = 2.119
+movement = 18.14
+outroll = 4.039
+pinky_ring = 0.9029
+redirect = 2.672
+row_jump = 3.366
+scissor = 0.5297
+sfb = 0.7908
+sfs = 1.209
+sfs_far = 0.4285
+skip_stretch = 1.341
+stretch = 1.316
+
+[sfb]
+distance = "linear"
+finger_factor = [2.0, 1.538, 1.111, 1.0, 1.0]
+lateral = 1.0
+skip_decay = 0.5
+
+[weights]
+alternate = 0.11662891
+bad_redirect = 0.47666696
+effort = 0.68352556
+engram = 0.31517473
+finger_target = 0.44800955
+half_scissor = 0.041279115
+hand_balance = 1.045539
+hand_switch = 0.6747403
+home_row = 0.05976186
+inroll = 0.12766947
+movement = 0.13303655
+outroll = 0.4464108
+pinky_ring = 1.2204092
+redirect = 0.007558445
+row_jump = 0.101816505
+scissor = 0.19262896
+sfb = 5.4415894
+sfs = 0.037348546
+sfs_far = 0.053104635
+skip_stretch = 0.018596465
+stretch = 0.1585623

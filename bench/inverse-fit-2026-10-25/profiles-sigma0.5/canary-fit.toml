@@ -1,0 +1,59 @@
+description = "Weights under which Canary is closest to optimal (gecko fit-layout from default)."
+finger_target = [8.0, 11.0, 15.0, 16.0, 0.0, 0.0, 16.0, 15.0, 11.0, 8.0]
+name = "canary-fit"
+row_offset = [[0.0, 0.0], [-0.1, 0.1], [-0.2, 0.2], [0.2, -0.2]]
+scale_basis = "stdev over 9 layouts (canary, colemak, colemak-dh, dvorak, graphite, halmak, semimak, sturdy, workman) on english / ansi-30"
+thumb_target = 18.0
+trigram_coverage = 0.99
+
+[scale]
+alternate = 5.475
+bad_redirect = 0.6505
+effort = 0.03799
+engram = 1.206
+finger_target = 2.018
+half_scissor = 0.6859
+hand_balance = 1.789
+hand_switch = 5.126
+home_row = 3.573
+inroll = 2.119
+movement = 18.14
+outroll = 4.039
+pinky_ring = 0.9029
+redirect = 2.672
+row_jump = 3.366
+scissor = 0.5297
+sfb = 0.7908
+sfs = 1.209
+sfs_far = 0.4285
+skip_stretch = 1.341
+stretch = 1.316
+
+[sfb]
+distance = "linear"
+finger_factor = [2.0, 1.538, 1.111, 1.0, 1.0]
+lateral = 1.0
+skip_decay = 0.5
+
+[weights]
+alternate = 0.34620455
+bad_redirect = 0.93847454
+effort = 0.47419465
+engram = 0.094101846
+finger_target = 0.21485819
+half_scissor = 0.15453368
+hand_balance = 0.052454088
+hand_switch = 0.2071603
+home_row = 0.11199342
+inroll = 0.4426229
+movement = 0.079204954
+outroll = 0.7639216
+pinky_ring = 0.6624884
+redirect = 0.25159112
+row_jump = 0.052780144
+scissor = 0.034094233
+sfb = 1.0197365
+sfs = 0.072039485
+sfs_far = 0.06415174
+skip_stretch = 0.16012673
+stretch = 0.11479531

@@ -1,0 +1,122 @@
+[
+ {
+  "name": "QWERTY",
+  "kind": "classic",
+  "set": "qwerty",
+  "chars": "qwertyuiopasdfghjkl;zxcvbnm,./"
+ },
+ {
+  "name": "Dvorak",
+  "kind": "classic",
+  "set": "semi",
+  "chars": "',.pyfgcrlaoeuidhtns;qjkxbmwvz"
+ },
+ {
+  "name": "Colemak",
+  "kind": "classic",
+  "set": "qwerty",
+  "chars": "qwfpgjluy;arstdhneiozxcvbkm,./"
+ },
+ {
+  "name": "Colemak-DH",
+  "kind": "classic",
+  "set": "qwerty",
+  "chars": "qwfpbjluy;arstgmneiozxcdvkh,./"
+ },
+ {
+  "name": "Workman",
+  "kind": "classic",
+  "set": "qwerty",
+  "chars": "qdrwbjfup;ashtgyneoizxmcvkl,./"
+ },
+ {
+  "name": "Halmak",
+  "kind": "classic",
+  "set": "qwerty",
+  "chars": "wlrbz;qudjshnt,.aeoifmvc/gpxky"
+ },
+ {
+  "name": "Canary",
+  "kind": "modern",
+  "set": "qwerty",
+  "chars": "wlypkzxou;crstbfneiajvdgqmh/,."
+ },
+ {
+  "name": "Graphite",
+  "kind": "modern",
+  "set": "apos",
+  "chars": "bldwz'foujnrtsgyhaeiqxmcvkp,./"
+ },
+ {
+  "name": "Gallium",
+  "kind": "modern",
+  "set": "semi",
+  "chars": "bldcvjfou,nrtsgyhaeixqmwzkp';."
+ },
+ {
+  "name": "Galite",
+  "kind": "modern",
+  "set": "qwerty",
+  "chars": "bldwzjfou;nrtsgyhaeixqmcvkp,./"
+ },
+ {
+  "name": "Sturdy",
+  "kind": "modern",
+  "set": "semi",
+  "chars": "vmlcpxfoujstrdy.naeizkqgwbh';,"
+ },
+ {
+  "name": "Semimak-JQ",
+  "kind": "modern",
+  "set": "apos",
+  "chars": "flhvz'wuoysrntkcdeaixjbmqpg,./"
+ },
+ {
+  "name": "Dhorf",
+  "kind": "modern",
+  "set": "semi",
+  "chars": "vlhkqjfou,srntwycaeizxmdbpg';."
+ },
+ {
+  "name": "Focal",
+  "kind": "modern",
+  "set": "semi",
+  "chars": "vlhgkqfoujsrntbycaeizxmdp'w.;,"
+ },
+ {
+  "name": "Hands Down (ref)",
+  "kind": "modern",
+  "set": "apos",
+  "chars": "qchpvkyoj/rsntgwueiaxmldbzf',."
+ },
+ {
+  "name": "MTGAP",
+  "kind": "modern",
+  "set": "semi",
+  "chars": "ypoujkdlcwinea,mhtsrqz'.;bfgvx"
+ },
+ {
+  "name": "APTv3",
+  "kind": "modern",
+  "set": "apos",
+  "chars": "wgdfbqluoyrsthkjneaixcmpvz,.'/"
+ },
+ {
+  "name": "GECKO prose (apos)",
+  "kind": "gecko",
+  "set": "apos",
+  "chars": "cwdlxjyou.gstnvpheiafbmrqzk'/,"
+ },
+ {
+  "name": "GECKO prose (qwerty)",
+  "kind": "gecko",
+  "set": "qwerty",
+  "chars": "cwdlxjyou.gstnvpheiafbmrqzk/;,"
+ },
+ {
+  "name": "GECKO prose (semi)",
+  "kind": "gecko",
+  "set": "semi",
+  "chars": "cwdlxjyou.gstnvpheiafbmrqzk';,"
+ }
+]
