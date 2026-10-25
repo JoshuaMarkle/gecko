@@ -1,17 +1,10 @@
 # Roadmap
 
 Future work only. Task scope lives in the [open GitHub issues](https://github.com/JoshuaMarkle/gecko/issues?q=is%3Aissue%20state%3Aopen).
-Take the next priority below, then the first unblocked backlog item. Remove completed
-items instead of keeping checked boxes. Update issue scope before changing its roadmap
-summary; follow `AGENTS.md` for the working process.
-
-## Next priorities
-
-Evidence and packaging before more features: the scorer must be shown correct (V1) and the
-optimizers shown to beat known layouts (V2) before results are shared or published.
-
-Both are done: Phase 1 validation in `context/objective.md` §Validation (#140), Phase 2
-evaluation in [`evaluation.md`](evaluation.md) (#141). Take the first unblocked backlog item.
+Take the first unblocked backlog item. Remove completed items instead of keeping checked
+boxes. Update issue scope before changing its roadmap summary; follow `AGENTS.md` for the
+working process. Done and written up: Phase 1 validation (`objective.md` §Validation, #140),
+Phase 2 evaluation ([`evaluation.md`](evaluation.md), #141).
 
 ## Remaining backlog
 

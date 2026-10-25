@@ -1,7 +1,10 @@
 # English corpus fitness audit
 
 Date: 2026-10-24. Status: audit and evaluation design complete; corpus repairs,
-new source ingestion, and new scoring/optimization have **not** been performed.
+new source ingestion, and new scoring/optimization have **not** been performed. Since then
+(commit `10991c1`): `english-cased`, `english-full(-bspc)`, `mt-10k` and `mt-450k` are retired to
+`data/corpora/legacy/`, and languages are recipes over new components (`writer`, `programmer`,
+`vim-programmer`; `context/representation.md#corpus`).
 
 The existing corpora support strong English **letter-layout candidates**, but do not yet
 establish a general-English complete-keyboard optimum. Keep Shai as the provisional letter
@@ -9,12 +12,12 @@ baseline, novels and Reddit as development checks, and Monkeytype lists as vocab
 tests. Improve source diversity, provenance and preserved typing information before adding
 large volumes of data.
 
-Full analysis: [English corpus fitness](<../../reports/English corpus fitness.md>).
-Evidence: [artifact audit](<../../research_notes/English corpus fitness/corpus_audit.md>),
-[generalization](<../../research_notes/English corpus fitness/overfitting.md>),
-[external sources](<../../research_notes/English corpus fitness/sources.md>),
-[counting script](<../../research_notes/English corpus fitness/audit_counts.py>),
-[measured counts](<../../research_notes/English corpus fitness/counts.json>).
+Full analysis: [English corpus fitness](2026-10-24-english-corpus-audit/report.md).
+Evidence: [artifact audit](2026-10-24-english-corpus-audit/corpus_audit.md),
+[generalization](2026-10-24-english-corpus-audit/overfitting.md),
+[external sources](2026-10-24-english-corpus-audit/sources.md),
+[counting script](2026-10-24-english-corpus-audit/audit_counts.py),
+[measured counts](2026-10-24-english-corpus-audit/counts.json).
 
 ## Findings
 

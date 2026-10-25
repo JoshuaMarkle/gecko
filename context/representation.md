@@ -10,8 +10,7 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   `Store` prefers explicit `name.toml`, then `name.param.toml`; direct parameter paths or
   `name.param` select the generated version. Listing de-duplicates the base name.
 - TOML in `data/geometries/`. One `[[key]]` per slot, listed row by row, with
-  `pos[3], rot[3], size[2], finger, row, col, home, stretch, effort` (hand comes from finger;
-  `role` comes with symbol layers). `effort` and `stretch` are optional: a key without
+  `pos[3], rot[3], size[2], finger, row, col, home, stretch, effort` (hand comes from finger). `effort` and `stretch` are optional: a key without
   `effort`, or a board that marks no key `stretch`, gets them derived from key positions on
   load ([geometry.md](geometry.md#derived-effort-and-stretch-g4)); parametric columns may omit
   `effort` too. Optional `hrm` (bool) marks home-row mod keys for Y04;
@@ -172,8 +171,8 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 - `data/corpora/<name>.words.tsv`: word counts beside a word-import corpus (for
   `analyze --words`), written by `corpus import` from `words.json`: a `#total\t<n>` line (all
   occurrences), then `word\tcount`, most frequent first, folded like the tokenizer and merged
-  (`I` + `i`), capped at 20 000 words. Not part of the `.gkc` or its hash. Bundled for `shai`
-  and `mt-10k`.
+  (`I` + `i`), capped at 20 000 words. Not part of the `.gkc` or its hash. Bundled for `shai`,
+  `prose-web` and `prose-chat` (and the retired `mt-10k` in `legacy/`).
 - Shift pairs (`Corpus::keyed`, applied by `Scorer::new` when the layout has `shifted`): each
   shifted symbol's n-grams move to its base key and Shift presses are added: one before each
   shifted symbol except right after another pair-shifted one (`::` holds Shift), from bigrams;

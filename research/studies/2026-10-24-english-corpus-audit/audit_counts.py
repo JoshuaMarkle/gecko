@@ -1,11 +1,12 @@
 """Read bundled English GKC tables only; stdlib, single thread, no optimization."""
 from pathlib import Path
 import struct, json, hashlib, itertools
-root=Path('/home/josh/projects/gecko')
+root=Path(__file__).resolve().parents[3]
 names=['english','english-cased','english-full','english-full-bspc','shai','reddit','mt-10k','mt-450k']
 parsed={}; result={}
 for name in names:
- p=root/'data/corpora'/f'{name}.gkc'; b=p.read_bytes(); off=8; strings=[]
+ p=root/'data/corpora'/f'{name}.gkc'
+ p=p if p.exists() else root/'data/corpora/legacy'/f'{name}.gkc'; b=p.read_bytes(); off=8; strings=[]
  for _ in range(2):
   n=struct.unpack_from('<I',b,off)[0];off+=4;strings.append(b[off:off+n].decode());off+=n
  c=len(strings[1]); tables={}
@@ -30,7 +31,7 @@ for a,b in itertools.combinations(names,2):
   row[key]=sum(abs(x-y) for x,y in zip(*vectors))/2
  tvs[a+' vs '+b]=row
 result['letter_only_total_variation']=tvs
-(root/'research_notes/English corpus fitness/counts.json').write_text(json.dumps(result,indent=2)+'\n')
+(Path(__file__).with_name('counts.json')).write_text(json.dumps(result,indent=2)+'\n')
 for name in names:
  d=result[name];print(name,d['magic'],d['table_totals']['mono'],'letters%',round(d['letters_pct'],3),'space%',d['mono_pct'].get('␣',0),'shift/100',round(d['shift_per_100_tokens'],3),'nonzero tri',d['nonzero']['tri'])
 print(json.dumps(tvs,indent=2))

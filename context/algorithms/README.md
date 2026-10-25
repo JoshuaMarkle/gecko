@@ -10,24 +10,26 @@ trait Optimizer {
 }
 ```
 
-Implemented: HC, SA, GA, memetic islands, BLS, tabu, Explore, MAP-Elites (`gecko-core/src/optimize/`, `explore/`). The runner handles time budgets, threads/restarts, progress events, and persistence,
+Implemented: HC, SA, GA, memetic islands, BLS, tabu, NSGA-II and RWSA (random-weight SA, multi-objective), Explore, MAP-Elites (`gecko-core/src/optimize/`, `explore/`). The runner handles time budgets, threads/restarts, progress events, and persistence,
 so algorithms contain only search logic. Memetic uses a synchronized generation coordinator
 with independent RNG streams per island and snapshot migration; its GA/local-search primitives
 are shared with the single-population algorithms. All moves respect pins.
 
-| File | Kind | Status | Role |
-|---|---|---|---|
-| [hill-climbing.md](hill-climbing.md) | Local search | Phase 2, first | Baseline + inner local search for others |
-| [simulated-annealing.md](simulated-annealing.md) | Local search | Phase 2 | Main workhorse (carpalx, KLO, Kühlmak use it) |
-| [genetic.md](genetic.md) | Population | Phase 2 | Comparison; staying near a start layout |
-| [tabu-search.md](tabu-search.md) | Local search | Done | Strong for QAP; cross-checks SA's optimum |
-| [memetic.md](memetic.md) | Hybrid | Done | GA + local search, island model |
-| [nsga2.md](nsga2.md) | Multi-objective | Phase 3 | Pareto fronts |
-| [explore.md](explore.md) | Local search + archive | Done | BLS; explore = probe + BLS with exclusion restarts, writes an atlas of local optima |
-| [map-elites.md](map-elites.md) | Quality diversity | Done | Grid over behaviour axes (roll ratio, index load, …), best layout per cell; `gecko qd` |
-| [magic-rules.md](magic-rules.md) | Greedy (lazy) | Done | Rules of an adaptive (magic) key on a fixed layout |
-| [bounds.md](bounds.md) | Lower bound, exact | Done | Gilmore–Lawler + dual ascent; optimality gap in every `optimize` run; `gecko certify` proves sub-problem optima |
-| [geometry-search.md](geometry-search.md) | Continuous | Done | Key positions/rotations; bilevel with layout |
+All are implemented.
+
+| File | Kind | Role |
+|---|---|---|
+| [hill-climbing.md](hill-climbing.md) | Local search | Baseline + inner local search for others |
+| [simulated-annealing.md](simulated-annealing.md) | Local search | Main workhorse (carpalx, KLO, Kühlmak use it) |
+| [genetic.md](genetic.md) | Population | Comparison; staying near a start layout |
+| [tabu-search.md](tabu-search.md) | Local search | Strong for QAP; cross-checks SA's optimum |
+| [memetic.md](memetic.md) | Hybrid | GA + local search, island model |
+| [nsga2.md](nsga2.md) | Multi-objective | Pareto fronts (NSGA-II, RWSA) |
+| [explore.md](explore.md) | Local search + archive | BLS; explore = probe + BLS with exclusion restarts, writes an atlas of local optima |
+| [map-elites.md](map-elites.md) | Quality diversity | Grid over behaviour axes (roll ratio, index load, …), best layout per cell; `gecko qd` |
+| [magic-rules.md](magic-rules.md) | Greedy (lazy) | Rules of an adaptive (magic) key on a fixed layout |
+| [bounds.md](bounds.md) | Lower bound, exact | Gilmore–Lawler + dual ascent; optimality gap in every `optimize` run; `gecko certify` proves sub-problem optima |
+| [geometry-search.md](geometry-search.md) | Continuous | Key positions/rotations; bilevel with layout |
 
 Shared neighborhoods (`optimize/moves.rs`): every `steepest_descent` runs swaps to a local
 optimum, then, if enabled in `Params.moves` (`--moves columns,cycle3,depth2|all`), tries the

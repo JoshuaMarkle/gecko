@@ -53,7 +53,8 @@ optimum (20 s SA, seed 7: B11 at 0, 0.5, 1 gives near-identical layouts, B14 1.8
 5.22–5.27) but re-sorts references with ring-up scissors: Semimak (`bl`) 93.7 and Halmak (`ed`)
 97.1 are above QWERTY (85.9); Sturdy 41.5 and Graphite 46.1 are the lowest. Weight 1 swaps
 Halmak and Colemak; 0.5 keeps the reference order. Default 0.5 until the 2026-10-22 retune
-halved it to 0.25 (0.2478 on the 9-layout basis); measurements above use the 2026-10-21 profile.
+halved it to 0.25 (0.2478 on the 9-layout basis, now `balanced`); the 2026-10-24 default cuts it
+to 0.086. Measurements above use the 2026-10-21 profile.
 
 ## Metric contract
 
@@ -303,7 +304,7 @@ regression test pins these rankings (`ranking_sanity_on_english`). On the bundle
 QWERTY SFB = 6.63% (published ≈ 6.6%). Independent judges per layout: `gecko judge [--community]`
 (E01 typing time, E05/E04 Engram, home row, effort, SFB, with cmini percentiles). Validity against 136M-keystroke timing, Engram comfort and
 weight perturbations: [cost-function validity](../research/experiments/2026-10-22-cost-function-validity.md). Cross-checks: `gecko compare -p engram` (measured
-comfort) and `gecko compare --corpora english,shai,mt-10k,mt-450k,reddit,french` (robustness, L05; add `writer,programmer,vim-programmer` for the full-symbol languages).
+comfort) and `gecko compare --corpora english,shai,reddit,french` (robustness, L05; add `writer,programmer,vim-programmer` for the full-symbol languages). The validation below also used the since-retired `english-cased` and `mt-450k` (`data/corpora/legacy/`).
 
 **Community likes (cmini, `gecko layouts likes`).** 4121 cmini layouts → 1965 importable
 (30-key core, all letters, standard or angle fingering) → 1904 after merging 55 duplicates and
@@ -336,8 +337,8 @@ layouts for C7 as preference pairs between liked layouts, not as raw like counts
 Fingering is part of the geometry. `ansi-30-angle` is `ansi-30` with the angle mod: the same
 key positions, but the left bottom row is typed one finger over (Z ring, X middle, C V B
 index; the left pinky has no bottom key). Re-fingered keys take their new finger's natural
-bottom-row effort ([decision](decisions/scoring.md)). Reference layouts, default profile,
-english, standard → angle fingering (lower is better; Colemak-DH angle is the ANSI angle
+bottom-row effort ([decision](decisions/scoring.md)). Reference layouts, `balanced` profile
+(the default when measured), english, standard → angle fingering (lower is better; Colemak-DH angle is the ANSI angle
 variant with the `xcdvz` bottom row):
 
 | layout | ansi-30 | ansi-30-angle | Δ | largest changes |

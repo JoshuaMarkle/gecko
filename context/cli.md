@@ -1,8 +1,8 @@
 # CLI
 
 One binary, `gecko` (`crates/gecko-cli`). Built for agents first: deterministic, scriptable, JSON output.
-Code: `main.rs` (clap entry) dispatches to `cmd/<group>.rs` (score, judge, optimize, bench, explore,
-magic, certify, corpus, geometry, layouts, profile, list); `ctx.rs` holds the shared inputs, loading
+Code: `main.rs` (clap entry) dispatches to `cmd/<group>.rs` (score, judge, keyset, optimize, bench,
+explore, select, magic, certify, corpus, geometry, build, layouts, profile, list); `ctx.rs` holds the shared inputs, loading
 and output helpers, `fmt.rs` the text tables, `serve.rs` the HTTP server.
 
 ## Commands
@@ -156,7 +156,7 @@ words belong to neither. `--top` sets the words per metric. JSON adds a top-leve
 - `share`: % of the metric's total word cost (Σ freq × cost over the whole word list).
 - `ngrams`: the word's n-grams with non-zero cost, in typing order.
 
-Corpora without a word list (`english`, `code`, `mt-450k`, mixes) give an `error:`.
+Corpora without a word list (`english`, `prose-books`, code components, mixes such as `writer`) give an `error:`.
 
 ### `select`
 

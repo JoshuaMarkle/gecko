@@ -24,12 +24,13 @@ gecko/
 │   ├── profiles/           # metric weights (TOML)
 │   ├── layouts/            # reference layouts
 │   ├── comfort/            # measured comfort tables
-│   └── community/          # cmini community layout bundle
+│   ├── community/          # cmini community layout bundle
+│   └── examples/           # example inputs (`my-hand.toml` for the build guide)
 ├── runs/                   # optimization outputs (gitignored except curated results)
 ├── bench/                  # benchmark history and curated benchmark runs
 ├── research/               # evidence: sources, studies, experiments, open questions
-├── docs/papers/            # paper templates (HTML/LaTeX)
-├── .github/workflows/      # CI (Rust tests, clippy, rustdoc; web typecheck, tests, contract)
+├── docs/papers/            # papers (LaTeX sources, figures, PDFs) and templates
+├── .github/workflows/      # CI (Rust tests, clippy, rustdoc; web typecheck, tests, contract), release builds, @claude
 └── context/                # this folder
 ```
 
@@ -37,24 +38,28 @@ gecko/
 
 | Module | Responsibility |
 |---|---|
-| `geometry` | Keys (pos, rot, size, finger, effort), fingers, hands; TOML parse and print. Submodules: `parametric` (zones/columns/rows → ordinary geometry), `derive` (G4 effort/stretch from positions), `pose` (3D key poses, per-hand measuring frames), `flat2d` (clean 2D drawing), `collision` (G04 2D keycap overlap, SAT), `manufacture` (G07 build limits), `collision3d` (H8 keycap + switch hulls, grid + GJK/EPA) |
+| `geometry` | Keys (pos, rot, size, finger, effort), fingers, hands; TOML parse and print. Submodules: `parametric` (zones/columns/rows → ordinary geometry), `derive` (G4 effort/stretch from positions), `pose` (3D key poses, per-hand measuring frames), `flat2d` (clean 2D drawing), `collision` (G04 2D keycap overlap, SAT), `manufacture` (G07 build limits), `collision3d` (H8 keycap + switch hulls, grid + GJK/EPA), `case` (J4 plate and case shells), `mesh` (convex hulls, binary STL) |
 | `hand` | Hand model: skeleton, placement over home keys, finger IK, 4-DoF thumb, per-key G01/G03/G05 costs ([hand-model.md](hand-model.md)) |
 | `layout` | Slot-ordered symbols; rows ↔ flat; TOML; hash |
 | `magic` | Adaptive (magic / repeat) keys |
 | `keyset` | Symbol sets and start layouts from board + corpus (alpha, Shift pairs, symbol layer); fixed-key placement search ([keysets.md](keysets.md)) |
 | `corpus` | Text → n-gram count tables; binary `.gkc` format; mixing |
+| `recipe` | Languages: `.mix.toml` recipes of component corpora plus modelled ⌫ / arrows, built by `gecko corpus mix` |
+| `vim` | Synthetic Vim sessions and `nvim -w` log import for the `vim` corpus ([vim.md](vim.md)) |
 | `profile` | Metric weights, finger targets, trigram coverage |
 | `metrics` | Metric definitions + per-geometry cost tables (`metrics/mod.rs`; trigram classes in `metrics/trigram.rs`) |
 | `scorer` | Folded tables and evaluation: `build` (fold metrics × weights, re-weight, re-cost a moved geometry), `eval` (hot loop: full, delta, `apply`), `load` (finger-load costs), `qap` (QAP terms for bounds) |
 | `bound` | Gilmore–Lawler lower bound and optimality gap |
+| `certify` | B7 exact optimum of a sub-problem (k free symbols, branch and bound; `gecko certify`) |
+| `fingering` | C11 fingering search: per-key finger reassignment with incremental re-costing |
 | `calibrate` | Spread-normalized and judge-fitted profile weights; rank agreement |
 | `robust` | Unit metric costs (score linear in weights), rank confidence under weight noise, weight sweeps, mirror-invariant families |
 | `report` | Per-metric breakdown, finger loads, heat, worst n-grams, worst words |
 | `optimize` | `Optimizer` trait, threaded runner, top-K; `hill_climb`, `anneal`, `genetic`, `memetic`, `bls`, `tabu`, `map_elites`, `nsga2` |
 | `explore` | Landscape probe, local-optima archive, atlas files, distances/symmetry, atlas statistics, MAP-Elites grid |
 | `cmaes` | G5 CMA-ES with IPOP restarts and box bounds (continuous geometry parameters) |
-| `geomsearch` | G6 board + layout search: free parameters of a parametric board, CMA-ES outside, warm-started layout SA inside, geometry run directories |
-| `interop` | Other tools: `kle` (keyboard-layout-editor.com import/export), `import` (Oxeylyzer, genkey, cmini layout files), `community` (cmini bundle, duplicates, rank agreement) |
+| `geomsearch` | G6 board + layout search: free parameters of a parametric board, CMA-ES outside, warm-started layout SA inside, geometry run directories; `freeform` (I1 per-key 6-DoF poses) |
+| `interop` | Other tools: `kle` (keyboard-layout-editor.com import/export), `import` (Oxeylyzer, genkey, cmini layout files), `community` (cmini bundle, duplicates, rank agreement), `svg` (standalone layout image) |
 | `run` | Run directories (config, progress, best), listing |
 | `select` | B9 rank-sum selection over the layouts of many runs (optimize, Pareto, atlas, qd) |
 | `store` | The data directory (`gecko.toml`, `data/`, `runs/`) and layout specs |

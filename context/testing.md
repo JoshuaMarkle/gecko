@@ -8,7 +8,7 @@
 | Delta == full (property test, `proptest`) | Random layouts + random swaps: delta matches re-evaluation within 1e-5 relative (ansi-30; also corne-36/sweep-34 with tokens and empty slots) |
 | Folding == unfolded | Folded score equals sum of individually computed metrics |
 | Reference snapshot | Scores and metric values of reference layouts per profile (`insta`). Changes must be intentional |
-| Ranking sanity | Default profile ranks modern layouts > Colemak > Dvorak > QWERTY |
+| Ranking sanity | Default profile ranks modern layouts > Colemak-DH and Dvorak > QWERTY (Colemak-DH vs Dvorak left open) |
 | Published numbers | SFB % for QWERTY/Colemak/Graphite within tolerance of published values on the matching corpus |
 | Optimizer correctness | On instances small enough to brute-force (≤ 8 keys), each optimizer finds the optimum |
 | Determinism | Same seed → identical result |
@@ -95,7 +95,7 @@ needs a `⎈`; L04 counts Space off the thumbs, a letter on a thumb or a layer; 
 joining; the placement search never worsens and keeps the fixed keys. The API contract test
 starts a `shift` keyset run and re-scores its best with `shifted`.
 Web: `web/src/format.test.ts`, `web/src/explore.test.ts`, `web/src/export.test.ts` (layout TOML, KLE, stats, standalone SVG), `web/src/runViews.test.ts` (metric columns, qd grid projection: best elite per cell, one-axis rows).
-WASM == CLI: `web/scripts/wasm-parity.mjs` tests all 10 references × all 4 profiles
+WASM == CLI: `web/scripts/wasm-parity.mjs` tests all 10 references × every bundled profile
 using the same web-target package loaded by the browser.
 
 3D boards (`tests/three_d.rs`): `rot` Euler round trip and axes; the Dactyl's poses equal the
@@ -249,6 +249,10 @@ generated CLI fixture as a CI artifact for inspection. `make test` also runs par
 `@claude` in an issue, issue/PR comment or review. It needs the secret `ANTHROPIC_API_KEY` (or
 `CLAUDE_CODE_OAUTH_TOKEN`) and the Claude GitHub app; the agent follows `AGENTS.md`.
 
+`.github/workflows/release.yml` runs on a pushed `v*` tag: it builds the web UI and a
+`--features embed-web` binary for Linux x86-64, macOS arm64 and Windows x86-64, and attaches the
+archives to the GitHub release.
+
 ## Snapshots (`insta`)
 
 A changed score or metric fails `cargo test` (snapshots in `crates/gecko-core/tests/snapshots/`).
@@ -260,4 +264,4 @@ unreviewed changes just fail.
 
 ## Rule
 
-`cargo test` and `cargo clippy -- -D warnings` pass before any change is considered done.
+`cargo test` and `cargo clippy --all-targets -- -D warnings` pass before any change is considered done.

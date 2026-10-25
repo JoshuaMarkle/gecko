@@ -143,7 +143,7 @@ from before the fix (`4e8ace4`), since their recorded scores moved in the 4th–
 
 ## Limits
 
-- One profile (default). The margins are "better under GECKO's profile". The profile's weights
+- One profile (`balanced`, the default at the time). The margins are "better under GECKO's profile". The profile's weights
   are fit to community preferences only loosely (`objective.md`), and the gain is mostly in
   stretch/scissor terms that analyzers like cmini weigh less.
 - Community layouts are scored on GECKO's boards. Many were tuned for ortho boards or other
