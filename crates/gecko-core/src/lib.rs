@@ -16,6 +16,7 @@ pub mod geometry;
 pub mod geomsearch;
 pub mod hand;
 pub mod hash;
+pub mod inverse;
 pub mod interop;
 pub mod keyset;
 pub mod layout;

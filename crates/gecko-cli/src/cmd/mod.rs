@@ -6,6 +6,7 @@ mod build;
 mod certify;
 mod corpus;
 mod explore;
+mod fit;
 mod geometry;
 mod judge;
 pub(crate) mod keyset;
@@ -13,7 +14,7 @@ mod layouts;
 mod list;
 mod magic;
 mod optimize;
-mod profile;
+pub(crate) mod profile;
 mod score;
 mod select;
 
@@ -38,6 +39,10 @@ pub enum Cmd {
     /// How far the optimum moves with the weights: re-optimize with each weight dropped, halved
     /// and doubled and under random log-normal draws; families, regret, per-weight sensitivity.
     Sweep(judge::SweepArgs),
+    /// Inverse fit: the weights under which each layout is closest to optimal (a prior around the
+    /// profile, rounds of search under the fitted weights), whether it is optimal under them, and
+    /// every layout scored under every other layout's weights.
+    FitLayout(fit::FitArgs),
     /// Finger loads, heat, and the worst same-finger and stretch n-grams.
     Analyze(score::AnalyzeArgs),
     /// Choose the symbols to place from the board and corpus and build a start layout: alpha
@@ -121,6 +126,7 @@ impl Cmd {
             Cmd::Judge(a) => judge::judge(&ctx, a),
             Cmd::Features(a) => judge::features(&ctx, a),
             Cmd::Sweep(a) => judge::sweep(&ctx, a),
+            Cmd::FitLayout(a) => fit::run(&ctx, a),
             Cmd::Keyset(a) => keyset::run(&ctx, a),
             Cmd::Optimize(a) => optimize::run(&ctx, *a),
             Cmd::Explore(a) => explore::explore(&ctx, a),

@@ -294,6 +294,7 @@ export const api = {
   benches: () => req<Bench[]>("/api/bench"),
   bench: (id: string) => req<Bench>(`/api/bench/${encodeURIComponent(id)}`),
   swapMatrix: (body: ScoreRequest) => post<{ n: number; score: number; matrix: number[] }>("/api/swap-matrix", body),
+  fitLayout: (body: FitRequest) => post<FitResponse>("/api/fit-layout", body),
   qd: (id: string) => req<QdSummary>(`/api/runs/${encodeURIComponent(id)}/qd`),
   atlas: (id: string) => req<AtlasSummary>(`/api/runs/${encodeURIComponent(id)}/atlas`),
   atlasFile: async (id: string, file: "optima" | "edges" | "samples") => {
@@ -301,6 +302,25 @@ export const api = {
     return r.ok ? new Uint8Array(await r.arrayBuffer()) : new Uint8Array();
   },
 };
+
+// ---- inverse fit (`gecko fit-layout`, gecko-core `inverse`) ----
+
+/** One fitted weight: base and fitted weight (spread units), multiplier with its 95 % interval. */
+export interface WeightFit { id: string; base: number; fitted: number; multiplier: number; lo: number; hi: number; sd_ratio: number; at_bound: boolean }
+/** A search under one weight vector: the best layout found and how far the fitted layout is from it. */
+export interface FitProbe { best: string; best_score: number; layout_score: number; gap: number; gap_pct: number; keys: number }
+export interface FitRound { round: number; competitors: number; violated: number; log_distance: number; probe: FitProbe; added: number }
+export interface InverseFit {
+  layout: string; chars: string; tolerance: number; weights: WeightFit[]; profile_weights: Record<string, number>;
+  log_distance: number; base: FitProbe; fitted: FitProbe; self_consistent: boolean; converged: boolean; rounds: FitRound[];
+  spec: { sigma: number; tol: number; bound: number; rounds: number; evals: number; seeds: number; seed: number; threads: number; neighbours: number; fit: string[] };
+}
+/** The fit, the profile with its weights, and the reference layouts scored under base and fitted weights. */
+export interface FitResponse {
+  fit: InverseFit; profile: Profile;
+  layouts: { layout: string; chars: string; base: number; fitted: number; rank_base: number; rank_fitted: number }[];
+}
+export interface FitRequest extends ScoreRequest { pins?: string; rounds?: number; evals?: number; seeds?: number; sigma?: number; tol?: number; threads?: number }
 
 export interface ScoreRequest { geometry: string; corpus: string; profile_override: Profile; chars: string; top?: number; shifted?: string[] }
 /** Build the symbol set and start layout from board and corpus (`gecko keyset`). */

@@ -297,6 +297,32 @@ weights without rebuilding scorers.
 - `gecko optimize` notes results within 0.4 of the best that differ in more than 4 keys
   (mirror-invariant) as near ties.
 
+## Inverse fit (`gecko fit-layout`, `inverse`)
+
+The forward question is "which layout is best under these weights"; the inverse is "under which
+weights is this layout best". A designer who chose layout L over every alternative revealed a
+preference, and the fit reads it off:
+
+- Each weighted metric's weight is `w₀ · e^θ` (w₀ from the base profile; signs never flip), with
+  a log-normal prior θ ~ N(0, σ²). When every weighted metric is fitted, θ is centred (geometric
+  mean multiplier 1): scores are homogeneous in the weights, so only ratios mean anything, and
+  fits of different layouts compare directly.
+- Loss: a squared hinge `½·max(0, Δ/T)²` per competitor C that L loses to, Δ = score(L) −
+  score(C), linear in the weights through the unit costs. T is `--tol` × the median |Δ| of L's
+  swaps under the base profile. The minimum of prior + loss (projected gradient descent from
+  θ = 0, `|θ| ≤ --bound`) is the smallest change of weights that makes L win; competitors L
+  already beats add nothing, so an optimum of the base profile keeps the base weights.
+- Competitors by cutting planes: L's `--neighbours` tightest swaps, the layouts BLS finds under
+  the base profile, then rounds of BLS (from L, restarts random) under the current fit, adding
+  every layout that beats L, until a round adds nothing or `--rounds` run out.
+- Outputs: `self_consistent` (no better layout found under L's own weights) or the gap that
+  remains, which is how far L is from optimal under any nearby weights; a Laplace interval per
+  multiplier (finite-difference Hessian), whose width against the prior says whether L tells us
+  anything about that weight; and the cross matrix (each layout under each fit's weights).
+- Limits: only weights are fitted, not table parameters; a weight near 0 in the base needs a huge
+  multiplier to matter (`sfs` in `default` is 0.04), so raise `--bound` or check `at_bound`; the
+  search is not exact, so `self_consistent` means "nothing better found".
+
 ## Calibration
 
 The default profile must rank known layouts sensibly (modern layouts > Colemak-DH and

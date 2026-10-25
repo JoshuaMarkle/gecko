@@ -125,6 +125,7 @@ be scored, layout-optimized or shape-searched again.
 | `GET /api/runs/{id}/qd` | qd run grid and elites (`qd.json`) |
 | `GET /api/runs/{id}/atlas/{optima\|edges\|samples}` | atlas binary files (for WASM `AtlasView`) |
 | `POST /api/swap-matrix` | score inputs + `chars` → Δ score of every slot-pair swap |
+| `POST /api/fit-layout` | score inputs + `chars`, optional `pins`, `rounds`, `evals`, `seeds`, `sigma`, `tol`, `threads` → `{fit, profile, layouts}`: the inverse fit (`gecko fit-layout`), the profile with its weights, and every reference layout's score and rank under base and fitted weights |
 | `POST /api/path` | score inputs + `chars` + `to` → path relinking `{start, steps: [{a, b, score}], barrier}` (fallback for WASM `Engine.path`) |
 | `GET /api/bench` · `/api/bench/{id}` | saved `gecko bench` files (`runs/bench/`), newest first without per-seed traces / one in full |
 | `POST /api/runs/{id}/pause` · `/resume` | pause / resume a running run; paused time does not count against `time_ms` or toward `elapsed_ms` |

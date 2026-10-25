@@ -374,7 +374,7 @@ export function App() {
           reload={(id) => { api.corpora().then((c) => { setCorpora(c); setCorpusId(id); langs.select(id); }).catch((e) => setErr((e as Error).message)); }} />}
         {view === "profile" && (
           <ProfileView meta={meta} profiles={profiles} profileId={profileId} setProfileId={setProfileId} profile={profile} setProfile={setProfile} hand={hand}
-            geometry={geometry} chars={viewChars} layouts={layouts} a={analysis} />
+            geometry={geometry} chars={viewChars} layouts={layouts} a={analysis} corpusId={corpus?.id} label={shownLabel} />
         )}
         {view === "summary" && <SummaryView inputs={inputs} meta={meta} geometry={geometry} corpus={corpus} profile={profile} layouts={layouts} />}
         {view === "layout" && (

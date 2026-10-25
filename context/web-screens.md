@@ -100,12 +100,19 @@ relative effort inputs, Rows and reach, Hand model (`reach`/`press_angle`/`wrist
 profile's hand, ringed keys out of reach), Same-finger with skip decay, Stretches and scissors,
 Rolls and alternation, Redirects, Measured comfort and timing (`typing_time` is a judge, weight 0 by
 default), Layers, Shortcuts and familiarity (with the Vim h j k l policy for `vim`),
-Precision); each field has a tooltip. Retired metrics (`sfb_distance`, `sfs_distance`) are not shown. Scroll-spy marks the focused section (click a title to
+Precision, Fit to layout); each field has a tooltip. Retired metrics (`sfb_distance`, `sfs_distance`) are not shown. Scroll-spy marks the focused section (click a title to
 jump). Main: a visual of the focused section on the current layout (finger heat + finger
 load, effort heat, SFB/SFS arcs, stretch arcs, roll arcs, a redirect example, layer keys,
 Z X C V and keys moved from QWERTY). Bottom: what it measures, why, how weights act, and the
 section's metrics (value, weight, contribution). Edits re-score live and are sent with
 each run (`profile_override`).
+
+**Fit to layout** (`POST /api/fit-layout`, `gecko fit-layout`): Budget (Quick / Standard /
+Thorough), Prior σ, **Fit weights to this layout**, **Apply fitted weights** (replaces the
+profile's weights; Reset restores them). Main: each weight's fitted multiplier on a log axis with
+its 95 % interval, largest change first; weights the layout says little about are grey, ⟂ marks
+the bound. Bottom: the gap under the profile and under the fitted weights, self-consistency, the
+distance from the profile, and the reference layouts' ranks under both.
 
 Finger load uses five fingers with symmetric hands by default; disable symmetry to edit
 each hand. Each finger has typing, side-to-side, and up/down effort. Generated target

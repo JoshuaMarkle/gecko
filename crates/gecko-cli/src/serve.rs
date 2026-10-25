@@ -102,6 +102,7 @@ fn router(store: Store, web: Option<PathBuf>) -> Router {
         .route("/runs/{id}/qd", get(qd_summary))
         .route("/runs/{id}/atlas/{file}", get(atlas_file))
         .route("/swap-matrix", post(swap_matrix))
+        .route("/fit-layout", post(fit_layout))
         .route("/path", post(path))
         .route("/bench", get(list_bench))
         .route("/bench/{id}", get(get_bench))
@@ -766,6 +767,73 @@ async fn swap_matrix(State(app): State<AppState>, Json(req): Json<SwapReq>) -> A
 }
 
 #[derive(Deserialize)]
+struct FitReq {
+    #[serde(flatten)]
+    inputs: InputsReq,
+    /// Symbols that keep their position in every search.
+    #[serde(default)]
+    pins: String,
+    #[serde(default)]
+    rounds: Option<usize>,
+    #[serde(default)]
+    evals: Option<u64>,
+    #[serde(default)]
+    seeds: Option<u64>,
+    #[serde(default)]
+    sigma: Option<f64>,
+    #[serde(default)]
+    tol: Option<f64>,
+    #[serde(default)]
+    threads: Option<usize>,
+}
+
+/// Inverse fit (`gecko fit-layout`) of the request's layout, plus every reference layout that
+/// fits the board scored under the base and the fitted weights.
+async fn fit_layout(State(app): State<AppState>, Json(req): Json<FitReq>) -> ApiResult {
+    use gecko_core::inverse::{self, InverseSpec};
+    use gecko_core::robust::{score_of, UnitCosts};
+    let v = tokio::task::spawn_blocking(move || -> std::result::Result<Value, ApiError> {
+        let r = resolve(&app.store, &req.inputs)?;
+        let d = InverseSpec::default();
+        let spec = InverseSpec {
+            rounds: req.rounds.unwrap_or(d.rounds).clamp(1, 20),
+            evals: req.evals.unwrap_or(d.evals).clamp(10_000, 50_000_000),
+            seeds: req.seeds.unwrap_or(d.seeds).clamp(1, 8),
+            sigma: req.sigma.unwrap_or(d.sigma),
+            tol: req.tol.unwrap_or(d.tol),
+            threads: crate::ctx::threads(req.threads),
+            ..d
+        };
+        let flat = r.layout.flat(&r.geometry)?.1;
+        let movable: Vec<usize> = (0..flat.len()).filter(|&s| !req.pins.contains(flat[s])).collect();
+        let f = inverse::fit_layout(&r.geometry, &r.corpus, &r.profile, "current", &r.layout, &movable, &spec, |_, _| {})?;
+        let fitted = f.profile(&r.profile);
+        let mut unit = UnitCosts::new(&r.geometry, &r.corpus, &r.profile);
+        let mut refs: Vec<(String, String, f64, f64)> = vec![("current".into(), f.chars.clone(), score_of(&f.costs, &r.profile), score_of(&f.costs, &fitted))];
+        for name in app.store.list("layouts") {
+            let Ok(l) = app.store.layout(&name, &r.geometry.name).and_then(|l| l.fit(&r.geometry)) else { continue };
+            let chars: String = l.chars.iter().collect();
+            if chars == f.chars {
+                continue;
+            }
+            if let Ok(c) = unit.of(&l) {
+                refs.push((name, chars, score_of(&c, &r.profile), score_of(&c, &fitted)));
+            }
+        }
+        let rank = |k: usize, i: usize| {
+            let key = |x: &(String, String, f64, f64)| if k == 0 { x.2 } else { x.3 };
+            1 + refs.iter().filter(|x| key(x) < key(&refs[i])).count()
+        };
+        let rows: Vec<Value> = (0..refs.len())
+            .map(|i| json!({"layout": refs[i].0, "chars": refs[i].1, "base": refs[i].2, "fitted": refs[i].3, "rank_base": rank(0, i), "rank_fitted": rank(1, i)}))
+            .collect();
+        Ok(json!({"schema": SCHEMA, "fit": f, "profile": fitted, "layouts": rows}))
+    })
+    .await??;
+    Ok(Json(v))
+}
+
+#[derive(Deserialize)]
 struct PathReq {
     #[serde(flatten)]
     inputs: InputsReq,
@@ -1011,6 +1079,7 @@ mod tests {
             ("score", call("POST", "/api/score", Some(json!({"top": 3}))).await),
             ("swapMatrix", call("POST", "/api/swap-matrix", Some(json!({}))).await),
             ("path", call("POST", "/api/path", Some(json!({"to": "qwfpgjluy;arstdhneiozxcvbkm,./"}))).await),
+            ("fitLayout", call("POST", "/api/fit-layout", Some(json!({"rounds": 1, "evals": 20000, "seeds": 1, "threads": 1}))).await),
             ("benches", call("GET", "/api/bench", None).await),
         ];
         let (started, detail, _) = finished(json!({"algo": "hc", "evals": 20000, "threads": 1})).await;

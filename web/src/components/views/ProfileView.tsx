@@ -2,7 +2,7 @@
 // a visual of what the focused section optimizes | what it measures and how weights move the score.
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { type Analysis, type Geometry, type LayoutInfo, type Meta, type MetricDef, type PairKind, type Profile } from "../../api";
+import { api, type Analysis, type FitResponse, type Geometry, type LayoutInfo, type Meta, type MetricDef, type PairKind, type Profile } from "../../api";
 import { fingerColor, heatColor, heatText, INK, PAIR_KINDS } from "../../colors";
 import { fmt, LAYER_KEYS, ONESHOT_KEYS, TOGGLE_KEYS, undirected } from "../../format";
 import { FitBoard, type Cell, type KeyArc } from "../Board2D";
@@ -11,6 +11,7 @@ import { defaultFingerEffort, editFingerEffort, fingerTargets, symmetricEffort, 
 import { Frame, Num, Seg, Toggle } from "../Form";
 import { withHand, type HandSettings, type HandSpec } from "../../hand";
 import { useHandCosts } from "../../handCosts";
+import { FIT_BUDGETS, FitChart, FitControls, FitSummary, type FitBudget } from "../FitPanel";
 
 interface Props {
   meta: Meta;
@@ -25,9 +26,12 @@ interface Props {
   chars: string;
   layouts: LayoutInfo[];
   a: Analysis | null;
+  /** Corpus id and the current layout's name, for the inverse fit. */
+  corpusId?: string;
+  label: string;
 }
 
-type Visual = "load" | "reach" | "hand" | "sfb" | "stretch" | "rolls" | "redirects" | "comfort" | "layers" | "shortcuts" | "precision";
+type Visual = "load" | "reach" | "hand" | "sfb" | "stretch" | "rolls" | "redirects" | "comfort" | "layers" | "shortcuts" | "precision" | "fit";
 interface Section { id: Visual; title: string; ids: string[]; what: string; why: string; how: string }
 
 const SECTIONS: Section[] = [
@@ -75,6 +79,10 @@ const SECTIONS: Section[] = [
     what: "How many trigrams the scorer keeps: the most frequent ones covering this share of trigram volume.",
     why: "Rare trigrams barely change the score but cost search time.",
     how: "1 is exact. 0.95 is several times faster with a negligible score difference." },
+  { id: "fit", title: "Fit to layout", ids: [],
+    what: "The weights under which the current layout is closest to optimal: its designer's revealed preferences, as multipliers of this profile's weights.",
+    why: "A layout made by hand encodes what its designer valued. Fitting the weights to it shows which preferences make it the best choice, whether any nearby weights make it optimal at all, and lets one layout be scored with another's preferences.",
+    how: "Each weight is this profile's weight times a multiplier with a log-normal prior (Prior σ). Rounds of search under the fitted weights add every layout that beats the current one, and the fit is redone until the search finds nothing better or the rounds run out." },
 ];
 
 const sectionOf = (id: string): Visual => SECTIONS.find((s) => s.ids.includes(id))?.id
@@ -160,6 +168,8 @@ function Visualize({ id, geometry, chars, a, layouts, hand }: { id: Visual; geom
     }
     case "precision":
       return <div className="empty">Precision changes speed, not what a good layout is.</div>;
+    case "fit":
+      return null;
   }
 }
 
@@ -205,6 +215,25 @@ export function ProfileView(p: Props) {
     return m;
   }, [p.meta.metrics]);
   const setW = (id: string, v: number) => p.setProfile({ ...pr, weights: { ...pr.weights, [id]: Math.max(0, v) } });
+  const [fitBudget, setFitBudget] = useState<FitBudget>("standard");
+  const [fitSigma, setFitSigma] = useState(0.5);
+  const [fit, setFit] = useState<{ res: FitResponse; label: string } | null>(null);
+  const [fitBusy, setFitBusy] = useState(false);
+  const [fitErr, setFitErr] = useState<string | null>(null);
+  const runFit = async () => {
+    if (!p.corpusId) return;
+    setFitBusy(true);
+    setFitErr(null);
+    try {
+      const res = await api.fitLayout({ geometry: p.geometry.id, corpus: p.corpusId, profile_override: pr, chars: p.chars, sigma: fitSigma, ...FIT_BUDGETS[fitBudget] });
+      setFit({ res, label: p.label });
+    } catch (e) {
+      setFitErr((e as Error).message);
+    } finally {
+      setFitBusy(false);
+    }
+  };
+  const applyFit = () => fit && p.setProfile({ ...pr, weights: { ...pr.weights, ...fit.res.fit.profile_weights }, description: fit.res.profile.description });
 
   // Scroll-spy: the last section whose top has passed the top of the sidebar.
   const spy = () => {
@@ -286,6 +315,12 @@ export function ProfileView(p: Props) {
                   </div>
                   {pr.vim && !pr.weights.vim && <p className="hint">Give Vim motions a weight for the policy to count; 100 or more makes it a constraint.</p>}
                 </>}
+                {s.id === "fit" && <>
+                  <FitControls budget={fitBudget} setBudget={setFitBudget} sigma={fitSigma} setSigma={setFitSigma} busy={fitBusy} onFit={runFit} res={fit?.res ?? null} onApply={applyFit} />
+                  {!p.corpusId && <p className="hint">Pick a saved language to fit weights; local languages are not on the server.</p>}
+                  {fitErr && <div className="notice error">{fitErr}</div>}
+                  {fit && fit.label !== p.label && <p className="hint">Showing the fit of {fit.label}.</p>}
+                </>}
                 {s.id === "precision" && (
                   <Num label="Trigram coverage" help="Keep the most frequent trigrams covering this share of trigram volume. 1 = exact, lower = faster search." value={pr.trigram_coverage} step={0.005} min={0.5} max={1}
                     onChange={(v) => p.setProfile({ ...pr, trigram_coverage: Math.min(1, Math.max(0.5, v)) })} />
@@ -297,18 +332,20 @@ export function ProfileView(p: Props) {
       }
       main={
         <div className="viewport light">
-          <Visualize id={focus} geometry={p.geometry} chars={p.chars} a={p.a} layouts={p.layouts} hand={pr.hand ?? { size: "average" }} />
+          {focus === "fit"
+            ? <FitChart res={fit?.res ?? null} metrics={p.meta.metrics} />
+            : <Visualize id={focus} geometry={p.geometry} chars={p.chars} a={p.a} layouts={p.layouts} hand={pr.hand ?? { size: "average" }} />}
           <div className="viewlabel"><span>{sec.title}</span><span className="muted">on the current layout</span></div>
         </div>
       }
       bottom={
         <div className="bottompad describe">
-          <div>
+          {focus === "fit" && fit ? <FitSummary res={fit.res} label={fit.label} /> : <div>
             <h4>{sec.title}</h4>
             <p><b>Measures.</b> {sec.what}</p>
             <p><b>Why it matters.</b> {sec.why}</p>
             <p><b>Weights.</b> {sec.how}</p>
-          </div>
+          </div>}
           {metrics.length > 0 && (
             <table className="tbl">
               <thead><tr><th>metric</th><th>value</th><th>weight</th><th>contribution</th></tr></thead>

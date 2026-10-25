@@ -20,6 +20,11 @@ gecko sweep    [--evals 5000000] [--seeds 1] [--draws 20] [--sigma 0.5] [--seed 
                [--family-keys 10] [--from <layout>] [--pin ...] [--out report.json]
                                                                   # re-optimize under perturbed weights: families,
                                                                   #   regret, per-weight sensitivity, judges
+gecko fit-layout <layout>... [--names a,b] [--sigma 0.5] [--tol 0.05] [--bound 3] [--rounds 6]
+               [--evals 4000000] [--seeds 2] [--seed 1] [--threads N] [--neighbours 600]
+               [--fit sfb,inroll,...] [--pin ...] [--out report.json] [--profiles dir]
+                                                                  # inverse fit: the weights under which each layout is
+                                                                  #   closest to optimal; cross-scores the layouts
 gecko analyze  <layout> [--top 10] [--words]                      # finger loads, worst SFB/SFS/LSB/scissors; JSON adds all bigrams/skipgrams with a `kind`;
                                                                   #   --words: worst real words per metric (needs a word import: shai, prose-web or prose-chat)
 gecko optimize [--algo sa|hc|ga|memetic|bls|tabu|explore|qd|nsga2|rwsa] [--time 30s | --evals N] [--seed 1] [--threads N]
@@ -294,6 +299,18 @@ regret (what keeping the base optimum costs under that vector), keys moved, base
 judges (`typing_time`, `engram`, `sfb`, `home_row`), per-weight sensitivity, and median / p90 regret over the draws.
 `--out` writes the full report with input hashes. Deterministic for a seed and thread count.
 Measured: `bench/sweep-2026-10-22/`.
+
+`gecko fit-layout` fits, per layout, the weights under which it is closest to optimal
+(`context/objective.md` Inverse fit). Per layout: the search gap under the base profile and
+under the fitted weights (% and keys to the better layout), `self_consistent` (nothing better
+found under its own weights), `converged` (the last round added no competitor), the RMS log
+distance from the base weights, and per weight the base and fitted value, multiplier, 95 %
+interval, `sd_ratio` (posterior / prior sd; > 0.8 = the layout says little about it) and
+`at_bound`. With several layouts, `cross` scores each layout under each fit's weights:
+`gap_pct[a][b]` (% above the best layout known under fit b), `rank`, and the RMS log distance
+between fits. `--profiles` writes each fit as a profile TOML; `--out` the JSON with input hashes.
+Deterministic for a seed and thread count. The web Profile tab runs the same fit
+(`POST /api/fit-layout`).
 
 `gecko optimize` adds a near-tie note when other results are within 0.4 of #1 but differ in more
 than 4 keys (mirror-invariant): weight uncertainty moves scores more than that (halving one

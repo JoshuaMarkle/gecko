@@ -128,6 +128,19 @@ fn reference_layouts(ctx: &Ctx, l: &Loaded, names: Vec<String>) -> Result<(Vec<L
 
 /// Print a profile as TOML, or write it to data/profiles/<out>.toml.
 fn emit_profile(ctx: &Ctx, p: &Profile, out: Option<&str>) -> Result<()> {
+    let text = profile_toml(p)?;
+    match out {
+        Some(name) => ctx.write_file(&ctx.store.data.join("profiles").join(format!("{name}.toml")), &text),
+        None if !ctx.json => {
+            print!("{text}");
+            Ok(())
+        }
+        None => Ok(()),
+    }
+}
+
+/// A profile as TOML.
+pub(crate) fn profile_toml(p: &Profile) -> Result<String> {
     // Profile numbers are f32; print each at its shortest f32 decimal, not the widened f64.
     fn tidy(v: &mut toml::Value) {
         match v {
@@ -139,15 +152,7 @@ fn emit_profile(ctx: &Ctx, p: &Profile, out: Option<&str>) -> Result<()> {
     }
     let mut v = toml::Value::try_from(p)?;
     tidy(&mut v);
-    let text = toml::to_string(&v)?;
-    match out {
-        Some(name) => ctx.write_file(&ctx.store.data.join("profiles").join(format!("{name}.toml")), &text),
-        None if !ctx.json => {
-            print!("{text}");
-            Ok(())
-        }
-        None => Ok(()),
-    }
+    Ok(toml::to_string(&v)?)
 }
 
 /// Round to 4 significant digits so generated profiles stay readable.
