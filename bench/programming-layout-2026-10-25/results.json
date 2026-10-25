@@ -1,0 +1,1523 @@
+{
+ "cells": {
+  "digits-row": {
+   "best": 146.51265866861615,
+   "at_best": 1,
+   "n": 6,
+   "scores": [
+    146.51265866861615,
+    146.62749391416898,
+    146.64090751860084,
+    150.38265133236374,
+    150.38621714788877,
+    150.4492358519516
+   ],
+   "run": "20261025-042045-bls-33240900",
+   "rows": [
+    "yuokjqxlfp",
+    "ieatgmnrsc",
+    ",=.dzvh'wb",
+    "\u23ce\u232b\u21e7\u2460\u2423\u2461",
+    "_*:|%^!/{}",
+    "1234567890",
+    "&$()#`;[]\\",
+    "@+-\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7~\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "programmer-typed",
+   "profile": "prog-cal",
+   "evals": 40000000
+  },
+  "full-cal": {
+   "best": 145.75096945496043,
+   "at_best": 1,
+   "n": 6,
+   "scores": [
+    145.75096945496043,
+    145.94269012177682,
+    146.24280080968975,
+    148.04543345660446,
+    150.27241491109834,
+    150.41826897407657
+   ],
+   "run": "20261025-040445-bls-0aec6d68",
+   "rows": [
+    "yuokjqxlfb",
+    "ieatgmnrsc",
+    ",=.dzvh'wp",
+    "\u23ce\u232b\u21e7\u2460\u2423\u2461",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "%\\:|@98026",
+    "_-()&#;/*!",
+    "[4137^`{}]",
+    "+5$\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "programmer-typed",
+   "profile": "prog-cal",
+   "evals": 40000000
+  },
+  "full-code": {
+   "best": 222.6222974044826,
+   "at_best": 1,
+   "n": 6,
+   "scores": [
+    222.6222974044826,
+    222.64410978560528,
+    222.65950910597044,
+    222.79985990920102,
+    222.89182349476565,
+    223.0051466728542
+   ],
+   "run": "20261025-044301-bls-39ccdc2a",
+   "rows": [
+    "mlfgvqkouj",
+    "nrspb.teai",
+    "hxdcwz,'=y",
+    "\u23ce\u2423\u21e7\u2460\u232b\u2461",
+    "6[]%^@|`{}",
+    "\\$()!#:*/_",
+    "284-5+;1&0",
+    "937\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "code-typed",
+   "profile": "prog-cal",
+   "evals": 40000000
+  },
+  "full-old": {
+   "best": 14.984855968144942,
+   "at_best": 1,
+   "n": 6,
+   "scores": [
+    14.984855968144942,
+    15.305595012714452,
+    15.336981786273897,
+    15.33906162376663,
+    15.471253643564406,
+    15.55557827340901
+   ],
+   "run": "20261025-041054-bls-030d61ce",
+   "rows": [
+    "lhfkq\u00b7wouy",
+    "rnstdgcaei",
+    "jxbmvzp\u00b7\u00b7\u00b7",
+    "\u23ce\u2423\u21e7\u2460\u232b\u2461",
+    "@[#\u00b7\u00b7^;!]%",
+    "(/'`\\=,.-)",
+    "\u00b7+{}~*:|&$",
+    "\u00b7_\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b77\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "6920\u00b7\u00b73154",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b78\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "programmer-typed",
+   "profile": "prog-old",
+   "evals": 40000000
+  },
+  "full-raw": {
+   "best": 139.55505725770084,
+   "at_best": 1,
+   "n": 6,
+   "scores": [
+    139.55505725770084,
+    141.10546617054504,
+    142.14571313997988,
+    142.8954525096436,
+    142.9156867683205,
+    142.9835426718345
+   ],
+   "run": "20261025-042445-bls-0a2ee5c2",
+   "rows": [
+    "xhcwvq_uy.",
+    "rnstg,oeip",
+    "lmfdbza'jk",
+    "\u23ce\u232b\u21e7\u2460\u2423\u2461",
+    "62047^9813",
+    "[=()|`:-/]",
+    "{}*#%@;\\&!",
+    "+5$\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "programmer",
+   "profile": "prog-cal",
+   "evals": 40000000
+  },
+  "lang-js": {
+   "best": 201.28828341894496,
+   "at_best": 1,
+   "n": 3,
+   "scores": [
+    201.28828341894496,
+    201.39036370306184,
+    201.5029048401574
+   ],
+   "run": "20261025-051615-bls-5dc46422",
+   "rows": [
+    "yuoqzwbnmd",
+    "iaesgfcrtl",
+    "j/{hk*px=v",
+    "\u23ce\u2423\u21e7\u2460\u232b\u2461",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "3@_9%&|}6`",
+    "'0()5+,.-:",
+    "7$4!8^;[]2",
+    "\\1#\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "code-js-typed",
+   "profile": "prog-cal",
+   "evals": 40000000
+  },
+  "lang-python": {
+   "best": 156.71840159580302,
+   "at_best": 1,
+   "n": 3,
+   "scores": [
+    156.71840159580302,
+    156.95460254342063,
+    157.31132357236075
+   ],
+   "run": "20261025-051430-bls-aa44e328",
+   "rows": [
+    "=_ovkqbmdp",
+    "ieahulrtsf",
+    "jz,.yxngwc",
+    "\u23ce\u2423\u21e7\u2460\u232b\u2461",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7&\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "%6{}$^|#+!",
+    "2/-(84)':1",
+    "\\[]3;9*07`",
+    "@5~\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "code-python-typed",
+   "profile": "prog-cal",
+   "evals": 40000000
+  },
+  "lang-rust": {
+   "best": 233.72709949629444,
+   "at_best": 1,
+   "n": 3,
+   "scores": [
+    233.72709949629444,
+    234.00126343478308,
+    234.46233470589723
+   ],
+   "run": "20261025-051202-bls-b3c327b0",
+   "rows": [
+    "juoxqgdnpv",
+    "iael:csrft",
+    "y/=hzwm{bk",
+    "\u23ce\u2423\u21e7\u2460\u232b\u2461",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7@\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "48157^6;!|",
+    "._'(}$),0`",
+    "\\%*[]3#-&2",
+    "~+9\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "code-rust-typed",
+   "profile": "prog-cal",
+   "evals": 40000000
+  },
+  "layer-cal": {
+   "best": 150.65665870365044,
+   "at_best": 1,
+   "n": 6,
+   "scores": [
+    150.65665870365044,
+    150.67725594680735,
+    150.6881897869857,
+    150.7020960337571,
+    150.70344122380624,
+    150.72846149257785
+   ],
+   "run": "20261025-041705-bls-76ece981",
+   "rows": [
+    "qwfpbjluy=",
+    "arstgmneio",
+    "zxcdvkh'.,",
+    "\u23ce\u232b\u21e7\u2460\u2423\u2461",
+    "#()|7^839@",
+    "-:/*{}1_;&",
+    "`0[]5%!$\\4",
+    "+62\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7~\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "programmer-typed",
+   "profile": "prog-cal",
+   "evals": 40000000
+  },
+  "long": {
+   "best": 145.3647495758767,
+   "at_best": 1,
+   "n": 3,
+   "scores": [
+    145.3647495758767,
+    145.58271723166706,
+    145.7193531014278
+   ],
+   "run": "20261025-043842-bls-a679c37e",
+   "rows": [
+    "yuowzqxpfm",
+    "ieatghrnsc",
+    "'=,.kjlbvd",
+    "\u23ce\u232b\u21e7\u2460\u2423\u2461",
+    "`{}|^9\\$86",
+    "/-(:#3_)*2",
+    "4701@&;[]!",
+    "+5%\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7~\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "programmer-typed",
+   "profile": "prog-cal",
+   "evals": 160000000
+  },
+  "oneshot": {
+   "best": 190.16909569534639,
+   "at_best": 1,
+   "n": 4,
+   "scores": [
+    190.16909569534639,
+    190.29164614248546,
+    190.29514098081629,
+    190.36224391674773
+   ],
+   "run": "20261025-043249-bls-f30e507e",
+   "rows": [
+    "yuokjqxhfw",
+    "ieatg'rnsc",
+    ",/.dzvlmbp",
+    "\u23ce\u232b\u21e7\u24f5\u2423\u24f6",
+    "\u00b7\u00b7+|\u00b7\u00b7\u00b7#8\u00b7",
+    "$-(=&2*)\\1",
+    "5\u00b740\u00b7\u00b7\u00b7\u00b7\u00b7~",
+    "\u00b7\u00b7%\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b79\u00b7\u00b7",
+    "[_:{}3`;!]",
+    "7\u00b7\u00b76\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7^\u00b7\u00b7\u00b7"
+   ],
+   "corpus": "programmer-typed",
+   "profile": "prog-cal",
+   "evals": 40000000
+  }
+ },
+ "layouts": {
+  "ref:us-layer": {
+   "spec": "/home/josh/projects/gecko/bench/programming-layout-2026-10-25/layouts/us-layer.toml",
+   "scores": {
+    "programmer-typed": 161.8771425092496,
+    "programmer": 157.1177868641825,
+    "code-typed": 247.94417649691138,
+    "code-rust-typed": 266.39258457731563,
+    "code-python-typed": 194.54958943714684,
+    "code-js-typed": 247.35549976431872,
+    "prose": 92.72494927399862
+   },
+   "costs": {
+    "programmer-typed": {
+     "layer_switch": 10.636684885399106,
+     "symbol_bigram": 32.36791443345055,
+     "brackets": 0.0,
+     "sfb": 1.6368196373474753,
+     "typing_time": 6.651764299436888,
+     "effort": 1.7249484240420776,
+     "hand_switch": -50.99257050261987,
+     "zones": 0.0
+    },
+    "programmer": {
+     "layer_switch": 10.308954774219314,
+     "symbol_bigram": 31.995531823781675,
+     "brackets": 0.0,
+     "sfb": 1.7380340521540028,
+     "typing_time": 6.81816862357924,
+     "effort": 1.6971302776696784,
+     "hand_switch": -51.46784270575385,
+     "zones": 0.0
+    },
+    "code-typed": {
+     "layer_switch": 16.666210772612544,
+     "symbol_bigram": 32.56694641826812,
+     "brackets": 0.0,
+     "sfb": 2.0974130465376106,
+     "typing_time": 7.533240960736738,
+     "effort": 1.9757282442412607,
+     "hand_switch": -51.146579625432764,
+     "zones": 0.0
+    },
+    "code-rust-typed": {
+     "layer_switch": 17.887137478415838,
+     "symbol_bigram": 26.146127081608483,
+     "brackets": 0.0,
+     "sfb": 2.4771579928945187,
+     "typing_time": 7.681454198783666,
+     "effort": 2.0411983317458438,
+     "hand_switch": -50.574070255149195,
+     "zones": 0.0
+    },
+    "code-python-typed": {
+     "layer_switch": 12.859259064745743,
+     "symbol_bigram": 34.77066276723235,
+     "brackets": 0.0,
+     "sfb": 1.5430995520375745,
+     "typing_time": 7.227400979961138,
+     "effort": 1.8787626732151084,
+     "hand_switch": -51.17259341812428,
+     "zones": 0.0
+    },
+    "code-js-typed": {
+     "layer_switch": 16.691711275223042,
+     "symbol_bigram": 35.5859434697777,
+     "brackets": 0.0,
+     "sfb": 1.846288241495131,
+     "typing_time": 7.476792048018762,
+     "effort": 1.9589936852902037,
+     "hand_switch": -51.7066069237444,
+     "zones": 0.0
+    },
+    "prose": {
+     "layer_switch": 5.770421428205608,
+     "symbol_bigram": 33.665374590844976,
+     "brackets": 0.0,
+     "sfb": 1.0072774133508933,
+     "typing_time": 6.297409615474246,
+     "effort": 1.5606128566827966,
+     "hand_switch": -53.04927692861909,
+     "zones": 0.0
+    }
+   },
+   "old": 24.663911545174415
+  },
+  "ref:miryoku": {
+   "spec": "/home/josh/projects/gecko/bench/programming-layout-2026-10-25/layouts/miryoku.toml",
+   "scores": {
+    "programmer-typed": 172.0768845525667,
+    "programmer": 165.62028476128532,
+    "code-typed": 266.7910483913573,
+    "code-rust-typed": 290.6643750785308,
+    "code-python-typed": 204.7247746746361,
+    "code-js-typed": 265.09958781796456,
+    "prose": 94.51010243830778
+   },
+   "costs": {
+    "programmer-typed": {
+     "layer_switch": 10.985192053620274,
+     "symbol_bigram": 47.18667427543277,
+     "brackets": 34.09440517425537,
+     "sfb": 2.3909774745181966,
+     "typing_time": 6.863890844522336,
+     "effort": 1.7332747901314502,
+     "hand_switch": -48.416926395787186,
+     "zones": 0.0
+    },
+    "programmer": {
+     "layer_switch": 10.575133498967793,
+     "symbol_bigram": 47.25686787093508,
+     "brackets": 37.672990560531616,
+     "sfb": 2.2778334309843995,
+     "typing_time": 6.897359715760199,
+     "effort": 1.699098036812303,
+     "hand_switch": -49.478974753505845,
+     "zones": 0.0
+    },
+    "code-typed": {
+     "layer_switch": 17.404790498149225,
+     "symbol_bigram": 47.00953445521918,
+     "brackets": 33.172065019607544,
+     "sfb": 3.66629492125341,
+     "typing_time": 7.961667672121944,
+     "effort": 1.9828989758687543,
+     "hand_switch": -45.433409319507945,
+     "zones": 0.0
+    },
+    "code-rust-typed": {
+     "layer_switch": 19.207758032482758,
+     "symbol_bigram": 43.60786741190168,
+     "brackets": 30.716489255428314,
+     "sfb": 3.4896359761368956,
+     "typing_time": 7.8629742075846725,
+     "effort": 2.049982063574907,
+     "hand_switch": -44.367532101404095,
+     "zones": 0.0
+    },
+    "code-python-typed": {
+     "layer_switch": 12.997340320814033,
+     "symbol_bigram": 45.15266253833943,
+     "brackets": 17.488449439406395,
+     "sfb": 3.581938401001139,
+     "typing_time": 7.720854623611868,
+     "effort": 1.8507981144042946,
+     "hand_switch": -47.49518167541851,
+     "zones": 0.0
+    },
+    "code-js-typed": {
+     "layer_switch": 17.21877821870521,
+     "symbol_bigram": 53.22162557858974,
+     "brackets": 39.203913509845734,
+     "sfb": 3.3972562948349605,
+     "typing_time": 7.90915565506076,
+     "effort": 1.9814146229956833,
+     "hand_switch": -43.89218101376855,
+     "zones": 0.0
+    },
+    "prose": {
+     "layer_switch": 5.7719607036242015,
+     "symbol_bigram": 41.19830639652946,
+     "brackets": 7.470765768084675,
+     "sfb": 1.1524635103714376,
+     "typing_time": 6.34806991809513,
+     "effort": 1.5609354713661572,
+     "hand_switch": -52.507757425347734,
+     "zones": 0.0
+    }
+   },
+   "old": 30.367911251383386
+  },
+  "ref:getreuer": {
+   "spec": "/home/josh/projects/gecko/bench/programming-layout-2026-10-25/layouts/getreuer.toml",
+   "scores": {
+    "programmer-typed": 151.36226989586265,
+    "programmer": 151.2954141298504,
+    "code-typed": 224.61113478819306,
+    "code-rust-typed": 237.38054797618418,
+    "code-python-typed": 180.44939067350947,
+    "code-js-typed": 235.14590840569468,
+    "prose": 93.79358813192832
+   },
+   "costs": {
+    "programmer-typed": {
+     "layer_switch": 9.904717375520722,
+     "symbol_bigram": 24.783639493483633,
+     "brackets": 0.0,
+     "sfb": 1.9326258054388923,
+     "typing_time": 6.652938251282704,
+     "effort": 1.693918461275937,
+     "hand_switch": -50.61027056852633,
+     "zones": 0.0
+    },
+    "programmer": {
+     "layer_switch": 9.922379010519444,
+     "symbol_bigram": 25.10120670610263,
+     "brackets": 0.0,
+     "sfb": 2.0010627709527995,
+     "typing_time": 6.76774760919721,
+     "effort": 1.6683853410487963,
+     "hand_switch": -51.27738378361452,
+     "zones": 0.0
+    },
+    "code-typed": {
+     "layer_switch": 15.027821052136403,
+     "symbol_bigram": 23.764326784527157,
+     "brackets": 0.0,
+     "sfb": 2.60283974329667,
+     "typing_time": 7.478604852321793,
+     "effort": 1.9039072394807461,
+     "hand_switch": -50.61764095338077,
+     "zones": 0.0
+    },
+    "code-rust-typed": {
+     "layer_switch": 15.95870247468909,
+     "symbol_bigram": 16.222669125727407,
+     "brackets": 0.0,
+     "sfb": 2.7706232499888017,
+     "typing_time": 7.518965047520209,
+     "effort": 1.9671357450220701,
+     "hand_switch": -50.24733028686228,
+     "zones": 0.0
+    },
+    "code-python-typed": {
+     "layer_switch": 11.897710397568062,
+     "symbol_bigram": 31.661266221681217,
+     "brackets": 0.0,
+     "sfb": 2.169686390132597,
+     "typing_time": 7.102041071392034,
+     "effort": 1.7969471392312684,
+     "hand_switch": -51.46523429297076,
+     "zones": 0.0
+    },
+    "code-js-typed": {
+     "layer_switch": 15.816113863127157,
+     "symbol_bigram": 30.93145852908492,
+     "brackets": 0.0,
+     "sfb": 2.3756550630992024,
+     "typing_time": 7.4045686068406145,
+     "effort": 1.8934263470279364,
+     "hand_switch": -50.789856062351646,
+     "zones": 0.0
+    },
+    "prose": {
+     "layer_switch": 5.66736986940839,
+     "symbol_bigram": 51.01818125772013,
+     "brackets": 0.0,
+     "sfb": 1.1069064770710124,
+     "typing_time": 6.322668962880027,
+     "effort": 1.5561144724680607,
+     "hand_switch": -52.795855820154244,
+     "zones": 0.0
+    }
+   },
+   "old": 23.591419529995182
+  },
+  "digits-row": {
+   "spec": "run:20261025-042045-bls-33240900",
+   "scores": {
+    "programmer-typed": 146.51265263603912,
+    "programmer": 140.85161712719497,
+    "code-typed": 239.95954410319197,
+    "code-rust-typed": 264.4949502952006,
+    "code-python-typed": 169.37570164555703,
+    "code-js-typed": 250.09572445748626,
+    "prose": 60.996716046765506
+   },
+   "costs": {
+    "programmer-typed": {
+     "layer_switch": 9.908798456875246,
+     "symbol_bigram": 26.363477085590503,
+     "brackets": 0.0,
+     "sfb": 1.3792272087623125,
+     "typing_time": 5.934191625887328,
+     "effort": 1.7426141269380333,
+     "hand_switch": -59.04851691787041,
+     "zones": 0.0
+    },
+    "programmer": {
+     "layer_switch": 9.502087417565551,
+     "symbol_bigram": 26.031033244245094,
+     "brackets": 0.0,
+     "sfb": 1.4657841641107616,
+     "typing_time": 6.128505950508714,
+     "effort": 1.7137301739083932,
+     "hand_switch": -59.39919045130861,
+     "zones": 0.0
+    },
+    "code-typed": {
+     "layer_switch": 16.559166229395572,
+     "symbol_bigram": 26.77852009568369,
+     "brackets": 0.0,
+     "sfb": 1.5638302046831143,
+     "typing_time": 6.576629876716081,
+     "effort": 1.989627444664281,
+     "hand_switch": -58.9896445185218,
+     "zones": 0.0
+    },
+    "code-rust-typed": {
+     "layer_switch": 18.415342962450154,
+     "symbol_bigram": 18.965760725848213,
+     "brackets": 0.0,
+     "sfb": 1.3511030105306077,
+     "typing_time": 6.561893051984105,
+     "effort": 2.0703381003326458,
+     "hand_switch": -57.561326696382054,
+     "zones": 0.0
+    },
+    "code-python-typed": {
+     "layer_switch": 11.378950317279646,
+     "symbol_bigram": 34.03404646232957,
+     "brackets": 0.0,
+     "sfb": 1.5027961932872813,
+     "typing_time": 6.522001035799007,
+     "effort": 1.8863979234720698,
+     "hand_switch": -59.44817359872445,
+     "zones": 0.0
+    },
+    "code-js-typed": {
+     "layer_switch": 17.40460349136015,
+     "symbol_bigram": 25.701583176851273,
+     "brackets": 0.0,
+     "sfb": 1.4210046667983534,
+     "typing_time": 6.431654939726345,
+     "effort": 1.9672004365080589,
+     "hand_switch": -60.58580183952813,
+     "zones": 0.0
+    },
+    "prose": {
+     "layer_switch": 3.9201728535323666,
+     "symbol_bigram": 27.7777130419679,
+     "brackets": 0.0,
+     "sfb": 0.6867271972727407,
+     "typing_time": 5.436763440700698,
+     "effort": 1.578576969504269,
+     "hand_switch": -64.4553511734842,
+     "zones": 0.0
+    }
+   },
+   "old": 18.689156322255066
+  },
+  "full-cal": {
+   "spec": "run:20261025-040445-bls-0aec6d68",
+   "scores": {
+    "programmer-typed": 145.75096336520713,
+    "programmer": 139.96036675305845,
+    "code-typed": 238.91805678215945,
+    "code-rust-typed": 263.8347257019121,
+    "code-python-typed": 167.78643195968357,
+    "code-js-typed": 249.5310001595532,
+    "prose": 60.959075012477825
+   },
+   "costs": {
+    "programmer-typed": {
+     "layer_switch": 9.909270547254302,
+     "symbol_bigram": 26.297976445642135,
+     "brackets": 0.0,
+     "sfb": 1.2538594821573268,
+     "typing_time": 5.860868030264265,
+     "effort": 1.753447292636009,
+     "hand_switch": -59.16563725386646,
+     "zones": 0.0
+    },
+    "programmer": {
+     "layer_switch": 9.503010793157184,
+     "symbol_bigram": 25.98791872018964,
+     "brackets": 0.0,
+     "sfb": 1.321468236908352,
+     "typing_time": 6.02083470996724,
+     "effort": 1.721298256388682,
+     "hand_switch": -59.508294924944906,
+     "zones": 0.0
+    },
+    "code-typed": {
+     "layer_switch": 16.558421646454846,
+     "symbol_bigram": 26.694096093945063,
+     "brackets": 0.0,
+     "sfb": 1.429391201878616,
+     "typing_time": 6.4835389794193,
+     "effort": 2.0037995349791715,
+     "hand_switch": -59.23242768756296,
+     "zones": 0.0
+    },
+    "code-rust-typed": {
+     "layer_switch": 18.422708417740097,
+     "symbol_bigram": 18.95856100624087,
+     "brackets": 0.0,
+     "sfb": 1.3583091581033102,
+     "typing_time": 6.538640074405549,
+     "effort": 2.0832612133020416,
+     "hand_switch": -57.853931233020006,
+     "zones": 0.0
+    },
+    "code-python-typed": {
+     "layer_switch": 11.379765398552877,
+     "symbol_bigram": 34.006206563708474,
+     "brackets": 0.0,
+     "sfb": 1.2693582615298737,
+     "typing_time": 6.2931268172842225,
+     "effort": 1.8870296371411281,
+     "hand_switch": -59.56581513816559,
+     "zones": 0.0
+    },
+    "code-js-typed": {
+     "layer_switch": 17.404464770794448,
+     "symbol_bigram": 25.659050815738738,
+     "brackets": 0.0,
+     "sfb": 1.3448474480412642,
+     "typing_time": 6.442100462292638,
+     "effort": 1.9881132112971047,
+     "hand_switch": -60.60845974844824,
+     "zones": 0.0
+    },
+    "prose": {
+     "layer_switch": 3.9212198833402434,
+     "symbol_bigram": 28.143274963892395,
+     "brackets": 0.0,
+     "sfb": 0.6550197749288333,
+     "typing_time": 5.438071369457999,
+     "effort": 1.5860497096689674,
+     "hand_switch": -64.39188007477155,
+     "zones": 0.0
+    }
+   },
+   "old": 17.92137708571336
+  },
+  "full-code": {
+   "spec": "run:20261025-044301-bls-39ccdc2a",
+   "scores": {
+    "programmer-typed": 150.82958347149562,
+    "programmer": 147.93802267551519,
+    "code-typed": 222.62228813210243,
+    "code-rust-typed": 250.901138784597,
+    "code-python-typed": 163.4534273179392,
+    "code-js-typed": 216.0166028307008,
+    "prose": 89.9961786739005
+   },
+   "costs": {
+    "programmer-typed": {
+     "layer_switch": 10.28994915599808,
+     "symbol_bigram": 27.596951182772678,
+     "brackets": 0.0,
+     "sfb": 1.272030863596063,
+     "typing_time": 5.751753603158682,
+     "effort": 1.7498267876722549,
+     "hand_switch": -59.71393974605468,
+     "zones": 0.0
+    },
+    "programmer": {
+     "layer_switch": 10.056835819898534,
+     "symbol_bigram": 27.52884778257325,
+     "brackets": 0.0,
+     "sfb": 1.3758863665265464,
+     "typing_time": 5.923838684881385,
+     "effort": 1.7347337855922644,
+     "hand_switch": -59.971620674425765,
+     "zones": 0.0
+    },
+    "code-typed": {
+     "layer_switch": 15.562338156337496,
+     "symbol_bigram": 27.27339818608243,
+     "brackets": 0.0,
+     "sfb": 1.4178112884557947,
+     "typing_time": 6.1924938645424055,
+     "effort": 1.9115475104729418,
+     "hand_switch": -61.490195482915766,
+     "zones": 0.0
+    },
+    "code-rust-typed": {
+     "layer_switch": 17.650608119938482,
+     "symbol_bigram": 19.863745250222564,
+     "brackets": 0.0,
+     "sfb": 1.435214461970702,
+     "typing_time": 6.232751554295177,
+     "effort": 1.9529306106470148,
+     "hand_switch": -60.1977983088652,
+     "zones": 0.0
+    },
+    "code-python-typed": {
+     "layer_switch": 11.242268732908656,
+     "symbol_bigram": 34.149969966756544,
+     "brackets": 0.0,
+     "sfb": 1.1447842331676839,
+     "typing_time": 5.926621231432999,
+     "effort": 1.8157663887734736,
+     "hand_switch": -61.90981557606676,
+     "zones": 0.0
+    },
+    "code-js-typed": {
+     "layer_switch": 15.14311262315573,
+     "symbol_bigram": 26.15017918869853,
+     "brackets": 0.0,
+     "sfb": 1.3320096597396969,
+     "typing_time": 6.113590715768497,
+     "effort": 1.901471498954411,
+     "hand_switch": -63.47476368682692,
+     "zones": 0.0
+    },
+    "prose": {
+     "layer_switch": 5.799852151049123,
+     "symbol_bigram": 31.616105609671763,
+     "brackets": 0.0,
+     "sfb": 0.9235389844289843,
+     "typing_time": 5.617740036744184,
+     "effort": 1.6736235788032285,
+     "hand_switch": -62.65879626504328,
+     "zones": 0.0
+    }
+   },
+   "old": 18.089243284424477
+  },
+  "full-old": {
+   "spec": "run:20261025-041054-bls-030d61ce",
+   "scores": {
+    "programmer-typed": 188.6362899908613,
+    "programmer": 187.15179859597586,
+    "code-typed": 272.6966199805258,
+    "code-rust-typed": 295.1795789545474,
+    "code-python-typed": 216.08086921335718,
+    "code-js-typed": 268.11948221442725,
+    "prose": 115.40125432117507
+   },
+   "costs": {
+    "programmer-typed": {
+     "layer_switch": 13.461351893178275,
+     "symbol_bigram": 1.4196489854384708,
+     "brackets": 0.0,
+     "sfb": 0.9649715228599476,
+     "typing_time": 5.593960122191035,
+     "effort": 1.7269817705203812,
+     "hand_switch": -56.91072395893137,
+     "zones": 0.0
+    },
+    "programmer": {
+     "layer_switch": 13.35698667768308,
+     "symbol_bigram": 1.3982873784925687,
+     "brackets": 0.0,
+     "sfb": 1.0076277941356793,
+     "typing_time": 5.677697653951187,
+     "effort": 1.7013871803518645,
+     "hand_switch": -57.297726036007084,
+     "zones": 0.0
+    },
+    "code-typed": {
+     "layer_switch": 19.536152262008954,
+     "symbol_bigram": 1.362943905053271,
+     "brackets": 0.0,
+     "sfb": 1.2564075518362472,
+     "typing_time": 6.172937727285516,
+     "effort": 1.9325921027840387,
+     "hand_switch": -57.3527444024208,
+     "zones": 0.0
+    },
+    "code-rust-typed": {
+     "layer_switch": 21.17017442912541,
+     "symbol_bigram": 1.1189257976297995,
+     "brackets": 0.0,
+     "sfb": 1.168852389452013,
+     "typing_time": 6.037628098120933,
+     "effort": 1.981777713242361,
+     "hand_switch": -55.846857856295884,
+     "zones": 0.0
+    },
+    "code-python-typed": {
+     "layer_switch": 15.473770317009894,
+     "symbol_bigram": 1.2600976646808704,
+     "brackets": 0.0,
+     "sfb": 1.1065632517443191,
+     "typing_time": 5.850283859182168,
+     "effort": 1.8240312880323544,
+     "hand_switch": -59.027663765462535,
+     "zones": 0.0
+    },
+    "code-js-typed": {
+     "layer_switch": 19.21652712629225,
+     "symbol_bigram": 1.6049947356805205,
+     "brackets": 0.0,
+     "sfb": 1.1372947377651599,
+     "typing_time": 6.3589971750621945,
+     "effort": 1.9324023461641096,
+     "hand_switch": -58.35877873433333,
+     "zones": 0.0
+    },
+    "prose": {
+     "layer_switch": 8.180445614497888,
+     "symbol_bigram": 0.7740065884036085,
+     "brackets": 0.0,
+     "sfb": 0.4924745333001024,
+     "typing_time": 5.349748848367777,
+     "effort": 1.6089895214661993,
+     "hand_switch": -60.10388543404601,
+     "zones": 0.0
+    }
+   },
+   "old": 14.98485570395976
+  },
+  "full-raw": {
+   "spec": "run:20261025-042445-bls-0a2ee5c2",
+   "scores": {
+    "programmer-typed": 151.42371544095784,
+    "programmer": 139.55505133143296,
+    "code-typed": 253.7482124090396,
+    "code-rust-typed": 277.4344745442315,
+    "code-python-typed": 173.49951512225522,
+    "code-js-typed": 281.14145319546293,
+    "prose": 61.00231546072922
+   },
+   "costs": {
+    "programmer-typed": {
+     "layer_switch": 10.334000679580036,
+     "symbol_bigram": 26.191509035902882,
+     "brackets": 0.0,
+     "sfb": 1.4047092852859766,
+     "typing_time": 5.707462565237139,
+     "effort": 1.7195583688775513,
+     "hand_switch": -60.40863227915737,
+     "zones": 0.0
+    },
+    "programmer": {
+     "layer_switch": 9.473752970194592,
+     "symbol_bigram": 26.277033023014695,
+     "brackets": 0.0,
+     "sfb": 1.5040487119874157,
+     "typing_time": 5.853667741148409,
+     "effort": 1.6968571861453943,
+     "hand_switch": -61.10220397248209,
+     "zones": 0.0
+    },
+    "code-typed": {
+     "layer_switch": 17.60348683611248,
+     "symbol_bigram": 26.168572687515734,
+     "brackets": 0.0,
+     "sfb": 1.6604156870393183,
+     "typing_time": 6.308933133050662,
+     "effort": 1.919438446971481,
+     "hand_switch": -60.12074102436742,
+     "zones": 0.0
+    },
+    "code-rust-typed": {
+     "layer_switch": 19.309394648137612,
+     "symbol_bigram": 20.759659883549375,
+     "brackets": 0.0,
+     "sfb": 1.6758742695479611,
+     "typing_time": 6.310693233065085,
+     "effort": 1.974556846724314,
+     "hand_switch": -59.063099552867016,
+     "zones": 0.0
+    },
+    "code-python-typed": {
+     "layer_switch": 11.835886726854028,
+     "symbol_bigram": 27.08867679712057,
+     "brackets": 0.0,
+     "sfb": 1.5199297250831023,
+     "typing_time": 6.046821226521416,
+     "effort": 1.8180122433975074,
+     "hand_switch": -62.16811016342376,
+     "zones": 0.0
+    },
+    "code-js-typed": {
+     "layer_switch": 19.679974917789878,
+     "symbol_bigram": 26.277776435017586,
+     "brackets": 0.0,
+     "sfb": 1.5589469147357704,
+     "typing_time": 6.3315279551453765,
+     "effort": 1.914445649184863,
+     "hand_switch": -61.141611462949186,
+     "zones": 0.0
+    },
+    "prose": {
+     "layer_switch": 3.914777582846507,
+     "symbol_bigram": 30.2181103832595,
+     "brackets": 0.0,
+     "sfb": 0.7394782956457124,
+     "typing_time": 5.294743087579931,
+     "effort": 1.6024177560281967,
+     "hand_switch": -65.78101664539227,
+     "zones": 0.0
+    }
+   },
+   "old": 18.115110616483783
+  },
+  "lang-js": {
+   "spec": "run:20261025-051615-bls-5dc46422",
+   "scores": {
+    "programmer-typed": 169.515510348982,
+    "programmer": 172.13374829201007,
+    "code-typed": 233.658001318393,
+    "code-rust-typed": 249.8455596439375,
+    "code-python-typed": 194.69610091298824,
+    "code-js-typed": 201.28827519690026,
+    "prose": 118.3143394411384
+   },
+   "costs": {
+    "programmer-typed": {
+     "layer_switch": 11.627559631266028,
+     "symbol_bigram": 12.62856678068296,
+     "brackets": 14.56630676984787,
+     "sfb": 1.7770544866508864,
+     "typing_time": 6.2346615012475874,
+     "effort": 1.7781871629451613,
+     "hand_switch": -57.9294011112148,
+     "zones": 0.0
+    },
+    "programmer": {
+     "layer_switch": 11.79909488006674,
+     "symbol_bigram": 12.879456762467356,
+     "brackets": 18.668733537197113,
+     "sfb": 1.9510048147052705,
+     "typing_time": 6.413319233309676,
+     "effort": 1.751421030771589,
+     "hand_switch": -58.758867106271815,
+     "zones": 0.0
+    },
+    "code-typed": {
+     "layer_switch": 16.175670393011288,
+     "symbol_bigram": 11.774192598610966,
+     "brackets": 15.296609699726105,
+     "sfb": 2.1641875706585267,
+     "typing_time": 6.892880664395798,
+     "effort": 2.0066831189448777,
+     "hand_switch": -58.67395209395028,
+     "zones": 0.0
+    },
+    "code-rust-typed": {
+     "layer_switch": 17.308916803245467,
+     "symbol_bigram": 9.096570637950663,
+     "brackets": 15.357530117034912,
+     "sfb": 2.032418530198754,
+     "typing_time": 7.033281957371354,
+     "effort": 2.073382852672516,
+     "hand_switch": -55.36466834801459,
+     "zones": 0.0
+    },
+    "code-python-typed": {
+     "layer_switch": 13.367491807161969,
+     "symbol_bigram": 7.4054127525414515,
+     "brackets": 4.2882289737463,
+     "sfb": 2.49817593926025,
+     "typing_time": 6.920875198494785,
+     "effort": 1.8989814870015946,
+     "hand_switch": -59.758527775017,
+     "zones": 0.0
+    },
+    "code-js-typed": {
+     "layer_switch": 14.151521650308041,
+     "symbol_bigram": 15.841298107989132,
+     "brackets": 23.987475037574768,
+     "sfb": 1.0733103999882587,
+     "typing_time": 6.038557429190479,
+     "effort": 1.971913056476254,
+     "hand_switch": -62.69774523564138,
+     "zones": 0.0
+    },
+    "prose": {
+     "layer_switch": 7.880064291125288,
+     "symbol_bigram": 15.184433932302,
+     "brackets": 0.13662880519405007,
+     "sfb": 1.4043025706898193,
+     "typing_time": 6.036863883093656,
+     "effort": 1.6363342616607217,
+     "hand_switch": -60.52306750676759,
+     "zones": 0.0
+    }
+   },
+   "old": 19.519995541212225
+  },
+  "lang-python": {
+   "spec": "run:20261025-051430-bls-aa44e328",
+   "scores": {
+    "programmer-typed": 155.79665253849475,
+    "programmer": 149.69266248362538,
+    "code-typed": 228.20450778632198,
+    "code-rust-typed": 255.48464605289664,
+    "code-python-typed": 156.7183947873338,
+    "code-js-typed": 221.0283767916164,
+    "prose": 96.40616442541942
+   },
+   "costs": {
+    "programmer-typed": {
+     "layer_switch": 10.671988213727923,
+     "symbol_bigram": 22.370352107556357,
+     "brackets": 0.0,
+     "sfb": 1.5017363057625133,
+     "typing_time": 5.905847718255767,
+     "effort": 1.7816429649125243,
+     "hand_switch": -59.79268240331139,
+     "zones": 0.0
+    },
+    "programmer": {
+     "layer_switch": 10.17123687873891,
+     "symbol_bigram": 23.061198853690712,
+     "brackets": 0.0,
+     "sfb": 1.7316968701874824,
+     "typing_time": 6.131750177668044,
+     "effort": 1.7552829972931177,
+     "hand_switch": -60.61827739585054,
+     "zones": 0.0
+    },
+    "code-typed": {
+     "layer_switch": 15.821100675472977,
+     "symbol_bigram": 21.64532318101635,
+     "brackets": 0.0,
+     "sfb": 1.8056682640789745,
+     "typing_time": 6.474045059072813,
+     "effort": 2.0209150615151237,
+     "hand_switch": -59.80362703446147,
+     "zones": 0.0
+    },
+    "code-rust-typed": {
+     "layer_switch": 17.65872918413507,
+     "symbol_bigram": 21.29765874650502,
+     "brackets": 0.0,
+     "sfb": 2.0532678168102336,
+     "typing_time": 6.589383478023282,
+     "effort": 2.0802025709641505,
+     "hand_switch": -56.55160474067742,
+     "zones": 0.0
+    },
+    "code-python-typed": {
+     "layer_switch": 10.909601584071993,
+     "symbol_bigram": 19.7051707295941,
+     "brackets": 0.0,
+     "sfb": 1.1378517378602737,
+     "typing_time": 5.829408524015179,
+     "effort": 1.8799657556018652,
+     "hand_switch": -64.39104226695918,
+     "zones": 0.0
+    },
+    "code-js-typed": {
+     "layer_switch": 15.302741146177823,
+     "symbol_bigram": 19.170859828591347,
+     "brackets": 0.0,
+     "sfb": 1.811406304295815,
+     "typing_time": 6.515860689675008,
+     "effort": 2.0173645214924587,
+     "hand_switch": -59.548294035971594,
+     "zones": 0.0
+    },
+    "prose": {
+     "layer_switch": 6.304088927959639,
+     "symbol_bigram": 43.49405884811972,
+     "brackets": 0.0,
+     "sfb": 1.0905179879609816,
+     "typing_time": 5.682623499566556,
+     "effort": 1.6236732844846877,
+     "hand_switch": -64.15709383757397,
+     "zones": 0.0
+    }
+   },
+   "old": 18.128008652444976
+  },
+  "lang-rust": {
+   "spec": "run:20261025-051202-bls-b3c327b0",
+   "scores": {
+    "programmer-typed": 167.8832585362773,
+    "programmer": 168.5918672772866,
+    "code-typed": 231.76298338173027,
+    "code-rust-typed": 233.7270893119381,
+    "code-python-typed": 188.15541318899685,
+    "code-js-typed": 217.55743465449427,
+    "prose": 115.15895440250117
+   },
+   "costs": {
+    "programmer-typed": {
+     "layer_switch": 11.524090037152446,
+     "symbol_bigram": 17.603364988951853,
+     "brackets": 14.56630676984787,
+     "sfb": 1.4837081531109853,
+     "typing_time": 6.095628484007884,
+     "effort": 1.7885251226586976,
+     "hand_switch": -58.98455142182502,
+     "zones": 0.0
+    },
+    "programmer": {
+     "layer_switch": 11.559557783236428,
+     "symbol_bigram": 17.321043605957698,
+     "brackets": 18.668733537197113,
+     "sfb": 1.633855847723087,
+     "typing_time": 6.285380728789228,
+     "effort": 1.7637939126354374,
+     "hand_switch": -59.558311850765854,
+     "zones": 0.0
+    },
+    "code-typed": {
+     "layer_switch": 16.125269666539666,
+     "symbol_bigram": 17.392640356632683,
+     "brackets": 15.296609699726105,
+     "sfb": 1.647300950848063,
+     "typing_time": 6.574186604826361,
+     "effort": 2.0038049787499093,
+     "hand_switch": -58.72931585357577,
+     "zones": 0.0
+    },
+    "code-rust-typed": {
+     "layer_switch": 16.57822882174571,
+     "symbol_bigram": 8.235034713823097,
+     "brackets": 15.357530117034912,
+     "sfb": 1.0438297901750104,
+     "typing_time": 6.1406186259192745,
+     "effort": 2.0377183402768364,
+     "hand_switch": -59.431345846086,
+     "zones": 0.0
+    },
+    "code-python-typed": {
+     "layer_switch": 13.090177522624913,
+     "symbol_bigram": 19.210442075245737,
+     "brackets": 4.2882289737463,
+     "sfb": 1.2462675145343383,
+     "typing_time": 6.1045359489332585,
+     "effort": 1.8772381682581267,
+     "hand_switch": -61.63536238859422,
+     "zones": 0.0
+    },
+    "code-js-typed": {
+     "layer_switch": 14.97118600341878,
+     "symbol_bigram": 24.092576140537858,
+     "brackets": 23.987475037574768,
+     "sfb": 1.5888165009243949,
+     "typing_time": 6.642980992441881,
+     "effort": 1.9944645404205006,
+     "hand_switch": -57.97349172732993,
+     "zones": 0.0
+    },
+    "prose": {
+     "layer_switch": 7.838348555122776,
+     "symbol_bigram": 13.11959449849951,
+     "brackets": 0.13662880519405007,
+     "sfb": 1.0556189394780313,
+     "typing_time": 5.933699657260042,
+     "effort": 1.6585736236163835,
+     "hand_switch": -63.28498263310637,
+     "zones": 0.0
+    }
+   },
+   "old": 19.222501453102222
+  },
+  "layer-cal": {
+   "spec": "run:20261025-041705-bls-76ece981",
+   "scores": {
+    "programmer-typed": 150.65665268612705,
+    "programmer": 145.013008480605,
+    "code-typed": 243.79636687315391,
+    "code-rust-typed": 268.6715053776363,
+    "code-python-typed": 172.7183618179278,
+    "code-js-typed": 254.51355252950768,
+    "prose": 68.51019086323055
+   },
+   "costs": {
+    "programmer-typed": {
+     "layer_switch": 9.909733332690585,
+     "symbol_bigram": 26.910801791780514,
+     "brackets": 0.0,
+     "sfb": 1.618396413797818,
+     "typing_time": 6.5441235361347445,
+     "effort": 1.7104779826995204,
+     "hand_switch": -52.966729567542316,
+     "zones": 0.0
+    },
+    "programmer": {
+     "layer_switch": 9.503934735447327,
+     "symbol_bigram": 26.591090075228152,
+     "brackets": 0.0,
+     "sfb": 1.761100308873842,
+     "typing_time": 6.717408653012155,
+     "effort": 1.6787129838378365,
+     "hand_switch": -53.7576492074015,
+     "zones": 0.0
+    },
+    "code-typed": {
+     "layer_switch": 16.560388810403026,
+     "symbol_bigram": 27.29430698645956,
+     "brackets": 0.0,
+     "sfb": 1.8230508186654504,
+     "typing_time": 7.158596839726995,
+     "effort": 1.9378588366891534,
+     "hand_switch": -51.996362426863385,
+     "zones": 0.0
+    },
+    "code-rust-typed": {
+     "layer_switch": 18.428747753276298,
+     "symbol_bigram": 19.579896450704837,
+     "brackets": 0.0,
+     "sfb": 1.8449212457525732,
+     "typing_time": 7.212324359047182,
+     "effort": 1.998994496243032,
+     "hand_switch": -51.42926733064215,
+     "zones": 0.0
+    },
+    "code-python-typed": {
+     "layer_switch": 11.379309911964697,
+     "symbol_bigram": 34.59997225868392,
+     "brackets": 0.0,
+     "sfb": 1.506117458777112,
+     "typing_time": 6.923353156919464,
+     "effort": 1.8430786037911207,
+     "hand_switch": -52.08705012694281,
+     "zones": 0.0
+    },
+    "code-js-typed": {
+     "layer_switch": 17.40520461381152,
+     "symbol_bigram": 26.04585455264896,
+     "brackets": 0.0,
+     "sfb": 1.7876231462366832,
+     "typing_time": 7.191183162671642,
+     "effort": 1.9231827349331425,
+     "hand_switch": -53.09482650710606,
+     "zones": 0.0
+    },
+    "prose": {
+     "layer_switch": 3.920773265490607,
+     "symbol_bigram": 28.380260631553256,
+     "brackets": 0.0,
+     "sfb": 0.9366163998241861,
+     "typing_time": 6.244424078811898,
+     "effort": 1.5607530382218164,
+     "hand_switch": -56.698854535030634,
+     "zones": 0.0
+    }
+   },
+   "old": 22.821096474681745
+  },
+  "long": {
+   "spec": "run:20261025-043842-bls-a679c37e",
+   "scores": {
+    "programmer-typed": 145.3647434805129,
+    "programmer": 139.7837041693259,
+    "code-typed": 237.14496389714714,
+    "code-rust-typed": 261.8788117120621,
+    "code-python-typed": 166.31850572087149,
+    "code-js-typed": 247.62741534142702,
+    "prose": 61.573847048401724
+   },
+   "costs": {
+    "programmer-typed": {
+     "layer_switch": 9.909270547254302,
+     "symbol_bigram": 26.41570419300514,
+     "brackets": 0.0,
+     "sfb": 1.2822035113519314,
+     "typing_time": 5.729828061396857,
+     "effort": 1.7264172966842732,
+     "hand_switch": -59.442182133795946,
+     "zones": 0.0
+    },
+    "programmer": {
+     "layer_switch": 9.503010793157184,
+     "symbol_bigram": 26.101626787677645,
+     "brackets": 0.0,
+     "sfb": 1.4096757426860451,
+     "typing_time": 5.889366514712289,
+     "effort": 1.702114642215185,
+     "hand_switch": -59.68575708785569,
+     "zones": 0.0
+    },
+    "code-typed": {
+     "layer_switch": 16.558421646454846,
+     "symbol_bigram": 26.818192681997743,
+     "brackets": 0.0,
+     "sfb": 1.3806993898683118,
+     "typing_time": 6.174992659816948,
+     "effort": 1.9204442007001055,
+     "hand_switch": -60.350730014452836,
+     "zones": 0.0
+    },
+    "code-rust-typed": {
+     "layer_switch": 18.422708417740097,
+     "symbol_bigram": 19.030558167446543,
+     "brackets": 0.0,
+     "sfb": 1.3083422404889689,
+     "typing_time": 6.244932539788591,
+     "effort": 1.9750955857184993,
+     "hand_switch": -58.18038717360636,
+     "zones": 0.0
+    },
+    "code-python-typed": {
+     "layer_switch": 11.379765398552877,
+     "symbol_bigram": 34.15225193311926,
+     "brackets": 0.0,
+     "sfb": 1.314854406476229,
+     "typing_time": 5.945794428185333,
+     "effort": 1.8150051921670363,
+     "hand_switch": -61.594242094344054,
+     "zones": 0.0
+    },
+    "code-js-typed": {
+     "layer_switch": 17.404464770794448,
+     "symbol_bigram": 25.527441245503724,
+     "brackets": 0.0,
+     "sfb": 1.3834630953681426,
+     "typing_time": 6.129520203901709,
+     "effort": 1.8948240522313378,
+     "hand_switch": -62.08639051718592,
+     "zones": 0.0
+    },
+    "prose": {
+     "layer_switch": 3.9212198833402434,
+     "symbol_bigram": 27.708032620145673,
+     "brackets": 0.0,
+     "sfb": 0.7793627805091408,
+     "typing_time": 5.478575084091343,
+     "effort": 1.6129363604366451,
+     "hand_switch": -63.85618463120088,
+     "zones": 0.0
+    }
+   },
+   "old": 17.535157201019132
+  },
+  "oneshot": {
+   "spec": "run:20261025-043249-bls-f30e507e",
+   "scores": {
+    "programmer-typed": 190.16908824864265,
+    "programmer": 175.39761852503455,
+    "code-typed": 329.4756415220598,
+    "code-rust-typed": 360.58622316714695,
+    "code-python-typed": 245.51592561741722,
+    "code-js-typed": 339.01736244316277,
+    "prose": 67.79345991903085
+   },
+   "costs": {
+    "programmer-typed": {
+     "layer_switch": 12.817011212512487,
+     "symbol_bigram": 76.95314187037087,
+     "brackets": 0.0,
+     "sfb": 1.1885696813907831,
+     "typing_time": 5.685414072792741,
+     "effort": 1.7030792959679184,
+     "hand_switch": -59.250187233518545,
+     "zones": 0.0
+    },
+    "programmer": {
+     "layer_switch": 11.720526265805509,
+     "symbol_bigram": 77.38481943028646,
+     "brackets": 0.0,
+     "sfb": 1.26948383002774,
+     "typing_time": 5.8527644781006325,
+     "effort": 1.6805986779598587,
+     "hand_switch": -59.411806262158954,
+     "zones": 0.0
+    },
+    "code-typed": {
+     "layer_switch": 23.005090985278542,
+     "symbol_bigram": 77.0268104145174,
+     "brackets": 0.0,
+     "sfb": 1.300337074956559,
+     "typing_time": 6.120215544537432,
+     "effort": 1.8960666376293094,
+     "hand_switch": -59.468612298952905,
+     "zones": 0.0
+    },
+    "code-rust-typed": {
+     "layer_switch": 25.329193212855472,
+     "symbol_bigram": 71.28276408271859,
+     "brackets": 0.0,
+     "sfb": 1.1759395068928313,
+     "typing_time": 6.132637547242003,
+     "effort": 1.9687888403131877,
+     "hand_switch": -57.37985426790004,
+     "zones": 0.0
+    },
+    "code-python-typed": {
+     "layer_switch": 16.916740426933075,
+     "symbol_bigram": 75.3612332809098,
+     "brackets": 0.0,
+     "sfb": 1.133950558636343,
+     "typing_time": 6.000387147332184,
+     "effort": 1.8059319985587823,
+     "hand_switch": -60.857157025395736,
+     "zones": 0.0
+    },
+    "code-js-typed": {
+     "layer_switch": 23.71629415129064,
+     "symbol_bigram": 81.31465087644756,
+     "brackets": 0.0,
+     "sfb": 1.2217376947944558,
+     "typing_time": 6.105740872040989,
+     "effort": 1.8811752400314496,
+     "hand_switch": -60.79800885870554,
+     "zones": 0.0
+    },
+    "prose": {
+     "layer_switch": 4.225708604466782,
+     "symbol_bigram": 50.53086814446317,
+     "brackets": 0.0,
+     "sfb": 0.661242157110653,
+     "typing_time": 5.419889569194147,
+     "effort": 1.5892749730160034,
+     "hand_switch": -64.44056644009608,
+     "zones": 0.0
+    }
+   },
+   "old": 24.82964849653331
+  }
+ }
+}

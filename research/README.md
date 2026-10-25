@@ -13,7 +13,7 @@ each recommendation. Then open only the page you need.
 | [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) | Finding unverified claims and uncovered topics; planning research |
 | [sources/](sources/README.md) | Implementing an idea: one summary per source, with an index by group and status |
 | studies/ | A design exploration that spans sources (below) |
-| experiments/ | A dated result produced by GECKO itself, linked to its run directory: [profile ranking](experiments/2026-10-21-profile-ranking.md), [cost-function validity](experiments/2026-10-22-cost-function-validity.md), [skipgram timing](experiments/2026-10-22-skipgram-timing.md), [cost-function optimization](experiments/2026-10-24-cost-function-optimization.md) |
+| experiments/ | A dated result produced by GECKO itself, linked to its run directory: [profile ranking](experiments/2026-10-21-profile-ranking.md), [cost-function validity](experiments/2026-10-22-cost-function-validity.md), [skipgram timing](experiments/2026-10-22-skipgram-timing.md), [cost-function optimization](experiments/2026-10-24-cost-function-optimization.md), [English layout](experiments/2026-10-24-english-layout.md), [programming layout](experiments/2026-10-25-programming-layout.md) |
 | [archive/](archive/design-draft-v0.md) | History only: the first design draft, superseded by `context/` |
 
 Studies: [search-space-visualization](studies/search-space-visualization.md) (exploring the

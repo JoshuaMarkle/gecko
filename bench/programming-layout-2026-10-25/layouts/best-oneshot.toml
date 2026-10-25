@@ -1,0 +1,15 @@
+name = "20261025-040445-bls-0aec6d68 oneshot"
+geometry = "corne-36"
+source = "bench/programming-layout-2026-10-25/variant.py 20261025-040445-bls-0aec6d68 oneshot"
+rows = ["yuokjqxlfb", "ieatgmnrsc", ",=.dzvh'wp", "{enter}{bspc}{shift}{layer1}{space}{layer2}"]
+shifted = ["'\"", ",<", ".>", "/?"]
+
+[[layer]]
+name = "sym"
+mode = "oneshot"
+rows = ["··········", "···~······", "··········", "······"]
+
+[[layer]]
+name = "num"
+mode = "oneshot"
+rows = ["%\\:|@98026", "_-()&#;/*!", "[4137^`{}]", "+5$···"]

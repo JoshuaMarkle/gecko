@@ -35,6 +35,7 @@ all files are collected in [`../OPEN-QUESTIONS.md`](../OPEN-QUESTIONS.md).
 | [community-design-notes.md](community-design-notes.md) | No single stat; corpus dependence; alt-fingering; thumb letters | read |
 | [corpora.md](corpora.md) | Which corpora and timing data exist; which to add for comparable numbers | read |
 | [keyboard-layouts-doc.md](keyboard-layouts-doc.md) | Shared metric definitions; distance examples; design rules | read |
+| [symbol-layers.md](symbol-layers.md) | Three published symbol-layer designs to score against, their principles, and an editor-typing corpus model; no measured study of layer cost exists | read |
 
 ### Human data and biomechanics
 

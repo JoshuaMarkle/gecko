@@ -1,0 +1,72 @@
+{
+ "tag": "lang-rust",
+ "start": "layouts/best.toml",
+ "corpus": "code-rust-typed",
+ "profile": "profiles/prog-cal.toml",
+ "pin": "",
+ "evals": 40000000,
+ "best": 233.72709949629444,
+ "at_best": 1,
+ "rows": [
+  {
+   "seed": 1,
+   "run": "20261025-051202-bls-b3c327b0",
+   "score": 233.72709949629444,
+   "chars": "juoxqgdnpviael:csrfty/=hzwm{bk\u23ce\u2423\u21e7\u2460\u232b\u2461\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b748157^6;!|._'(}$),0`\\%*[]3#-&2~+9",
+   "rows": [
+    "juoxqgdnpv",
+    "iael:csrft",
+    "y/=hzwm{bk",
+    "\u23ce\u2423\u21e7\u2460\u232b\u2461",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7@\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "48157^6;!|",
+    "._'(}$),0`",
+    "\\%*[]3#-&2",
+    "~+9\u00b7\u00b7\u00b7"
+   ]
+  },
+  {
+   "seed": 2,
+   "run": "20261025-051202-bls-25b10166",
+   "score": 234.46233470589723,
+   "chars": "juokqwpm{hieatgcfsrny=:lzv/dxb\u23ce\u2423\u21e7\u2460\u232b\u2461\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7-8`^%+*;&#[_()3$',.]4}5!7|0962~1\\",
+   "rows": [
+    "juokqwpm{h",
+    "ieatgcfsrn",
+    "y=:lzv/dxb",
+    "\u23ce\u2423\u21e7\u2460\u232b\u2461",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7@\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "-8`^%+*;&#",
+    "[_()3$',.]",
+    "4}5!7|0962",
+    "~1\\\u00b7\u00b7\u00b7"
+   ]
+  },
+  {
+   "seed": 3,
+   "run": "20261025-051202-bls-f2792546",
+   "score": 234.00126343478308,
+   "chars": "u:okqwd/{hiaetgcsfrnyj=lzvmpxb\u23ce\u2423\u21e7\u2460\u232b\u2461\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7@\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7148\\%+};!#`'()360,._*-5[7|]$&2~^9",
+   "rows": [
+    "u:okqwd/{h",
+    "iaetgcsfrn",
+    "yj=lzvmpxb",
+    "\u23ce\u2423\u21e7\u2460\u232b\u2461",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7@\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+    "148\\%+};!#",
+    "`'()360,._",
+    "*-5[7|]$&2",
+    "~^9\u00b7\u00b7\u00b7"
+   ]
+  }
+ ]
+}
