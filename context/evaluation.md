@@ -98,11 +98,12 @@ The winner beats every known layout on the corpus it never saw (qwerty set; apos
 gallium-stdpct, Graphite, Canary):
 
 - The **shai** winner ranks 1st or 2nd on every corpus on both boards (mean rank 1.4 / 1.6).
-- The **english** winner is 1st on english, english-cased and reddit, but **5th of 6 on `mt-450k`**
+- The **english** winner is 1st on english and english-cased on both boards; on reddit it is
+  2nd on ansi-30 and 1st on corne-36. It is **5th of 6 on `mt-450k`**
   on ansi-30 (20.200 vs galite-reference 19.948) and 4th on corne-36 (16.064 vs 15.872). `mt-450k`
   is a word list with every word once, so it weighs rare words heavily. The english
-  winner over-fits that difference; shai (iweb, broad) generalizes. **Search on `shai`** when one
-  layout has to serve several kinds of text.
+  winner transfers less well to this word-list distribution; shai (iweb, broad) generalizes.
+  **Search on `shai`** when one layout has to serve several kinds of text.
 
 ### Bounds: how close to optimal?
 

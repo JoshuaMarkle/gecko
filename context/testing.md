@@ -52,7 +52,10 @@ through both `breakdown` and the folded `Scorer::full` (E01's model and B10's ho
 jump included).
 delta == full (proptest), folding == breakdown, brute-force optimum on a 6-key board for
 HC/SA/GA/memetic, determinism with an eval budget, pins respected, ranking sanity + QWERTY SFB,
-corpus counting (incl. skip-2/3, word imports) + binary round-trip + `GKCORP1` compatibility,
+corpus counting (incl. skip-2/3, word imports) + binary round-trip (dense and `GKCORP4` sparse form) + `GKCORP1` compatibility,
+Unicode punctuation folding, Gutenberg markup stripping, union-charset mixes, exact ⌫ share of the edits model,
+every bundled recipe matches its built `.gkc` (`recipes_match_their_built_corpora`), the Vim grammar and log import,
+L03 per policy on QWERTY (row 0, pairs 50, fingers 16.7),
 imported corpora reproduce QWERTY SFB computed independently from their source tables,
 layout TOML round-trip, word lists (fold/merge/TSV round-trip), worst words sum to B01 and Semimak shows `you're` on shai. Reference snapshots (`tests/snapshots.rs`): score + weighted
 metrics of the 10 `data/layouts/*.toml` × default/sfb/engram/code on `english`, 4 decimals. KLE (`tests/kle.rs` + unit tests in `interop/kle.rs`): bundled boards round-trip

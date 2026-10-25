@@ -1,0 +1,82 @@
+[
+  {
+    "file": "data/corpora/src/pg11.txt",
+    "title": "Title: Alice's Adventures in Wonderland",
+    "unicode_chars_after_header_footer_strip": 144604,
+    "curly_double_quotes": 2231,
+    "ascii_double_quotes": 0,
+    "curly_single_quotes": 753
+  },
+  {
+    "file": "data/corpora/src/pg1260.txt",
+    "title": "Title: Jane Eyre: An Autobiography",
+    "unicode_chars_after_header_footer_strip": 1022384,
+    "curly_double_quotes": 7336,
+    "ascii_double_quotes": 0,
+    "curly_single_quotes": 1289
+  },
+  {
+    "file": "data/corpora/src/pg1342.txt",
+    "title": "Title: Pride and Prejudice",
+    "unicode_chars_after_header_footer_strip": 728750,
+    "curly_double_quotes": 3806,
+    "ascii_double_quotes": 0,
+    "curly_single_quotes": 785
+  },
+  {
+    "file": "data/corpora/src/pg1661.txt",
+    "title": "Title: The Adventures of Sherlock Holmes",
+    "unicode_chars_after_header_footer_strip": 562213,
+    "curly_double_quotes": 5089,
+    "ascii_double_quotes": 0,
+    "curly_single_quotes": 1485
+  },
+  {
+    "file": "data/corpora/src/pg2701.txt",
+    "title": "Title: Moby Dick; Or, The Whale",
+    "unicode_chars_after_header_footer_strip": 1218982,
+    "curly_double_quotes": 3094,
+    "ascii_double_quotes": 0,
+    "curly_single_quotes": 2936
+  },
+  {
+    "file": "data/corpora/src/pg345.txt",
+    "title": "Title: Dracula",
+    "unicode_chars_after_header_footer_strip": 845930,
+    "curly_double_quotes": 2930,
+    "ascii_double_quotes": 0,
+    "curly_single_quotes": 1639
+  },
+  {
+    "file": "data/corpora/src/pg4300.txt",
+    "title": "Title: Ulysses",
+    "unicode_chars_after_header_footer_strip": 1519713,
+    "curly_double_quotes": 9,
+    "ascii_double_quotes": 0,
+    "curly_single_quotes": 4489
+  },
+  {
+    "file": "data/corpora/src/pg74.txt",
+    "title": "Title: The Adventures of Tom Sawyer, Complete",
+    "unicode_chars_after_header_footer_strip": 392743,
+    "curly_double_quotes": 3057,
+    "ascii_double_quotes": 0,
+    "curly_single_quotes": 2458
+  },
+  {
+    "file": "data/corpora/src/pg84.txt",
+    "title": "Title: Frankenstein; or, the modern prometheus",
+    "unicode_chars_after_header_footer_strip": 419342,
+    "curly_double_quotes": 773,
+    "ascii_double_quotes": 0,
+    "curly_single_quotes": 187
+  },
+  {
+    "file": "data/corpora/src/pg98.txt",
+    "title": "Title: A Tale of Two Cities",
+    "unicode_chars_after_header_footer_strip": 757610,
+    "curly_double_quotes": 5659,
+    "ascii_double_quotes": 0,
+    "curly_single_quotes": 1262
+  }
+]

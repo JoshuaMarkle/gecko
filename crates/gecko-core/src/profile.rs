@@ -70,6 +70,12 @@ pub struct Profile {
     /// base layer. Keysets with a symbol layer set it.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub base_letters: bool,
+    /// Vim motion keys `h j k l` for L03: `"row"` (one row, in this order, neighbouring keys),
+    /// `"pairs"` (`h` left of `l` and `j` left of `k`, each on neighbouring keys) or `"fingers"`
+    /// (four different fingers of one hand). Unset = L03 costs nothing. Fixed QWERTY spots are
+    /// pins (`--pin hjkl`), not this.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vim: Option<String>,
     /// G07 build limits (`geometry/manufacture.rs`). Set: the geometry search penalizes and
     /// hard-fails boards past them like keycap collisions. Not a scoring metric.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -265,6 +271,11 @@ impl Profile {
                 return Err(Error::invalid("profile", "fidelity: top_k and misses must be ≥ 1, grow ≥ 2"));
             }
         }
+        if let Some(v) = &p.vim {
+            if crate::metrics::vim_pairs(v).is_none() {
+                return Err(Error::invalid("profile", format!("vim '{v}' is unknown (row, pairs or fingers)")));
+            }
+        }
         if let Some(r) = &p.familiar_to {
             if r != "qwerty" {
                 return Err(Error::invalid("profile", format!("familiar_to '{r}' is unknown (only \"qwerty\")")));
@@ -305,6 +316,9 @@ impl Profile {
         }
         if self.base_letters {
             v["base_letters"] = serde_json::json!(true);
+        }
+        if let Some(m) = &self.vim {
+            v["vim"] = serde_json::json!(m);
         }
         if let Some(h) = &self.hand {
             v["hand"] = serde_json::json!(h);

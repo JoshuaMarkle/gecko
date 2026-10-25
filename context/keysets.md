@@ -5,8 +5,8 @@ start layout from the board and the corpus, so you pick a *kind* of layout inste
 hand-writing one (`crates/gecko-core/src/keyset.rs`, `gecko keyset`, `optimize --keyset`).
 
 ```
-gecko keyset alpha|shift|layer -g corne-36 -c english-full-bspc     # preview; --place, --out <name>
-gecko optimize --keyset shift  -g corne-36 -c english-full-bspc --evals 40000000
+gecko keyset alpha|shift|layer -g corne-36 -c programmer     # preview; --place, --out <name>
+gecko optimize --keyset shift  -g corne-36 -c programmer --evals 40000000
 ```
 
 ## Modes
@@ -74,11 +74,15 @@ gecko optimize --keyset shift  -g corne-36 -c english-full-bspc --evals 40000000
 
 | Corpus | What | Why |
 |---|---|---|
-| `english-full` | The `english` novels with the `code` charset (letters, digits, all ASCII punctuation, `␣`, `⏎`), `--paragraphs`, case counts | Every symbol separately, so pairs and layers can be chosen; Shift for capitals |
-| `english-full-bspc` | `english-full` + Backspace at 5.6 % (`corpus edits`) | Places `⌫` by real use |
-| `code`, `code-nav` | Programming text (no case counts; Shift comes only from pairs) | Symbol-heavy layouts |
+| `writer` | English prose (web, chat, books) with every ASCII symbol, digits, case, `⏎`, `⌫` 5.6 % | Writing-first layouts |
+| `programmer` | `writer`'s prose 45 + Markdown 10 + code (Rust, Python, JS/TS, C, shell, Lua) 45, `⌫` | Symbol layers and pairs for coding |
+| `vim-programmer` | `programmer` + 22 % Vim sessions (`⎋`, motions, `:`), `⌫` | Vim users; see [vim.md](vim.md) for h j k l policies |
 
-Other bundled corpora fold shifted punctuation into its US key already (`:` is `;` + Shift), so
+Languages are recipes over component corpora ([representation.md](representation.md#corpus));
+make your own mix in the web Language tab or with `gecko corpus mix`. The retired
+`english-full-bspc` (Results below) is in `data/corpora/legacy/`.
+
+The reference corpora (`english`, `shai`, `reddit`, `french`) fold shifted punctuation into its US key already (`:` is `;` + Shift), so
 on them `shift` mode can only choose among `, . / ; ' -`.
 
 ## Not modelled

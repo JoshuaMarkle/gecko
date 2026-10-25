@@ -1,0 +1,107 @@
+# Kind, description and source of each bundled corpus (served by /api/corpora, shown by
+# `gecko corpus info`). Kinds: language (optimize on these), component (parts of languages),
+# reference (older corpora kept to compare with earlier results). Retired corpora live in
+# legacy/ (loadable by name so old runs verify, not listed). Rebuild: data/corpora/build/build.sh.
+
+# ---- Languages ----
+[writer]
+kind = "language"
+description = "English writing: modern web prose, chat and books with every ASCII symbol, case (Shift), Enter and Backspace (5.6 %)."
+source = "recipe: prose + Backspace model"
+
+[programmer]
+kind = "language"
+description = "Programmer: half English prose and Markdown docs, half source code (Rust, Python, JS/TS, C, shell, Lua), with Backspace."
+source = "recipe: prose 45, markdown 10, code-all 45 + Backspace model"
+
+[vim-programmer]
+kind = "language"
+description = "Vim programmer: the programmer mix plus 22 % Vim editing sessions (motions, operators, Esc, :commands), with Backspace."
+source = "recipe: prose 35, markdown 8, code-all 35, vim 22 + Backspace model"
+
+# ---- Components ----
+[prose]
+kind = "component"
+description = "Alpha side: English prose, all symbols and case. Web 50, chat 30, books 20."
+source = "recipe: prose-web, prose-chat, prose-books"
+
+[prose-web]
+kind = "component"
+description = "Modern web English (Shai's iWeb sample, 90M words) with punctuation and case kept; cross-word n-grams estimated, no Enter."
+source = "cmini corpora/shai/words.json (GPL-3.0 aggregate counts), `corpus import --charset code`"
+
+[prose-chat]
+kind = "component"
+description = "Informal English (Reddit comments, 10M words) with punctuation and case; cross-word n-grams estimated, no Enter."
+source = "cmini corpora/reddit/words.json, `corpus import --charset code`"
+
+[prose-books]
+kind = "component"
+description = "Ten Project Gutenberg novels as running text: dialogue quotes, paragraphs as Enter, Gutenberg markup removed."
+source = "data/corpora/src/*.txt, `corpus build --charset code --paragraphs --strip-markup`"
+
+[code-all]
+kind = "component"
+description = "Symbol side: source code. Rust 25, Python 25, JS/TS 25, C 8, shell 9, Lua/Vimscript 8."
+source = "recipe: code-rust, code-python, code-js, code-c, code-shell, code-lua"
+
+[code-rust]
+kind = "component"
+description = "Rust: src/ of the newest version of ~400 crates.io crates (120 kB cap per crate; generated and binding crates excluded)."
+source = "~/.cargo/registry, data/corpora/build/select_sources.py"
+
+[code-python]
+kind = "component"
+description = "Python 3.14 standard library (tests, encodings and data modules excluded; 200 kB cap per package)."
+source = "/usr/lib/python3.14, data/corpora/build/select_sources.py"
+
+[code-js]
+kind = "component"
+description = "JavaScript and TypeScript: src/ of npm packages (no .d.ts, minified, dist or test files; 120 kB cap per package)."
+source = "node_modules of local projects, data/corpora/build/select_sources.py"
+
+[code-c]
+kind = "component"
+description = "C: zstd, xz (liblzma), bzip2 and ring's C sources (tests, fuzzers and examples excluded)."
+source = "vendored sources in ~/.cargo/registry -sys crates"
+
+[code-shell]
+kind = "component"
+description = "Shell: sh/bash/zsh scripts from /usr/bin, makepkg and PKGBUILDs."
+source = "local system scripts, data/corpora/build/select_sources.py"
+
+[code-lua]
+kind = "component"
+description = "Lua and Vimscript: the Neovim runtime (plugins, ftplugins, autoload; no docs or syntax files)."
+source = "/usr/share/nvim/runtime"
+
+[markdown]
+kind = "component"
+description = "Technical English in Markdown: READMEs and docs of crates and npm packages (no changelogs or licenses)."
+source = "~/.cargo/registry, node_modules, data/corpora/build/select_sources.py"
+
+[vim]
+kind = "component"
+description = "Synthetic Vim editing sessions: a weighted grammar of normal-mode commands with short inserts typed from code-all, then Esc. An assumption, not a measurement; replace with your own `nvim -w` logs (`gecko corpus vim --log`)."
+source = "gecko corpus vim --text code-all (gecko_core::vim::COMMANDS)"
+
+# ---- References ----
+[english]
+kind = "reference"
+description = "Ten Gutenberg novels, letters and , . / ; ' - only, no case. The default for 30-key letter layouts and earlier results."
+source = "data/corpora/src/*.txt (2026-10-20 build, frozen)"
+
+[shai]
+kind = "reference"
+description = "Shai's iWeb English on the 33-symbol charset, no case. The community default; prose-web is the full-symbol version."
+source = "cmini corpora/shai"
+
+[reddit]
+kind = "reference"
+description = "Reddit comments on the 33-symbol charset, no case; prose-chat is the full-symbol version."
+source = "cmini corpora/reddit"
+
+[french]
+kind = "reference"
+description = "French, diacritics folded to their base letter (dead-key typing), 33-symbol charset."
+source = "cmini corpora/french, `corpus import --fold`"

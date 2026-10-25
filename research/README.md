@@ -19,7 +19,10 @@ each recommendation. Then open only the page you need.
 Studies: [search-space-visualization](studies/search-space-visualization.md) (exploring the
 landscape, escaping local optima, the Explore mode) and
 [tool-comparison](studies/tool-comparison.md) (other tools side by side),
-[literature-survey-2023-2026](studies/literature-survey-2023-2026.md) (recent papers; mostly a gap).
+[literature-survey-2023-2026](studies/literature-survey-2023-2026.md) (recent papers; mostly a gap),
+and [English corpus audit](studies/2026-10-24-english-corpus-audit.md) (adequacy, preprocessing,
+and source-separated evaluation), and the [research plan](studies/2026-10-24-research-plan.md)
+(what to research next, toward the best standard keyboard).
 
 Moved to `context/` because they specify the code: [metrics-catalog](../context/metrics-catalog.md)
 (every metric and its ID), [parameters](../context/parameters.md) (what describes, steers and

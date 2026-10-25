@@ -370,7 +370,8 @@ export function App() {
             constraints={constraints} setConstraints={setConstraints} custom={boardCustom} setCustom={setBoardCustom} />
         )}
         {view === "hand" && <HandView geometry={geometry} chars={layerView[0]?.chars ?? viewChars} hand={hand} setHand={setHand} />}
-        {view === "language" && <LanguageView langs={langs} corpusId={corpusId} setCorpusId={setCorpusId} />}
+        {view === "language" && <LanguageView langs={langs} corpusId={corpusId} setCorpusId={setCorpusId} corpora={corpora}
+          reload={(id) => { api.corpora().then((c) => { setCorpora(c); setCorpusId(id); langs.select(id); }).catch((e) => setErr((e as Error).message)); }} />}
         {view === "profile" && (
           <ProfileView meta={meta} profiles={profiles} profileId={profileId} setProfileId={setProfileId} profile={profile} setProfile={setProfile} hand={hand}
             geometry={geometry} chars={viewChars} layouts={layouts} a={analysis} />

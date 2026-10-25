@@ -303,7 +303,7 @@ regression test pins these rankings (`ranking_sanity_on_english`). On the bundle
 QWERTY SFB = 6.63% (published ≈ 6.6%). Independent judges per layout: `gecko judge [--community]`
 (E01 typing time, E05/E04 Engram, home row, effort, SFB, with cmini percentiles). Validity against 136M-keystroke timing, Engram comfort and
 weight perturbations: [cost-function validity](../research/experiments/2026-10-22-cost-function-validity.md). Cross-checks: `gecko compare -p engram` (measured
-comfort) and `gecko compare --corpora english,shai,mt-10k,mt-450k,reddit,french` (robustness, L05).
+comfort) and `gecko compare --corpora english,shai,mt-10k,mt-450k,reddit,french` (robustness, L05; add `writer,programmer,vim-programmer` for the full-symbol languages).
 
 **Community likes (cmini, `gecko layouts likes`).** 4121 cmini layouts → 1965 importable
 (30-key core, all letters, standard or angle fingering) → 1904 after merging 55 duplicates and
@@ -431,6 +431,13 @@ the key no longer counts. Not modeled: the learning cost of rules (only `gecko m
   opener left) or mirrored (same row, finger and stretch flag on opposite hands, opener on the
   left hand); 50 for those shapes reversed; 100 otherwise. Reads "% of bracket use that is
   badly paired". The delta loops over ≤ 4 entries, and only when weighted.
+- **L03** Vim motions (`Order::Brackets`, sparse pairs like Y03; block `t` in each `PairEntry`
+  says which sparse table it reads): profile `vim` picks the key pairs, `row` = h–j, j–k, k–l;
+  `pairs` = h–l, j–k; `fingers` = all six. For `row`/`pairs` a pair costs 0 when the keys are
+  neighbours on one row and layer in order (first key left), 50 reversed, 100 otherwise; for
+  `fingers` 0 on different non-thumb fingers of one hand and layer, else 100. Pairs weigh equally,
+  so L03 is "% of the policy broken" and needs no corpus. No `vim` = 0. QWERTY: row 0, pairs 50,
+  fingers 16.7. [vim.md](vim.md).
 - **L01, L02** (`Order::Place`, an n × n symbol-on-slot table `Cp` folded like a mono term: `full` sums
   `Cp[x, p(x)]`, a swap delta touches two entries, QAP terms add it to the mono matrix). Tables
   are built in the scorer (they need the symbols) and already carry their weights. The QWERTY

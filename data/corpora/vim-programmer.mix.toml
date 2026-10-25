@@ -1,0 +1,18 @@
+description = "Vim programmer: the programmer mix plus Vim editing (normal-mode commands, Esc, :commands), with Backspace"
+edits = 0.056
+
+[[part]]
+corpus = "prose"
+weight = 35.0
+
+[[part]]
+corpus = "markdown"
+weight = 8.0
+
+[[part]]
+corpus = "code-all"
+weight = 35.0
+
+[[part]]
+corpus = "vim"
+weight = 22.0

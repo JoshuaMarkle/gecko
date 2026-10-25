@@ -34,6 +34,8 @@ optimization on top. Rust core + CLI + server + WASM; TypeScript web UI with a 3
 | Orientation | `context/goals.md`, `context/architecture.md` |
 | Data formats (geometry, layout, corpus, runs) | `context/representation.md` |
 | Metrics, scoring, profiles | `context/objective.md`, `context/metrics-catalog.md`, `context/parameters.md` |
+| Languages to optimize on (recipes, components, building corpora) | `context/representation.md#corpus`, `data/corpora/index.toml` |
+| Vim users: h j k l policies, the `vim` corpus | `context/vim.md` |
 | Which symbols a search places (alpha / Shift pairs / symbol layer), Space, Enter, Backspace, Shift, Ctrl placement | `context/keysets.md` |
 | Does the search beat known layouts (Phase 2 evaluation) | `context/evaluation.md` |
 | Hand model, reach / press-angle / wrist-posture costs | `context/hand-model.md` |

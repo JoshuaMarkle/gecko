@@ -85,6 +85,8 @@ pub fn fold_diacritics(s: &str) -> String {
     out
 }
 
+/// Compact file form of a v2/v3 corpus (sparse varint tables; [`Corpus::to_file_bytes`]).
+const MAGIC_V4: &[u8; 8] = b"GKCORP4\0";
 const MAGIC_V3: &[u8; 8] = b"GKCORP3\0";
 const MAGIC: &[u8; 8] = b"GKCORP2\0";
 const MAGIC_V1: &[u8; 8] = b"GKCORP1\0";
@@ -139,13 +141,36 @@ pub const US_SHIFT: &[(char, char)] = &[
 const SPACE: u8 = 254;
 const OTHER: u8 = 255;
 
-/// The tokenizer's per-character folding: lowercase, curly quotes → `'`, dashes → `-`.
+/// Unicode punctuation typed as ASCII (smart quotes, dashes and ellipses are what an editor's
+/// autocorrect makes of `'`, `"`, `-` and `...`), invisible characters dropped (`""`) and
+/// Unicode spaces as a space. `None`: the character is kept as it is.
+pub fn ascii_punct(c: char) -> Option<&'static str> {
+    Some(match c {
+        '\u{2018}' | '\u{2019}' | '\u{201A}' | '\u{201B}' | '\u{2032}' | '\u{02BC}' => "'",
+        '\u{201C}' | '\u{201D}' | '\u{201E}' | '\u{201F}' | '\u{2033}' | '\u{00AB}' | '\u{00BB}' => "\"",
+        '\u{2010}'..='\u{2015}' | '\u{2212}' => "-",
+        '\u{2026}' => "...",
+        '\u{00A0}' | '\u{2000}'..='\u{200A}' | '\u{202F}' | '\u{3000}' => " ",
+        '\u{00AD}' | '\u{200B}'..='\u{200D}' | '\u{2060}' | '\u{FEFF}' | '\u{FE0F}' => "",
+        _ => return None,
+    })
+}
+
+/// The tokenizer's per-character folding: lowercase, Unicode punctuation as its ASCII key
+/// ([`ascii_punct`]; the first character of a multi-character form, `…` → `.`).
 pub fn fold_char(c: char) -> char {
-    match c {
-        '\u{2018}' | '\u{2019}' => '\'',
-        '\u{2013}' | '\u{2014}' => '-',
-        _ => c.to_ascii_lowercase(),
+    match ascii_punct(c) {
+        Some(s) => s.chars().next().unwrap_or(c),
+        None => c.to_ascii_lowercase(),
     }
+}
+
+/// [`fold_char`] over a string, expanding multi-character forms (`…` → `...`) and dropping
+/// invisible characters.
+pub fn fold_str(s: &str) -> String {
+    s.chars()
+        .flat_map(|c| ascii_punct(c).map_or_else(|| c.to_ascii_lowercase().to_string(), str::to_string).chars().collect::<Vec<_>>())
+        .collect()
 }
 
 /// Words kept in a `.words.tsv` side file (most frequent first). The tail carries almost no
@@ -169,7 +194,7 @@ impl WordList {
         let mut merged: std::collections::BTreeMap<String, u64> = Default::default();
         let mut total = 0;
         for (w, n) in counts {
-            let w: String = w.trim().chars().map(fold_char).collect();
+            let w = fold_str(w.trim());
             if w.is_empty() || w.chars().any(char::is_whitespace) {
                 continue;
             }
@@ -214,6 +239,36 @@ fn strip_gutenberg(text: &str) -> &str {
     let start = text.find("*** START OF").and_then(|i| text[i..].find('\n').map(|j| i + j + 1)).unwrap_or(0);
     let end = text[start..].find("*** END OF").map(|i| start + i).unwrap_or(text.len());
     &text[start..end]
+}
+
+/// Remove Project Gutenberg typesetting that nobody types: `_emphasis_` underscores at word
+/// edges, `[Illustration…]` tags and section-break lines of `*` (`corpus build --strip-markup`).
+pub fn strip_markup(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut skip = false;
+    for line in text.split_inclusive('\n') {
+        let t = line.trim();
+        if !t.is_empty() && t.chars().all(|c| c == '*' || c.is_whitespace()) {
+            out.push('\n');
+            continue;
+        }
+        let chars: Vec<char> = line.chars().collect();
+        for (i, &c) in chars.iter().enumerate() {
+            if c == '[' && chars[i..].iter().take(14).collect::<String>().starts_with("[Illustration") {
+                skip = true;
+            }
+            if skip {
+                skip = c != ']';
+                continue;
+            }
+            let word = |j: Option<usize>| j.and_then(|j| chars.get(j)).is_some_and(|c| c.is_alphanumeric());
+            if c == '_' && word(i.checked_sub(1)) != word(Some(i + 1)) {
+                continue;
+            }
+            out.push(c);
+        }
+    }
+    out
 }
 
 /// Hard-wrapped text → one line per paragraph: lines join with a space, blank lines (one or
@@ -318,29 +373,28 @@ impl Corpus {
                 }
                 line_start = false;
             }
-            let ch = match raw {
-                '\u{2018}' | '\u{2019}' => '\'',
-                '\u{2013}' | '\u{2014}' => '-',
-                _ => raw,
-            };
-            let (t, sh) = if ch.is_whitespace() {
-                (space, false)
-            } else if (ch as u32) < 128 {
-                let lower = lut[ch.to_ascii_lowercase() as usize];
-                if ch.is_ascii_uppercase() || lower != OTHER {
-                    (lower, ch.is_ascii_uppercase() && lower != OTHER)
+            let mut buf = [0u8; 4];
+            let mapped = ascii_punct(raw).unwrap_or_else(|| raw.encode_utf8(&mut buf));
+            for ch in mapped.chars() {
+                let (t, sh) = if ch.is_whitespace() {
+                    (space, false)
+                } else if (ch as u32) < 128 {
+                    let lower = lut[ch.to_ascii_lowercase() as usize];
+                    if ch.is_ascii_uppercase() || lower != OTHER {
+                        (lower, ch.is_ascii_uppercase() && lower != OTHER)
+                    } else {
+                        let s = shifted_lut[ch as usize];
+                        (s, s != OTHER)
+                    }
                 } else {
-                    let s = shifted_lut[ch as usize];
-                    (s, s != OTHER)
+                    (self.index_of(ch).map_or(OTHER, |i| i as u8), false)
+                };
+                if t == space && out.last() == Some(&space) {
+                    continue;
                 }
-            } else {
-                (self.index_of(ch).map_or(OTHER, |i| i as u8), false)
-            };
-            if t == space && out.last() == Some(&space) {
-                continue;
+                out.push(t);
+                shift.push(sh);
             }
-            out.push(t);
-            shift.push(sh);
         }
         (out, shift)
     }
@@ -524,9 +578,87 @@ impl Corpus {
         out
     }
 
+    /// The file form: `GKCORP4`, the canonical header (name, charset), a flag byte (1 = Shift
+    /// tables follow), then each table as a varint count of non-zero entries and, per entry,
+    /// varint (index − previous index − 1) and varint value. Mostly-empty trigram tables shrink
+    /// 10–50×. The hash stays that of the canonical bytes ([`Corpus::to_bytes`]).
+    pub fn to_file_bytes(&self) -> Vec<u8> {
+        fn varint(out: &mut Vec<u8>, mut v: u64) {
+            while v >= 0x80 {
+                out.push(v as u8 | 0x80);
+                v >>= 7;
+            }
+            out.push(v as u8);
+        }
+        let mut out = MAGIC_V4.to_vec();
+        let cs: String = self.charset.iter().collect();
+        for s in [self.name.as_bytes(), cs.as_bytes()] {
+            out.extend_from_slice(&(s.len() as u32).to_le_bytes());
+            out.extend_from_slice(s);
+        }
+        let v3 = self.has_shift();
+        out.push(v3 as u8);
+        let shift = if v3 { vec![&self.shift, &self.shift_bi] } else { vec![] };
+        for t in [&self.mono, &self.bi, &self.skip, &self.skip2, &self.skip3, &self.tri].into_iter().chain(shift) {
+            varint(&mut out, t.iter().filter(|&&v| v > 0).count() as u64);
+            let mut prev = 0u64;
+            for (i, &v) in t.iter().enumerate().filter(|e| *e.1 > 0) {
+                varint(&mut out, i as u64 - prev);
+                varint(&mut out, v);
+                prev = i as u64 + 1;
+            }
+        }
+        out
+    }
+
+    fn from_file_bytes(b: &[u8]) -> Result<Self> {
+        let bad = || Error::parse("corpus", "truncated or corrupt corpus file");
+        let mut i = 8;
+        let mut take = |n: usize| -> Result<&[u8]> {
+            let s = b.get(i..i + n).ok_or_else(bad)?;
+            i += n;
+            Ok(s)
+        };
+        let mut strs = Vec::new();
+        for _ in 0..2 {
+            let n = u32::from_le_bytes(take(4)?.try_into().unwrap()) as usize;
+            strs.push(std::str::from_utf8(take(n)?).map_err(|e| Error::parse("corpus", e))?.to_string());
+        }
+        let v3 = take(1)?[0] == 1;
+        let mut c = Corpus::new(&strs[0], &strs[1]);
+        let mut varint = || -> Result<u64> {
+            let mut v = 0u64;
+            for shift in (0..64).step_by(7) {
+                let byte = *b.get(i).ok_or_else(bad)?;
+                i += 1;
+                v |= ((byte & 0x7f) as u64) << shift;
+                if byte < 0x80 {
+                    return Ok(v);
+                }
+            }
+            Err(bad())
+        };
+        let mut tables = vec![&mut c.mono, &mut c.bi, &mut c.skip, &mut c.skip2, &mut c.skip3, &mut c.tri];
+        if v3 {
+            tables.extend([&mut c.shift, &mut c.shift_bi]);
+        }
+        for t in tables {
+            let mut at = 0usize;
+            for _ in 0..varint()? {
+                at += varint()? as usize;
+                *t.get_mut(at).ok_or_else(bad)? = varint()?;
+                at += 1;
+            }
+        }
+        Ok(c)
+    }
+
     pub fn from_bytes(b: &[u8]) -> Result<Self> {
         let bad = || Error::parse("corpus", "truncated or corrupt corpus file");
         let magic = b.get(..8).unwrap_or_default();
+        if magic == MAGIC_V4 {
+            return Corpus::from_file_bytes(b);
+        }
         let (v1, v3) = (magic == MAGIC_V1, magic == MAGIC_V3);
         if magic != MAGIC && !v1 && !v3 {
             return Err(Error::parse("corpus", "not a GECKO corpus file (bad magic)"));
@@ -567,22 +699,42 @@ impl Corpus {
     pub fn extended(&self, name: &str, extra: &[char]) -> Result<Self> {
         let mut cs = self.charset.clone();
         cs.extend(extra.iter().filter(|c| !self.charset.contains(c)));
-        if cs.len() >= SPACE as usize {
+        let mut out = self.over(&cs)?;
+        out.name = name.to_string();
+        Ok(out)
+    }
+
+    /// This corpus re-indexed onto `charset`, which must contain every symbol of this one
+    /// (the others get zero counts).
+    pub fn over(&self, charset: &[char]) -> Result<Self> {
+        if charset.len() >= SPACE as usize {
             return Err(Error::invalid("corpus", "too many symbols"));
         }
-        let (c, n) = (self.size(), cs.len());
-        let mut out = Corpus::new(name, &cs.iter().collect::<String>());
-        out.mono[..c].copy_from_slice(&self.mono);
-        out.shift[..c].copy_from_slice(&self.shift);
+        if charset == self.charset.as_slice() {
+            return Ok(self.clone());
+        }
+        let map: Vec<usize> = self
+            .charset
+            .iter()
+            .map(|ch| {
+                charset.iter().position(|c| c == ch).ok_or_else(|| Error::invalid("corpus", format!("'{ch}' missing from the new charset")))
+            })
+            .collect::<Result<_>>()?;
+        let (c, n) = (self.size(), charset.len());
+        let mut out = Corpus::new(&self.name, &charset.iter().collect::<String>());
         for x in 0..c {
+            let mx = map[x];
+            out.mono[mx] = self.mono[x];
+            out.shift[mx] = self.shift[x];
             for y in 0..c {
-                out.bi[x * n + y] = self.bi[x * c + y];
-                out.shift_bi[x * n + y] = self.shift_bi[x * c + y];
-                out.skip[x * n + y] = self.skip[x * c + y];
-                out.skip2[x * n + y] = self.skip2[x * c + y];
-                out.skip3[x * n + y] = self.skip3[x * c + y];
+                let (o, i) = (mx * n + map[y], x * c + y);
+                out.bi[o] = self.bi[i];
+                out.shift_bi[o] = self.shift_bi[i];
+                out.skip[o] = self.skip[i];
+                out.skip2[o] = self.skip2[i];
+                out.skip3[o] = self.skip3[i];
                 for z in 0..c {
-                    out.tri[(x * n + y) * n + z] = self.tri[(x * c + y) * c + z];
+                    out.tri[o * n + map[z]] = self.tri[i * c + z];
                 }
             }
         }
@@ -590,40 +742,16 @@ impl Corpus {
     }
 
     /// This corpus plus arrow keys `←↓↑→` making up `share` of all keystrokes. Text corpora
-    /// have no cursor movement, so the arrows come from a model (seeded, deterministic): a
-    /// stream typed from this corpus' bigram chain where, before each keystroke, a run of
-    /// arrows starts with probability 0.1; runs continue with probability 2/3 (mean length 3)
-    /// and keep their direction with probability 0.85; directions ← 25 %, ↓ 30 %, ↑ 20 %,
-    /// → 25 %. After a run the next symbol is drawn from the monograms (the cursor moved). The
-    /// result mixes this corpus (weight 1 − w) with that stream (w = share / arrow share of
-    /// the stream), so all non-arrow statistics stay mostly exact.
+    /// have no cursor movement, so the arrows come from a model (seeded, deterministic): runs
+    /// inserted between real keystrokes ([`Corpus::with_episodes`]) that continue with
+    /// probability 2/3 (mean length 3) and keep their direction with probability 0.85;
+    /// directions ← 25 %, ↓ 30 %, ↑ 20 %, → 25 %.
     pub fn with_nav(&self, name: &str, share: f64, seed: u64) -> Result<Self> {
-        const LEN: usize = 2_000_000;
-        const START: f64 = 0.1;
         const CONT: f64 = 2.0 / 3.0;
         const SAME: f64 = 0.85;
         const DIR: [f64; 4] = [0.25, 0.30, 0.20, 0.25];
         let base = self.extended(name, &ARROWS)?;
         let arrow: Vec<u8> = ARROWS.iter().map(|&a| base.index_of(a).unwrap() as u8).collect();
-        let c = self.size();
-        // Cumulative rows for sampling: row c is the monograms.
-        let mut cum = vec![0u64; (c + 1) * c];
-        for x in 0..=c {
-            let mut acc = 0;
-            for y in 0..c {
-                acc += if x == c { self.mono[y] } else { self.bi[x * c + y] };
-                cum[x * c + y] = acc;
-            }
-        }
-        if cum[c * c + c - 1] == 0 {
-            return Err(Error::invalid("corpus", "empty corpus"));
-        }
-        let mut rng = Rng::new(seed);
-        let draw = |rng: &mut Rng, row: usize| -> Option<u8> {
-            let r = &cum[row * c..row * c + c];
-            let tot = r[c - 1];
-            (tot > 0).then(|| r.partition_point(|&v| v <= (rng.f64() * tot as f64) as u64).min(c - 1) as u8)
-        };
         let pick_dir = |rng: &mut Rng, not: Option<usize>| -> usize {
             loop {
                 let mut u = rng.f64();
@@ -639,35 +767,124 @@ impl Corpus {
                 }
             }
         };
-        let mut t: Vec<u8> = Vec::with_capacity(LEN + 64);
-        let mut prev: Option<u8> = None;
-        while t.len() < LEN {
-            if rng.f64() < START {
-                let mut d = pick_dir(&mut rng, None);
-                loop {
-                    t.push(arrow[d]);
-                    if rng.f64() >= CONT {
-                        break;
-                    }
-                    if rng.f64() >= SAME {
-                        d = pick_dir(&mut rng, Some(d));
+        base.with_episodes(name, "corpus nav", &arrow, share, seed, |rng, _, _| {
+            let mut d = pick_dir(rng, None);
+            let mut run = vec![arrow[d]];
+            while rng.f64() < CONT {
+                if rng.f64() >= SAME {
+                    d = pick_dir(rng, Some(d));
+                }
+                run.push(arrow[d]);
+            }
+            run
+        })
+    }
+
+    /// Insert modelled keystroke runs (`episode`) between the real keystrokes of this corpus so
+    /// that the `target` symbols make up `share` of all keystrokes. The real text stays exact:
+    /// each n-gram that spans m gaps between keystrokes keeps its count × (1 − r)^m, r being the
+    /// episodes per gap, and only n-grams touching an episode are added. Those are counted in
+    /// sampled windows of 4 real keystrokes, the episode, then 4 more, following the trigram
+    /// chain (order 2; bigrams, then monograms, when a row is empty); the episode sees the
+    /// keystroke before it. A Shift press that started the keystroke after the gap moves after
+    /// the episode. Shift presses per keystroke otherwise stay as they were (inserted keys are
+    /// unshifted). Symbols the episodes add must already be in the charset (see `extended`).
+    pub fn with_episodes(
+        &self,
+        name: &str,
+        what: &str,
+        target: &[u8],
+        share: f64,
+        seed: u64,
+        mut episode: impl FnMut(&mut Rng, &Chain, u8) -> Vec<u8>,
+    ) -> Result<Self> {
+        const EPISODES: usize = 400_000;
+        const CTX: usize = 4;
+        let n = self.size();
+        let chain = Chain::new(self).ok_or_else(|| Error::invalid(what, "empty corpus"))?;
+        let mut rng = Rng::new(seed);
+        let z = || vec![0f64; n * n];
+        let (mut mono, mut bi, mut tri) = (vec![0f64; n], z(), vec![0f64; n * n * n]);
+        let mut skips = [z(), z(), z()];
+        let mut shift_bi = z();
+        let (mut len, mut hits) = (0usize, 0usize);
+        let mut w: Vec<u8> = Vec::with_capacity(64);
+        for _ in 0..EPISODES {
+            w.clear();
+            w.extend_from_slice(&chain.start(&mut rng));
+            let x1 = chain.after(&mut rng, w[1], w[2]);
+            w.push(x1);
+            let ins = episode(&mut rng, &chain, x1);
+            len += ins.len();
+            hits += ins.iter().filter(|t| target.contains(t)).count();
+            let (lo, hi) = (CTX, CTX + ins.len());
+            w.extend_from_slice(&ins);
+            let (mut a, mut b) = (w[CTX - 2], x1);
+            for _ in 0..CTX {
+                let y = chain.after(&mut rng, a, b);
+                w.push(y);
+                (a, b) = (b, y);
+            }
+            let y1 = w[hi] as usize;
+            // An n-gram covering positions i..=j is new when it overlaps the episode.
+            let new = |i: usize, j: usize| i < hi && j >= lo;
+            for i in 0..w.len() {
+                let x = w[i] as usize;
+                if (lo..hi).contains(&i) {
+                    mono[x] += 1.0;
+                }
+                if i + 1 < w.len() && new(i, i + 1) {
+                    bi[x * n + w[i + 1] as usize] += 1.0;
+                }
+                if i + 2 < w.len() && new(i, i + 2) {
+                    tri[(x * n + w[i + 1] as usize) * n + w[i + 2] as usize] += 1.0;
+                }
+                for (g, t) in skips.iter_mut().enumerate() {
+                    let j = i + g + 2;
+                    if j < w.len() && new(i, j) {
+                        t[x * n + w[j] as usize] += 1.0;
                     }
                 }
-                prev = None;
-                continue;
             }
-            let x = prev.and_then(|p| draw(&mut rng, p as usize)).or_else(|| draw(&mut rng, c)).unwrap();
-            t.push(x);
-            prev = Some(x);
+            let real = self.bi[x1 as usize * n + y1];
+            if real > 0 && hi > lo {
+                shift_bi[w[hi - 1] as usize * n + y1] += self.shift_bi[x1 as usize * n + y1] as f64 / real as f64;
+            }
         }
-        let mut stream = Corpus::new(name, &base.charset.iter().collect::<String>());
-        stream.count(&t, &vec![false; t.len()], 1, 1);
-        let a = arrow.iter().map(|&i| stream.mono[i as usize]).sum::<u64>() as f64 / stream.total_chars().max(1) as f64;
-        if !(share > 0.0 && share < a) {
-            return Err(Error::invalid("corpus nav", format!("share must be in (0, {a:.2})")));
+        let (l, m) = (len as f64 / EPISODES as f64, hits as f64 / EPISODES as f64);
+        // share = r·m / (1 + r·l) for r episodes per real keystroke.
+        let r = share / (m - share * l);
+        if !(share > 0.0 && r > 0.0 && r < 0.5) {
+            let max = m / (2.0 + l);
+            return Err(Error::invalid(what, format!("share must be in (0, {max:.3})")));
         }
-        let w = share / a;
-        Corpus::mix(name, &[(&base, 1.0 - w), (&stream, w)])
+        let real = self.total_chars() as f64;
+        let wt = r / EPISODES as f64; // one sampled episode, per real keystroke
+        const TOTAL: f64 = 1e12;
+        let fill = |dst: &mut [u64], src: &[u64], add: &[f64], keep: f64| {
+            let tot = src.iter().sum::<u64>().max(1) as f64;
+            for ((d, &s), &a) in dst.iter_mut().zip(src).zip(add) {
+                *d = (TOTAL * (s as f64 / tot * keep + a * wt)).round() as u64;
+            }
+        };
+        let mut out = Corpus::new(name, &self.charset.iter().collect::<String>());
+        let keep = |gaps: i32| (1.0 - r).powi(gaps);
+        fill(&mut out.mono, &self.mono, &mono, 1.0);
+        fill(&mut out.bi, &self.bi, &bi, keep(1));
+        fill(&mut out.tri, &self.tri, &tri, keep(2));
+        for (g, (dst, src)) in
+            [(&mut out.skip, &self.skip), (&mut out.skip2, &self.skip2), (&mut out.skip3, &self.skip3)].into_iter().enumerate()
+        {
+            fill(dst, src, &skips[g], keep(g as i32 + 2));
+        }
+        // Shift tables scale with the monograms (presses per real keystroke).
+        for (d, &s) in out.shift.iter_mut().zip(&self.shift) {
+            *d = (TOTAL * s as f64 / real).round() as u64;
+        }
+        for ((d, &s), &a) in out.shift_bi.iter_mut().zip(&self.shift_bi).zip(&shift_bi) {
+            *d = (TOTAL * (s as f64 / real * keep(1) + a * wt)).round() as u64;
+        }
+        Ok(out)
     }
 
     /// This corpus as typed on keys that carry Shift pairs `(base, shifted)`: every n-gram of a
@@ -723,79 +940,43 @@ impl Corpus {
     }
 
     /// This corpus plus Backspace (`⌫`) making up `share` of all keystrokes, from a typing-error
-    /// model (seeded, deterministic): a stream typed from the bigram chain where, before each
-    /// keystroke, an error starts with probability 0.1; the typist types k wrong symbols (the
-    /// first drawn from the monograms, the rest continuing the chain), presses `⌫` k times and
-    /// retypes from where the error began. k − 1 is geometric with continuation 0.45 (mean k
-    /// 1.82). The stream is mixed in like [`Corpus::with_nav`] at the weight that gives `share`,
-    /// so other statistics stay mostly exact. Fitted on 4,000 participants of the Aalto 136M
+    /// model (seeded, deterministic; [`Corpus::with_episodes`]): between two real keystrokes the
+    /// typist types k wrong symbols (the first drawn from the monograms, the rest continuing the
+    /// bigram chain), presses `⌫` k times and types the intended key. k − 1 is geometric with
+    /// continuation 0.45 (mean k 1.82). Fitted on 4,000 participants of the Aalto 136M
     /// keystrokes study (2.8M keys): `⌫` is 5.6 % of keystrokes, 3.0 runs per 100 keys, runs of
     /// 1/2/3 keys 55/25/10 %.
     pub fn with_edits(&self, name: &str, share: f64, seed: u64) -> Result<Self> {
-        const LEN: usize = 2_000_000;
-        const START: f64 = 0.1;
         const CONT: f64 = 0.45;
         let base = self.extended(name, &[BACKSPACE])?;
         let bs = base.index_of(BACKSPACE).unwrap() as u8;
-        let c = self.size();
-        let mut cum = vec![0u64; (c + 1) * c];
-        for x in 0..=c {
-            let mut acc = 0;
-            for y in 0..c {
-                acc += if x == c { self.mono[y] } else { self.bi[x * c + y] };
-                cum[x * c + y] = acc;
+        base.with_episodes(name, "corpus edits", &[bs], share, seed, |rng, chain, _| {
+            let mut wrong = vec![chain.mono(rng)];
+            while rng.f64() < CONT {
+                wrong.push(chain.after(rng, None, *wrong.last().unwrap()));
             }
-        }
-        if cum[c * c + c - 1] == 0 {
-            return Err(Error::invalid("corpus", "empty corpus"));
-        }
-        let mut rng = Rng::new(seed);
-        let draw = |rng: &mut Rng, row: usize| -> Option<u8> {
-            let r = &cum[row * c..row * c + c];
-            let tot = r[c - 1];
-            (tot > 0).then(|| r.partition_point(|&v| v <= (rng.f64() * tot as f64) as u64).min(c - 1) as u8)
-        };
-        let next = |rng: &mut Rng, prev: Option<u8>| prev.and_then(|p| draw(rng, p as usize)).or_else(|| draw(rng, c)).unwrap();
-        let mut t: Vec<u8> = Vec::with_capacity(LEN + 64);
-        let mut prev: Option<u8> = None;
-        while t.len() < LEN {
-            if rng.f64() < START {
-                let mut k = 1;
-                let mut wrong = draw(&mut rng, c).unwrap();
-                t.push(wrong);
-                while rng.f64() < CONT {
-                    wrong = next(&mut rng, Some(wrong));
-                    t.push(wrong);
-                    k += 1;
-                }
-                t.extend(std::iter::repeat_n(bs, k));
-                continue;
-            }
-            let x = next(&mut rng, prev);
-            t.push(x);
-            prev = Some(x);
-        }
-        let mut stream = Corpus::new(name, &base.charset.iter().collect::<String>());
-        stream.count(&t, &vec![false; t.len()], 1, 1);
-        let a = stream.mono[bs as usize] as f64 / stream.total_chars().max(1) as f64;
-        if !(share > 0.0 && share < a) {
-            return Err(Error::invalid("corpus edits", format!("share must be in (0, {a:.2})")));
-        }
-        let w = share / a;
-        Corpus::mix(name, &[(&base, 1.0 - w), (&stream, w)])
+            let k = wrong.len();
+            wrong.extend(std::iter::repeat_n(bs, k));
+            wrong
+        })
     }
 
-    /// Weighted mix of corpora with the same charset (each normalized first; Shift counts
-    /// scale with mono, so presses per keystroke are kept).
+    /// Weighted mix of corpora (each normalized first; Shift counts scale with mono, so presses
+    /// per keystroke are kept). The charset is the union of the parts' charsets, in order of
+    /// first appearance; a symbol missing from a part counts zero there, so an alphabetic corpus
+    /// mixed with a code corpus takes its symbols from the code alone.
     pub fn mix(name: &str, parts: &[(&Corpus, f64)]) -> Result<Self> {
-        let first = parts.first().ok_or_else(|| Error::invalid("corpus mix", "empty"))?.0;
-        let cs: String = first.charset.iter().collect();
-        let mut out = Corpus::new(name, &cs);
+        if parts.is_empty() {
+            return Err(Error::invalid("corpus mix", "empty"));
+        }
+        let mut cs: Vec<char> = Vec::new();
+        for (c, _) in parts {
+            cs.extend(c.charset.iter().filter(|ch| !cs.contains(ch)).collect::<Vec<_>>());
+        }
+        let mut out = Corpus::new(name, &cs.iter().collect::<String>());
         const SCALE: f64 = 1e12;
         for (c, w) in parts {
-            if c.charset != first.charset {
-                return Err(Error::invalid("corpus mix", "charsets differ"));
-            }
+            let c = c.over(&cs)?;
             for (dst, src) in [
                 (&mut out.mono, &c.mono),
                 (&mut out.bi, &c.bi),
@@ -817,6 +998,73 @@ impl Corpus {
             }
         }
         Ok(out)
+    }
+}
+
+/// Sampling over a corpus' n-grams for [`Corpus::with_episodes`]: cumulative counts of every
+/// trigram, and per row of the trigram, bigram and monogram tables.
+pub struct Chain {
+    c: usize,
+    all: Vec<u64>,
+    tri: Vec<u64>,
+    bi: Vec<u64>,
+    mono: Vec<u64>,
+}
+
+fn cumulate(src: &[u64], row: usize) -> Vec<u64> {
+    let mut out = Vec::with_capacity(src.len());
+    for r in src.chunks(row) {
+        let mut acc = 0;
+        out.extend(r.iter().map(|&v| {
+            acc += v;
+            acc
+        }));
+    }
+    out
+}
+
+impl Chain {
+    pub fn new(k: &Corpus) -> Option<Self> {
+        let c = k.size();
+        let mono = cumulate(&k.mono, c);
+        (*mono.last()? > 0).then(|| Chain {
+            c,
+            all: cumulate(&k.tri, k.tri.len().max(1)),
+            tri: cumulate(&k.tri, c),
+            bi: cumulate(&k.bi, c),
+            mono,
+        })
+    }
+
+    /// An index drawn from one cumulative row (`None` when the row is empty).
+    fn pick(rng: &mut Rng, cum: &[u64]) -> Option<usize> {
+        let tot = *cum.last()?;
+        if tot == 0 {
+            return None;
+        }
+        let t = (rng.f64() * tot as f64) as u64;
+        Some(cum.partition_point(|&v| v <= t).min(cum.len() - 1))
+    }
+
+    /// A symbol drawn from the monograms.
+    pub fn mono(&self, rng: &mut Rng) -> u8 {
+        Chain::pick(rng, &self.mono).unwrap_or(0) as u8
+    }
+
+    /// The symbol after `a b` (`a` unknown: after `b`).
+    pub fn after(&self, rng: &mut Rng, a: impl Into<Option<u8>>, b: u8) -> u8 {
+        let (c, b) = (self.c, b as usize);
+        let tri = a.into().and_then(|a| Chain::pick(rng, &self.tri[(a as usize * c + b) * c..][..c]));
+        tri.or_else(|| Chain::pick(rng, &self.bi[b * c..][..c])).map_or_else(|| self.mono(rng), |x| x as u8)
+    }
+
+    /// Three consecutive symbols: a trigram, or monogram draws when there are none.
+    pub fn start(&self, rng: &mut Rng) -> [u8; 3] {
+        let c = self.c;
+        match Chain::pick(rng, &self.all) {
+            Some(i) => [(i / (c * c)) as u8, (i / c % c) as u8, (i % c) as u8],
+            None => [self.mono(rng), self.mono(rng), self.mono(rng)],
+        }
     }
 }
 
@@ -983,5 +1231,76 @@ mod tests {
         assert_eq!(w.tri[(1 * 3 + 2) * 3 + 0], 3); // b␣a: 4 · 3/4
                                                    // ␣ _ ␣ around "b": exact, as the segment end meets the next segment's space.
         assert_eq!(w.skip[2 * 3 + 2], 1000);
+    }
+
+    #[test]
+    fn unicode_punctuation_types_as_ascii() {
+        let mut c = Corpus::new("t", CODE_CHARSET);
+        c.add_text("\u{201C}Hi\u{2026}\u{201D} \u{2014} it\u{2019}s\u{00A0}x\u{00AD}y");
+        let n = |ch: char| c.mono[c.index_of(ch).unwrap()];
+        assert_eq!((n('"'), n('.'), n('-'), n('\''), n('\u{2423}')), (2, 3, 1, 1, 3));
+        let (x, y) = (c.index_of('x').unwrap(), c.index_of('y').unwrap());
+        assert_eq!(c.bi[x * c.size() + y], 1, "soft hyphen dropped");
+        assert_eq!(fold_str("\u{201C}It\u{2026}"), "\"it...");
+    }
+
+    #[test]
+    fn file_form_round_trips_with_the_canonical_hash() {
+        let mut c = Corpus::new("t", "abc\u{2423}");
+        c.add_text("Abc cab bca abba cc a b c");
+        let f = c.to_file_bytes();
+        assert!(f.len() < c.to_bytes().len());
+        let back = Corpus::from_bytes(&f).unwrap();
+        assert_eq!(back.to_bytes(), c.to_bytes());
+        assert_eq!(back.hash(), c.hash());
+        let mut l = Corpus::new("l", "ab");
+        l.add_text("ab ba");
+        assert_eq!(Corpus::from_bytes(&l.to_file_bytes()).unwrap().to_bytes(), l.to_bytes());
+        assert!(Corpus::from_bytes(&f[..f.len() - 1]).is_err());
+    }
+
+    #[test]
+    fn mix_takes_the_union_of_charsets() {
+        let mut a = Corpus::new("a", "ab");
+        a.add_text("ab ab");
+        let mut s = Corpus::new("s", "b(a)");
+        s.add_text("(a)(b)");
+        let m = Corpus::mix("m", &[(&a, 3.0), (&s, 1.0)]).unwrap();
+        assert_eq!(m.charset, vec!['a', 'b', '(', ')']);
+        let share = |ch: char| m.mono[m.index_of(ch).unwrap()] as f64 / m.total_chars() as f64;
+        assert!((share('(') - 0.25 * 2.0 / 6.0).abs() < 1e-9);
+        assert!((share('a') - (0.75 * 0.5 + 0.25 / 6.0)).abs() < 1e-9);
+        // Same charsets mix as before.
+        let same = Corpus::mix("m", &[(&a, 1.0), (&a, 1.0)]).unwrap();
+        assert_eq!(same.charset, a.charset);
+    }
+
+    #[test]
+    fn edits_keep_the_real_text_exact() {
+        let mut c = Corpus::new("t", "abcde\u{2423}");
+        c.add_text("Abc dea Bcd eab cde Abd ceb ade bcA eda");
+        let e = c.with_edits("e", 0.05, 1).unwrap();
+        let bs = e.index_of(BACKSPACE).unwrap();
+        let (n, m) = (e.size(), c.size());
+        assert!((e.mono[bs] as f64 / e.total_chars() as f64 - 0.05).abs() < 1e-6);
+        // Real keystrokes are 90 % of the stream and the mistyped ones (5 %, drawn from the
+        // monograms) keep each symbol's share; Shift presses per real keystroke are unchanged.
+        for x in 0..m {
+            let (got, want) = (e.mono[x] as f64 / e.total_chars() as f64, 0.95 * c.mono[x] as f64 / c.total_chars() as f64);
+            assert!((got / want - 1.0).abs() < 0.01, "{x}: {got} vs {want}");
+        }
+        let presses = |k: &Corpus, of: f64| k.shift.iter().sum::<u64>() as f64 / of;
+        let typed = e.total_chars() as f64 * (1.0 - 0.1); // without ⌫ and the wrong keys
+        assert!((presses(&e, typed) - presses(&c, c.total_chars() as f64)).abs() < 1e-6);
+        // ⌫ is always followed by ⌫ or a real key; bigrams between real keys keep their ratios.
+        let (a, b, d) = (e.index_of('a').unwrap(), e.index_of('b').unwrap(), e.index_of('d').unwrap());
+        let ratio = |k: &Corpus, w: usize| k.bi[a * w + b] as f64 / k.bi[d * w + e.index_of('e').unwrap()] as f64;
+        assert!((ratio(&e, n) / ratio(&c, m) - 1.0).abs() < 0.02);
+    }
+
+    #[test]
+    fn strips_gutenberg_markup() {
+        let t = "He was _very_ tired_ok.\n       *       *       *\n[Illustration: a cat]\nsnake_case stays";
+        assert_eq!(strip_markup(t), "He was very tired_ok.\n\n\nsnake_case stays");
     }
 }

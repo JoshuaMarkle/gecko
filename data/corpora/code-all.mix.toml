@@ -1,0 +1,25 @@
+description = "Symbol side: source code, weighted toward Rust, Python and JS/TS"
+
+[[part]]
+corpus = "code-rust"
+weight = 25.0
+
+[[part]]
+corpus = "code-python"
+weight = 25.0
+
+[[part]]
+corpus = "code-js"
+weight = 25.0
+
+[[part]]
+corpus = "code-c"
+weight = 8.0
+
+[[part]]
+corpus = "code-shell"
+weight = 9.0
+
+[[part]]
+corpus = "code-lua"
+weight = 8.0

@@ -23,8 +23,9 @@ pub enum Order {
     Tri,
     /// Bigrams of two code symbols (ASCII punctuation, e.g. `()`, `->`), normalized on their own.
     SymBi,
-    /// Open/close bracket pairs (`()`, `[]`, `{}`, `<>`) on the layout, weighted by their
-    /// symbol frequency; a sparse list, not a corpus n-gram.
+    /// Sparse symbol pairs, not corpus n-grams, each metric with its own cost-table block
+    /// ([`SPARSE`]): Y03's bracket pairs (`()`, `[]`, `{}`, `<>`, by symbol frequency) and
+    /// L03's Vim motion pairs (equal weights).
     Brackets,
     /// A cost for symbol x on slot i (a table of n × n, symbol-major), already weighted by the
     /// symbols it concerns: L01, L02.
@@ -300,6 +301,14 @@ pub static METRICS: &[MetricDef] = &[
         "Distance from the reference layout (profile `familiar_to`), % of keystrokes: 0 on the reference key, 50 on another key of its finger, 75 on its hand, 100 otherwise.",
     ),
     m(
+        "L03",
+        "Vim motions",
+        "%",
+        Order::Brackets,
+        Dir::Min,
+        "Vim motion keys h j k l against the profile's `vim` policy: row (one row, h j k l left to right on neighbouring keys), pairs (h left of l, j left of k, each on neighbouring keys) or fingers (four different fingers of one hand). % of the policy's key pairs broken; reversed neighbours count half. Weighted high it is a constraint.",
+    ),
+    m(
         "L04",
         "Key zones",
         "keys",
@@ -314,6 +323,43 @@ pub const SHORTCUTS: [(char, f32); 8] = [('z', 1.0), ('x', 1.0), ('c', 1.0), ('v
 
 /// The QWERTY letter keys in slot order of a 3-row, 10-column board.
 const QWERTY: &str = "qwertyuiopasdfghjkl;zxcvbnm,./";
+
+/// Key pairs L03 checks for a profile `vim` policy (`None`: unknown policy).
+pub fn vim_pairs(policy: &str) -> Option<&'static [(char, char)]> {
+    match policy {
+        "row" => Some(&[('h', 'j'), ('j', 'k'), ('k', 'l')]),
+        "pairs" => Some(&[('h', 'l'), ('j', 'k')]),
+        "fingers" => Some(&[('h', 'j'), ('h', 'k'), ('h', 'l'), ('j', 'k'), ('j', 'l'), ('k', 'l')]),
+        _ => None,
+    }
+}
+
+/// Sparse symbol-pair metrics (`Order::Brackets`) and their cost-table block in the scorer.
+pub const SPARSE: [&str; 2] = ["Y03", "L03"];
+
+pub fn sparse_block(id: &str) -> usize {
+    SPARSE.iter().position(|&s| s == id).unwrap_or(0)
+}
+
+/// L03 cost of `x` on slot `i` and `y` on slot `j` under a `vim` policy. Neighbour policies
+/// (row, pairs): 0 when both are on one layer, hand and row in neighbouring columns with `x`
+/// left of `y`, 50 reversed, 100 otherwise. Fingers: 0 on two different non-thumb fingers of
+/// one hand on one layer, else 100.
+pub fn vim_cost_at(g: &Geometry, pts: &[[f32; 3]], policy: &str, i: usize, j: usize) -> f32 {
+    let (a, b) = (&g.key[i], &g.key[j]);
+    let base = a.layer == b.layer && a.hand() == b.hand() && !g.same_key(i, j) && !a.finger.is_thumb() && !b.finger.is_thumb();
+    if policy == "fingers" {
+        return if base && a.finger != b.finger { 0.0 } else { 100.0 };
+    }
+    if !base || a.row != b.row || (a.col - b.col).abs() != 1 {
+        return 100.0;
+    }
+    if pts[i][0] < pts[j][0] {
+        0.0
+    } else {
+        50.0
+    }
+}
 
 /// Open/close symbol pairs scored by Y03.
 pub const BRACKET_PAIRS: [(char, char); 4] = [('(', ')'), ('[', ']'), ('{', '}'), ('<', '>')];
@@ -476,6 +522,10 @@ pub fn update_table(g: &Geometry, p: &Profile, prep: &Prep, d: &MetricDef, t: &m
             pct(same_finger(i, j) || k[i].layer != k[j].layer || oneshot)
         }),
         "Y03" => pair(t, n, fresh, ch, &idx, &|i, j| bracket_cost_at(g, pts, i, j)),
+        "L03" => {
+            let Some(policy) = p.vim.as_deref() else { return false };
+            pair(t, n, fresh, ch, &idx, &|i, j| vim_cost_at(g, pts, policy, i, j))
+        }
         // The mod key is still down when another finger of its hand presses: a fast roll that
         // a tap-hold resolver can read as a hold. Same-finger pairs release first.
         "Y04" => pair(t, n, fresh, ch, &idx, &|i, j| pct(g.hrm(i) && same_hand(i, j) && k[i].finger != k[j].finger)),
@@ -502,7 +552,7 @@ const E01_EFFORT: f32 = 0.0201;
 /// other pair/triple table reads only logical key fields (finger, row, column, flags), so a
 /// pose-only move leaves it unchanged.
 pub fn reads_points(id: &str) -> bool {
-    matches!(id, "B03" | "S03" | "B14" | "S04" | "S05" | "B10" | "Y03" | "T09")
+    matches!(id, "B03" | "S03" | "B14" | "S04" | "S05" | "B10" | "Y03" | "L03" | "T09")
 }
 
 /// Each slot's metric-point y minus the mean y of its finger's home keys; for a finger without

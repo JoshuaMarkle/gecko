@@ -1,0 +1,13 @@
+description = "Alpha side: modern English prose with every symbol, case and paragraphs (web 50, chat 30, books 20)"
+
+[[part]]
+corpus = "prose-web"
+weight = 50.0
+
+[[part]]
+corpus = "prose-chat"
+weight = 30.0
+
+[[part]]
+corpus = "prose-books"
+weight = 20.0

@@ -1,0 +1,14 @@
+description = "Programmer: half English prose and docs, half source code (Rust, Python, JS/TS, C, shell, Lua), with Backspace"
+edits = 0.056
+
+[[part]]
+corpus = "prose"
+weight = 45.0
+
+[[part]]
+corpus = "markdown"
+weight = 10.0
+
+[[part]]
+corpus = "code-all"
+weight = 45.0

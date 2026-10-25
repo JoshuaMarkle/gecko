@@ -4,7 +4,10 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use std::collections::BTreeMap;
+
 use crate::corpus::WordList;
+use crate::recipe::Recipe;
 use crate::{Corpus, Error, Geometry, Layout, Profile, Result};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -39,6 +42,19 @@ fn d_profile() -> String {
 }
 fn d_reference() -> String {
     "qwerty".into()
+}
+
+/// One entry of `corpora/index.toml`.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct CorpusMeta {
+    /// `language` (meant for optimization), `component` (a part of languages) or `reference`
+    /// (kept for comparison with earlier results).
+    #[serde(default)]
+    pub kind: String,
+    #[serde(default)]
+    pub description: String,
+    #[serde(default)]
+    pub source: String,
 }
 
 #[derive(Clone, Debug)]
@@ -83,13 +99,18 @@ impl Store {
     /// Names (file stems) of `layouts`, `geometries`, `profiles` or `corpora`.
     pub fn list(&self, kind: &str) -> Vec<String> {
         let ext = if kind == "corpora" { "gkc" } else { "toml" };
+        let recipes = kind == "corpora";
         let mut v: Vec<String> = std::fs::read_dir(self.dir(kind))
             .into_iter()
             .flatten()
             .flatten()
             .filter_map(|e| {
                 let p = e.path();
-                if p.extension()? != ext {
+                let name = p.file_name()?.to_string_lossy().into_owned();
+                if recipes && name.ends_with(".mix.toml") {
+                    return Some(name.trim_end_matches(".mix.toml").to_string());
+                }
+                if p.extension()? != ext || (kind == "corpora" && name == "index.toml") {
                     return None;
                 }
                 let stem = p.file_stem()?.to_string_lossy().into_owned();
@@ -185,20 +206,73 @@ impl Store {
         Profile::from_toml(&read(&p)?)
     }
 
+    /// `corpora/<name>.gkc`, or `corpora/legacy/<name>.gkc` for a retired corpus (kept so old
+    /// runs verify; not listed). New files go to the first.
     pub fn corpus_path(&self, name: &str) -> PathBuf {
-        self.dir("corpora").join(format!("{name}.gkc"))
+        let p = self.dir("corpora").join(format!("{name}.gkc"));
+        let legacy = self.dir("corpora").join("legacy").join(format!("{name}.gkc"));
+        if !p.exists() && legacy.exists() {
+            legacy
+        } else {
+            p
+        }
     }
 
+    /// The built `.gkc`; a recipe without one is built on the fly.
     pub fn corpus(&self, name: &str) -> Result<Corpus> {
         let p = self.corpus_path(name);
+        if !p.exists() && self.recipe_path(name).exists() {
+            return self.build_recipe(name);
+        }
         let bytes = std::fs::read(&p)
             .map_err(|e| Error::invalid("corpus", format!("{}: {e} (build it with `gecko corpus build`)", p.display())))?;
         Corpus::from_bytes(&bytes)
     }
 
+    /// A language recipe, `corpora/<name>.mix.toml` (`crate::recipe`).
+    pub fn recipe_path(&self, name: &str) -> PathBuf {
+        self.dir("corpora").join(format!("{name}.mix.toml"))
+    }
+
+    pub fn recipe(&self, name: &str) -> Result<Option<Recipe>> {
+        let p = self.recipe_path(name);
+        if !p.exists() {
+            return Ok(None);
+        }
+        Recipe::from_toml(&read(&p)?).map(Some)
+    }
+
+    /// Build a recipe from its parts (each loaded with [`Store::corpus`]).
+    pub fn build_recipe(&self, name: &str) -> Result<Corpus> {
+        let r = self.recipe(name)?.ok_or_else(|| Error::invalid("recipe", format!("no recipe '{name}'")))?;
+        let parts = r
+            .parts
+            .iter()
+            .map(
+                |p| if p.corpus == name { Err(Error::invalid("recipe", format!("'{name}' mixes itself"))) } else { self.corpus(&p.corpus) },
+            )
+            .collect::<Result<Vec<_>>>()?;
+        r.build(name, &parts)
+    }
+
+    /// `corpora/index.toml`: kind, description and source of each corpus (missing file = empty).
+    pub fn corpus_index(&self) -> Result<BTreeMap<String, CorpusMeta>> {
+        let p = self.dir("corpora").join("index.toml");
+        if !p.exists() {
+            return Ok(BTreeMap::new());
+        }
+        toml::from_str(&read(&p)?).map_err(|e| Error::parse("corpora/index.toml", e))
+    }
+
     /// Word-count side file of a corpus (written by `gecko corpus import` from `words.json`).
     pub fn words_path(&self, name: &str) -> PathBuf {
-        self.dir("corpora").join(format!("{name}.words.tsv"))
+        let p = self.dir("corpora").join(format!("{name}.words.tsv"));
+        let legacy = self.dir("corpora").join("legacy").join(format!("{name}.words.tsv"));
+        if !p.exists() && legacy.exists() {
+            legacy
+        } else {
+            p
+        }
     }
 
     pub fn words(&self, name: &str) -> Result<WordList> {

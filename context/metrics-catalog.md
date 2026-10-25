@@ -98,10 +98,11 @@ stats summing to 100% and makes reports easy to read.
 |---|---|---|---|---|
 | L01 | Shortcut placement | − | P1 | Z X C V (and A S Q W) reachable by the left hand / near QWERTY spots. Implemented (`Order::Place`; profile `familiar`): 100 off the left hand, up to 50 by distance from the QWERTY spot; A S Q W at half weight. |
 | L02 | Familiarity | ± | P2 | Distance from a reference layout: keys moved, keys kept on the same finger/hand. Implemented (profile `familiar_to = "qwerty"`): per keystroke 0 on the reference key, 50 same finger, 75 same hand, 100 otherwise. |
-| L03 | Grouping / symmetry | − | P2 | Related symbols kept together or mirrored (brackets, vowels, similar letters). |
+| L03 | Vim motions | − | P2 | h j k l keep a usable shape (profile `vim`: `row` in order on one row, `pairs` h←l and j←k each on neighbours, `fingers` four fingers of one hand). % of the policy's pairs broken (reversed neighbours half). Implemented (`Order::Brackets` sparse pairs); [vim.md](vim.md). Brackets are Y03. |
 | L04 | Key zones | − | P1 | Symbols kept in or out of key zones (soft pins). Implemented as "Key zones" (`Order::Place`): profile `thumb_zone` (those symbols on thumb keys, letters/digits/punctuation off them) and `base_letters` (letters off layer keys); count of misplaced keys. Keysets weight it 100. Fixed positions remain `--pin`. |
 | L05 | Corpus robustness | − | P2 | Score spread across several corpora (prose, chat, code). Report only: `gecko compare --corpora`. |
 | L06 | Held-out generalization | info | P2 | Score on a corpus not used in optimization. Guards against overfitting. |
+| L07 | Grouping / symmetry | − | P3 | Related symbols kept together or mirrored (vowels, similar letters); L03 and Y03 cover Vim keys and brackets. |
 
 ## 8. Layers and symbols (phase: symbol layers)
 

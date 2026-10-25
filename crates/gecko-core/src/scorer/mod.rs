@@ -141,6 +141,8 @@ pub struct PairEntry {
     pub x: u8,
     pub y: u8,
     pub f: f32,
+    /// Offset of the entry's cost-table block in `cb` (`metrics::sparse_block` × n²).
+    pub t: u32,
 }
 
 /// Mutable search state: symbol ↔ slot maps, finger loads and current trigram costs.

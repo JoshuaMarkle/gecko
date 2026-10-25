@@ -191,30 +191,47 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
 - Default charset: `a–z , . / ; ' - ␣` (33). Frequencies are normalized over the symbols on
   the layout, so 30-key layouts (no `␣`) score exactly as before; layouts with `␣` read as
   "% of all keystrokes incl. space" and are not directly comparable to 30-key numbers.
-- Bundled corpora (`gecko compare --corpora english,shai,mt-10k,mt-450k,reddit,french` for the L05 report):
+- **Languages** (optimize on these) are recipes: `data/corpora/<name>.mix.toml` (`gecko_core::recipe`)
+  names weighted component corpora plus an optional modelled `edits` (⌫) and `nav` (arrows)
+  share, built to `<name>.gkc` by `gecko corpus mix` (`--all` rebuilds every recipe in dependency
+  order; the store builds a missing gkc on the fly). The web Language tab shows a recipe's
+  composition (`/api/corpora/{name}/composition`) and saves new ones (`POST /api/corpora/mix`).
+  `data/corpora/index.toml` gives each bundled corpus a kind (language / component / reference),
+  description and source; `data/corpora/build/build.sh` rebuilds the components and recipes.
 
-  | Name | Source | Size | QWERTY SFB |
-  |---|---|---|---|
-  | `english` | 10 Project Gutenberg novels (raw text in `data/corpora/src/`, not committed; other corpora's sources go in `data/corpora/src/<name>/`, served by `/api/corpora/{name}/sources`) | 7.5M chars incl. space | 6.63 % |
-  | `english-cased` | Same 10 novels, rebuilt with the current tokenizer (`GKCORP3`: Shift tables, punctuation as shifted keys) | 7.5M chars incl. space | 6.61 % |
-  | `english-full` | Same novels, `--charset code --paragraphs`: every ASCII symbol and digit its own symbol, `⏎` per paragraph, Shift tables (keysets) | 7.5M chars | |
-  | `english-full-bspc` | `english-full` + `⌫` at 5.6 % of keystrokes (`corpus edits`) | | |
-  | `shai` | cmini `corpora/shai/words.json` (iweb-based English; the community default) | 520M | 6.70 % |
-  | `mt-10k` | cmini `corpora/english-10k` (Monkeytype 10k word list, each word once) | 82k | 8.40 % |
-  | `mt-450k` | cmini `corpora/english-450k` (Monkeytype 450k list) | 4.8M | 8.30 % |
-  | `reddit` | cmini `corpora/reddit` (Reddit comments; chat style) | 56M | 6.28 % |
-  | `french` | cmini `corpora/french`, imported with `--fold` (diacritics → base letter) | 118M | 8.81 % |
+  | Kind | Name | Recipe or source |
+  |---|---|---|
+  | language | `writer` | `prose` + ⌫ 5.6 % |
+  | language | `programmer` | `prose` 45, `markdown` 10, `code-all` 45 + ⌫ 5.6 % |
+  | language | `vim-programmer` | `prose` 35, `markdown` 8, `code-all` 35, `vim` 22 + ⌫ 5.6 % |
+  | component | `prose` | `prose-web` 50, `prose-chat` 30, `prose-books` 20 |
+  | component | `prose-web` / `prose-chat` | cmini shai / reddit `words.json` re-imported with `--charset code` (punctuation, digits, case) |
+  | component | `prose-books` | the 10 novels, `--paragraphs --strip-markup` (the only prose with `⏎`) |
+  | component | `code-all` | `code-rust` 25, `code-python` 25, `code-js` 25, `code-c` 8, `code-shell` 9, `code-lua` 8 |
+  | component | `markdown` | READMEs and docs of crates and npm packages |
+  | component | `vim` | synthetic Vim sessions (`gecko corpus vim`, [vim.md](vim.md)) |
+  | reference | `english`, `shai`, `reddit`, `french` | 33-symbol, no case; kept for earlier results |
 
+  All languages and components use `--charset code` (every printable ASCII symbol, digits, `⏎`,
+  `⇥`, case); `vim` adds `⎋`. Code sources are picked by `data/corpora/build/select_sources.py`
+  (size caps per package, generated / minified / test files out). Limits: word imports estimate
+  cross-word n-grams; code is text, not keystrokes (editor auto-pairs are not modelled); the
+  code components depend on what the build machine has installed.
+- Retired corpora (`english-cased`, `english-full`, `english-full-bspc`, `code`, `code-nav`,
+  `mt-10k`, `mt-450k`) live in `data/corpora/legacy/`: they load by name (store fallback) so old
+  runs verify, but are not listed. `english` stays frozen at the top level for the same reason.
+- `gecko corpus info <name>` reports symbol classes, Shift presses per 100 keystrokes, ASCII the
+  charset lacks or the text never types, and rare symbols, so gaps are visible before a search.
   cmini data from https://github.com/Apsu/cmini (GPL-3.0; only aggregated counts are
-  committed). Word lists weight every word once, as a Monkeytype test samples them.
-  `--fold` (build and import) maps Latin diacritics and ligatures to ASCII first (`é` → `e`,
-  `œ` → `oe`, `ß` → `ss`), so non-English text on an ASCII charset counts an accented letter
-  as its base key (dead key / compose) instead of breaking the n-gram; without it French
-  QWERTY SFB is 8.53 %. Accented keys of their own are future work.
-- Shift: only `english-cased` has case counts (`GKCORP3`). The other bundled corpora predate
-  them (`GKCORP2`), so Shift costs nothing on them. `english` stays frozen because recorded runs
-  verify against its hash; use `english-cased` when a layout places `⇧`. cmini word lists are
-  lowercase, so their corpora cannot gain Shift counts.
+  committed). `--fold` (build and import) maps Latin diacritics and ligatures to ASCII first
+  (`é` → `e`, `œ` → `oe`, `ß` → `ss`). Unicode punctuation always folds to ASCII
+  (`Corpus::ascii_punct`: curly quotes, dashes, `…` → `...`, odd spaces; zero-width characters
+  dropped), and `--strip-markup` removes Gutenberg `_emphasis_`, `[Illustration]` and `* * *`.
+- Shift: corpora with case counts write `GKCORP3`/`GKCORP4` Shift tables; the references are
+  lowercase, so Shift costs nothing on them.
+- File form: `GKCORP4` (written by every `corpus` command) stores the same tables as sparse
+  varints, several times smaller; the hash is over the canonical dense bytes, so it is the same
+  in either form. `Corpus::mix` takes the union of the parts' charsets.
 - Adaptive-key rewrite (`magic::rewrite`, run by `Scorer::new` when the layout has keys): each
   key joins the charset and every n-gram moves to its typed form, counts ×1000. A symbol's
   form depends on the one before it, so the tables need one more symbol of context: mono and
@@ -223,19 +240,12 @@ Three independent inputs: **geometry** (physical board), **layout** (symbols on 
   Markov chain `skip(g-1)[x,y]·bi[y,z]/mono[y]` (gaps 2–3); skipgram starts use the symbol's
   overall share. Shift tables are retained using the same context shares (estimates). Against the truly rewritten text (research notes, Magic Sturdy rules) the
   score is off by 0.01 (0.06 with an extra repeat key) for a 3.1 effect.
-- `code` corpus (`--charset code`: default + digits, all ASCII punctuation, `⏎`; 70 symbols):
-  1:1:1 `gecko corpus mix` of Rust (serde, serde_json, regex-syntax, tokio, axum, clap_builder,
-  hyper, rand, proptest from the cargo registry; 7.8M chars), Python 3.14 stdlib top-level
-  modules (3.7M) and TypeScript (hls.js `src`, @use-gesture; 1.5M). Only `code.gkc` is
-  committed. Rebuild: `gecko corpus build --charset code --ext rs --out code-rs <crate>/src…`
-  (likewise `code-py` from `/usr/lib/python3.14/*.py`, `code-ts` from the `.ts` files, not
-  `.d.ts`), then `gecko corpus mix code-rs code-py code-ts --out code`.
-- `code-nav` corpus (`--charset nav` = code + `←↓↑→`; 74 symbols): `code` plus 3 % arrow
-  keystrokes from a seeded cursor-movement model (`Corpus::with_nav`; text has no arrows):
-  runs of mean length 3 that keep direction 85 % of the time, ← 25 / ↓ 30 / ↑ 20 / → 25 %,
-  inserted at random points of a stream typed from `code`'s bigram chain, mixed in at the
-  weight that gives the share. Rebuild: `gecko corpus nav code --share 0.03 --out code-nav`.
-  Text with arrow glyphs also counts directly under `--charset nav`.
+- Modelled keys (`Corpus::with_edits`, `with_nav`) use an exact episode model: the real text's
+  n-grams keep their counts scaled by the chance no episode falls in their span, and each episode
+  (a mistyped run then as many `⌫`, or an arrow run) is counted in sampled windows with 4 symbols
+  of chain context on each side, so the share is exact and the text's own statistics (`/`,
+  Shift per keystroke) are preserved. Arrow runs have mean length 3, keep direction 85 %,
+  ← 25 / ↓ 30 / ↑ 20 / → 25 %. Text with arrow glyphs also counts directly under `--charset nav`.
 
 ## Results
 

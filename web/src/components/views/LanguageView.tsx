@@ -2,18 +2,31 @@
 // language statistics. Summarize lives in the navbar (App).
 
 import { useEffect, useRef, useState } from "react";
+import type { CorpusInfo } from "../../api";
 import { INK } from "../../colors";
 import { fmt, fmtCorpusChars, fmtCount } from "../../format";
 import { useLanguageStats, type Language, type Languages } from "../../languages";
 import { useSize } from "../Charts";
 import { Frame } from "../Form";
+import { LanguageMix } from "../LanguageMix";
 
 interface Props {
   langs: Languages;
   /** Corpus used for scoring and runs (bundled languages only). */
   corpusId: string;
   setCorpusId: (id: string) => void;
+  corpora: CorpusInfo[];
+  /** Reload the bundled corpora (after saving a mix) and select `id`. */
+  reload: (id: string) => void;
 }
+
+/** Sidebar groups, in order. */
+const GROUPS: [string, (l: Language) => boolean][] = [
+  ["Languages", (l) => !l.local && l.kind === "language"],
+  ["Components", (l) => !l.local && l.kind === "component"],
+  ["References", (l) => !l.local && l.kind === "reference"],
+  ["In this browser", (l) => l.local],
+];
 
 /** Cap on characters shown in the text viewer (whole books are several MB). */
 const VIEW_CAP = 400_000;
@@ -74,10 +87,11 @@ function Stats({ lang }: { lang: Language }) {
   return (
     <div className="langstats">
       <div className="langfacts">
-        <div className="kv"><span>Characters</span><span>{fmtCorpusChars(stats.chars)}</span></div>
+        <div className="kv"><span>Characters</span><span>{lang.recipe ? "mix" : fmtCorpusChars(stats.chars)}</span></div>
         <div className="kv"><span>Words</span><span>{lang.words !== null ? fmtCount(lang.words) : "–"}</span></div>
         <div className="kv"><span>Sources</span><span>{lang.sources ? lang.sources.length : "–"}</span></div>
         <div className="kv"><span>Charset</span><span className="mono" title={stats.charset}>{stats.charset.length} symbols</span></div>
+        {lang.recipe && <div className="kv"><span>Recipe</span><span title="Characters of a mix are normalized weights, not text size">{lang.recipe.parts.length} parts{lang.recipe.edits > 0 ? ` · ⌫ ${fmt(100 * lang.recipe.edits, 1)}%` : ""}</span></div>}
         {lang.status === "Outdated" && <div className="notice warn">Sources changed since the last summary. Summarize again to update.</div>}
       </div>
       <div className="langfreq"><h4>Key frequencies <span className="hint">% of keystrokes</span></h4><KeyFreq mono={stats.mono} /></div>
@@ -88,7 +102,7 @@ function Stats({ lang }: { lang: Language }) {
   );
 }
 
-export function LanguageView({ langs, corpusId, setCorpusId }: Props) {
+export function LanguageView({ langs, corpusId, setCorpusId, corpora, reload }: Props) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [src, setSrc] = useState<{ lang: string; name: string } | null>(null);
   const [text, setText] = useState<{ body: string; total: number } | null>(null);
@@ -96,6 +110,7 @@ export function LanguageView({ langs, corpusId, setCorpusId }: Props) {
   const [naming, setNaming] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const sel = langs.selected;
+  const selInfo = sel && !sel.local ? corpora.find((c) => c.id === sel.id) : undefined;
 
   useEffect(() => {
     let alive = true;
@@ -123,8 +138,10 @@ export function LanguageView({ langs, corpusId, setCorpusId }: Props) {
       title={<>Languages <span className="muted">· {langs.languages.length}</span></>}
       side={
         <div className="langlist">
-          {langs.languages.map((l) => (
-            <div key={l.id} className={`langrow ${sel?.id === l.id ? "sel" : ""}`}>
+          {GROUPS.map(([group, inGroup]) => {
+            const ls = langs.languages.filter(inGroup);
+            return ls.length > 0 && <div key={group}><div className="langgroup">{group}</div>{ls.map((l) => (
+            <div key={l.id} className={`langrow ${sel?.id === l.id ? "sel" : ""}`} title={l.description || undefined}>
               <div className="langhead">
                 <button className={`chev ${open[l.id] ? "open" : ""}`} onClick={() => toggle(l)} aria-label={open[l.id] ? "Collapse" : "Expand"} />
                 <button className="langname" onClick={() => choose(l)} title={l.local ? "Created in this browser" : "Bundled corpus"}>
@@ -147,7 +164,8 @@ export function LanguageView({ langs, corpusId, setCorpusId }: Props) {
                 </div>
               )}
             </div>
-          ))}
+          ))}</div>;
+          })}
         </div>
       }
       footer={
@@ -172,9 +190,12 @@ export function LanguageView({ langs, corpusId, setCorpusId }: Props) {
         </>
       }
       main={
-        !src ? <div className="empty faint">No text selected</div> : (
+        !src ? (
+          selInfo ? <LanguageMix corpus={selInfo} corpora={corpora} onSaved={reload} onOpen={(id) => { const l = langs.languages.find((x) => x.id === id); if (l) choose(l); }} />
+            : <div className="empty faint">No text selected</div>
+        ) : (
           <div className="textview">
-            <div className="textview-head"><b className="mono">{src.name}</b>{text && <span className="hint">{fmtCount(text.total)} characters{text.total > VIEW_CAP ? ` · showing the first ${fmtCount(VIEW_CAP)}` : ""}</span>}</div>
+            <div className="textview-head"><button className="x" aria-label="Close text" title="Back to the composition" onClick={() => setSrc(null)}>×</button><b className="mono">{src.name}</b>{text && <span className="hint">{fmtCount(text.total)} characters{text.total > VIEW_CAP ? ` · showing the first ${fmtCount(VIEW_CAP)}` : ""}</span>}</div>
             {textErr ? <div className="pad"><div className="notice error">{textErr}</div></div> : <pre>{text ? text.body : "Loading…"}</pre>}
           </div>
         )

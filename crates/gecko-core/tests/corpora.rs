@@ -9,8 +9,15 @@ fn read(p: &str) -> String {
     std::fs::read_to_string(format!("{ROOT}/{p}")).unwrap()
 }
 
+/// A bundled corpus, current or retired (`data/corpora/legacy/`).
+fn load(name: &str) -> Corpus {
+    let p = format!("{ROOT}/data/corpora/{name}.gkc");
+    let p = if std::path::Path::new(&p).exists() { p } else { format!("{ROOT}/data/corpora/legacy/{name}.gkc") };
+    Corpus::from_bytes(&std::fs::read(p).unwrap()).unwrap()
+}
+
 fn qwerty_sfb(corpus: &str) -> f64 {
-    let c = Corpus::from_bytes(&std::fs::read(format!("{ROOT}/data/corpora/{corpus}.gkc")).unwrap()).unwrap();
+    let c = load(corpus);
     let g = Geometry::from_toml(&read("data/geometries/ansi-30.toml")).unwrap();
     let p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
     let sc = Scorer::new(&g, &c, &p, &Layout::from_toml(&read("data/layouts/qwerty.toml")).unwrap()).unwrap();
@@ -31,7 +38,7 @@ fn imported_corpora_match_their_sources() {
 #[test]
 fn every_bundled_corpus_has_skipgrams_of_each_gap() {
     for name in ["english", "shai", "mt-10k", "mt-450k", "reddit", "french"] {
-        let c = Corpus::from_bytes(&std::fs::read(format!("{ROOT}/data/corpora/{name}.gkc")).unwrap()).unwrap();
+        let c = load(name);
         for (g, t) in [(1, &c.skip), (2, &c.skip2), (3, &c.skip3)] {
             assert!(t.iter().sum::<u64>() > 0, "{name}: skip-{g} is empty");
         }
@@ -58,5 +65,20 @@ fn corpus_transforms_preserve_shift_counts() {
         let back = Corpus::from_bytes(&got.to_bytes()).unwrap();
         assert_eq!(back.shift, got.shift);
         assert_eq!(back.shift_bi, got.shift_bi);
+    }
+}
+
+/// Every language recipe rebuilds to the committed `.gkc` (rebuild with `gecko corpus mix --all`
+/// after changing a part or the mixing code).
+#[test]
+fn recipes_match_their_built_corpora() {
+    let store = gecko_core::store::Store::open(std::path::Path::new(ROOT)).unwrap();
+    for name in store.list("corpora") {
+        if store.recipe(&name).unwrap().is_none() {
+            continue;
+        }
+        let built = store.build_recipe(&name).unwrap();
+        let file = Corpus::from_bytes(&std::fs::read(store.corpus_path(&name)).unwrap()).unwrap();
+        assert_eq!(built.hash(), file.hash(), "{name}: recipe and .gkc differ");
     }
 }

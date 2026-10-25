@@ -1,0 +1,6 @@
+description = "English writing: prose (web, chat, books) with every symbol, case, Enter and Backspace"
+edits = 0.056
+
+[[part]]
+corpus = "prose"
+weight = 1.0

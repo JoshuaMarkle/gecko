@@ -51,6 +51,8 @@ export interface Profile {
   /** Target thumb share % for M09 (default 18 when absent). */
   thumb_target?: number;
   trigram_coverage: number;
+  /** Vim motion policy for L03: "row" (h j k l in order), "pairs" (h l and j k), "fingers" (four fingers). */
+  vim?: string;
   /** Adaptive fidelity: search on the `top_k` most frequent trigrams, confirm on the full tables. */
   fidelity?: { top_k: number; grow: number; misses: number };
   /** Metric id → reference spread; the scorer uses weight / scale (weights in spread units). */
@@ -71,7 +73,24 @@ export interface MetricDef { id: string; name: string; unit: string; order: stri
 /** `chars` is slot-ordered; for a layered layout it is the flat string over its layer slots
  *  (see `layerSlots`), and `layers` names layers 1, 2, …. */
 export interface LayoutInfo { id: string; name: string; geometry: string; source: string; chars: string; layers?: string[] }
-export interface CorpusInfo { id: string; name: string; chars: number; charset: string; hash: string }
+/** A language recipe's part (`data/corpora/<name>.mix.toml`); `share` = weight / Σ weights. */
+export interface MixPart { corpus: string; weight: number; share: number }
+export interface Recipe { parts: MixPart[]; edits: number; nav: number }
+/** `language` (optimize on these), `component` (parts of languages), `reference` (older corpora). */
+export type CorpusKind = "language" | "component" | "reference";
+export interface CorpusInfo {
+  id: string; name: string; chars: number; charset: string; hash: string;
+  kind: CorpusKind; description: string; source: string;
+  /** Has case counts (Shift presses). */
+  shift: boolean;
+  recipe: Recipe | null;
+}
+/** Per-symbol keystroke shares of a language's parts and of the built language (`/api/corpora/{name}/composition`). */
+export interface Composition {
+  corpus: string; edits: number; nav: number; mono: Record<string, number>;
+  parts: (MixPart & { mono: Record<string, number>; recipe: boolean })[];
+}
+export interface MixRequest { name: string; parts: { corpus: string; weight: number }[]; edits: number; nav?: number; description?: string }
 
 export interface Meta {
   schema: number;
@@ -122,7 +141,7 @@ export interface AtlasSummary {
   counts: { optima: number; constrained: number; hits: number; edges: number; pruned: number };
   best: AtlasBest | null;
   probe: { samples: number; random_mean: number; random_sd: number; random_min: number; walks: number; walk_len: number; rho: number[]; corr_length: number };
-  fdc: number; funnels: number;
+  fdc: number | null; funnels: number;
   coverage: { within: number; observed: number; estimate: number };
   distinct_dist: number; distinct: AtlasBest[];
 }
@@ -253,6 +272,9 @@ export const api = {
   geometries: () => req<Geometry[]>("/api/geometries"),
   profiles: () => req<Profile[]>("/api/profiles"),
   corpora: () => req<CorpusInfo[]>("/api/corpora"),
+  composition: (id: string) => req<Composition>(`/api/corpora/${encodeURIComponent(id)}/composition`),
+  /** Save (and build) a language recipe on the server. */
+  saveMix: (body: MixRequest) => post<{ id: string; hash: string; chars: number }>("/api/corpora/mix", body),
   corpusBytes: async (id: string) => new Uint8Array(await (await fetch(`/api/corpora/${encodeURIComponent(id)}`)).arrayBuffer()),
   runs: () => req<RunSummary[]>("/api/runs"),
   run: (id: string) => req<RunDetail>(`/api/runs/${encodeURIComponent(id)}`),

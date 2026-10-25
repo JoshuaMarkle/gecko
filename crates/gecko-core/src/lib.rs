@@ -23,6 +23,7 @@ pub mod magic;
 pub mod metrics;
 pub mod optimize;
 pub mod profile;
+pub mod recipe;
 pub mod report;
 pub mod rng;
 pub mod robust;
@@ -30,6 +31,7 @@ pub mod run;
 pub mod scorer;
 pub mod select;
 pub mod store;
+pub mod vim;
 
 pub use corpus::Corpus;
 pub use error::{Error, Result};

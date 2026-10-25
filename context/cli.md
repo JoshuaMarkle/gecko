@@ -21,7 +21,7 @@ gecko sweep    [--evals 5000000] [--seeds 1] [--draws 20] [--sigma 0.5] [--seed 
                                                                   # re-optimize under perturbed weights: families,
                                                                   #   regret, per-weight sensitivity, judges
 gecko analyze  <layout> [--top 10] [--words]                      # finger loads, worst SFB/SFS/LSB/scissors; JSON adds all bigrams/skipgrams with a `kind`;
-                                                                  #   --words: worst real words per metric (needs -c shai or mt-10k)
+                                                                  #   --words: worst real words per metric (needs a word import: shai, prose-web or prose-chat)
 gecko optimize [--algo sa|hc|ga|memetic|bls|tabu|explore|qd|nsga2|rwsa] [--time 30s | --evals N] [--seed 1] [--threads N]
                [--pin ",./;"] [--from <layout>] [--top 10] [--sa-steps N] [--ga-pop N]
                [--memetic-pop 24] [--local-search hc|tabu] [--local-steps 12] [--islands N]
@@ -63,9 +63,16 @@ gecko verify   run:<id>                                           # re-run an --
                                                                   #   check input hashes, evals and best.json (layout and geometry runs)
 gecko perf     [--layout qwerty] [--record]                       # full evals/s, swap deltas/s, scorer builds/s, 1-key rebuilds/s (1 thread); --record appends to bench/history.jsonl
 gecko corpus build <files or dirs...> [--out english] [--charset default|code|nav|<symbols>] [--ext txt] [--fold] [--paragraphs]
-                                                                       # --paragraphs: wrapped prose, blank line = one ⏎
+               [--strip-markup] [--list <file>]                        # --paragraphs: wrapped prose, blank line = one ⏎;
+                                                                       #   --strip-markup: Gutenberg _emphasis_, [Illustration];
+                                                                       #   --list: one path per line; identical files count once
 gecko corpus edits <corpus> [--share 0.056] [--seed 1] --out <name>    # add Backspace from a typing-error model
-gecko corpus mix <corpus>[:weight]... --out <name>                     # weighted mix, same charset
+gecko corpus mix <corpus>[:weight]... --out <name> [--edits 0.056] [--nav 0] [--description ...]
+                                                                       # language recipe → <name>.mix.toml + <name>.gkc (union charset);
+                                                                       #   no parts: rebuild <name> from its recipe; --all: rebuild every recipe
+gecko corpus info <corpus> [--rare 0.05]                               # symbol classes, Shift/100, missing ASCII, rare symbols, recipe
+gecko corpus vim [--out vim] [--text prose-web] [--keystrokes 2000000] [--seed 1] [--log <nvim -w files>...]
+                                                                       # Vim sessions: synthetic grammar, or real keystroke logs (vim.md)
 gecko corpus import <cmini corpus dir> --out <name> [--charset ...] [--fold]   # words.json or n-gram JSON; --fold: é→e; also writes <name>.words.tsv
 gecko geometry import-kle <file.json> --out <name> [--force]       # KLE board → data/geometries/<name>.toml
                                                                   #   (fingers/rows/home/effort guessed; edit after)

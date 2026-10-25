@@ -280,7 +280,7 @@ export function LayoutView(p: Props) {
             {s.keyset && <>
               <Toggle label="Place modifiers" help="Before the run, search the keys of Shift, Ctrl and the layer key (each candidate thumb key, then a local re-optimization)." value={s.keysetPlace ?? true} onChange={(v) => set({ keysetPlace: v })} />
               <Toggle label="Letters on thumbs" help="Let letters and symbols take thumb keys (and Space, Backspace, Enter leave them). Off: a thumb zone keeps them apart." value={s.thumbLetters ?? false} onChange={(v) => set({ thumbLetters: v })} />
-              <div className="hint">Pick a language with punctuation and Enter (english-full, english-full-bspc, code). Shift pairs are scored on the server; the editor's live score ignores them.</div>
+              <div className="hint">Pick a language with punctuation and Enter (writer, programmer, vim-programmer). Shift pairs are scored on the server; the editor's live score ignores them.</div>
             </>}
           </Sec>
           <Sec id="search" title="Budget" note="how long, how wide">

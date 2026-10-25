@@ -8,7 +8,7 @@ import { fmt, LAYER_KEYS, ONESHOT_KEYS, TOGGLE_KEYS, undirected } from "../../fo
 import { FitBoard, type Cell, type KeyArc } from "../Board2D";
 import { FingerLoad } from "../Charts";
 import { defaultFingerEffort, editFingerEffort, fingerTargets, symmetricEffort, withFingerEffort } from "../../fingerEffort";
-import { Frame, Num, Toggle } from "../Form";
+import { Frame, Num, Seg, Toggle } from "../Form";
 import { withHand, type HandSettings, type HandSpec } from "../../hand";
 import { useHandCosts } from "../../handCosts";
 
@@ -67,8 +67,8 @@ const SECTIONS: Section[] = [
     what: "Layer switches, symbol bigrams across layers, paired brackets and home-row-mod misfires.",
     why: "On small boards symbols live on layers; each switch is an extra key press.",
     how: "Only layered layouts score here. Raise Layer switches to keep frequent symbols on the base." },
-  { id: "shortcuts", title: "Shortcuts and familiarity", ids: ["L01", "L02"],
-    what: "Whether Z X C V (and other shortcut letters) stay reachable by the left hand, and how far the layout moves from QWERTY.",
+  { id: "shortcuts", title: "Shortcuts and familiarity", ids: ["L01", "L02", "L03"],
+    what: "Whether Z X C V (and other shortcut letters) stay reachable by the left hand, how far the layout moves from QWERTY, and whether Vim's h j k l keep a usable shape.",
     why: "Shortcuts are muscle memory; a familiar layout is quicker to learn.",
     how: "Zero by default. A small weight trades a little typing score for an easier switch." },
   { id: "precision", title: "Precision", ids: [],
@@ -276,6 +276,15 @@ export function ProfileView(p: Props) {
                 </>}
                 {s.id === "sfb" && pr.sfb && <>
                   <Num label="Skip decay" help="Weight of an SFS relative to an SFB for each key between." value={pr.sfb.skip_decay} step={0.05} onChange={(v) => p.setProfile({ ...pr, sfb: { ...pr.sfb!, skip_decay: v } })} />
+                </>}
+                {s.id === "shortcuts" && <>
+                  <div className="row">
+                    <label title="Shape Vim motions (L03) must keep. Off: L03 scores 0. Row: h j k l in order on neighbouring keys of one row. Pairs: h left of l and j left of k, each on neighbours. Fingers: four different fingers of one hand.">Vim h j k l</label>
+                    <Seg value={(pr.vim ?? "off") as "off" | "row" | "pairs" | "fingers"} options={[["off", "Off"], ["row", "Row"], ["pairs", "Pairs"], ["fingers", "Fingers"]]}
+                      onChange={(v) => p.setProfile({ ...pr, vim: v === "off" ? undefined : v })} />
+                    <span />
+                  </div>
+                  {pr.vim && !pr.weights.L03 && <p className="hint">Give Vim motions (L03) a weight for the policy to count; 100 or more makes it a constraint.</p>}
                 </>}
                 {s.id === "precision" && (
                   <Num label="Trigram coverage" help="Keep the most frequent trigrams covering this share of trigram volume. 1 = exact, lower = faster search." value={pr.trigram_coverage} step={0.005} min={0.5} max={1}

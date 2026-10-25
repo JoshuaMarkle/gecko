@@ -103,3 +103,8 @@ code profile, 20M evals, 4 threads, seeds 1–3): about half the cost per evalua
 K = 1000 found the best layout seen (15.977, `ujo.qwbkmx ieanhgctsr y/;,zpdfvl`) on all three
 seeds, and exact SA found it on one. On layered corne-code, at equal time it is level with exact
 search. Details: `context/objective.md` (Adaptive fidelity).
+
+Vim h j k l constraints 2026-10-24 (`vim-programmer`, ansi-30, 60 s, seeds 1–2, L03 weight 100):
+rescored without L03, pairs costs +2 % over the free optimum, fingers +7.5 %, row +12 %, QWERTY
+spots (`--pin hjkl`) +24 %. With L03 at weight 100, SA spread across seeds is about 1 point
+(5 %). Unconstrained runs agree across seeds. Table and runs: `context/vim.md`.

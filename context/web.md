@@ -110,9 +110,11 @@ be scored, layout-optimized or shape-searched again.
 | Route | |
 |---|---|
 | `GET /api/meta` | defaults, algos, metric definitions (with `retired`; `api.meta` drops retired ones for the UI), core count |
-| `GET /api/layouts` · `/api/geometries` · `/api/profiles` · `/api/corpora` | data dir contents; geometries add each finished geometry run's best board (`run:<id>`) and `param` on parametric boards; geometries and corpora carry their content `hash` |
+| `GET /api/layouts` · `/api/geometries` · `/api/profiles` · `/api/corpora` | data dir contents (corpora add `kind`, `description`, `source`, `shift`, `recipe` from `index.toml` and `.mix.toml`); geometries add each finished geometry run's best board (`run:<id>`) and `param` on parametric boards; geometries and corpora carry their content `hash` |
 | `GET /api/geometries/{id}/free?spec=` | free parameters of a parametric board for a `--free` spec: `{vars: [{name, lo, hi, start}]}` |
 | `GET /api/corpora/{name}` | `.gkc` bytes (for WASM) |
+| `GET /api/corpora/{name}/composition` | recipe parts' per-symbol mono shares and the built mono (Language tab composition) |
+| `POST /api/corpora/mix` | `{name, description?, edits?, nav?, parts: [{corpus, weight}]}` → writes `<name>.mix.toml` + `.gkc`; refuses bundled non-recipe names (409) and unknown parts |
 | `GET /api/corpora/{name}/sources` · `/sources/{file}` | source texts of a corpus (`data/corpora/src/<name>/`; loose `src/` files = `english`): list `[{name, bytes}]`, or one file as text |
 | `POST /api/score` | `{geometry, corpus, profile \| profile_override, chars \| layout, shifted?, top}` → analysis (`shifted`: Shift pairs, [keysets.md](keysets.md)) |
 | `GET /api/runs` · `POST /api/runs` | list (each with `kind`: layout / geometry and the `geometry_hash`, `corpus_hash`, `profile_hash` of its inputs, so the UI matches runs by content, not names) / start (`algo, time_ms \| evals, threads, seed, pins, sa_steps, ga_pop, memetic, moves, holdout` + score inputs; `keyset: {mode, pairs, symbols, keys, layer_mode, thumb_letters, place, place_evals}` builds the start layout instead (placement runs before the response, ≤ 5M evals per settle); with `geom: {free, mode (bilevel / alternate / board), inner_evals, margin, penalty, keep_effort, …}` a board + layout search, `evals` then counts boards) |

@@ -100,8 +100,15 @@ impl Scorer {
             }
         }
         let bracket_total: f64 = bracket_all.iter().map(|e| e.2).sum();
-        let bracket_all: Vec<PairEntry> =
-            bracket_all.into_iter().map(|(x, y, f)| PairEntry { x, y, f: (f / bracket_total) as f32 }).collect();
+        let mut bracket_all: Vec<PairEntry> =
+            bracket_all.into_iter().map(|(x, y, f)| PairEntry { x, y, f: (f / bracket_total) as f32, t: 0 }).collect();
+        // L03: the policy's motion-key pairs on the layout, equal weights.
+        if let Some(pairs) = profile.vim.as_deref().and_then(metrics::vim_pairs) {
+            let at = |c: char| chars.iter().position(|&ch| ch == c);
+            let on: Vec<(usize, usize)> = pairs.iter().filter_map(|&(a, b)| Some((at(a)?, at(b)?))).collect();
+            let t = (metrics::sparse_block("L03") * n * n) as u32;
+            bracket_all.extend(on.iter().map(|&(x, y)| PairEntry { x: x as u8, y: y as u8, f: 1.0 / on.len() as f32, t }));
+        }
 
         let qwerty = metrics::qwerty_slots(board, &chars);
         let prep = metrics::Prep::new(geometry);
@@ -121,7 +128,7 @@ impl Scorer {
         let mut ckf = vec![0f32; n * n];
         let mut cy = vec![0f32; n * n];
         let mut c3 = vec![0f32; n * n * n];
-        let mut cb = vec![0f32; n * n];
+        let mut cb = vec![0f32; metrics::SPARSE.len() * n * n];
         let mut cp = vec![0f32; n * n];
         let (mut has_pair, mut has_far, mut has_sym, mut has_tri) = (false, false, false, false);
         let has_shift = fsh.iter().any(|&f| f > 0.0);
@@ -153,7 +160,8 @@ impl Scorer {
                     _ => {}
                 },
                 (order, Some(t)) => {
-                    let dst = match order {
+                    let block = metrics::sparse_block(d.id) * n * n;
+                    let dst: &mut [f32] = match order {
                         Order::Mono => &mut c1,
                         Order::Bi => {
                             has_pair = true;
@@ -177,7 +185,7 @@ impl Scorer {
                             has_tri = true;
                             &mut c3
                         }
-                        Order::Brackets => &mut cb,
+                        Order::Brackets => &mut cb[block..block + n * n],
                         Order::Place => &mut cp,
                         Order::Load => unreachable!(),
                     };
@@ -202,7 +210,7 @@ impl Scorer {
         let ctrl_w = (profile.effective_weight("M01"), profile.effective_weight("Y01"));
         add_ctrl(&mut cp, &fct, &ctrl_effort, &ctrl_press, ctrl_w);
         let has_place = cp.iter().any(|&c| c != 0.0);
-        let brackets = if cb.iter().any(|&c| c != 0.0) { bracket_all.clone() } else { Vec::new() };
+        let brackets = sparse_used(&bracket_all, &cb, n);
         if let Some(h) = &profile.hand {
             h.validate()?;
         }
@@ -278,6 +286,7 @@ impl Scorer {
     /// with the returned scorer: a state's cached costs belong to its constructing scorer.
     pub fn with_weights(&self, weights: &[(&str, f32)]) -> Result<Self> {
         let mut out = self.clone();
+        let n = out.n;
         out.profile.weights.clear();
         out.profile.scale.clear();
         for &(id, weight) in weights {
@@ -309,7 +318,8 @@ impl Scorer {
                     _ => {}
                 },
                 (order, Some(table)) => {
-                    let target = match order {
+                    let block = metrics::sparse_block(d.id) * n * n;
+                    let target: &mut [f32] = match order {
                         Order::Mono => &mut out.c1,
                         Order::Bi => {
                             out.has_pair = true;
@@ -333,7 +343,7 @@ impl Scorer {
                             out.has_tri = true;
                             &mut out.c3
                         }
-                        Order::Brackets => &mut out.cb,
+                        Order::Brackets => &mut out.cb[block..block + n * n],
                         Order::Place => &mut out.cp,
                         Order::Load => unreachable!(),
                     };
@@ -349,7 +359,7 @@ impl Scorer {
         add_ctrl(&mut out.cp, &out.fct, &out.ctrl_effort, &out.ctrl_press, out.ctrl_w);
         out.has_place = out.cp.iter().any(|&c| c != 0.0);
         out.has_load = [out.w_load, out.w_hand, out.w_rss, out.w_peak, out.w_thumb].iter().any(|&w| w != 0.0);
-        out.brackets = if out.cb.iter().any(|&c| c != 0.0) { out.bracket_all.clone() } else { Vec::new() };
+        out.brackets = sparse_used(&out.bracket_all, &out.cb, n);
         let (effort, layer) = (out.profile.weight("M01"), out.profile.weight("Y01"));
         out.shift_w = (effort, layer);
         for ((cost, e), p) in out.csh.iter_mut().zip(&out.shift_effort).zip(&out.shift_press) {
@@ -479,12 +489,20 @@ impl Scorer {
         // Refold exactly as `new` does (0, then + w·t in `METRICS` order), so results match.
         // Per order, only entries a folded table may have changed in.
         let (tables, fold_w) = (&self.tables, &self.fold_w);
-        let srcs = |order: Order| -> (Vec<(&[f32], f32)>, &Vec<bool>) {
-            let used: Vec<_> =
-                METRICS.iter().zip(tables).zip(fold_w).filter(|((d, t), &w)| d.order == order && w != 0.0 && t.is_some()).collect();
+        // `block`: only the sparse metrics of that cost-table block (`metrics::SPARSE`).
+        let srcs_in = |order: Order, block: Option<usize>| -> (Vec<(&[f32], f32)>, &Vec<bool>) {
+            let used: Vec<_> = METRICS
+                .iter()
+                .zip(tables)
+                .zip(fold_w)
+                .filter(|((d, t), &w)| {
+                    d.order == order && w != 0.0 && t.is_some() && block.is_none_or(|b| metrics::sparse_block(d.id) == b)
+                })
+                .collect();
             let mask = if used.iter().any(|((d, _), _)| metrics::reads_points(d.id)) { &moved } else { &logical };
             (used.into_iter().map(|((_, t), &w)| (t.as_deref().unwrap(), w)).collect(), mask)
         };
+        let srcs = |order: Order| srcs_in(order, None);
         let fold = |dst: &mut [f32], srcs: &[(&[f32], f32)], e: usize| {
             let mut c = 0.0f32;
             for (t, w) in srcs {
@@ -496,14 +514,17 @@ impl Scorer {
             let (s, _) = srcs(order);
             (0..dst.len()).for_each(|e| fold(dst, &s, e));
         }
-        for (dst, order) in [
+        for (dst, srcs) in [
             (&mut self.c2, Order::Bi),
             (&mut self.ck, Order::Skip),
             (&mut self.ckf, Order::SkipFar),
             (&mut self.cy, Order::SymBi),
-            (&mut self.cb, Order::Brackets),
-        ] {
-            let (s, ch) = srcs(order);
+        ]
+        .into_iter()
+        .map(|(dst, order)| (&mut dst[..], srcs(order)))
+        .chain(self.cb.chunks_mut(n * n).enumerate().map(|(b, dst)| (dst, srcs_in(Order::Brackets, Some(b)))))
+        {
+            let (s, ch) = srcs;
             let idx: Vec<usize> = (0..n).filter(|&i| ch[i]).collect();
             for i in 0..n {
                 if ch[i] {
@@ -538,10 +559,16 @@ impl Scorer {
         (self.ctrl_effort, self.ctrl_press) = ctrl_tables(geometry, &self.chars);
         add_ctrl(&mut self.cp, &self.fct, &self.ctrl_effort, &self.ctrl_press, self.ctrl_w);
         self.has_place = self.cp.iter().any(|&c| c != 0.0);
-        self.brackets = if self.cb.iter().any(|&c| c != 0.0) { self.bracket_all.clone() } else { Vec::new() };
+        self.brackets = sparse_used(&self.bracket_all, &self.cb, n);
         (self.target, self.thumb_target) = finger_targets(&self.profile, geometry);
         Ok(count)
     }
+}
+
+/// The sparse entries whose cost-table block has any non-zero cost (weighted metrics only).
+fn sparse_used(all: &[PairEntry], cb: &[f32], n: usize) -> Vec<PairEntry> {
+    let live = |t: u32| cb[t as usize..t as usize + n * n].iter().any(|&c| c != 0.0);
+    all.iter().filter(|e| live(e.t)).copied().collect()
 }
 
 /// Unfolded Shift cost tables for the `⇧` slots `keys` (all zero without one): the Shift key

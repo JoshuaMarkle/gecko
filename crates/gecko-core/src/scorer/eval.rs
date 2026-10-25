@@ -99,7 +99,7 @@ impl Scorer {
             }
         }
         for e in &self.brackets {
-            sum += e.f as f64 * self.cb[pos[e.x as usize] as usize * n + pos[e.y as usize] as usize] as f64;
+            sum += e.f as f64 * self.cb[e.t as usize + pos[e.x as usize] as usize * n + pos[e.y as usize] as usize] as f64;
         }
         sum + self.load_cost(&self.loads(pos))
     }
@@ -179,7 +179,8 @@ impl Scorer {
         for e in &self.brackets {
             let (x, y) = (e.x as usize, e.y as usize);
             if x == a || x == b || y == a || y == b {
-                d += (e.f * (self.cb[new[x] as usize * n + new[y] as usize] - self.cb[old[x] as usize * n + old[y] as usize])) as f64;
+                let cb = &self.cb[e.t as usize..];
+                d += (e.f * (cb[new[x] as usize * n + new[y] as usize] - cb[old[x] as usize * n + old[y] as usize])) as f64;
             }
         }
         d
@@ -275,7 +276,7 @@ impl Scorer {
             }
             d += acc;
         }
-        // Y03 is sparse, so update only bracket pairs spanning the two swaps.
+        // Y03 and L03 are sparse, so update only pairs spanning the two swaps.
         for e in &self.brackets {
             let (x, y) = (e.x as usize, e.y as usize);
             if !((x == r || x == s) && (y == u || y == v) || (y == r || y == s) && (x == u || x == v)) {
@@ -294,7 +295,7 @@ impl Scorer {
                     pos[z] as usize
                 }
             };
-            let cost = |back, uv| self.cb[slot(x, back, uv) * n + slot(y, back, uv)];
+            let cost = |back, uv| self.cb[e.t as usize + slot(x, back, uv) * n + slot(y, back, uv)];
             d += (e.f * ((cost(false, true) - cost(false, false)) - (cost(true, true) - cost(true, false)))) as f64;
         }
         d

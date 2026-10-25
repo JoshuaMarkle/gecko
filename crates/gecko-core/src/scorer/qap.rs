@@ -36,12 +36,16 @@ impl Scorer {
         if self.has_shift_pair {
             chans.push((self.fsb.clone(), self.csb.clone()));
         }
-        if !self.brackets.is_empty() {
+        for b in 0..crate::metrics::SPARSE.len() {
+            let off = (b * n * n) as u32;
+            if !self.brackets.iter().any(|e| e.t == off) {
+                continue;
+            }
             let mut fb = vec![0.0f32; n * n];
-            for e in &self.brackets {
+            for e in self.brackets.iter().filter(|e| e.t == off) {
                 fb[e.x as usize * n + e.y as usize] += e.f;
             }
-            chans.push((fb, self.cb.clone()));
+            chans.push((fb, self.cb[off as usize..off as usize + n * n].to_vec()));
         }
         if trigrams && self.has_tri {
             let c3 = |i: usize, j: usize, k: usize| self.c3[(i * n + j) * n + k];

@@ -78,13 +78,20 @@ of reach (mm short), then each wrist's resting deviation, extension, pronation a
 **Reach** view toggle (default on) colours the 3D keys by G01.
 
 ## Language
-Sidebar "Languages · N": collapsible rows with a status (Summarized / Unsummarized /
+Sidebar "Languages · N", grouped Languages (recipes to optimize on) / Components / References /
+In this browser: collapsible rows with a status (Summarized / Unsummarized /
 Outdated); expanding lists sources with sizes; clicking a source opens it in the text
 viewer. Bundled corpora are Summarized and read-only; choosing one makes it the corpus for
 scoring and runs (`in use`). Footer: New language, Upload sources (local languages only).
 Navbar **Summarize** builds a local language's statistics in WASM (enabled when it is
-Unsummarized or Outdated and has sources). Main: text viewer (first 400k characters) or
-"No text selected". Bottom: characters, words, sources, charset; key-frequency bars; top
+Unsummarized or Outdated and has sources). Main, no source open: the **composition**
+(`LanguageMix`, `mix.ts`): a recipe's parts with weight sliders, Backspace share, add part,
+Save as (writes a recipe through `POST /api/corpora/mix`) / Reset; notes on ASCII the
+charset lacks or never types and missing case; a stacked bar of each part's keystroke share;
+two per-symbol bar charts (letters, space and keys / punctuation and digits) stacked by part,
+with hover tooltips. Edits preview live (same arithmetic as `Corpus::mix` + `with_edits`). A
+plain corpus shows its symbol shares alone. A source open: text viewer (first 400k
+characters, × closes). Bottom: characters, words, sources, charset; key-frequency bars; top
 bigrams, trigrams, skipgrams (`corpus_stats`). Local languages cannot be used for runs yet.
 
 ## Profile
@@ -92,7 +99,7 @@ Sidebar: profile picker + reset, then every parameter in sections (Finger load w
 relative effort inputs, Rows and reach, Hand model (G01/G05/G03 weights; visual: G01 per key for the
 profile's hand, ringed keys out of reach), Same-finger with skip decay, Stretches and scissors,
 Rolls and alternation, Redirects, Measured comfort and timing (E01 is a judge, weight 0 by
-default), Layers, Shortcuts and familiarity,
+default), Layers, Shortcuts and familiarity (with the Vim h j k l policy for L03),
 Precision); each field has a tooltip. Retired metrics (B03, S03) are not shown. Scroll-spy marks the focused section (click a title to
 jump). Main: a visual of the focused section on the current layout (finger heat + finger
 load, effort heat, SFB/SFS arcs, stretch arcs, roll arcs, a redirect example, layer keys,

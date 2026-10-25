@@ -13,6 +13,7 @@ missing. Each paper gets one file in `drafts/` (or the top level for the softwar
 | 3 | Finding the best keyboard layout | [drafts/03-best-layout.md](drafts/03-best-layout.md) | needs exact windows (#43), budget grid |
 | 2a | Is the cost function right? (experiment report) | [cost-validity/cost-validity.tex](cost-validity/cost-validity.tex) (PDF beside it; data `bench/cost-validity-2026-10-22/`) | typeset; timing validity, weight robustness, sweep; feeds paper 2 |
 | 2b | Optimizing the cost function (experiment report) | [cost-optimization/cost-optimization.tex](cost-optimization/cost-optimization.tex) (PDF beside it; data `bench/costfit-2026-10-24/`) | typeset; timing calibration, bilevel weight search, the 2026-10-24 default; feeds paper 2 |
+| 2c | Ranking the modern layouts (experiment report) | [layout-ranking/layout-ranking.md](layout-ranking/layout-ranking.md) (PDF beside it; data `bench/layout-ranking-2026-10-24/`) | done; 31 layouts under the evidence default, swap-polish micro experiment |
 | 4 | Software paper: how GECKO works | [software/software.tex](software/software.tex) (PDF: `software/software.pdf`; notes: [software-paper.md](software-paper.md)) | typeset draft, 11 pages, eight use cases; written as the finished system; planned results are `TODO(run)` + template figures |
 
 Other files: [topics.md](topics.md) (all candidate topics; the four above are the focus),

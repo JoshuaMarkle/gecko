@@ -34,6 +34,7 @@ found little recent work, so most gaps below are gaps in the literature too.
 | Symbol and code frequency, layer design | Y-track, D9 (#91) | The French-standard CACM paper is unread |
 | Key switch force, travel, actuation | J, I-tracks | Armstrong 1994 and Martin 1996 give typing forces; no switch-design source |
 | Manufacturability: plate, case, PCB, printing | I4 (#73), J4 (#75) | Only ergogen spacing limits |
+| General English corpus validity | English layouts and full keyboards | [Audit](studies/2026-10-24-english-corpus-audit.md): add source-separated sequential text; repair dropped double quotes and synthetic sampling/case before new full-keyboard claims; establish mixture and sample-size stability |
 | Non-English n-gram sources, multilingual layouts | E3 corpora | cmini and Leipzig listed, not evaluated |
 | Timing data beyond QWERTY habits | E01 (#31) | E01 is fitted to the 136M data, which is QWERTY-biased (geometric features only, no per-letter terms); emg2qwerty is a second source (size unchecked) |
 | CHI/UIST proceedings 2023–2026, Engram IJHCI full text, 2025 Biomechanics wrist paper | all tracks | Not indexed by the tools used; abstracts only |

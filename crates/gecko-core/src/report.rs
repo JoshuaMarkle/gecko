@@ -91,7 +91,12 @@ pub fn breakdown(sc: &Scorer, st: &State) -> Breakdown {
             }
             (Order::Place, Some(t)) => (0..n).map(|x| t[x * n + pos[x] as usize] as f64).sum(),
             (Order::Brackets, Some(t)) => {
-                sc.bracket_pairs().iter().map(|e| e.f as f64 * t[pos[e.x as usize] as usize * n + pos[e.y as usize] as usize] as f64).sum()
+                let off = (crate::metrics::sparse_block(d.id) * n * n) as u32;
+                sc.bracket_pairs()
+                    .iter()
+                    .filter(|e| e.t == off)
+                    .map(|e| e.f as f64 * t[pos[e.x as usize] as usize * n + pos[e.y as usize] as usize] as f64)
+                    .sum()
             }
             (Order::Tri, Some(t)) => {
                 let f = sc.f3();

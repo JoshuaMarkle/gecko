@@ -21,7 +21,7 @@ use gecko_core::optimize::{Algo, Control, Params};
 use gecko_core::report::analyze;
 use gecko_core::run::{self, RunSpec};
 use gecko_core::store::Store;
-use gecko_core::{Layout, Profile, Scorer, SCHEMA};
+use gecko_core::{Corpus, Layout, Profile, Scorer, SCHEMA};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use tokio::sync::broadcast;
@@ -86,7 +86,9 @@ fn router(store: Store, web: Option<PathBuf>) -> Router {
         .route("/geometries/{id}/free", get(geometry_free))
         .route("/profiles", get(profiles))
         .route("/corpora", get(corpora))
+        .route("/corpora/mix", post(save_mix))
         .route("/corpora/{name}", get(corpus_bin))
+        .route("/corpora/{name}/composition", get(corpus_composition))
         .route("/corpora/{name}/sources", get(corpus_sources))
         .route("/corpora/{name}/sources/{file}", get(corpus_source))
         .route("/score", post(score))
@@ -207,18 +209,110 @@ async fn profiles(State(app): State<AppState>) -> ApiResult {
 
 async fn corpora(State(app): State<AppState>) -> ApiResult {
     let mut out = Vec::new();
+    let index = app.store.corpus_index()?;
     for id in app.store.list("corpora") {
         let c = app.store.corpus(&id)?;
-        out.push(json!({"id": id, "name": c.name, "chars": c.total_chars(), "charset": c.charset.iter().collect::<String>(), "hash": gecko_core::hash::hex(c.hash())}));
+        let recipe = app.store.recipe(&id)?;
+        let meta = index.get(&id).cloned().unwrap_or_default();
+        let kind = if meta.kind.is_empty() {
+            if recipe.is_some() {
+                "language"
+            } else {
+                "component"
+            }
+        } else {
+            &meta.kind
+        };
+        let description = match (&recipe, meta.description.is_empty()) {
+            (Some(r), true) => r.description.clone(),
+            _ => meta.description.clone(),
+        };
+        out.push(json!({
+            "id": id, "name": c.name, "chars": c.total_chars(), "charset": c.charset.iter().collect::<String>(),
+            "hash": gecko_core::hash::hex(c.hash()), "kind": kind, "description": description, "source": meta.source,
+            "shift": c.has_shift(),
+            "recipe": recipe.map(|r| json!({"parts": r.parts.iter().zip(r.shares()).map(|(p, s)| json!({"corpus": p.corpus, "weight": p.weight, "share": s})).collect::<Vec<_>>(), "edits": r.edits, "nav": r.nav})),
+        }));
     }
     Ok(Json(json!(out)))
+}
+
+/// Per-symbol keystroke shares of a recipe's parts (each over its own keystrokes) and of the
+/// built language, for the Language tab's composition chart. A corpus without a recipe is one
+/// part of itself.
+async fn corpus_composition(State(app): State<AppState>, Path(name): Path<String>) -> ApiResult {
+    safe_name(&name)?;
+    let shares = |c: &Corpus| -> Value {
+        let tot = c.total_chars().max(1) as f64;
+        Value::Object(c.charset.iter().zip(&c.mono).map(|(ch, &n)| (ch.to_string(), json!(n as f64 / tot))).collect())
+    };
+    let built = app.store.corpus(&name)?;
+    let (parts, edits, nav) = match app.store.recipe(&name)? {
+        Some(r) => {
+            let mut parts = Vec::new();
+            for (p, share) in r.parts.iter().zip(r.shares()) {
+                let c = app.store.corpus(&p.corpus)?;
+                parts.push(json!({"corpus": p.corpus, "weight": p.weight, "share": share, "mono": shares(&c), "recipe": app.store.recipe_path(&p.corpus).exists()}));
+            }
+            (parts, r.edits, r.nav)
+        }
+        None => (vec![json!({"corpus": name, "weight": 1.0, "share": 1.0, "mono": shares(&built), "recipe": false})], 0.0, 0.0),
+    };
+    Ok(Json(json!({"schema": SCHEMA, "corpus": name, "parts": parts, "edits": edits, "nav": nav, "mono": shares(&built)})))
+}
+
+#[derive(Deserialize)]
+struct MixReq {
+    name: String,
+    parts: Vec<gecko_core::recipe::Part>,
+    #[serde(default)]
+    edits: f64,
+    #[serde(default)]
+    nav: f64,
+    #[serde(default)]
+    description: String,
+}
+
+/// Save a language recipe (`data/corpora/<name>.mix.toml`) and build its `.gkc`. New names, or
+/// existing recipes; a corpus built from text is never overwritten.
+async fn save_mix(State(app): State<AppState>, Json(req): Json<MixReq>) -> ApiResult {
+    let ok = !req.name.is_empty() && req.name.len() <= 64 && req.name.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
+    if !ok {
+        return Err(ApiError(StatusCode::BAD_REQUEST, "name: letters, digits, '-' and '_' only".into()));
+    }
+    if app.store.corpus_path(&req.name).exists() && !app.store.recipe_path(&req.name).exists() {
+        return Err(ApiError(StatusCode::CONFLICT, format!("'{}' is a built corpus, not a recipe; choose another name", req.name)));
+    }
+    if app.store.corpus_index()?.contains_key(&req.name) {
+        return Err(ApiError(StatusCode::CONFLICT, format!("'{}' is a bundled language; save the mix under another name", req.name)));
+    }
+    let r = gecko_core::recipe::Recipe { description: req.description, edits: req.edits, nav: req.nav, parts: req.parts };
+    r.check()?;
+    let parts = r
+        .parts
+        .iter()
+        .map(|p| store_name("corpus", &p.corpus).map_err(|e| e.1).and_then(|n| app.store.corpus(n).map_err(|e| e.to_string())))
+        .collect::<std::result::Result<Vec<_>, _>>()
+        .map_err(|e| ApiError(StatusCode::BAD_REQUEST, e))?;
+    if r.parts.iter().any(|p| p.corpus == req.name) {
+        return Err(ApiError(StatusCode::BAD_REQUEST, "a recipe cannot mix itself".into()));
+    }
+    let c = r.build(&req.name, &parts)?;
+    std::fs::write(app.store.recipe_path(&req.name), r.to_toml())?;
+    std::fs::write(app.store.corpus_path(&req.name), c.to_file_bytes())?;
+    Ok(Json(json!({"schema": SCHEMA, "id": req.name, "hash": gecko_core::hash::hex(c.hash()), "chars": c.total_chars()})))
 }
 
 async fn corpus_bin(State(app): State<AppState>, Path(name): Path<String>) -> std::result::Result<Response, ApiError> {
     if name.contains('/') || name.contains("..") {
         return Err(ApiError(StatusCode::BAD_REQUEST, "bad corpus name".into()));
     }
-    let bytes = std::fs::read(app.store.corpus_path(&name)).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
+    let path = app.store.corpus_path(&name);
+    let bytes = if !path.exists() && app.store.recipe_path(&name).exists() {
+        app.store.corpus(&name)?.to_file_bytes()
+    } else {
+        std::fs::read(path).map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?
+    };
     Ok(([(header::CONTENT_TYPE, "application/octet-stream")], bytes).into_response())
 }
 
@@ -799,6 +893,48 @@ mod tests {
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
+    #[tokio::test]
+    async fn mixes_save_and_report_their_composition() {
+        let root = std::env::temp_dir().join(format!("gecko-mix-test-{}", std::process::id()));
+        let dir = root.join("data/corpora");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(root.join("gecko.toml"), "data = \"data\"\n").unwrap();
+        std::fs::write(dir.join("index.toml"), "[keep]\nkind = \"language\"\n").unwrap();
+        for (name, cs, text) in [("a", "ab\u{2423}", "ab ba ab"), ("b", "a(", "(a(a")] {
+            let mut c = Corpus::new(name, cs);
+            c.add_text(text);
+            std::fs::write(dir.join(format!("{name}.gkc")), c.to_file_bytes()).unwrap();
+        }
+        let app = router(Store::open(&root).unwrap(), None);
+        let post = |body: Value| {
+            app.clone().oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/corpora/mix")
+                    .header("content-type", "application/json")
+                    .body(Body::from(body.to_string()))
+                    .unwrap(),
+            )
+        };
+        let parts = json!([{"corpus": "a", "weight": 3}, {"corpus": "b", "weight": 1}]);
+        assert_eq!(post(json!({"name": "m", "parts": parts, "edits": 0.05})).await.unwrap().status(), StatusCode::OK);
+        assert!(dir.join("m.mix.toml").exists() && dir.join("m.gkc").exists());
+        for (name, status) in [("a", StatusCode::CONFLICT), ("keep", StatusCode::CONFLICT), ("../x", StatusCode::BAD_REQUEST)] {
+            assert_eq!(post(json!({"name": name, "parts": parts})).await.unwrap().status(), status, "{name}");
+        }
+        assert_eq!(post(json!({"name": "n", "parts": [{"corpus": "../a", "weight": 1}]})).await.unwrap().status(), StatusCode::BAD_REQUEST);
+        let r = app.clone().oneshot(Request::builder().uri("/api/corpora/m/composition").body(Body::empty()).unwrap()).await.unwrap();
+        let body: Value = serde_json::from_slice(&to_bytes(r.into_body(), usize::MAX).await.unwrap()).unwrap();
+        assert_eq!(body["parts"][0]["share"], 0.75);
+        assert_eq!(body["edits"], 0.05);
+        assert!(body["mono"]["("].as_f64().unwrap() > 0.0);
+        let r = app.clone().oneshot(Request::builder().uri("/api/corpora").body(Body::empty()).unwrap()).await.unwrap();
+        let list: Value = serde_json::from_slice(&to_bytes(r.into_body(), usize::MAX).await.unwrap()).unwrap();
+        let m = list.as_array().unwrap().iter().find(|c| c["id"] == "m").unwrap();
+        assert_eq!((m["kind"].as_str(), m["recipe"]["parts"][1]["corpus"].as_str()), (Some("language"), Some("b")));
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
     /// Request inputs are store names: the CLI's file-path fallback must not let the API read
     /// arbitrary files.
     #[tokio::test]
@@ -871,6 +1007,7 @@ mod tests {
             ("geometries", first(call("GET", "/api/geometries", None).await, 2)),
             ("profiles", call("GET", "/api/profiles", None).await),
             ("corpora", call("GET", "/api/corpora", None).await),
+            ("composition", call("GET", "/api/corpora/vim-programmer/composition", None).await),
             ("score", call("POST", "/api/score", Some(json!({"top": 3}))).await),
             ("swapMatrix", call("POST", "/api/swap-matrix", Some(json!({}))).await),
             ("path", call("POST", "/api/path", Some(json!({"to": "qwfpgjluy;arstdhneiozxcvbkm,./"}))).await),
@@ -885,7 +1022,7 @@ mod tests {
         let (_, _, qd) = finished(json!({"algo": "qd", "evals": 20000, "threads": 1})).await;
         samples.push(("qd", call("GET", &format!("/api/runs/{qd}/qd"), None).await));
         // A keyset run: Shift pairs travel in the config, and /api/score takes them back.
-        let ks = json!({"geometry": "corne-36", "corpus": "english-full", "algo": "hc", "evals": 20000, "threads": 1,
+        let ks = json!({"geometry": "corne-36", "corpus": "writer", "algo": "hc", "evals": 20000, "threads": 1,
             "keyset": {"mode": "shift", "place": true, "place_evals": 2000}});
         let (started, detail, _) = finished(ks).await;
         let shifted = started["config"]["shifted"].clone();
@@ -896,7 +1033,7 @@ mod tests {
         let rescored = call(
             "POST",
             "/api/score",
-            Some(json!({"geometry": "corne-36", "corpus": "english-full", "chars": chars,
+            Some(json!({"geometry": "corne-36", "corpus": "writer", "chars": chars,
             "shifted": shifted, "profile_override": started["config"]["profile"], "top": 1})),
         )
         .await;

@@ -37,6 +37,7 @@ fn layout(name: &str) -> Layout {
 fn all_weights() -> Profile {
     let mut p = Profile::from_toml(&read("data/profiles/default.toml")).unwrap();
     p.familiar_to = Some("qwerty".into());
+    p.vim = Some("row".into());
     for (i, d) in gecko_core::metrics::METRICS.iter().enumerate() {
         p.weights.insert(d.id.to_string(), 0.1 + i as f32 * 0.07);
     }
@@ -349,6 +350,34 @@ fn layer_modes_parse_round_trip_and_cost() {
     assert_eq!(layer_key_info(TOGGLE_KEYS[0]), Some((1, Toggle)));
     let bad = read("data/layouts/layered/corne-code-numtoggle.toml").replace("{tg2}", "{os2}");
     assert!(Layout::from_toml(&bad).is_err());
+}
+
+/// L03 on QWERTY: h j k l sit in one row in order (row 0); h and l are not neighbours (pairs 50,
+/// j–k fine); h and j share the right index finger (fingers: 1 of 6 pairs broken).
+#[test]
+fn vim_motion_policies_on_qwerty() {
+    let c = synthetic(gecko_core::corpus::DEFAULT_CHARSET, 3);
+    let l03 = |policy: &str, chars: Option<&str>| {
+        let mut p = all_weights();
+        p.vim = Some(policy.into());
+        let mut l = layout("qwerty");
+        if let Some(ch) = chars {
+            l = Layout::from_flat("t", &ansi(), ch.chars().collect()).unwrap();
+        }
+        let sc = Scorer::new(&ansi(), &c, &p, &l).unwrap();
+        let st = sc.identity();
+        let b = breakdown(&sc, &st);
+        assert!((b.score - st.score).abs() < 1e-6 * st.score.abs().max(1.0));
+        b.metrics.iter().find(|m| m.id == "L03").unwrap().value
+    };
+    assert!(l03("row", None).abs() < 1e-9);
+    assert!((l03("pairs", None) - 50.0).abs() < 1e-4);
+    assert!((l03("fingers", None) - 100.0 / 6.0).abs() < 1e-4);
+    // `l k j h` reversed: every neighbour pair reversed counts half.
+    assert!((l03("row", Some("qwertyuiopasdfglkjh;zxcvbnm,./")) - 50.0).abs() < 1e-4);
+    let mut p = all_weights();
+    p.vim = Some("diagonal".into());
+    assert!(Profile::from_toml(&toml::to_string(&p).unwrap()).is_err());
 }
 
 /// Y03: corne-code's brackets are adjacent and in order (0); reversing or splitting them costs.
@@ -1196,7 +1225,8 @@ fn finger_effort_normalizes_and_preserves_delta() {
             let mut next = st.clone();
             let delta = sc.delta(&st, a, b);
             sc.apply(&mut next, a, b, delta);
-            assert!((sc.full(&next) - sc.full(&st) - delta).abs() < 1e-5);
+            // f32 table sums: relative tolerance (all metrics weighted, score ≈ 870).
+            assert!((sc.full(&next) - sc.full(&st) - delta).abs() < 1e-7 * sc.full(&st).abs().max(100.0));
         }
     }
     let e = p.finger_effort.as_mut().unwrap();

@@ -4,7 +4,7 @@
 // optimized on: runs need the corpus on the server (an upload route is planned).
 
 import { useCallback, useEffect, useState } from "react";
-import { api, type CorpusInfo } from "./api";
+import { api, type CorpusInfo, type CorpusKind, type Recipe } from "./api";
 import { usePref } from "./inputs";
 import { corpusFromText, corpusStats, type CorpusStats } from "./wasm";
 
@@ -22,6 +22,9 @@ export interface Language {
   sources: Source[] | null;
   chars: number | null;
   words: number | null;
+  kind: CorpusKind | null;
+  description: string;
+  recipe: Recipe | null;
 }
 
 export function statusOf(l: LocalLanguage): Status {
@@ -62,10 +65,10 @@ export function useLanguages(corpora: CorpusInfo[]) {
   const [busy, setBusy] = useState<string | null>(null);
 
   const languages: Language[] = [
-    ...corpora.map((c): Language => ({ id: c.id, name: c.name, local: false, status: "Summarized", sources: bundledSources[c.id] ?? null, chars: c.chars, words: null })),
-    ...locals.map((l): Language => ({ id: `local:${l.id}`, name: l.name, local: true, status: statusOf(l), sources: l.sources, chars: null, words: l.words })),
+    ...corpora.map((c): Language => ({ id: c.id, name: c.name, local: false, status: "Summarized", sources: bundledSources[c.id] ?? null, chars: c.chars, words: null, kind: c.kind, description: c.description, recipe: c.recipe })),
+    ...locals.map((l): Language => ({ id: `local:${l.id}`, name: l.name, local: true, status: statusOf(l), sources: l.sources, chars: null, words: l.words, kind: null, description: "", recipe: null })),
   ];
-  const selected = languages.find((l) => l.id === selId) ?? languages[0];
+  const selected = languages.find((l) => l.id === selId) ?? languages.find((l) => l.kind === "language") ?? languages[0];
 
   const loadSources = useCallback(async (id: string) => {
     if (id.startsWith("local:") || bundledSources[id]) return;
