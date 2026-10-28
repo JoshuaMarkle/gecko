@@ -44,6 +44,22 @@ Every command takes `--json`. See [context/cli.md](context/cli.md).
 
 Human contributors: see [CONTRIBUTING.md](CONTRIBUTING.md). AI agents: follow [AGENTS.md](AGENTS.md).
 
+## Papers
+
+Experiment reports (PDF), each with its data in `bench/`. Index and drafts: [docs/papers/](docs/papers/README.md).
+
+| Paper | PDF |
+|---|---|
+| Is the cost function right? | [cost-validity](docs/papers/cost-validity/cost-validity.pdf) |
+| Optimizing the cost function | [cost-optimization](docs/papers/cost-optimization/cost-optimization.pdf) |
+| Ranking the modern layouts | [layout-ranking](docs/papers/layout-ranking/layout-ranking.pdf) |
+| The best English layout | [english-layout](docs/papers/english-layout/english-layout.pdf) |
+| The best programming layout with a symbol layer | [programming-layout](docs/papers/programming-layout/programming-layout.pdf) |
+| The best layout for a Vim programmer | [vim-layout](docs/papers/vim-layout/vim-layout.pdf) |
+| What layout designers value: inverse optimization | [inverse-fit](docs/papers/inverse-fit/inverse-fit.pdf) |
+| Symbol layers for programming and Vim | [symbol-layer](docs/papers/symbol-layer/symbol-layer.pdf) |
+| Software paper: how GECKO works | [software](docs/papers/software/software.pdf) |
+
 ## License
 
 Code: [MIT](LICENSE). Some bundled data (the cmini-derived corpora and layout list) is GPL-3.0;
