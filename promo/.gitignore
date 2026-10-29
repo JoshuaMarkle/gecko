@@ -1,0 +1,7 @@
+node_modules/
+# renders and stills for review; finished media goes in media/
+out/
+# copied by `npm run fonts` / `npm run data`
+public/fonts/
+public/stl/
+public/hands/

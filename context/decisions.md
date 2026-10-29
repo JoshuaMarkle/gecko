@@ -16,6 +16,7 @@ put it there instead of here.
 | [decisions/search.md](decisions/search.md) | Optimizers, runs and their reproducibility, exploration, quality-diversity and bounds. |
 | [decisions/geometry.md](decisions/geometry.md) | Boards (2D, parametric, 3D), KLE import, collision, derived costs and the hand model. |
 | [decisions/web.md](decisions/web.md) | The web app: views, interaction, local data and visual design. |
+| [decisions/promo.md](decisions/promo.md) | The promo video (`promo/`): stack, rendering, data. |
 
 When a decision reverses an earlier one, say so in the new entry ("reverses …") and edit the
 old entry's text to note it was superseded, rather than deleting it.

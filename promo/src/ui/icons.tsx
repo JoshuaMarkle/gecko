@@ -1,0 +1,34 @@
+// The product's 16 px line icons (web/src/components/Icons.tsx), scalable for the video.
+
+import type { ReactNode } from "react";
+
+function Svg({ children, fill, size }: { children: ReactNode; fill?: boolean; size: number }) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} fill={fill ? "currentColor" : "none"}
+      stroke={fill ? "none" : "currentColor"} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round">
+      {children}
+    </svg>
+  );
+}
+
+export const IconBoard = ({ size = 32 }: { size?: number }) => <Svg size={size}><rect x="1.5" y="4" width="13" height="8.5" rx="1.5" /><path d="M4 6.8h.01M6.7 6.8h.01M9.3 6.8h.01M12 6.8h.01M5 10h6" /></Svg>;
+export const IconHand = ({ size = 32 }: { size?: number }) => <Svg size={size}><path d="M5 8.5V4a1 1 0 0 1 2 0v3.5M7 7V3a1 1 0 0 1 2 0v4M9 7V3.8a1 1 0 0 1 2 0V8" /><path d="M11 6.5a1 1 0 0 1 2 0V9a5 5 0 0 1-5 5h-.5A4.5 4.5 0 0 1 3.3 11L2.4 9.3a1 1 0 0 1 1.7-1L5 9.5" /></Svg>;
+export const IconProfile = ({ size = 32 }: { size?: number }) => <Svg size={size}><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" /><circle cx="10" cy="4.5" r="1.4" fill="currentColor" /><circle cx="5.5" cy="8" r="1.4" fill="currentColor" /><circle cx="9" cy="11.5" r="1.4" fill="currentColor" /></Svg>;
+export const IconSearch = ({ size = 32 }: { size?: number }) => <Svg size={size}><circle cx="8" cy="8" r="2" /><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6 5 5M11 11l1.4 1.4M3.6 12.4 5 11M11 5l1.4-1.4" /></Svg>;
+export const IconRuns = ({ size = 32 }: { size?: number }) => <Svg size={size}><path d="M2.5 3.5h11M2.5 8h11M2.5 12.5h7" /><circle cx="12.5" cy="12.5" r="1" fill="currentColor" stroke="none" /></Svg>;
+export const IconStats = ({ size = 32 }: { size?: number }) => <Svg size={size}><path d="M2.5 13.5h11" /><path d="M4.5 11V7.5M8 11V3.5M11.5 11V6" /></Svg>;
+export const IconExplore = ({ size = 32 }: { size?: number }) => <Svg size={size}><circle cx="4" cy="11" r="1.3" /><circle cx="7.5" cy="5" r="1.3" /><circle cx="12" cy="9" r="1.3" /><circle cx="10" cy="13" r="1" fill="currentColor" stroke="none" /><circle cx="4.5" cy="4" r="1" fill="currentColor" stroke="none" /><circle cx="12.5" cy="3.5" r="1" fill="currentColor" stroke="none" /></Svg>;
+export const IconPlay = ({ size = 32 }: { size?: number }) => <Svg size={size} fill><path d="M5 3.2v9.6c0 .4.4.6.7.4l7.2-4.8a.5.5 0 0 0 0-.8L5.7 2.8c-.3-.2-.7 0-.7.4z" /></Svg>;
+export const IconPause = ({ size = 32 }: { size?: number }) => <Svg size={size} fill><rect x="4" y="3" width="2.6" height="10" rx=".6" /><rect x="9.4" y="3" width="2.6" height="10" rx=".6" /></Svg>;
+export const IconHome = ({ size = 32 }: { size?: number }) => <Svg size={size}><path d="M2.5 7.5 8 3l5.5 4.5" /><path d="M4 6.5v7h8v-7" /><path d="M6.8 13.5v-3.2h2.4v3.2" /></Svg>;
+export const IconLanguage = ({ size = 32 }: { size?: number }) => <Svg size={size}><path d="M2 3.5h6M5 2v1.5M3.5 3.5c.5 2.5 2 4.3 4 5.2M6.5 3.5c-.4 2.2-1.8 4.3-4 5.5" /><path d="M8.5 14l2.8-7 2.8 7M9.5 11.8h3.6" /></Svg>;
+export const IconStop = ({ size = 32 }: { size?: number }) => <Svg size={size} fill><rect x="3.5" y="3.5" width="9" height="9" rx="1.2" /></Svg>;
+export const IconSummary = ({ size = 32 }: { size?: number }) => <Svg size={size}><rect x="2" y="2" width="12" height="12" rx="1" /><path d="M2 6h12M2 10h12M6 2v12M10 2v12" /></Svg>;
+/** Optimize the layout: two keys swapping. */
+export const IconOptLayout = ({ size = 32 }: { size?: number }) => <Svg size={size}><rect x="1.5" y="2.5" width="5" height="5" rx="1" /><rect x="9.5" y="8.5" width="5" height="5" rx="1" /><path d="M8.5 4.5h2.5a1.5 1.5 0 0 1 1.5 1.5v1M7.5 11.5H5A1.5 1.5 0 0 1 3.5 10V9" /></Svg>;
+/** Optimize the board: a case with a resize arrow. */
+export const IconOptBoard = ({ size = 32 }: { size?: number }) => <Svg size={size}><rect x="1.5" y="6" width="9.5" height="7.5" rx="1.5" /><path d="M10 2.5h3.5V6M13.5 2.5 9.5 6.5" /></Svg>;
+/** Optimize both: a case with a key and a resize arrow. */
+export const IconOptBoth = ({ size = 32 }: { size?: number }) => <Svg size={size}><rect x="1.5" y="6" width="9.5" height="7.5" rx="1.5" /><rect x="4" y="8.5" width="2.6" height="2.6" rx=".5" fill="currentColor" stroke="none" /><path d="M10 2.5h3.5V6M13.5 2.5 9.5 6.5" /></Svg>;
+export const IconBench = ({ size = 32 }: { size?: number }) => <Svg size={size}><path d="M2.5 13.5h11" /><path d="M3 11.5c2-6 4-8 10-9" /><path d="M3 11.5c3-3 5-4 10-4.5" strokeDasharray="1.6 1.4" /></Svg>;
+export const IconExport = ({ size = 32 }: { size?: number }) => <Svg size={size}><path d="M8 10V2.5M5 5.3 8 2.3l3 3" /><path d="M2.5 9.5v3a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3" /></Svg>;

@@ -1,0 +1,41 @@
+{
+  "name": "gecko-promo",
+  "private": true,
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "data": "node scripts/export-data.mjs",
+    "fonts": "node scripts/fonts.mjs",
+    "stills": "node scripts/stills.mjs",
+    "render": "remotion render src/index.ts promo out/promo.mp4 --gl=angle --concurrency=3",
+    "preview": "remotion render src/index.ts promo out/preview.mp4 --gl=angle --concurrency=3 --scale=0.5",
+    "typecheck": "tsc --noEmit",
+    "components": "vite"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
+    "@react-three/postprocessing": "^3.2.2",
+    "@remotion/cli": "^4.0.539",
+    "@remotion/player": "^4.0.539",
+    "@remotion/renderer": "^4.0.539",
+    "@remotion/three": "^4.0.539",
+    "postprocessing": "^6.39.5",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "^4.0.539",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.186.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.5"
+  }
+}
