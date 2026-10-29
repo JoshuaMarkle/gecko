@@ -1,18 +1,17 @@
-<h1 align="center">🦎 GECKO 🦎</h1>
-<h3 align="center">General Engine for Custom Keyboard Optimization</h3>
+<div align="center">
+<img width="600" alt="banner" src="https://github.com/user-attachments/assets/31557e84-3fb1-42f1-9f08-88fb02ef531a" />
+</div>
 
-**GECKO** searches for the best keyboard layout for any physical keyboard, and later for the
-best keyboard itself (2D → 3D). It is first a data-analysis system for judging layouts
-thoroughly and fast, with optimization on top.
+**GECKO** finds optimal keyboard layouts and board shapes using a suite of data analysis systems. It has an extremely customizable system for design preferences and world class research tools for analyzing layout quality.
 
-- Score any layout on any board: 47 metrics (same-finger bigrams, rolls, stretches, reach
-  and wrist posture from a hand model, …) weighted by editable profiles, checked against
-  independent judges (typing time fitted to 136M keystrokes, measured comfort).
-- Optimize with several algorithms (simulated annealing, tabu, memetic, MAP-Elites, NSGA-II, …)
-  using fast swap-delta evaluation; every run is reproducible.
-- Explore the landscape of good layouts, not just one optimum.
-- Boards from TOML, keyboard-layout-editor.com, or parameters (stagger, splay, split, 3D keywells).
-- Web UI with a 3D viewer; the browser scores with the same Rust code through WASM.
+https://github.com/user-attachments/assets/622634a1-ff27-46af-9bb9-3f8f495704b8
+
+- Score any layout on any board on over 50 metrics
+- Optimize with several algorithms (simulated annealing, tabu, memetic, MAP-Elites, NSGA-II, ...)
+- Every run is reproducible.
+- Explore the whole landscape of good layouts, not just one optimum.
+- Works with boards from TOML, keyboard-layout-editor.com, or parameters (stagger, splay, split, 3D keywells).
+- Web UI with a 3D viewer; the browser scores with the same Rust code using WASM.
 
 ## Quick start
 
